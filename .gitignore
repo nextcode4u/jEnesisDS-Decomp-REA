@@ -1,0 +1,10 @@
+/input/
+/build/
+/ghidra/
+/.rebuild-*/
+/extracted/*
+!/extracted/nds-layout.json
+/evidence/*
+!/evidence/nds-header.txt
+/decompiled/**/decompile-journal.jsonl
+__pycache__/

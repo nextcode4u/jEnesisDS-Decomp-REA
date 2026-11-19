@@ -1,0 +1,71 @@
+// rea decompile_all
+// name: FUN_02000c08
+// address: 0x2000c08
+// body: available
+// range: 0x2000c08-0x2000cf7 inclusive
+// non_contiguous: false
+// provider: Ghidra 12.1.4 (ghidra)
+// analysis_profile: ee07897cf0d8c1f32e8434e3e0eb5f18c1cf8a29342632ece9fdf7c42dcbeda6
+// limitations: This session opens a caller-selected existing Ghidra project through a private copy, without import, auto-analysis or repair scripts. Original analysis completeness and settings are unknown.; The original project is never opened by Ghidra or modified. The private copy is read-only to bridge operations and deleted on close; original executable bytes are never written.; The analysis profile records the selected project content fingerprint and program name. The imported program SHA-256 must match the admitted target; the project may contain caller annotations or earlier edits, which are not fresh REA discoveries.; Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.; Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.; External functions and functions without an analyzable body return null; other decompiler failures remain explicit.
+// pseudocode: provider-specific; not original source
+
+
+void FUN_02000c08(void)
+
+{
+  DAT_0b000000 = 0x106;
+  if (DAT_0b000020 == 0) {
+    DAT_0b000000 = 0x138;
+  }
+  DAT_0b000004 = 0xe0;
+  DAT_0b000014 = 0x1e7;
+  DAT_0b000018 = 0xe3;
+  DAT_0b000010 = 0x19d;
+  DAT_0b00000c = 0;
+  DAT_0b000008 = 0;
+  DAT_0b000024 = 0;
+  DAT_0b0000a8 = 0;
+  FUN_020054d4(&DAT_0b0000ac);
+  FUN_02004dcc(&DAT_0b000158);
+  if ((DAT_023cb610 & 1) == 0) {
+    FUN_02003a50(DAT_0b000030,0);
+    FUN_02003a50(DAT_0b000034,0);
+  }
+  else {
+    FUN_02003a50(DAT_0b000030);
+    FUN_02003a50(DAT_0b000034,1);
+  }
+  FUN_020037b4(DAT_0b000030);
+  FUN_020037b4(DAT_0b000034);
+  FUN_02004bf0();
+  FUN_02004d94();
+  FUN_0200b6a8();
+  FUN_020062c4();
+  thunk_FUN_0208031c();
+  thunk_FUN_0208031c();
+  FUN_02006308(1);
+  thunk_FUN_0208031c();
+  thunk_FUN_0208031c();
+  FUN_020063dc();
+  if ((DAT_023cb610 & 4) == 0) {
+    DAT_023dcea8 = FUN_0200c280;
+  }
+  else {
+    switch(DAT_023dcdb0) {
+    case 0:
+      DAT_023dcea8 = (code *)&LAB_0200bbd0;
+      return;
+    case 1:
+      DAT_023dcea8 = (code *)&LAB_0200c0cc;
+      return;
+    case 2:
+      DAT_023dcea8 = (code *)&LAB_0200bf18;
+      return;
+    case 3:
+      DAT_023dcea8 = (code *)&LAB_0200bd6c;
+      return;
+    }
+  }
+  return;
+}
+
