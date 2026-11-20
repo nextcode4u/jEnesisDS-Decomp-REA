@@ -126,7 +126,7 @@ byte read_z80_bus_request_status(void)
 undefined1 read_z80_banked_cartridge_byte(uint window_offset)
 
 {
-  return (&DAT_020b4cec)[(window_offset | z80_cartridge_bank_base) & 0x3fffff ^ 1];
+  return (&cartridge_rom_bytes)[(window_offset | z80_cartridge_bank_base) & 0x3fffff ^ 1];
 }
 
 
@@ -171,7 +171,7 @@ LAB_02004a70:
 undefined * get_z80_work_ram_buffer(void)
 
 {
-  return &DAT_0b00161c;
+  return &z80_work_ram_bytes;
 }
 
 
@@ -180,7 +180,7 @@ undefined * get_z80_work_ram_buffer(void)
 undefined1 read_z80_work_ram_byte(int param_1)
 
 {
-  return (&DAT_0b00161c)[param_1];
+  return (&z80_work_ram_bytes)[param_1];
 }
 
 
@@ -196,7 +196,7 @@ void clear_z80_work_ram(void)
   uint uVar2;
   uint uVar3;
   
-  puVar1 = (undefined4 *)&DAT_0b00161c;
+  puVar1 = (undefined4 *)&z80_work_ram_bytes;
   uVar2 = 0x2000;
   DAT_02099034 = 0;
   DAT_02099038 = 0;
@@ -226,91 +226,91 @@ void clear_z80_work_ram(void)
 
 // 0x02004dcc  reset_z80_cpu_registers_and_latches
 
-void reset_z80_cpu_registers_and_latches(int param_1)
+void reset_z80_cpu_registers_and_latches(int z80_state)
 
 {
-  undefined3 uVar1;
-  undefined1 uVar2;
-  undefined1 uVar3;
+  undefined3 ram_base_low_three_bytes;
+  undefined1 ram_base_byte_1;
+  undefined1 ram_base_byte_2;
   
-  uVar1 = *(undefined3 *)(param_1 + 0x400);
-  uVar2 = (undefined1)((uint3)uVar1 >> 8);
-  uVar3 = (undefined1)((uint3)uVar1 >> 0x10);
-  *(undefined1 *)(param_1 + 0x409) = 0;
-  *(undefined1 *)(param_1 + 0x40a) = 0;
-  *(undefined1 *)(param_1 + 0x40b) = 0;
-  *(char *)(param_1 + 0x424) = (char)uVar1;
-  *(undefined1 *)(param_1 + 0x425) = uVar2;
-  *(undefined1 *)(param_1 + 0x426) = uVar3;
-  *(undefined1 *)(param_1 + 0x427) = *(undefined1 *)(param_1 + 0x403);
-  *(undefined1 *)(param_1 + 0x438) = 0;
-  *(undefined1 *)(param_1 + 0x439) = 0;
-  *(undefined1 *)(param_1 + 0x43a) = 0;
-  *(undefined1 *)(param_1 + 0x43b) = 0;
-  *(undefined1 *)(param_1 + 0x43c) = 0;
-  *(undefined1 *)(param_1 + 0x43d) = 0;
-  *(undefined1 *)(param_1 + 0x43e) = 0;
-  *(undefined1 *)(param_1 + 0x43f) = 0;
-  *(undefined1 *)(param_1 + 0x444) = 0;
-  *(undefined1 *)(param_1 + 0x445) = 0;
-  *(undefined1 *)(param_1 + 0x446) = 0;
-  *(undefined1 *)(param_1 + 0x447) = 0;
-  *(undefined1 *)(param_1 + 0x408) = *(undefined1 *)(param_1 + 0x408);
-  *(undefined1 *)(param_1 + 0x4a4) = 0;
-  *(undefined1 *)(param_1 + 0x4a5) = 0;
-  *(undefined1 *)(param_1 + 0x4a6) = 0;
-  *(undefined1 *)(param_1 + 0x4a7) = 0;
-  *(char *)(param_1 + 0x420) = (char)uVar1;
-  *(undefined1 *)(param_1 + 0x421) = uVar2;
-  *(undefined1 *)(param_1 + 0x422) = uVar3;
-  *(undefined1 *)(param_1 + 0x423) = *(undefined1 *)(param_1 + 0x403);
-  *(undefined1 *)(param_1 + 0x474) = 0;
-  *(undefined1 *)(param_1 + 0x483) = 0;
-  *(undefined1 *)(param_1 + 0x475) = 0;
-  *(undefined1 *)(param_1 + 0x476) = 0;
-  *(undefined1 *)(param_1 + 0x477) = 0;
-  *(undefined1 *)(param_1 + 0x484) = 0;
-  *(undefined1 *)(param_1 + 0x485) = 0;
-  *(undefined1 *)(param_1 + 0x486) = 0;
-  *(undefined1 *)(param_1 + 0x487) = 0;
-  *(undefined1 *)(param_1 + 0x488) = 0;
-  *(undefined1 *)(param_1 + 0x489) = 0;
-  *(undefined1 *)(param_1 + 0x48a) = 0;
-  *(undefined1 *)(param_1 + 0x48b) = 0;
-  *(undefined1 *)(param_1 + 0x48c) = 0;
-  *(undefined1 *)(param_1 + 0x48d) = 0;
-  *(undefined1 *)(param_1 + 0x48e) = 0;
-  *(undefined1 *)(param_1 + 0x48f) = 0;
-  *(undefined1 *)(param_1 + 0x490) = 0;
-  *(undefined1 *)(param_1 + 0x491) = 0;
-  *(undefined1 *)(param_1 + 0x492) = 0;
-  *(undefined1 *)(param_1 + 0x493) = 0;
-  *(undefined1 *)(param_1 + 0x47c) = 0;
-  *(undefined1 *)(param_1 + 0x47d) = 0;
-  *(undefined1 *)(param_1 + 0x47e) = 0;
-  *(undefined1 *)(param_1 + 0x47f) = 0;
-  *(undefined1 *)(param_1 + 0x480) = 0;
-  *(undefined1 *)(param_1 + 0x481) = 0;
-  *(undefined1 *)(param_1 + 0x482) = 0;
+  ram_base_low_three_bytes = *(undefined3 *)(z80_state + 0x400);
+  ram_base_byte_1 = (undefined1)((uint3)ram_base_low_three_bytes >> 8);
+  ram_base_byte_2 = (undefined1)((uint3)ram_base_low_three_bytes >> 0x10);
+  *(undefined1 *)(z80_state + 0x409) = 0;
+  *(undefined1 *)(z80_state + 0x40a) = 0;
+  *(undefined1 *)(z80_state + 0x40b) = 0;
+  *(char *)(z80_state + 0x424) = (char)ram_base_low_three_bytes;
+  *(undefined1 *)(z80_state + 0x425) = ram_base_byte_1;
+  *(undefined1 *)(z80_state + 0x426) = ram_base_byte_2;
+  *(undefined1 *)(z80_state + 0x427) = *(undefined1 *)(z80_state + 0x403);
+  *(undefined1 *)(z80_state + 0x438) = 0;
+  *(undefined1 *)(z80_state + 0x439) = 0;
+  *(undefined1 *)(z80_state + 0x43a) = 0;
+  *(undefined1 *)(z80_state + 0x43b) = 0;
+  *(undefined1 *)(z80_state + 0x43c) = 0;
+  *(undefined1 *)(z80_state + 0x43d) = 0;
+  *(undefined1 *)(z80_state + 0x43e) = 0;
+  *(undefined1 *)(z80_state + 0x43f) = 0;
+  *(undefined1 *)(z80_state + 0x444) = 0;
+  *(undefined1 *)(z80_state + 0x445) = 0;
+  *(undefined1 *)(z80_state + 0x446) = 0;
+  *(undefined1 *)(z80_state + 0x447) = 0;
+  *(undefined1 *)(z80_state + 0x408) = *(undefined1 *)(z80_state + 0x408);
+  *(undefined1 *)(z80_state + 0x4a4) = 0;
+  *(undefined1 *)(z80_state + 0x4a5) = 0;
+  *(undefined1 *)(z80_state + 0x4a6) = 0;
+  *(undefined1 *)(z80_state + 0x4a7) = 0;
+  *(char *)(z80_state + 0x420) = (char)ram_base_low_three_bytes;
+  *(undefined1 *)(z80_state + 0x421) = ram_base_byte_1;
+  *(undefined1 *)(z80_state + 0x422) = ram_base_byte_2;
+  *(undefined1 *)(z80_state + 0x423) = *(undefined1 *)(z80_state + 0x403);
+  *(undefined1 *)(z80_state + 0x474) = 0;
+  *(undefined1 *)(z80_state + 0x483) = 0;
+  *(undefined1 *)(z80_state + 0x475) = 0;
+  *(undefined1 *)(z80_state + 0x476) = 0;
+  *(undefined1 *)(z80_state + 0x477) = 0;
+  *(undefined1 *)(z80_state + 0x484) = 0;
+  *(undefined1 *)(z80_state + 0x485) = 0;
+  *(undefined1 *)(z80_state + 0x486) = 0;
+  *(undefined1 *)(z80_state + 0x487) = 0;
+  *(undefined1 *)(z80_state + 0x488) = 0;
+  *(undefined1 *)(z80_state + 0x489) = 0;
+  *(undefined1 *)(z80_state + 0x48a) = 0;
+  *(undefined1 *)(z80_state + 0x48b) = 0;
+  *(undefined1 *)(z80_state + 0x48c) = 0;
+  *(undefined1 *)(z80_state + 0x48d) = 0;
+  *(undefined1 *)(z80_state + 0x48e) = 0;
+  *(undefined1 *)(z80_state + 0x48f) = 0;
+  *(undefined1 *)(z80_state + 0x490) = 0;
+  *(undefined1 *)(z80_state + 0x491) = 0;
+  *(undefined1 *)(z80_state + 0x492) = 0;
+  *(undefined1 *)(z80_state + 0x493) = 0;
+  *(undefined1 *)(z80_state + 0x47c) = 0;
+  *(undefined1 *)(z80_state + 0x47d) = 0;
+  *(undefined1 *)(z80_state + 0x47e) = 0;
+  *(undefined1 *)(z80_state + 0x47f) = 0;
+  *(undefined1 *)(z80_state + 0x480) = 0;
+  *(undefined1 *)(z80_state + 0x481) = 0;
+  *(undefined1 *)(z80_state + 0x482) = 0;
   return;
 }
 
 
 // 0x02004ef4  set_or_clear_z80_pending_interrupt_bits
 
-void set_or_clear_z80_pending_interrupt_bits(int param_1,uint param_2,int param_3)
+void set_or_clear_z80_pending_interrupt_bits(int z80_state,uint interrupt_bits,int assert_interrupt)
 
 {
-  if (param_3 == 0) {
-    param_2 = *(uint *)(param_1 + 0x4a4) & ~param_2;
+  if (assert_interrupt == 0) {
+    interrupt_bits = *(uint *)(z80_state + 0x4a4) & ~interrupt_bits;
   }
   else {
-    param_2 = param_2 | *(uint *)(param_1 + 0x4a4);
+    interrupt_bits = interrupt_bits | *(uint *)(z80_state + 0x4a4);
   }
-  *(char *)(param_1 + 0x4a7) = (char)(param_2 >> 0x18);
-  *(char *)(param_1 + 0x4a5) = (char)(param_2 >> 8);
-  *(char *)(param_1 + 0x4a6) = (char)(param_2 >> 0x10);
-  *(char *)(param_1 + 0x4a4) = (char)param_2;
+  *(char *)(z80_state + 0x4a7) = (char)(interrupt_bits >> 0x18);
+  *(char *)(z80_state + 0x4a5) = (char)(interrupt_bits >> 8);
+  *(char *)(z80_state + 0x4a6) = (char)(interrupt_bits >> 0x10);
+  *(char *)(z80_state + 0x4a4) = (char)interrupt_bits;
   return;
 }
 
@@ -321,7 +321,7 @@ void initialize_z80_state_and_dispatch_pointers(int z80_state)
 
 {
   newlib_memset(z80_state,0,0x4c4);
-  *(undefined ***)(z80_state + 0x494) = &switchD_0200e01c::switchdataD_020154b0;
+  *(undefined ***)(z80_state + 0x494) = &z80_arm_base_opcode_table;
   *(undefined ***)(z80_state + 0x498) = &z80_dispatch;
   *(undefined ***)(z80_state + 0x49c) = &PTR_z80_dispatch_01002e00_02015430;
   *(undefined ***)(z80_state + 0x4a0) = &PTR_z80_dispatch_01002ea8_02015470;

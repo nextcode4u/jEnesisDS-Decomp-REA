@@ -14,7 +14,7 @@ void configure_frame_timing_callbacks(void)
   mark_background_tile_cache_for_refresh(1);
   select_vdp_scanline_render_callback();
   invalidate_viewport_mode_cache();
-  uVar1 = DAT_023cb610 >> 0xc & 3;
+  uVar1 = emulator_option_flags >> 0xc & 3;
   if (uVar1 == 1) {
     DAT_0b000040 = update_vdp_timing_and_run_m68k_configured;
     DAT_0b000038 = run_frame_h_int_on;
@@ -42,13 +42,13 @@ void advance_configuration_value(int param_1)
   switch(*(undefined4 *)(param_1 + 4)) {
   case 0:
   case 1:
-    DAT_023cb610 = *(uint *)(param_1 + 8) ^ DAT_023cb610;
+    emulator_option_flags = *(uint *)(param_1 + 8) ^ emulator_option_flags;
     return;
   case 2:
   case 3:
     uVar1 = *(uint *)(param_1 + 8);
-    DAT_023cb610 = DAT_023cb610 & ~(3 << (uVar1 & 0xff)) |
-                   ((DAT_023cb610 >> (uVar1 & 0xff) & 3) + 1) % 3 << (uVar1 & 0xff);
+    emulator_option_flags = emulator_option_flags & ~(3 << (uVar1 & 0xff)) |
+                   ((emulator_option_flags >> (uVar1 & 0xff) & 3) + 1) % 3 << (uVar1 & 0xff);
   }
   return;
 }
@@ -72,17 +72,17 @@ void draw_on_off_option_text(undefined4 *param_1,int param_2)
     write_text_at_tile_position(*param_1,param_2,1);
     pcVar3 = "on   ";
     pcVar4 = "off  ";
-    uVar5 = param_1[2] & DAT_023cb610;
+    uVar5 = param_1[2] & emulator_option_flags;
     break;
   case 1:
     write_text_at_tile_position(*param_1,param_2,1);
     pcVar3 = "HW   ";
     pcVar4 = "SW   ";
-    uVar5 = param_1[2] & DAT_023cb610;
+    uVar5 = param_1[2] & emulator_option_flags;
     break;
   case 2:
     write_text_at_tile_position(*param_1,param_2,1);
-    uVar5 = DAT_023cb610 >> (param_1[2] & 0xff) & 3;
+    uVar5 = emulator_option_flags >> (param_1[2] & 0xff) & 3;
     if (uVar5 == 0) {
       pcVar3 = "off  ";
     }
@@ -95,7 +95,7 @@ void draw_on_off_option_text(undefined4 *param_1,int param_2)
     goto code_r0x0200da3c;
   case 3:
     write_text_at_tile_position(*param_1,param_2,1);
-    uVar5 = DAT_023cb610 >> (param_1[2] & 0xff) & 3;
+    uVar5 = emulator_option_flags >> (param_1[2] & 0xff) & 3;
     if (uVar5 == 0) {
       pcVar3 = "USA";
     }
@@ -146,7 +146,7 @@ undefined4 run_configuration_menu(int param_1)
   int iVar4;
   undefined *puVar5;
   
-  iVar1 = DAT_023cb610;
+  iVar1 = emulator_option_flags;
   clear_text_overlay_tilemap();
   arm_tail_branch_to_load_subscreen_palette_tiles_and_map();
   write_text_at_tile_position("Configuration",5,1);
@@ -193,7 +193,7 @@ undefined4 run_configuration_menu(int param_1)
   arm_veneer_for_nds_swiwaitforvblank();
   restore_overlay_tilemap_row(DAT_02098fe8 + 8);
   arm_veneer_for_nds_swiwaitforvblank();
-  if (iVar1 != DAT_023cb610) {
+  if (iVar1 != emulator_option_flags) {
     configure_frame_timing_callbacks();
   }
   arm_veneer_for_nds_swiwaitforvblank();

@@ -240,7 +240,7 @@ void reset_ym2612_registers(void)
     } while (iVar3 != 4);
     puVar7 = puVar7 + 0x36;
     puVar1 = puVar1 + 0x36;
-  } while (puVar7 != &DAT_03807818);
+  } while (puVar7 != &ym2612_dac_enable_bit);
   write_ym2612_channel_or_operator_register(0xb6,iVar4 + 0xbd);
   write_ym2612_channel_or_operator_register(0x1b6,0xc0);
   write_ym2612_channel_or_operator_register(0xb5,0xc0);
@@ -261,7 +261,7 @@ void reset_ym2612_registers(void)
   write_ym2612_channel_or_operator_register(0x22,0);
   write_ym2612_channel_or_operator_register(0x21,0);
   write_ym2612_channel_or_operator_register(0x20,0);
-  DAT_03807818 = 0;
+  ym2612_dac_enable_bit = 0;
   return;
 }
 
@@ -393,7 +393,7 @@ void initialize_ym2612_tables_and_channels(undefined4 param_1,int param_2,int pa
     } while (iVar7 != 4);
     puVar11 = puVar11 + 0x36;
     puVar2 = puVar2 + 0x36;
-  } while (puVar11 != &DAT_03807818);
+  } while (puVar11 != &ym2612_dac_enable_bit);
   write_ym2612_channel_or_operator_register(0xb6,iVar4 + 0xbd);
   write_ym2612_channel_or_operator_register(0x1b6,0xc0);
   write_ym2612_channel_or_operator_register(0xb5,0xc0);
@@ -414,7 +414,7 @@ void initialize_ym2612_tables_and_channels(undefined4 param_1,int param_2,int pa
   write_ym2612_channel_or_operator_register(0x22,0);
   write_ym2612_channel_or_operator_register(0x21,0);
   write_ym2612_channel_or_operator_register(0x20,0);
-  DAT_03807818 = 0;
+  ym2612_dac_enable_bit = 0;
   return;
 }
 
@@ -524,7 +524,7 @@ void apply_ym2612_bank0_writes(byte *write_pairs,uint byte_count)
           }
           break;
         case 0x2b:
-          DAT_03807818 = uVar5 & 0x80;
+          ym2612_dac_enable_bit = uVar5 & 0x80;
         }
       }
       else {

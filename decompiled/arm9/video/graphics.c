@@ -78,7 +78,7 @@ void copy_sprite_tiles_for_sprite_shape(ushort *param_1,int param_2,int param_3)
   uVar5 = ((param_1[3] & 0xffff01ff) - DAT_020993a4) - 0x80;
   uVar4 = (ushort)uVar5;
   uVar3 = ((*param_1 & 0xffff01ff) - DAT_020993a8) - 0x80 & 0xffff;
-  if (((DAT_023cb610 & 4) != 0) && ((uVar3 - 1) * 0x10000 < 0xee0001)) {
+  if (((emulator_option_flags & 4) != 0) && ((uVar3 - 1) * 0x10000 < 0xee0001)) {
     uVar3 = uVar3 - (byte)(&DAT_023dcdb4)[uVar3] & 0xffff;
   }
   uVar2 = (ushort)uVar3;
@@ -217,7 +217,7 @@ void reload_vdp_counter_during_vertical_blanking(undefined4 param_1)
 void select_vdp_scanline_render_callback(void)
 
 {
-  if ((DAT_023cb610 & 4) == 0) {
+  if ((emulator_option_flags & 4) == 0) {
     DAT_023dcea8 = record_unscaled_scanline_scroll_and_backdrop;
   }
   else {
@@ -286,7 +286,7 @@ void write_vdp_register_and_update_render_state(uint param_1,uint param_2)
     case 2:
       vdp_plane_a_name_table_base = (param_2 & 0x38) * 0x400;
       DAT_023dde8c = &DAT_020acbec + (param_2 & 0x38) * 0x200;
-      if (((DAT_023cb610 & 8) != 0) && (vdp_plane_a_name_table_base != ram0x023dd374)) {
+      if (((emulator_option_flags & 8) != 0) && (vdp_plane_a_name_table_base != ram0x023dd374)) {
         DAT_023dc8a4 = 1;
       }
       ram0x023dd374 = vdp_plane_a_name_table_base;
@@ -305,7 +305,7 @@ void write_vdp_register_and_update_render_state(uint param_1,uint param_2)
     case 4:
       vdp_plane_b_name_table_base = (param_2 & 7) * 0x2000;
       DAT_023dde90 = &DAT_020acbec + (param_2 & 7) * 0x1000;
-      if (((DAT_023cb610 & 8) != 0) && (vdp_plane_b_name_table_base != DAT_023dd378)) {
+      if (((emulator_option_flags & 8) != 0) && (vdp_plane_b_name_table_base != DAT_023dd378)) {
         DAT_023dc8a8 = 1;
       }
       DAT_023dd378 = vdp_plane_b_name_table_base;
@@ -328,7 +328,7 @@ void write_vdp_register_and_update_render_state(uint param_1,uint param_2)
       DAT_020b4bf0 = (byte)(param_2 >> 3) & 1;
       DAT_023dcfac = (byte)(param_2 >> 2) & 1;
       DAT_023dcdb0 = bVar1 & 3;
-      if ((DAT_023cb610 & 4) == 0) {
+      if ((emulator_option_flags & 4) == 0) {
         DAT_023dcea8 = record_unscaled_scanline_scroll_and_backdrop;
       }
       else {
@@ -462,8 +462,8 @@ void update_vdp_line_cycles_and_queue_m68k_interrupts(uint param_1)
   }
   if (((DAT_0b00362c != '\0') && (DAT_0b00362e != '\0')) &&
      ((0x8e < DAT_0b003624 || ((DAT_0b00362d == '\0' && (0xc < DAT_0b003624)))))) {
-    DAT_0b00014d = 1;
-    DAT_0b00014c = 6;
+    m68k_irq_pending = 1;
+    m68k_pending_irq_level = 6;
     iVar1 = CONCAT13(DAT_0b000143,CONCAT12(DAT_0b000142,CONCAT11(DAT_0b000141,DAT_0b000140))) + -4;
     DAT_0b000143 = (char)((uint)iVar1 >> 0x18);
     DAT_0b000141 = (char)((uint)iVar1 >> 8);

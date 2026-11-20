@@ -111,7 +111,7 @@ void rebuild_background_tilemap_from_vdp_words(undefined2 *param_1,uint param_2,
       param_1 = param_1 + 1;
     } while (uVar2 < param_2);
   }
-  if ((DAT_023cb610 & 8) == 0) {
+  if ((emulator_option_flags & 8) == 0) {
     (&DAT_0209c3d4)[param_3] = 0;
   }
   return;

@@ -7,7 +7,7 @@
 byte read_ym2612_timer_status(void)
 
 {
-  return *(byte *)(DAT_0b00002c + 0x480) & 3;
+  return *(byte *)(z80_context_pointer + 0x480) & 3;
 }
 
 
@@ -76,7 +76,7 @@ void queue_ym2612_register_or_dac_write(uint port_address,uint write_value)
       return;
     }
     (&ym2612_bank_0_mirror)[ym2612_bank_0_register] = write_byte;
-    iVar5 = DAT_0b00002c;
+    iVar5 = z80_context_pointer;
     switch(iVar1) {
     case 0x24:
       uVar6 = DAT_023db784 & 3 | write_value << 2;
@@ -97,12 +97,12 @@ void queue_ym2612_register_or_dac_write(uint port_address,uint write_value)
       iVar1 = (uint)(ushort)(&DAT_023dbf98)[write_value] << 5;
       DAT_023db788 = iVar1;
       DAT_023db790 = write_value;
-      *(undefined1 *)(DAT_0b00002c + 0x48f) = 0;
+      *(undefined1 *)(z80_context_pointer + 0x48f) = 0;
       *(char *)(iVar5 + 0x48d) = (char)((uint)iVar1 >> 8);
       *(char *)(iVar5 + 0x48e) = (char)((uint)iVar1 >> 0x10);
       *(char *)(iVar5 + 0x48c) = (char)iVar1;
-      iVar1 = DAT_0b00002c;
-      *(undefined1 *)(DAT_0b00002c + 0x490) = (undefined1)DAT_023db788;
+      iVar1 = z80_context_pointer;
+      *(undefined1 *)(z80_context_pointer + 0x490) = (undefined1)DAT_023db788;
       *(undefined1 *)(iVar1 + 0x491) = DAT_023db788._1_1_;
       *(undefined1 *)(iVar1 + 0x492) = DAT_023db788._2_1_;
       *(undefined1 *)(iVar1 + 0x493) = DAT_023db788._3_1_;
@@ -111,33 +111,33 @@ void queue_ym2612_register_or_dac_write(uint port_address,uint write_value)
       DAT_023db778 = write_value;
       if ((write_value & 0x20) != 0) {
         DAT_023db794 = DAT_023db794 & 0xfffffffd;
-        puVar2 = (uint *)(DAT_0b00002c + 0x480);
+        puVar2 = (uint *)(z80_context_pointer + 0x480);
         uVar6 = *puVar2 & 0xfffffffd;
-        *(char *)(DAT_0b00002c + 0x483) = (char)(uVar6 >> 0x18);
+        *(char *)(z80_context_pointer + 0x483) = (char)(uVar6 >> 0x18);
         *(byte *)(iVar5 + 0x480) = (byte)*puVar2 & 0xfd;
         *(char *)(iVar5 + 0x481) = (char)(uVar6 >> 8);
         *(char *)(iVar5 + 0x482) = (char)(uVar6 >> 0x10);
       }
-      iVar5 = DAT_0b00002c;
+      iVar5 = z80_context_pointer;
       if ((write_value & 0x10) != 0) {
         DAT_023db794 = DAT_023db794 & 0xfffffffe;
-        puVar2 = (uint *)(DAT_0b00002c + 0x480);
+        puVar2 = (uint *)(z80_context_pointer + 0x480);
         uVar6 = *puVar2 & 0xfffffffe;
-        *(char *)(DAT_0b00002c + 0x483) = (char)(uVar6 >> 0x18);
+        *(char *)(z80_context_pointer + 0x483) = (char)(uVar6 >> 0x18);
         *(byte *)(iVar5 + 0x480) = (byte)*puVar2 & 0xfe;
         *(char *)(iVar5 + 0x481) = (char)(uVar6 >> 8);
         *(char *)(iVar5 + 0x482) = (char)(uVar6 >> 0x10);
       }
-      iVar5 = DAT_0b00002c;
-      bVar3 = *(byte *)(DAT_0b00002c + 0x480);
-      *(undefined1 *)(DAT_0b00002c + 0x481) = 0;
+      iVar5 = z80_context_pointer;
+      bVar3 = *(byte *)(z80_context_pointer + 0x480);
+      *(undefined1 *)(z80_context_pointer + 0x481) = 0;
       *(undefined1 *)(iVar5 + 0x483) = 0;
       *(undefined1 *)(iVar5 + 0x482) = 0;
       *(byte *)(iVar5 + 0x480) = bVar3 & 3;
-      iVar5 = DAT_0b00002c;
-      uVar6 = *(uint *)(DAT_0b00002c + 0x480);
+      iVar5 = z80_context_pointer;
+      uVar6 = *(uint *)(z80_context_pointer + 0x480);
       uVar7 = uVar6 | write_value << 8;
-      *(char *)(DAT_0b00002c + 0x483) = (char)(uVar7 >> 0x18);
+      *(char *)(z80_context_pointer + 0x483) = (char)(uVar7 >> 0x18);
       *(char *)(iVar5 + 0x481) = (char)(uVar7 >> 8);
       *(char *)(iVar5 + 0x482) = (char)(uVar7 >> 0x10);
       *(char *)(iVar5 + 0x480) = (char)uVar6;
@@ -153,12 +153,12 @@ void queue_ym2612_register_or_dac_write(uint port_address,uint write_value)
     iVar1 = (uint)(ushort)(&DAT_023db798)[uVar6] << 1;
     DAT_023db77c = iVar1;
     DAT_023db784 = uVar6;
-    *(undefined1 *)(DAT_0b00002c + 0x487) = 0;
+    *(undefined1 *)(z80_context_pointer + 0x487) = 0;
     *(char *)(iVar5 + 0x485) = (char)((uint)iVar1 >> 8);
     *(char *)(iVar5 + 0x486) = (char)((uint)iVar1 >> 0x10);
     *(char *)(iVar5 + 0x484) = (char)iVar1;
-    iVar1 = DAT_0b00002c;
-    *(undefined1 *)(DAT_0b00002c + 0x488) = (undefined1)DAT_023db77c;
+    iVar1 = z80_context_pointer;
+    *(undefined1 *)(z80_context_pointer + 0x488) = (undefined1)DAT_023db77c;
     *(undefined1 *)(iVar1 + 0x489) = DAT_023db77c._1_1_;
     *(undefined1 *)(iVar1 + 0x48a) = DAT_023db77c._2_1_;
     *(undefined1 *)(iVar1 + 0x48b) = DAT_023db77c._3_1_;

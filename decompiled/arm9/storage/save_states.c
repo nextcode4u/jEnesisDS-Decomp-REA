@@ -125,99 +125,99 @@ void restore_z80_bank_latch_from_savestate(undefined4 param_1)
 
 // 0x02004f70  encode_z80_pc_and_sp_as_ram_offsets
 
-void encode_z80_pc_and_sp_as_ram_offsets(int param_1)
+void encode_z80_pc_and_sp_as_ram_offsets(int z80_state)
 
 {
-  int iVar1;
-  int iVar2;
+  int guest_pc;
+  int guest_sp;
   
-  iVar1 = *(int *)(param_1 + 0x420) - *(int *)(param_1 + 0x400);
-  iVar2 = *(int *)(param_1 + 0x424) - *(int *)(param_1 + 0x400);
-  *(char *)(param_1 + 0x427) = (char)((uint)iVar2 >> 0x18);
-  *(char *)(param_1 + 0x421) = (char)((uint)iVar1 >> 8);
-  *(char *)(param_1 + 0x422) = (char)((uint)iVar1 >> 0x10);
-  *(char *)(param_1 + 0x423) = (char)((uint)iVar1 >> 0x18);
-  *(char *)(param_1 + 0x425) = (char)((uint)iVar2 >> 8);
-  *(char *)(param_1 + 0x426) = (char)((uint)iVar2 >> 0x10);
-  *(char *)(param_1 + 0x420) = (char)iVar1;
-  *(char *)(param_1 + 0x424) = (char)iVar2;
+  guest_pc = *(int *)(z80_state + 0x420) - *(int *)(z80_state + 0x400);
+  guest_sp = *(int *)(z80_state + 0x424) - *(int *)(z80_state + 0x400);
+  *(char *)(z80_state + 0x427) = (char)((uint)guest_sp >> 0x18);
+  *(char *)(z80_state + 0x421) = (char)((uint)guest_pc >> 8);
+  *(char *)(z80_state + 0x422) = (char)((uint)guest_pc >> 0x10);
+  *(char *)(z80_state + 0x423) = (char)((uint)guest_pc >> 0x18);
+  *(char *)(z80_state + 0x425) = (char)((uint)guest_sp >> 8);
+  *(char *)(z80_state + 0x426) = (char)((uint)guest_sp >> 0x10);
+  *(char *)(z80_state + 0x420) = (char)guest_pc;
+  *(char *)(z80_state + 0x424) = (char)guest_sp;
   return;
 }
 
 
 // 0x0200500c  rebase_z80_pc_and_sp_into_work_ram
 
-void rebase_z80_pc_and_sp_into_work_ram(int param_1)
+void rebase_z80_pc_and_sp_into_work_ram(int z80_state)
 
 {
-  int iVar1;
-  int iVar2;
+  int pc_host_pointer;
+  int sp_host_pointer;
   
-  iVar1 = *(int *)(param_1 + 0x420) + *(int *)(param_1 + 0x400);
-  iVar2 = *(int *)(param_1 + 0x424) + *(int *)(param_1 + 0x400);
-  *(char *)(param_1 + 0x427) = (char)((uint)iVar2 >> 0x18);
-  *(char *)(param_1 + 0x421) = (char)((uint)iVar1 >> 8);
-  *(char *)(param_1 + 0x422) = (char)((uint)iVar1 >> 0x10);
-  *(char *)(param_1 + 0x423) = (char)((uint)iVar1 >> 0x18);
-  *(char *)(param_1 + 0x425) = (char)((uint)iVar2 >> 8);
-  *(char *)(param_1 + 0x426) = (char)((uint)iVar2 >> 0x10);
-  *(char *)(param_1 + 0x420) = (char)iVar1;
-  *(char *)(param_1 + 0x424) = (char)iVar2;
+  pc_host_pointer = *(int *)(z80_state + 0x420) + *(int *)(z80_state + 0x400);
+  sp_host_pointer = *(int *)(z80_state + 0x424) + *(int *)(z80_state + 0x400);
+  *(char *)(z80_state + 0x427) = (char)((uint)sp_host_pointer >> 0x18);
+  *(char *)(z80_state + 0x421) = (char)((uint)pc_host_pointer >> 8);
+  *(char *)(z80_state + 0x422) = (char)((uint)pc_host_pointer >> 0x10);
+  *(char *)(z80_state + 0x423) = (char)((uint)pc_host_pointer >> 0x18);
+  *(char *)(z80_state + 0x425) = (char)((uint)sp_host_pointer >> 8);
+  *(char *)(z80_state + 0x426) = (char)((uint)sp_host_pointer >> 0x10);
+  *(char *)(z80_state + 0x420) = (char)pc_host_pointer;
+  *(char *)(z80_state + 0x424) = (char)sp_host_pointer;
   return;
 }
 
 
 // 0x02005164  rebase_m68k_program_counter_after_savestate
 
-void rebase_m68k_program_counter_after_savestate(int param_1)
+void rebase_m68k_program_counter_after_savestate(int m68k_state)
 
 {
-  int *piVar1;
-  uint uVar2;
-  int iVar3;
-  uint uVar4;
+  int *pc_mapping;
+  uint guest_pc_or_offset;
+  int pc_host_pointer;
+  uint guest_pc_page_bits;
   
-  piVar1 = (int *)(**(code **)(param_1 + 0x88))(*(undefined4 *)(param_1 + 0x44));
-  DAT_02099044 = piVar1;
-  *(char *)(param_1 + 0x54) = (char)*piVar1;
-  *(undefined1 *)(param_1 + 0x55) = *(undefined1 *)((int)piVar1 + 1);
-  *(undefined1 *)(param_1 + 0x56) = *(undefined1 *)((int)piVar1 + 2);
-  *(undefined1 *)(param_1 + 0x57) = *(undefined1 *)((int)piVar1 + 3);
-  uVar2 = CONCAT13(*(undefined1 *)(param_1 + 0x47),
-                   CONCAT12(*(undefined1 *)(param_1 + 0x46),
-                            CONCAT11(*(undefined1 *)(param_1 + 0x45),*(undefined1 *)(param_1 + 0x44)
+  pc_mapping = (int *)(**(code **)(m68k_state + 0x88))(*(undefined4 *)(m68k_state + 0x44));
+  m68k_pc_mapping_entry = pc_mapping;
+  *(char *)(m68k_state + 0x54) = (char)*pc_mapping;
+  *(undefined1 *)(m68k_state + 0x55) = *(undefined1 *)((int)pc_mapping + 1);
+  *(undefined1 *)(m68k_state + 0x56) = *(undefined1 *)((int)pc_mapping + 2);
+  *(undefined1 *)(m68k_state + 0x57) = *(undefined1 *)((int)pc_mapping + 3);
+  guest_pc_or_offset = CONCAT13(*(undefined1 *)(m68k_state + 0x47),
+                   CONCAT12(*(undefined1 *)(m68k_state + 0x46),
+                            CONCAT11(*(undefined1 *)(m68k_state + 0x45),*(undefined1 *)(m68k_state + 0x44)
                                     )));
-  uVar4 = uVar2 & ~piVar1[1];
-  *(char *)(param_1 + 0x9e) = (char)(uVar4 >> 0x10);
-  *(char *)(param_1 + 0x9c) = (char)uVar4;
-  *(char *)(param_1 + 0x9d) = (char)(uVar4 >> 8);
-  *(char *)(param_1 + 0x9f) = (char)(uVar4 >> 0x18);
-  uVar2 = uVar2 & piVar1[1];
-  *(char *)(param_1 + 0x46) = (char)(uVar2 >> 0x10);
-  *(char *)(param_1 + 0x44) = (char)uVar2;
-  *(char *)(param_1 + 0x45) = (char)(uVar2 >> 8);
-  *(char *)(param_1 + 0x47) = (char)(uVar2 >> 0x18);
-  iVar3 = uVar2 + *piVar1;
-  *(char *)(param_1 + 0x47) = (char)((uint)iVar3 >> 0x18);
-  *(char *)(param_1 + 0x45) = (char)((uint)iVar3 >> 8);
-  *(char *)(param_1 + 0x46) = (char)((uint)iVar3 >> 0x10);
-  *(char *)(param_1 + 0x44) = (char)iVar3;
+  guest_pc_page_bits = guest_pc_or_offset & ~pc_mapping[1];
+  *(char *)(m68k_state + 0x9e) = (char)(guest_pc_page_bits >> 0x10);
+  *(char *)(m68k_state + 0x9c) = (char)guest_pc_page_bits;
+  *(char *)(m68k_state + 0x9d) = (char)(guest_pc_page_bits >> 8);
+  *(char *)(m68k_state + 0x9f) = (char)(guest_pc_page_bits >> 0x18);
+  guest_pc_or_offset = guest_pc_or_offset & pc_mapping[1];
+  *(char *)(m68k_state + 0x46) = (char)(guest_pc_or_offset >> 0x10);
+  *(char *)(m68k_state + 0x44) = (char)guest_pc_or_offset;
+  *(char *)(m68k_state + 0x45) = (char)(guest_pc_or_offset >> 8);
+  *(char *)(m68k_state + 0x47) = (char)(guest_pc_or_offset >> 0x18);
+  pc_host_pointer = guest_pc_or_offset + *pc_mapping;
+  *(char *)(m68k_state + 0x47) = (char)((uint)pc_host_pointer >> 0x18);
+  *(char *)(m68k_state + 0x45) = (char)((uint)pc_host_pointer >> 8);
+  *(char *)(m68k_state + 0x46) = (char)((uint)pc_host_pointer >> 0x10);
+  *(char *)(m68k_state + 0x44) = (char)pc_host_pointer;
   return;
 }
 
 
 // 0x0200526c  encode_m68k_program_counter_for_savestate
 
-void encode_m68k_program_counter_for_savestate(int param_1)
+void encode_m68k_program_counter_for_savestate(int m68k_state)
 
 {
-  uint uVar1;
+  uint guest_pc;
   
-  uVar1 = *(int *)(param_1 + 0x44) - *(int *)(param_1 + 0x54) | *(uint *)(param_1 + 0x9c);
-  *(char *)(param_1 + 0x47) = (char)(uVar1 >> 0x18);
-  *(char *)(param_1 + 0x45) = (char)(uVar1 >> 8);
-  *(char *)(param_1 + 0x46) = (char)(uVar1 >> 0x10);
-  *(char *)(param_1 + 0x44) = (char)uVar1;
+  guest_pc = *(int *)(m68k_state + 0x44) - *(int *)(m68k_state + 0x54) | *(uint *)(m68k_state + 0x9c);
+  *(char *)(m68k_state + 0x47) = (char)(guest_pc >> 0x18);
+  *(char *)(m68k_state + 0x45) = (char)(guest_pc >> 8);
+  *(char *)(m68k_state + 0x46) = (char)(guest_pc >> 0x10);
+  *(char *)(m68k_state + 0x44) = (char)guest_pc;
   return;
 }
 
@@ -316,9 +316,9 @@ void prepare_savestate_header_and_regions(void)
 {
   DAT_023eb348 = &DAT_023eb314;
   DAT_023eb314 = 0x4a530003;
-  DAT_023eb318 = DAT_0b000028;
-  DAT_023eb31c = &DAT_023cb634;
-  DAT_023eb330 = DAT_0b00002c;
+  DAT_023eb318 = m68k_context_pointer;
+  DAT_023eb31c = &genesis_work_ram_bytes;
+  DAT_023eb330 = z80_context_pointer;
   DAT_023eb338 = get_z80_work_ram_buffer();
   DAT_023eb33c = get_ym2612_bank_0_mirror_for_savestate();
   DAT_023eb340 = get_ym2612_bank_1_mirror_for_savestate();
@@ -411,8 +411,8 @@ void load_emulator_savestate(undefined4 param_1)
       newlib_fread(DAT_023eb340,1,0x100,iVar4);
       newlib_fread(DAT_023eb344,1,0x20,iVar4);
       newlib_fread(&local_2c,4,1,iVar4);
-      DAT_02099000 = (undefined1)((uint)local_2c >> 0x10);
-      DAT_02099001 = (undefined1)((uint)local_2c >> 8);
+      z80_bus_request_asserted = (undefined1)((uint)local_2c >> 0x10);
+      z80_reset_released = (undefined1)((uint)local_2c >> 8);
       DAT_0208f349 = (undefined1)local_2c;
       newlib_fread(&local_2c,4,1,iVar4);
       restore_z80_bank_latch_from_savestate(local_2c);
@@ -486,7 +486,7 @@ void write_emulator_savestate(undefined4 param_1)
     newlib_fwrite(DAT_023eb33c,1,0x100,iVar4);
     newlib_fwrite(DAT_023eb340,1,0x100,iVar4);
     newlib_fwrite(DAT_023eb344,1,0x20,iVar4);
-    local_1c = (uint)DAT_0208f349 | (uint)DAT_02099000 << 0x10 | (uint)DAT_02099001 << 8;
+    local_1c = (uint)DAT_0208f349 | (uint)z80_bus_request_asserted << 0x10 | (uint)z80_reset_released << 8;
     newlib_fwrite(&local_1c,4,1,iVar4);
     local_1c = get_z80_bank_latch_for_savestate();
     newlib_fwrite(&local_1c,4,1,iVar4);

@@ -15,7 +15,7 @@ void update_ds_sprite_position_from_genesis_attributes(ushort *genesis_sprite_wo
   viewport_relative_x = (genesis_sprite_words[3] & 0x1ff) - (short)DAT_020993a4;
   ds_sprite_x = viewport_relative_x - 0x80;
   uVar3 = ((*genesis_sprite_words & 0xffff01ff) - DAT_020993a8) - 0x80 & 0xffff;
-  if (((DAT_023cb610 & 4) != 0) && ((uVar3 - 1) * 0x10000 < 0xee0001)) {
+  if (((emulator_option_flags & 4) != 0) && ((uVar3 - 1) * 0x10000 < 0xee0001)) {
     uVar3 = uVar3 - (byte)(&DAT_023dcdb4)[uVar3] & 0xffff;
   }
   ds_sprite_y = (ushort)uVar3;
@@ -142,7 +142,7 @@ LAB_02008a40:
       uVar3 = puVar15[3];
       (&DAT_023dcfb8)[uVar14 * 6] = (short)uVar17;
       (&DAT_023dcfb6)[uVar14 * 6] = uVar3;
-      uVar2 = DAT_023cb610;
+      uVar2 = emulator_option_flags;
       if ((int)((puVar15[3] & 0x1ff) - 0x80) < (int)(uint)DAT_023dc8b2) {
         uVar20 = puVar15[1] >> 10 & 3;
         if ((((((puVar15[3] & 0xffff01ff) + (uVar20 + 1) * 8) - 0x80 & 0x8000) == 0) &&
@@ -174,7 +174,7 @@ LAB_02008a40:
           goto LAB_02008b90;
         }
       }
-      uVar19 = DAT_023cb610 & 0x100;
+      uVar19 = emulator_option_flags & 0x100;
       (&DAT_023dcfba)[uVar14 * 6] = 0;
       puVar18[-1] = 0x200;
       cVar4 = DAT_023dc5b4;

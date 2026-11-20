@@ -33,8 +33,8 @@ void run_frame_h_int_off(void)
         (*DAT_023dcea8)(uVar4);
       }
       (*DAT_0b000040)(iVar2 << 4);
-      if ((((DAT_023cb610 & 2) == 0) && (DAT_02099001 == '\x01')) && (DAT_02099000 == '\0')) {
-        run_z80_cycle_budget(&DAT_0b000158,iVar3 << 4);
+      if ((((emulator_option_flags & 2) == 0) && (z80_reset_released == '\x01')) && (z80_bus_request_asserted == '\0')) {
+        run_z80_cycle_budget(&z80_context,iVar3 << 4);
       }
       uVar4 = uVar6;
     } while (uVar6 < uVar1);
@@ -46,13 +46,13 @@ void run_frame_h_int_off(void)
   DAT_0b00007c = 8;
   (*DAT_0b000040)(0x4a);
   queue_m68k_interrupt_level(6);
-  set_or_clear_z80_pending_interrupt_bits(&DAT_0b000158,1,1);
+  set_or_clear_z80_pending_interrupt_bits(&z80_context,1,1);
   DAT_0b000080 = 0;
   (*DAT_0b000040)(iVar2 + -0x4a);
   iVar5 = (iVar5 - uVar6) + -1;
   (*DAT_0b000040)(iVar5 * iVar2);
-  if ((((DAT_023cb610 & 2) == 0) && (DAT_02099001 == '\x01')) && (DAT_02099000 == '\0')) {
-    run_z80_cycle_budget(&DAT_0b000158,iVar5 * iVar3);
+  if ((((emulator_option_flags & 2) == 0) && (z80_reset_released == '\x01')) && (z80_bus_request_asserted == '\0')) {
+    run_z80_cycle_budget(&z80_context,iVar5 * iVar3);
   }
   submit_arm7_dac_sample_buffer();
   DAT_0b000008 = DAT_0b000008 + 1;
@@ -82,7 +82,7 @@ void run_frame_h_int_on(void)
   (*DAT_023dcea8)(0);
   update_vdp_timing_and_run_m68k_scanline(uVar2);
   accrue_z80_cycles_for_scanline(0);
-  set_or_clear_z80_pending_interrupt_bits(&DAT_0b000158,1,0);
+  set_or_clear_z80_pending_interrupt_bits(&z80_context,1,0);
   if (uVar4 < 2) {
     uVar5 = 2;
     uVar4 = (uint)(uVar4 < 2);
@@ -106,7 +106,7 @@ void run_frame_h_int_on(void)
   DAT_0b00007c = 8;
   DAT_0b000080 = 4;
   update_vdp_timing_and_run_m68k_scanline(0x4a);
-  set_or_clear_z80_pending_interrupt_bits(&DAT_0b000158,1,1);
+  set_or_clear_z80_pending_interrupt_bits(&z80_context,1,1);
   DAT_0b000080 = 0;
   update_vdp_timing_and_run_m68k_scanline(uVar2);
   accrue_z80_cycles_for_scanline(uVar4);
@@ -148,9 +148,9 @@ void reset_emulation_for_cartridge(void)
   DAT_0b000008 = 0;
   DAT_0b000024 = 0;
   DAT_0b0000a8 = 0;
-  reset_m68k_registers_and_load_vectors(&DAT_0b0000ac);
-  reset_z80_cpu_registers_and_latches(&DAT_0b000158);
-  if ((DAT_023cb610 & 1) == 0) {
+  reset_m68k_registers_and_load_vectors(&m68k_context);
+  reset_z80_cpu_registers_and_latches(&z80_context);
+  if ((emulator_option_flags & 1) == 0) {
     set_controller_six_button_mode(controller_port_1_state,0);
     set_controller_six_button_mode(controller_port_2_state,0);
   }
@@ -170,7 +170,7 @@ void reset_emulation_for_cartridge(void)
   arm_veneer_for_nds_swiwaitforvblank();
   arm_veneer_for_nds_swiwaitforvblank();
   request_arm7_audio_start();
-  if ((DAT_023cb610 & 4) == 0) {
+  if ((emulator_option_flags & 4) == 0) {
     DAT_023dcea8 = record_unscaled_scanline_scroll_and_backdrop;
   }
   else {
@@ -212,9 +212,9 @@ void initialize_emulator_state_and_shared_audio(void)
   bool bVar10;
   undefined8 uVar11;
   
-  install_m68k_callbacks_and_instrumented_opcode_entries(&DAT_0b0000ac,0x2003b34,0x2003b60,0x2003b8c,0x2003cf8,&LAB_02003d24,0x2003d50,
+  install_m68k_callbacks_and_instrumented_opcode_entries(&m68k_context,0x2003b34,0x2003b60,0x2003b8c,0x2003cf8,&LAB_02003d24,0x2003d50,
                0x2003d98,&LAB_02009214,&LAB_02003c88);
-  initialize_z80_state_and_dispatch_pointers(&DAT_0b000158);
+  initialize_z80_state_and_dispatch_pointers(&z80_context);
   uVar4 = get_z80_work_ram_buffer();
   DAT_0b000559 = (undefined1)((uint)uVar4 >> 8);
   DAT_0b00055a = (undefined1)((uint)uVar4 >> 0x10);
@@ -243,8 +243,8 @@ void initialize_emulator_state_and_shared_audio(void)
   if (controller_port_2_state == 0) {
     controller_port_2_state = allocate_genesis_controller_port();
   }
-  DAT_0b00002c = &DAT_0b000158;
-  DAT_0b000028 = &DAT_0b0000ac;
+  z80_context_pointer = &z80_context;
+  m68k_context_pointer = &m68k_context;
   configure_frame_timing_callbacks();
   if (DAT_02099070 == 0) {
     initialize_arm9_fifo_receive_interrupt(1);
@@ -461,7 +461,7 @@ switchD_020012ec_caseD_2:
 LAB_020013bc:
   (*DAT_0b000038)();
   update_genesis_controller_state();
-  if (((DAT_023cb610 & 0x40) != 0) && (DAT_02098fa4 < DAT_02098fa0)) {
+  if (((emulator_option_flags & 0x40) != 0) && (DAT_02098fa4 < DAT_02098fa0)) {
     arm_veneer_for_nds_swiwaitforvblank();
   }
   (*DAT_0b00003c)();
@@ -476,7 +476,7 @@ LAB_020013bc:
 void initialize_default_emulator_options(void)
 
 {
-  DAT_023cb610 = DAT_023cb610 & 0xfffccfff | 0x205c;
+  emulator_option_flags = emulator_option_flags & 0xfffccfff | 0x205c;
   return;
 }
 
@@ -540,7 +540,7 @@ void update_genesis_controller_state(void)
   *(byte *)(controller_port_1_state + 0x23) = ((byte)(ds_keys >> 6) ^ 1) & 1;
   *(bool *)(controller_port_1_state + 0x25) = (ds_keys & 0x20) == 0;
   *(bool *)(controller_port_1_state + 0x26) = (ds_keys & 0x10) == 0;
-  if ((DAT_023cb610 & 1) == 0) {
+  if ((emulator_option_flags & 1) == 0) {
     *(byte *)(controller_port_1_state + 0x2a) = ((byte)(ds_keys >> 3) ^ 1) & 1;
     if ((ds_keys & 0x400) == 0) {
       if ((ds_keys & 0x200) == 0) {
@@ -567,7 +567,7 @@ void update_genesis_controller_state(void)
     *(byte *)(controller_port_1_state + 0x29) = ((byte)(ds_keys >> 9) ^ 1) & 1;
     *(byte *)(controller_port_1_state + 0x28) = ((byte)(ds_keys >> 8) ^ 1) & 1;
   }
-  if ((DAT_023cb610 & 0x200) != 0) {
+  if ((emulator_option_flags & 0x200) != 0) {
     if ((ds_keys & 0x400) != 0) {
       DAT_02098ff8 = 0;
       center_viewport();
@@ -604,23 +604,23 @@ void update_genesis_controller_state(void)
 
 // 0x020054d4  reset_m68k_registers_and_load_vectors
 
-void reset_m68k_registers_and_load_vectors(int param_1)
+void reset_m68k_registers_and_load_vectors(int m68k_state)
 
 {
   undefined1 uVar1;
   undefined1 uVar2;
   undefined1 uVar3;
-  undefined4 uVar4;
-  int *piVar5;
+  undefined4 vector_or_memory_base;
+  int *pc_mapping;
   int iVar6;
-  uint uVar7;
+  uint guest_pc_or_offset;
   int iVar8;
-  uint uVar9;
+  uint guest_pc_page_bits;
   
   iVar6 = 0;
   do {
-    *(undefined1 *)(param_1 + iVar6 * 4) = 0;
-    iVar8 = param_1 + iVar6 * 4;
+    *(undefined1 *)(m68k_state + iVar6 * 4) = 0;
+    iVar8 = m68k_state + iVar6 * 4;
     iVar6 = iVar6 + 1;
     *(undefined1 *)(iVar8 + 0x20) = 0;
     *(undefined1 *)(iVar8 + 1) = 0;
@@ -630,87 +630,87 @@ void reset_m68k_registers_and_load_vectors(int param_1)
     *(undefined1 *)(iVar8 + 0x21) = 0;
     *(undefined1 *)(iVar8 + 0x22) = 0;
   } while (iVar6 != 8);
-  uVar4 = (**(code **)(param_1 + 0x70))(0);
-  uVar1 = (undefined1)((uint)uVar4 >> 0x18);
-  *(undefined1 *)(param_1 + 0x3f) = uVar1;
-  *(undefined1 *)(param_1 + 0x4b) = uVar1;
-  *(char *)(param_1 + 0x3c) = (char)uVar4;
-  uVar1 = (undefined1)((uint)uVar4 >> 8);
-  *(undefined1 *)(param_1 + 0x3d) = uVar1;
-  uVar2 = (undefined1)((uint)uVar4 >> 0x10);
-  *(undefined1 *)(param_1 + 0x3e) = uVar2;
-  *(char *)(param_1 + 0x48) = (char)uVar4;
-  *(undefined1 *)(param_1 + 0x49) = uVar1;
-  *(undefined1 *)(param_1 + 0x4a) = uVar2;
-  uVar4 = (**(code **)(param_1 + 0x70))(4);
-  *(char *)(param_1 + 0x45) = (char)((uint)uVar4 >> 8);
-  *(char *)(param_1 + 0x46) = (char)((uint)uVar4 >> 0x10);
-  *(char *)(param_1 + 0x47) = (char)((uint)uVar4 >> 0x18);
-  *(undefined1 *)(param_1 + 0x51) = 0x27;
-  *(char *)(param_1 + 0x44) = (char)uVar4;
-  *(undefined1 *)(param_1 + 0x40) = 0;
-  *(undefined1 *)(param_1 + 0x41) = 0;
-  *(undefined1 *)(param_1 + 0x42) = 0;
-  *(undefined1 *)(param_1 + 0x43) = 0;
-  *(undefined1 *)(param_1 + 0x4c) = 0;
-  *(undefined1 *)(param_1 + 0x4d) = 0;
-  *(undefined1 *)(param_1 + 0x4e) = 0;
-  *(undefined1 *)(param_1 + 0x4f) = 0;
-  *(undefined1 *)(param_1 + 0x50) = 0;
-  *(undefined1 *)(param_1 + 0x52) = 0;
-  *(undefined1 *)(param_1 + 0x53) = 0;
-  *(undefined1 *)(param_1 + 0xa0) = 0;
-  *(undefined1 *)(param_1 + 0xa1) = 0;
-  *(undefined1 *)(param_1 + 0xa7) = 0;
-  *(undefined1 *)(param_1 + 0xa2) = 0;
-  *(undefined1 *)(param_1 + 0xa3) = 0;
-  *(undefined1 *)(param_1 + 0xa4) = 0;
-  *(undefined1 *)(param_1 + 0x94) = 0;
-  *(undefined1 *)(param_1 + 0x95) = 0;
-  *(undefined1 *)(param_1 + 0x96) = 0;
-  *(undefined1 *)(param_1 + 0x97) = 0;
-  uVar4 = get_cartridge_rom_buffer();
-  *(char *)(param_1 + 0x61) = (char)((uint)uVar4 >> 8);
-  *(char *)(param_1 + 0x62) = (char)((uint)uVar4 >> 0x10);
-  *(char *)(param_1 + 99) = (char)((uint)uVar4 >> 0x18);
-  *(char *)(param_1 + 0x60) = (char)uVar4;
-  uVar4 = get_genesis_work_ram_buffer();
-  uVar3 = (undefined1)((uint)uVar4 >> 0x10);
-  *(char *)(param_1 + 0x58) = (char)uVar4;
-  uVar1 = (undefined1)((uint)uVar4 >> 8);
-  *(undefined1 *)(param_1 + 0x59) = uVar1;
-  *(undefined1 *)(param_1 + 0x5a) = uVar3;
-  uVar2 = (undefined1)((uint)uVar4 >> 0x18);
-  *(undefined1 *)(param_1 + 0x5b) = uVar2;
-  *(char *)(param_1 + 100) = (char)uVar4;
-  *(undefined1 *)(param_1 + 0x65) = uVar1;
-  *(undefined1 *)(param_1 + 0x66) = uVar3;
-  *(undefined1 *)(param_1 + 0x67) = uVar2;
-  piVar5 = (int *)(**(code **)(param_1 + 0x88))(*(undefined4 *)(param_1 + 0x44));
-  DAT_02099044 = piVar5;
-  *(char *)(param_1 + 0x54) = (char)*piVar5;
-  *(undefined1 *)(param_1 + 0x55) = *(undefined1 *)((int)piVar5 + 1);
-  *(undefined1 *)(param_1 + 0x56) = *(undefined1 *)((int)piVar5 + 2);
-  *(undefined1 *)(param_1 + 0x57) = *(undefined1 *)((int)piVar5 + 3);
-  uVar7 = CONCAT13(*(undefined1 *)(param_1 + 0x47),
-                   CONCAT12(*(undefined1 *)(param_1 + 0x46),
-                            CONCAT11(*(undefined1 *)(param_1 + 0x45),*(undefined1 *)(param_1 + 0x44)
+  vector_or_memory_base = (**(code **)(m68k_state + 0x70))(0);
+  uVar1 = (undefined1)((uint)vector_or_memory_base >> 0x18);
+  *(undefined1 *)(m68k_state + 0x3f) = uVar1;
+  *(undefined1 *)(m68k_state + 0x4b) = uVar1;
+  *(char *)(m68k_state + 0x3c) = (char)vector_or_memory_base;
+  uVar1 = (undefined1)((uint)vector_or_memory_base >> 8);
+  *(undefined1 *)(m68k_state + 0x3d) = uVar1;
+  uVar2 = (undefined1)((uint)vector_or_memory_base >> 0x10);
+  *(undefined1 *)(m68k_state + 0x3e) = uVar2;
+  *(char *)(m68k_state + 0x48) = (char)vector_or_memory_base;
+  *(undefined1 *)(m68k_state + 0x49) = uVar1;
+  *(undefined1 *)(m68k_state + 0x4a) = uVar2;
+  vector_or_memory_base = (**(code **)(m68k_state + 0x70))(4);
+  *(char *)(m68k_state + 0x45) = (char)((uint)vector_or_memory_base >> 8);
+  *(char *)(m68k_state + 0x46) = (char)((uint)vector_or_memory_base >> 0x10);
+  *(char *)(m68k_state + 0x47) = (char)((uint)vector_or_memory_base >> 0x18);
+  *(undefined1 *)(m68k_state + 0x51) = 0x27;
+  *(char *)(m68k_state + 0x44) = (char)vector_or_memory_base;
+  *(undefined1 *)(m68k_state + 0x40) = 0;
+  *(undefined1 *)(m68k_state + 0x41) = 0;
+  *(undefined1 *)(m68k_state + 0x42) = 0;
+  *(undefined1 *)(m68k_state + 0x43) = 0;
+  *(undefined1 *)(m68k_state + 0x4c) = 0;
+  *(undefined1 *)(m68k_state + 0x4d) = 0;
+  *(undefined1 *)(m68k_state + 0x4e) = 0;
+  *(undefined1 *)(m68k_state + 0x4f) = 0;
+  *(undefined1 *)(m68k_state + 0x50) = 0;
+  *(undefined1 *)(m68k_state + 0x52) = 0;
+  *(undefined1 *)(m68k_state + 0x53) = 0;
+  *(undefined1 *)(m68k_state + 0xa0) = 0;
+  *(undefined1 *)(m68k_state + 0xa1) = 0;
+  *(undefined1 *)(m68k_state + 0xa7) = 0;
+  *(undefined1 *)(m68k_state + 0xa2) = 0;
+  *(undefined1 *)(m68k_state + 0xa3) = 0;
+  *(undefined1 *)(m68k_state + 0xa4) = 0;
+  *(undefined1 *)(m68k_state + 0x94) = 0;
+  *(undefined1 *)(m68k_state + 0x95) = 0;
+  *(undefined1 *)(m68k_state + 0x96) = 0;
+  *(undefined1 *)(m68k_state + 0x97) = 0;
+  vector_or_memory_base = get_cartridge_rom_buffer();
+  *(char *)(m68k_state + 0x61) = (char)((uint)vector_or_memory_base >> 8);
+  *(char *)(m68k_state + 0x62) = (char)((uint)vector_or_memory_base >> 0x10);
+  *(char *)(m68k_state + 99) = (char)((uint)vector_or_memory_base >> 0x18);
+  *(char *)(m68k_state + 0x60) = (char)vector_or_memory_base;
+  vector_or_memory_base = get_genesis_work_ram_buffer();
+  uVar3 = (undefined1)((uint)vector_or_memory_base >> 0x10);
+  *(char *)(m68k_state + 0x58) = (char)vector_or_memory_base;
+  uVar1 = (undefined1)((uint)vector_or_memory_base >> 8);
+  *(undefined1 *)(m68k_state + 0x59) = uVar1;
+  *(undefined1 *)(m68k_state + 0x5a) = uVar3;
+  uVar2 = (undefined1)((uint)vector_or_memory_base >> 0x18);
+  *(undefined1 *)(m68k_state + 0x5b) = uVar2;
+  *(char *)(m68k_state + 100) = (char)vector_or_memory_base;
+  *(undefined1 *)(m68k_state + 0x65) = uVar1;
+  *(undefined1 *)(m68k_state + 0x66) = uVar3;
+  *(undefined1 *)(m68k_state + 0x67) = uVar2;
+  pc_mapping = (int *)(**(code **)(m68k_state + 0x88))(*(undefined4 *)(m68k_state + 0x44));
+  m68k_pc_mapping_entry = pc_mapping;
+  *(char *)(m68k_state + 0x54) = (char)*pc_mapping;
+  *(undefined1 *)(m68k_state + 0x55) = *(undefined1 *)((int)pc_mapping + 1);
+  *(undefined1 *)(m68k_state + 0x56) = *(undefined1 *)((int)pc_mapping + 2);
+  *(undefined1 *)(m68k_state + 0x57) = *(undefined1 *)((int)pc_mapping + 3);
+  guest_pc_or_offset = CONCAT13(*(undefined1 *)(m68k_state + 0x47),
+                   CONCAT12(*(undefined1 *)(m68k_state + 0x46),
+                            CONCAT11(*(undefined1 *)(m68k_state + 0x45),*(undefined1 *)(m68k_state + 0x44)
                                     )));
-  uVar9 = uVar7 & ~piVar5[1];
-  *(char *)(param_1 + 0x9e) = (char)(uVar9 >> 0x10);
-  *(char *)(param_1 + 0x9c) = (char)uVar9;
-  *(char *)(param_1 + 0x9d) = (char)(uVar9 >> 8);
-  *(char *)(param_1 + 0x9f) = (char)(uVar9 >> 0x18);
-  uVar7 = uVar7 & piVar5[1];
-  *(char *)(param_1 + 0x46) = (char)(uVar7 >> 0x10);
-  *(char *)(param_1 + 0x44) = (char)uVar7;
-  *(char *)(param_1 + 0x45) = (char)(uVar7 >> 8);
-  *(char *)(param_1 + 0x47) = (char)(uVar7 >> 0x18);
-  iVar6 = uVar7 + *piVar5;
-  *(char *)(param_1 + 0x47) = (char)((uint)iVar6 >> 0x18);
-  *(char *)(param_1 + 0x45) = (char)((uint)iVar6 >> 8);
-  *(char *)(param_1 + 0x46) = (char)((uint)iVar6 >> 0x10);
-  *(char *)(param_1 + 0x44) = (char)iVar6;
+  guest_pc_page_bits = guest_pc_or_offset & ~pc_mapping[1];
+  *(char *)(m68k_state + 0x9e) = (char)(guest_pc_page_bits >> 0x10);
+  *(char *)(m68k_state + 0x9c) = (char)guest_pc_page_bits;
+  *(char *)(m68k_state + 0x9d) = (char)(guest_pc_page_bits >> 8);
+  *(char *)(m68k_state + 0x9f) = (char)(guest_pc_page_bits >> 0x18);
+  guest_pc_or_offset = guest_pc_or_offset & pc_mapping[1];
+  *(char *)(m68k_state + 0x46) = (char)(guest_pc_or_offset >> 0x10);
+  *(char *)(m68k_state + 0x44) = (char)guest_pc_or_offset;
+  *(char *)(m68k_state + 0x45) = (char)(guest_pc_or_offset >> 8);
+  *(char *)(m68k_state + 0x47) = (char)(guest_pc_or_offset >> 0x18);
+  iVar6 = guest_pc_or_offset + *pc_mapping;
+  *(char *)(m68k_state + 0x47) = (char)((uint)iVar6 >> 0x18);
+  *(char *)(m68k_state + 0x45) = (char)((uint)iVar6 >> 8);
+  *(char *)(m68k_state + 0x46) = (char)((uint)iVar6 >> 0x10);
+  *(char *)(m68k_state + 0x44) = (char)iVar6;
   DAT_02099040 = 0;
   DAT_0209903c = 0;
   return;

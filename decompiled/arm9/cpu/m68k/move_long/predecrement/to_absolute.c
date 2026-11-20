@@ -289,7 +289,7 @@ LAB_0200ac58:
         case 2:
           vdp_plane_a_name_table_base = (uVar8 & 0x38) * 0x400;
           DAT_023dde8c = &DAT_020acbec + (uVar8 & 0x38) * 0x200;
-          if (((DAT_023cb610 & 8) != 0) && (vdp_plane_a_name_table_base != ram0x023dd374)) {
+          if (((emulator_option_flags & 8) != 0) && (vdp_plane_a_name_table_base != ram0x023dd374)) {
             DAT_023dc8a4 = 1;
           }
           ram0x023dd374 = vdp_plane_a_name_table_base;
@@ -308,7 +308,7 @@ LAB_0200ac58:
         case 4:
           vdp_plane_b_name_table_base = (uVar8 & 7) * 0x2000;
           DAT_023dde90 = &DAT_020acbec + (uVar8 & 7) * 0x1000;
-          if (((DAT_023cb610 & 8) != 0) && (vdp_plane_b_name_table_base != DAT_023dd378)) {
+          if (((emulator_option_flags & 8) != 0) && (vdp_plane_b_name_table_base != DAT_023dd378)) {
             DAT_023dc8a8 = 1;
           }
           DAT_023dd378 = vdp_plane_b_name_table_base;
@@ -331,7 +331,7 @@ LAB_0200ac58:
           DAT_020b4bf0 = (byte)(uVar12 >> 3) & 1;
           DAT_023dcfac = (byte)(uVar12 >> 2) & 1;
           DAT_023dcdb0 = bVar14 & 3;
-          if ((DAT_023cb610 & 4) == 0) {
+          if ((emulator_option_flags & 4) == 0) {
             DAT_023dcea8 = record_unscaled_scanline_scroll_and_backdrop;
           }
           else {
@@ -1168,7 +1168,7 @@ LAB_0200ac58:
         case 2:
           vdp_plane_a_name_table_base = (uVar7 & 0x38) * 0x400;
           DAT_023dde8c = &DAT_020acbec + (uVar7 & 0x38) * 0x200;
-          if (((DAT_023cb610 & 8) != 0) && (vdp_plane_a_name_table_base != ram0x023dd374)) {
+          if (((emulator_option_flags & 8) != 0) && (vdp_plane_a_name_table_base != ram0x023dd374)) {
             DAT_023dc8a4 = 1;
           }
           ram0x023dd374 = vdp_plane_a_name_table_base;
@@ -1187,7 +1187,7 @@ LAB_0200ac58:
         case 4:
           vdp_plane_b_name_table_base = (uVar7 & 7) * 0x2000;
           DAT_023dde90 = &DAT_020acbec + (uVar7 & 7) * 0x1000;
-          if (((DAT_023cb610 & 8) != 0) && (vdp_plane_b_name_table_base != DAT_023dd378)) {
+          if (((emulator_option_flags & 8) != 0) && (vdp_plane_b_name_table_base != DAT_023dd378)) {
             DAT_023dc8a8 = 1;
           }
           DAT_023dd378 = vdp_plane_b_name_table_base;
@@ -1210,7 +1210,7 @@ LAB_0200ac58:
           DAT_020b4bf0 = (byte)(uVar10 >> 3) & 1;
           DAT_023dcfac = (byte)(uVar10 >> 2) & 1;
           DAT_023dcdb0 = bVar12 & 3;
-          if ((DAT_023cb610 & 4) == 0) {
+          if ((emulator_option_flags & 4) == 0) {
             DAT_023dcea8 = record_unscaled_scanline_scroll_and_backdrop;
           }
           else {

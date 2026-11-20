@@ -9,8 +9,8 @@ void initialize_cartridge_and_work_ram_mapping(void)
 {
   DAT_023cb628 = 0x3fffff;
   DAT_023cb630 = 0xffff;
-  DAT_023cb624 = &DAT_020b4cec;
-  DAT_023cb62c = &DAT_023cb634;
+  DAT_023cb624 = &cartridge_rom_bytes;
+  DAT_023cb62c = &genesis_work_ram_bytes;
   return;
 }
 
@@ -20,7 +20,7 @@ void initialize_cartridge_and_work_ram_mapping(void)
 undefined * get_cartridge_rom_buffer(void)
 
 {
-  return &DAT_020b4cec;
+  return &cartridge_rom_bytes;
 }
 
 
@@ -29,27 +29,27 @@ undefined * get_cartridge_rom_buffer(void)
 undefined * get_genesis_work_ram_buffer(void)
 
 {
-  return &DAT_023cb634;
+  return &genesis_work_ram_bytes;
 }
 
 
 // 0x02003cc8  get_vdp_dma_backing_pointer
 
-undefined * get_vdp_dma_backing_pointer(uint param_1)
+undefined * get_vdp_dma_backing_pointer(uint source_address)
 
 {
-  undefined *puVar1;
-  bool bVar2;
+  undefined *source_pointer;
+  bool source_in_cartridge;
   
-  bVar2 = (param_1 & 0xc00000) == 0;
-  puVar1 = &DAT_023cb634 + (param_1 & 0xffff);
-  if (bVar2) {
-    puVar1 = &DAT_020b4cec;
+  source_in_cartridge = (source_address & 0xc00000) == 0;
+  source_pointer = &genesis_work_ram_bytes + (source_address & 0xffff);
+  if (source_in_cartridge) {
+    source_pointer = &cartridge_rom_bytes;
   }
-  if (bVar2) {
-    puVar1 = puVar1 + (param_1 & 0xffffff);
+  if (source_in_cartridge) {
+    source_pointer = source_pointer + (source_address & 0xffffff);
   }
-  return puVar1;
+  return source_pointer;
 }
 
 
@@ -371,12 +371,12 @@ void reset_bus_tables_work_ram_and_z80_bus_lines(void)
 {
   DAT_0209900e = 0;
   initialize_m68k_bus_dispatch_tables();
-  newlib_memset(&DAT_023cb634,0,0x10000);
+  newlib_memset(&genesis_work_ram_bytes,0,0x10000);
   z80_cartridge_bank_base = 0;
   DAT_0208f34a = 1;
   DAT_02099010 = 0;
-  DAT_02099001 = 0;
-  DAT_02099000 = 0;
+  z80_reset_released = 0;
+  z80_bus_request_asserted = 0;
   DAT_0208f349 = 1;
   return;
 }

@@ -4,33 +4,33 @@
 
 // 0x02004d14  read_z80_mapped_byte
 
-byte read_z80_mapped_byte(uint param_1)
+byte read_z80_mapped_byte(uint guest_address)
 
 {
-  switch((int)param_1 >> 0xd & 7) {
+  switch((int)guest_address >> 0xd & 7) {
   case 0:
   case 1:
-    return (&DAT_0b00161c)[param_1 & 0x1fff];
+    return (&z80_work_ram_bytes)[guest_address & 0x1fff];
   case 2:
-    return *(byte *)(DAT_0b00002c + 0x480) & 3;
+    return *(byte *)(z80_context_pointer + 0x480) & 3;
   case 3:
     return 0;
   default:
-    return (&DAT_020b4cec)[(param_1 & 0x7fff | z80_cartridge_bank_base & 0x3fffff) ^ 1];
+    return (&cartridge_rom_bytes)[(guest_address & 0x7fff | z80_cartridge_bank_base & 0x3fffff) ^ 1];
   }
 }
 
 
 // 0x02004d68  read_z80_mapped_little_endian_word
 
-uint read_z80_mapped_little_endian_word(int param_1)
+uint read_z80_mapped_little_endian_word(int guest_address)
 
 {
-  uint uVar1;
-  int iVar2;
+  uint low_byte;
+  int high_byte;
   
-  uVar1 = read_z80_mapped_byte();
-  iVar2 = read_z80_mapped_byte(param_1 + 1);
-  return uVar1 & 0xff | iVar2 << 8;
+  low_byte = read_z80_mapped_byte();
+  high_byte = read_z80_mapped_byte(guest_address + 1);
+  return low_byte & 0xff | high_byte << 8;
 }
 

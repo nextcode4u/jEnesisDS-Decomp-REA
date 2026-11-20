@@ -1131,7 +1131,7 @@ joined_r0x037f9df4:
     prepare_and_render_fm_channel(param_1 + DAT_03806e90 * 2,param_2,&DAT_038074b8);
     prepare_and_render_fm_channel(param_1 + DAT_03806e94 * 2,param_2,&DAT_03807590);
     prepare_and_render_fm_channel(param_1 + DAT_03806e98 * 2,param_2,&DAT_03807668);
-    if (DAT_03807818 == 0) {
+    if (ym2612_dac_enable_bit == 0) {
       prepare_and_render_fm_channel(param_1 + DAT_03806e9c * 2,param_2,&DAT_03807740);
     }
     else {

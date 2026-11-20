@@ -275,7 +275,7 @@ undefined4 load_genesis_rom_from_stream(int param_1,undefined4 param_2)
   undefined4 uVar11;
   char cVar12;
   
-  newlib_memset(&DAT_020b4cec,0,0x306800);
+  newlib_memset(&cartridge_rom_bytes,0,0x306800);
   if (DAT_02098fc8 == 0) {
     DAT_02098fc8 = newlib_malloc_global_reent_wrapper(0x268);
   }
@@ -292,26 +292,26 @@ undefined4 load_genesis_rom_from_stream(int param_1,undefined4 param_2)
     if (uVar6 != 0) {
       iVar7 = rom_header_lacks_sega_signature(param_1);
       if (iVar7 == 0) {
-        newlib_fread(&DAT_020b4cec,1,uVar6,param_1);
+        newlib_fread(&cartridge_rom_bytes,1,uVar6,param_1);
         *(undefined1 *)(DAT_02098fc8 + 0x260) = 0;
       }
       else {
         uVar6 = uVar6 - 0x200;
         newlib_fseek(param_1,0x200,0);
-        newlib_fread(&DAT_020b4cec,1,uVar6,param_1);
-        deinterleave_smd_rom_blocks(&DAT_020b4cec,uVar6);
+        newlib_fread(&cartridge_rom_bytes,1,uVar6,param_1);
+        deinterleave_smd_rom_blocks(&cartridge_rom_bytes,uVar6);
         *(undefined1 *)(DAT_02098fc8 + 0x260) = 1;
       }
-      parse_cartridge_header(&DAT_020b4cec,uVar6);
-      if (((DAT_023cb610 & 0x20) != 0) &&
-         (iVar8 = compute_genesis_rom_checksum(&DAT_020b4cec,uVar6), iVar7 = DAT_02098fc8,
+      parse_cartridge_header(&cartridge_rom_bytes,uVar6);
+      if (((emulator_option_flags & 0x20) != 0) &&
+         (iVar8 = compute_genesis_rom_checksum(&cartridge_rom_bytes,uVar6), iVar7 = DAT_02098fc8,
          iVar8 != *(int *)(DAT_02098fc8 + 0x240))) {
         *(uint *)(DAT_02098fc8 + 600) = *(uint *)(DAT_02098fc8 + 600) | 0x10;
         *(int *)(iVar7 + 0x240) = iVar8;
         DAT_020b4e7b = (undefined1)iVar8;
         DAT_020b4e7a = (undefined1)((uint)iVar8 >> 8);
       }
-      uVar10 = DAT_023cb610 >> 0x10 & 3;
+      uVar10 = emulator_option_flags >> 0x10 & 3;
       if (uVar10 == 1) {
         cVar12 = 'J';
       }
@@ -321,7 +321,7 @@ undefined4 load_genesis_rom_from_stream(int param_1,undefined4 param_2)
       else {
         cVar12 = 'U';
       }
-      puVar9 = &DAT_020b4cec;
+      puVar9 = &cartridge_rom_bytes;
       cVar4 = 'U';
       bVar3 = 0;
       do {
@@ -369,7 +369,7 @@ LAB_02001dd4:
   *(uint *)(DAT_02098fc8 + 0x244) = uVar6;
   *(uint *)(iVar7 + 600) = *puVar1 | 1;
   probe_savestate_slots();
-  swap_adjacent_bytes_in_backing_buffer(&DAT_020b4cec,uVar6);
+  swap_adjacent_bytes_in_backing_buffer(&cartridge_rom_bytes,uVar6);
   return uVar11;
 }
 

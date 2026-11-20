@@ -75,7 +75,7 @@ void write_vdp_control_port_word(uint control_word)
       case 2:
         vdp_plane_a_name_table_base = (control_word & 0x38) * 0x400;
         DAT_023dde8c = &DAT_020acbec + (control_word & 0x38) * 0x200;
-        if (((DAT_023cb610 & 8) != 0) && (vdp_plane_a_name_table_base != ram0x023dd374)) {
+        if (((emulator_option_flags & 8) != 0) && (vdp_plane_a_name_table_base != ram0x023dd374)) {
           DAT_023dc8a4 = 1;
         }
         ram0x023dd374 = vdp_plane_a_name_table_base;
@@ -94,7 +94,7 @@ void write_vdp_control_port_word(uint control_word)
       case 4:
         vdp_plane_b_name_table_base = (control_word & 7) * 0x2000;
         DAT_023dde90 = &DAT_020acbec + (control_word & 7) * 0x1000;
-        if (((DAT_023cb610 & 8) != 0) && (vdp_plane_b_name_table_base != DAT_023dd378)) {
+        if (((emulator_option_flags & 8) != 0) && (vdp_plane_b_name_table_base != DAT_023dd378)) {
           DAT_023dc8a8 = 1;
         }
         DAT_023dd378 = vdp_plane_b_name_table_base;
@@ -117,7 +117,7 @@ void write_vdp_control_port_word(uint control_word)
         DAT_020b4bf0 = (byte)(uVar9 >> 3) & 1;
         DAT_023dcfac = (byte)(uVar9 >> 2) & 1;
         DAT_023dcdb0 = bVar13 & 3;
-        if ((DAT_023cb610 & 4) == 0) {
+        if ((emulator_option_flags & 4) == 0) {
           DAT_023dcea8 = record_unscaled_scanline_scroll_and_backdrop;
         }
         else {

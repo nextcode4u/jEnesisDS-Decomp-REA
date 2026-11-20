@@ -8,6 +8,7 @@ Start with the feature you want to understand. The Nintendo DS has two host CPUs
 - [Follow a VDP write to a DS display update](#follow-a-vdp-write-to-a-ds-display-update)
 - [Read a large export](#read-a-large-export)
 - [Follow a 68000 controller-port read](#follow-a-68000-controller-port-read)
+- [Read CPU context and timing](#read-cpu-context-and-timing)
 - [Follow audio from ARM9 to ARM7](#follow-an-arm7-audio-command)
 - [Follow saved data to disk](#follow-saved-data-to-disk)
 
@@ -108,6 +109,20 @@ arm-none-eabi-objdump -D --start-address=0x02003a68 --stop-address=0x02003ad4 bu
 
 VDP reads use a different bus path. The port decoder selects data, status, or the horizontal and vertical counters. A data read advances the latched address, while a status read clears the command latch and selected status flags. [VDP port reads](../decompiled/arm9/video/vdp/port_reads.c)
 
+## Read CPU context and timing
+
+The CPU contexts use host pointers while executing. Save-state routines convert those pointers to guest addresses so the state can be loaded after memory is mapped again. Offsets below are relative to each jEnesisDS context.
+
+| CPU | Field | How to recognize it |
+| --- | --- | --- |
+| 68000 | `+0x44` PC, `+0x54` mapped base, `+0x9c` guest page bits | Saving subtracts the mapped base from the host PC and combines the offset with the page bits. Restoring selects a mapping entry for the saved guest PC and rebuilds the host pointer. [Encode PC](../decompiled/arm9/storage/save_states.c#L209) · [Rebase PC](../decompiled/arm9/storage/save_states.c#L170) |
+| Z80 | `+0x400` RAM base, `+0x420` PC, `+0x424` SP | The execution loop fetches opcodes through `pc_host_pointer` and uses `sp_host_pointer` to push the guest return address. The save routines subtract the same RAM base from both pointers. [Execution loop](../decompiled/arm9/cpu/z80/core.c#L146) · [Encode Z80 pointers](../decompiled/arm9/storage/save_states.c#L126) |
+| Z80 | `+0x404` accumulator, `+0x40c` through `+0x418` B, C, D, E, `+0x41c` HL | Read the immediate loads, transfers to A, and EXX cases to see how each live value is packed. [Execution loop](../decompiled/arm9/cpu/z80/core.c#L146) |
+
+PicoDrive's DrZ80 also stores host pointers for PC and SP and keeps several Z80 registers in the high bytes of ARM words. Its header places the PC at `+0x00` and the SP at `+0x18`, with separate base pointers. PicoDrive's Cyclone core stores a mapped PC and a memory base at `+0x40` and `+0x60`. The jEnesisDS offsets above come from its own reset, instruction, and save-state paths. [DrZ80 context](https://github.com/notaz/picodrive/blob/26ecb2b6358fefba24e3d68b9eb2efba7f10d5ee/cpu/DrZ80/drz80.h) · [Cyclone context](https://github.com/irixxxx/cyclone68000/blob/3ac7cf1bdeecb60e2414980e8dc72ff092f69769/Cyclone.h)
+
+To follow Z80 scheduling, start with the accumulated 227 cycles per scanline and the difference between the scheduled and accounted low words. The scheduler runs the Z80 only when reset is released, the 68000 has released BUSREQ, and the Fake Z80 option is clear. [Accrue scanline cycles](../decompiled/arm9/cpu/z80/core.c#L105) · [Bus-release gate](../decompiled/arm9/cpu/z80/bus_release.c#L5)
+
 ## Follow an ARM7 audio command
 
 1. **Send a command.** During menu transitions ARM9 requests mute or unmute. The command is in the high byte of the interprocessor FIFO word. `0x0e` mutes and `0x0f` unmutes. Separate commands start or stop the ARM7 playback channels and timers. [ARM9 mute control](../decompiled/arm9/system/ipc.c#L302)
@@ -115,6 +130,19 @@ VDP reads use a different bus path. The port decoder selects data, status, or th
 3. **Refill audio buffers.** While playback is enabled, the ARM7 service uses elapsed hardware timer counts to decide how many samples to generate. It handles the DAC sample stream separately and refills buffers for the PSG (tone and noise) and YM2612 (FM). The refill code wraps when a buffer reaches its end. [Timer-driven refill](../decompiled/arm7/audio/service.c#L110) · [PSG renderer](../decompiled/arm7/audio/psg.c#L59) · [Six FM channels](../decompiled/arm7/audio/ym2612/channel_rendering.c#L252)
 
 To follow a game's sound-register write, start on ARM9. A Z80 mapped write can reach the YM2612 queue, where the address ports select a register and the data ports update its mirror and buffer. ARM9 writes the lengths of the two FM-bank buffers and the PSG buffer at descriptor offsets `0x14`, `0x24`, and `0x34`. FIFO command `0x0b` tells ARM7 to consume those buffers. DAC sample bytes use command `0x10` and a separate buffer. [Z80 mapped write](../decompiled/arm9/cpu/z80/memory_writes.c#L5) · [YM2612 queue](../decompiled/arm9/system/ipc.c#L14) · [Buffer submission](../decompiled/arm9/system/ipc.c#L206) · [ARM7 command switch](../decompiled/arm7/platform/ipc.c#L16)
+
+### Track audio buffers and timer cursors
+
+The shared descriptor contains pointers and byte counts. ARM9 publishes the count and flushes the descriptor cache lines before sending the FIFO command. ARM7 copies the queued chip writes into a reusable staging buffer, then gives them to the chip decoder. DAC bytes have their own staging buffer and a fractional cursor for conversion to signed 16-bit PCM. Offsets are measured in bytes from the shared descriptor. [ARM9 submission](../decompiled/arm9/system/ipc.c#L206) · [ARM7 command switch](../decompiled/arm7/platform/ipc.c#L16) · [DAC renderer](../decompiled/arm7/audio/dac.c#L27)
+
+| FIFO command | Data | Buffer pointer | Byte count |
+| --- | --- | --- | --- |
+| `0x0b` | YM2612 bank 0 address/value pairs | `+0x10` | `+0x14` |
+| `0x0b` | YM2612 bank 1 address/value pairs | `+0x20` | `+0x24` |
+| `0x0b` | PSG latch and data bytes | `+0x30` | `+0x34` |
+| `0x10` | DAC sample bytes | `+0x00` | `+0x04` |
+
+DS timer 1 drives the FM and PSG refill. They share a write position across their separate PCM buffers. The refill splits at the end of the ring and continues from its base. Timer 3 drives the separate DAC ring. [ARM7 timer service](../decompiled/arm7/audio/service.c#L110) · [DAC service](../decompiled/arm7/audio/dac.c#L61)
 
 ### Follow one YM2612 channel
 

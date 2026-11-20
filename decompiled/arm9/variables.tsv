@@ -144,3 +144,87 @@ processor	DAT_02099008	z80_cartridge_bank_base	Serial writes shift the bank latc
 0x0200c55c	param_2	payload	Packs the command in the high byte and the payload in the low 24 bits.
 0x0200c55c	uVar2	fifo_word	Packs the command in the high byte and the payload in the low 24 bits.
 0x0200c55c	bVar3	send_fifo_full	Packs the command in the high byte and the payload in the low 24 bits.
+processor	DAT_0b0000ac	m68k_context	Emulator initialization installs handlers in each CPU context and saves a pointer to each context for save-state I/O.
+processor	DAT_0b000028	m68k_context_pointer	Emulator initialization installs handlers in each CPU context and saves a pointer to each context for save-state I/O.
+processor	DAT_0b000158	z80_context	Emulator initialization installs handlers in each CPU context and saves a pointer to each context for save-state I/O.
+processor	DAT_0b00002c	z80_context_pointer	Emulator initialization installs handlers in each CPU context and saves a pointer to each context for save-state I/O.
+processor	_DAT_0b0000f0	m68k_pc_host_pointer	The m68k reset and state restore form a host fetch pointer from the guest PC and mapped base. The inverse combines the pointer difference with saved guest page bits.
+processor	_DAT_0b000100	m68k_pc_mapped_base	The m68k reset and state restore form a host fetch pointer from the guest PC and mapped base. The inverse combines the pointer difference with saved guest page bits.
+processor	_DAT_0b000148	m68k_pc_guest_page_bits	The m68k reset and state restore form a host fetch pointer from the guest PC and mapped base. The inverse combines the pointer difference with saved guest page bits.
+processor	DAT_02099044	m68k_pc_mapping_entry	The m68k reset and state restore form a host fetch pointer from the guest PC and mapped base. The inverse combines the pointer difference with saved guest page bits.
+processor	_DAT_0b000140	m68k_cycle_counter	The CPU scheduler advances the cycle counter. IRQ queue and dispatch store the pending level and pending flag separately.
+processor	DAT_0b00014c	m68k_pending_irq_level	The CPU scheduler advances the cycle counter. IRQ queue and dispatch store the pending level and pending flag separately.
+processor	DAT_0b00014d	m68k_irq_pending	The CPU scheduler advances the cycle counter. IRQ queue and dispatch store the pending level and pending flag separately.
+processor	DAT_0b00010c	m68k_cartridge_base	The m68k reset installs the cartridge and work RAM pointers as backing storage for CPU and video accesses.
+processor	DAT_0b000110	m68k_work_ram_base	The m68k reset installs the cartridge and work RAM pointers as backing storage for CPU and video accesses.
+processor	DAT_020b4cec	cartridge_rom_bytes	The m68k reset installs the cartridge and work RAM pointers as backing storage for CPU and video accesses.
+processor	DAT_023cb634	genesis_work_ram_bytes	The m68k reset installs the cartridge and work RAM pointers as backing storage for CPU and video accesses.
+processor	DAT_0b00161c	z80_work_ram_bytes	The m68k reset installs the cartridge and work RAM pointers as backing storage for CPU and video accesses.
+processor	DAT_02099000	z80_bus_request_asserted	Guest writes to 0xa11100 assert BUSREQ and writes to 0xa11200 release reset when bit zero is set. The scheduler checks both latches.
+processor	DAT_02099001	z80_reset_released	Guest writes to 0xa11100 assert BUSREQ and writes to 0xa11200 release reset when bit zero is set. The scheduler checks both latches.
+processor	DAT_02098f90	z80_scheduled_cycles_lo	The scanline scheduler adds 227 cycles using a low word plus carry, then saves the timestamp up to which execution was accounted for.
+processor	DAT_02098f94	z80_scheduled_cycles_hi	The scanline scheduler adds 227 cycles using a low word plus carry, then saves the timestamp up to which execution was accounted for.
+processor	DAT_02098f98	z80_accounted_cycles_lo	The scanline scheduler adds 227 cycles using a low word plus carry, then saves the timestamp up to which execution was accounted for.
+processor	DAT_02098f9c	z80_accounted_cycles_hi	The scanline scheduler adds 227 cycles using a low word plus carry, then saves the timestamp up to which execution was accounted for.
+processor	DAT_023cb610	emulator_option_flags	The settings menu toggles bits and fields in this word, and emulator paths test those settings.
+processor	switchD_0200e01c::switchdataD_020154b0	z80_arm_base_opcode_table	The cycle engine indexes this ARM dispatch table with the byte fetched from the host Z80 PC.
+0x0200df50	param_1	z80_state	The entry loads the Z80 context and initial cycle budget. The PC feeds opcode fetch, the SP holds the interrupt return address, and both are written back.
+0x0200df50	param_2	cycle_budget	The entry loads the Z80 context and initial cycle budget. The PC feeds opcode fetch, the SP holds the interrupt return address, and both are written back.
+0x0200df50	pbVar16	work_ram_base	The entry loads the Z80 context and initial cycle budget. The PC feeds opcode fetch, the SP holds the interrupt return address, and both are written back.
+0x0200df50	pbVar29	pc_host_pointer	The entry loads the Z80 context and initial cycle budget. The PC feeds opcode fetch, the SP holds the interrupt return address, and both are written back.
+0x0200df50	puVar31	sp_host_pointer	The entry loads the Z80 context and initial cycle budget. The PC feeds opcode fetch, the SP holds the interrupt return address, and both are written back.
+0x0200df50	ppuVar15	opcode_table	The entry loads the Z80 context and initial cycle budget. The PC feeds opcode fetch, the SP holds the interrupt return address, and both are written back.
+0x0200df50	uVar18	accumulator_value	LD immediate, register-to-A transfers and EXX identify the register values. A through E use the most significant byte. HL usually occupies the high halfword.
+0x0200df50	uVar22	b_register_value	LD immediate, register-to-A transfers and EXX identify the register values. A through E use the most significant byte. HL usually occupies the high halfword.
+0x0200df50	uVar23	c_register_value	LD immediate, register-to-A transfers and EXX identify the register values. A through E use the most significant byte. HL usually occupies the high halfword.
+0x0200df50	uVar24	d_register_value	LD immediate, register-to-A transfers and EXX identify the register values. A through E use the most significant byte. HL usually occupies the high halfword.
+0x0200df50	uVar25	e_register_value	LD immediate, register-to-A transfers and EXX identify the register values. A through E use the most significant byte. HL usually occupies the high halfword.
+0x0200df50	uVar26	hl_register_value	LD immediate, register-to-A transfers and EXX identify the register values. A through E use the most significant byte. HL usually occupies the high halfword.
+0x02000588	uVar1	cycles_due	Splits the difference between scheduled and accounted Z80 cycles into repeated chunks and a final remainder.
+0x02000588	uVar2	chunk_loop_remainder	Splits the difference between scheduled and accounted Z80 cycles into repeated chunks and a final remainder.
+0x020006b8	uVar1	cycles_due	Splits the difference between scheduled and accounted Z80 cycles into repeated chunks and a final remainder.
+0x020006b8	uVar2	chunk_loop_remainder	Splits the difference between scheduled and accounted Z80 cycles into repeated chunks and a final remainder.
+0x02004dcc	param_1	z80_state	Reset reads bytes from the Z80 RAM base as inputs to both PC and SP.
+0x02004dcc	uVar1	ram_base_low_three_bytes	Reset reads bytes from the Z80 RAM base as inputs to both PC and SP.
+0x02004dcc	uVar2	ram_base_byte_1	Reset reads bytes from the Z80 RAM base as inputs to both PC and SP.
+0x02004dcc	uVar3	ram_base_byte_2	Reset reads bytes from the Z80 RAM base as inputs to both PC and SP.
+0x02004ef4	param_1	z80_state	Sets or clears bits in the pending Z80 interrupt word.
+0x02004ef4	param_2	interrupt_bits	Sets or clears bits in the pending Z80 interrupt word.
+0x02004ef4	param_3	assert_interrupt	Sets or clears bits in the pending Z80 interrupt word.
+0x02004d14	param_1	guest_address	Selects the Z80 access region by guest address, with RAM and cartridge windows masked separately.
+0x02004d68	param_1	guest_address	Combines two adjacent Z80 byte reads in little-endian order.
+0x02004d68	uVar1	low_byte	Combines two adjacent Z80 byte reads in little-endian order.
+0x02004d68	iVar2	high_byte	Combines two adjacent Z80 byte reads in little-endian order.
+0x02004c50	param_1	guest_address	Writes the supplied value at a guest Z80 bus address.
+0x02004c50	param_2	write_value	Writes the supplied value at a guest Z80 bus address.
+0x02004ce4	param_1	guest_address	Writes the supplied value at a guest Z80 bus address.
+0x02004ce4	param_2	write_value	Writes the supplied value at a guest Z80 bus address.
+0x02004f70	param_1	z80_state	Subtracts the Z80 RAM base from the live host PC and SP, then stores those offsets in the saved fields.
+0x02004f70	iVar1	guest_pc	Subtracts the Z80 RAM base from the live host PC and SP, then stores those offsets in the saved fields.
+0x02004f70	iVar2	guest_sp	Subtracts the Z80 RAM base from the live host PC and SP, then stores those offsets in the saved fields.
+0x0200500c	param_1	z80_state	Adds the Z80 RAM base to the saved PC and SP before restoring the live pointers.
+0x0200500c	iVar1	pc_host_pointer	Adds the Z80 RAM base to the saved PC and SP before restoring the live pointers.
+0x0200500c	iVar2	sp_host_pointer	Adds the Z80 RAM base to the saved PC and SP before restoring the live pointers.
+0x02005164	param_1	m68k_state	Uses the saved PC to select a mapping entry. The entry supplies the mapped host base and a mask that separates the guest offset from the guest page.
+0x02005164	piVar1	pc_mapping	Uses the saved PC to select a mapping entry. The entry supplies the mapped host base and a mask that separates the guest offset from the guest page.
+0x02005164	uVar2	guest_pc_or_offset	Uses the saved PC to select a mapping entry. The entry supplies the mapped host base and a mask that separates the guest offset from the guest page.
+0x02005164	uVar4	guest_pc_page_bits	Uses the saved PC to select a mapping entry. The entry supplies the mapped host base and a mask that separates the guest offset from the guest page.
+0x02005164	iVar3	pc_host_pointer	Uses the saved PC to select a mapping entry. The entry supplies the mapped host base and a mask that separates the guest offset from the guest page.
+0x0200526c	param_1	m68k_state	Subtracts the host mapping base from the live PC and combines it with the saved guest page bits.
+0x0200526c	uVar1	guest_pc	Subtracts the host mapping base from the live PC and combines it with the saved guest page bits.
+0x020054d4	param_1	m68k_state	Initializes the CPU context from reset vectors and retains the selected PC mapping.
+0x020054d4	uVar4	vector_or_memory_base	Initializes the CPU context from reset vectors and retains the selected PC mapping.
+0x020054d4	piVar5	pc_mapping	Initializes the CPU context from reset vectors and retains the selected PC mapping.
+0x020054d4	uVar7	guest_pc_or_offset	Initializes the CPU context from reset vectors and retains the selected PC mapping.
+0x020054d4	uVar9	guest_pc_page_bits	Initializes the CPU context from reset vectors and retains the selected PC mapping.
+0x020004e0	param_1	irq_level	Stores the requested interrupt level and adjusts the accumulated cycle count.
+0x020004e0	iVar1	adjusted_cycle_count	Stores the requested interrupt level and adjusts the accumulated cycle count.
+0x02000538	param_1	cycles_to_run	Charges this cycle budget and selects the interrupt path before 68000 opcode dispatch.
+0x02000538	puVar3	pc_host_pointer	Charges this cycle budget and selects the interrupt path before 68000 opcode dispatch.
+0x02000538	puVar7	interrupt_stack_frame	Charges this cycle budget and selects the interrupt path before 68000 opcode dispatch.
+0x02000568	param_1	cycles_to_run	Charges this cycle budget and selects the interrupt path before 68000 opcode dispatch.
+0x02000568	puVar3	pc_host_pointer	Charges this cycle budget and selects the interrupt path before 68000 opcode dispatch.
+0x02000568	puVar7	interrupt_stack_frame	Charges this cycle budget and selects the interrupt path before 68000 opcode dispatch.
+0x02003cc8	param_1	source_address	Selects backing storage for a VDP DMA source on the 68000 bus.
+0x02003cc8	puVar1	source_pointer	Selects backing storage for a VDP DMA source on the 68000 bus.
+0x02003cc8	bVar2	source_in_cartridge	Selects backing storage for a VDP DMA source on the 68000 bus.

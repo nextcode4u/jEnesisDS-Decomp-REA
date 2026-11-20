@@ -62,14 +62,14 @@ undefined8 run_z80_if_enabled_and_bus_released(int param_1,undefined4 param_2)
   bool bVar34;
   undefined8 uVar35;
   
-  if ((DAT_023cb610 & 2) != 0) {
+  if ((emulator_option_flags & 2) != 0) {
     return CONCAT44(param_2,param_1);
   }
-  if (DAT_02099001 != '\x01') {
+  if (z80_reset_released != '\x01') {
     return CONCAT44(param_2,param_1);
   }
-  if (DAT_02099000 != '\0') {
-    return CONCAT44(param_1,&DAT_0b000158);
+  if (z80_bus_request_asserted != '\0') {
+    return CONCAT44(param_1,&z80_context);
   }
   puRam0b0005b8 = &stack0xffffffd8;
   bVar31 = false;
@@ -99,7 +99,7 @@ undefined8 run_z80_if_enabled_and_bus_released(int param_1,undefined4 param_2)
     }
   }
   uVar18 = uRam0b000560 + iRam0b0005d0 * 0x10000;
-  ppuVar12 = &switchD_0200e01c::switchdataD_020154b0;
+  ppuVar12 = &z80_arm_base_opcode_table;
   pbVar13 = _DAT_0b000558;
   uVar4 = uRam0b00055c;
   uVar20 = uRam0b000564;

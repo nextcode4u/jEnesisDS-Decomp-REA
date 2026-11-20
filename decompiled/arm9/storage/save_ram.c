@@ -45,7 +45,7 @@ void flush_cartridge_save_ram(undefined4 param_1,undefined4 param_2,int param_3)
   puVar2 = (undefined *)0x0;
   if (bVar5) {
     param_3 = *(int *)(DAT_02098fc8 + 0x24c);
-    puVar2 = &DAT_020b4cec;
+    puVar2 = &cartridge_rom_bytes;
   }
   puVar4 = &DAT_023bb4f0;
   if (bVar5) {
@@ -85,7 +85,7 @@ undefined4 configure_cartridge_save_ram(undefined4 param_1,uint param_2,uint par
     *(undefined1 *)(iVar2 + 0x264) = 1;
     if (uVar4 < param_3) {
       *(undefined4 *)(iVar2 + 0x25c) = 1;
-      newlib_memcpy(&DAT_023bb4f0,&DAT_020b4cec + uVar4,param_2);
+      newlib_memcpy(&DAT_023bb4f0,&cartridge_rom_bytes + uVar4,param_2);
       iVar2 = DAT_02098fc8;
     }
     newlib_strncpy(iVar2 + 0x100,param_1,0x100);
@@ -103,15 +103,15 @@ undefined4 configure_cartridge_save_ram(undefined4 param_1,uint param_2,uint par
       if (param_2 < uVar4) {
         uVar4 = param_2;
       }
-      newlib_fread(&DAT_020b4cec + *(int *)(DAT_02098fc8 + 0x24c),1,uVar4,iVar2);
-      swap_adjacent_bytes_in_backing_buffer(&DAT_020b4cec + *(int *)(DAT_02098fc8 + 0x24c),uVar4);
+      newlib_fread(&cartridge_rom_bytes + *(int *)(DAT_02098fc8 + 0x24c),1,uVar4,iVar2);
+      swap_adjacent_bytes_in_backing_buffer(&cartridge_rom_bytes + *(int *)(DAT_02098fc8 + 0x24c),uVar4);
       newlib_fclose(iVar2);
       return 0;
     }
     uVar3 = newlib_fopen(iVar5,&DAT_0208f070,2);
     newlib_fwrite(&DAT_023bb4f0,1,param_2,uVar3);
     newlib_fclose(uVar3);
-    newlib_memset(&DAT_020b4cec + *(int *)(DAT_02098fc8 + 0x24c),0,param_2);
+    newlib_memset(&cartridge_rom_bytes + *(int *)(DAT_02098fc8 + 0x24c),0,param_2);
   }
   else {
     *(undefined4 *)(DAT_02098fc8 + 0x24c) = 0;

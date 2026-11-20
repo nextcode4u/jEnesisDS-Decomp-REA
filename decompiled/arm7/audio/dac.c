@@ -7,52 +7,52 @@
 undefined4 read_ym2612_dac_enable(void)
 
 {
-  return DAT_03807818;
+  return ym2612_dac_enable_bit;
 }
 
 
 // 0x037fbc10  reset_dac_sample_cursor
 
-void reset_dac_sample_cursor(undefined4 param_1)
+void reset_dac_sample_cursor(undefined4 output_sample_count)
 
 {
-  DAT_0380b878 = 0;
-  DAT_0380b87c = 0;
-  DAT_0380b880 = compiler_udivsi3(DAT_0380b8a0 << 0x10,param_1);
-  DAT_0380b8a0 = 0;
+  dac_source_index = 0;
+  dac_source_fraction_q16 = 0;
+  dac_source_step_q16 = compiler_udivsi3(dac_staged_byte_count << 0x10,output_sample_count);
+  dac_staged_byte_count = 0;
   return;
 }
 
 
 // 0x037fbc68  render_unsigned_dac_to_pcm16
 
-void render_unsigned_dac_to_pcm16(int param_1,int param_2)
+void render_unsigned_dac_to_pcm16(int pcm_destination,int output_sample_count)
 
 {
-  int iVar1;
-  int iVar2;
-  short sVar3;
-  int iVar4;
-  int iVar5;
+  int output_byte_offset;
+  int source_step_q16;
+  short pcm_value;
+  int source_index;
+  int output_sample_index;
   
-  iVar2 = DAT_0380b880;
-  if (param_2 != 0) {
-    sVar3 = (*(byte *)((int)&DAT_0380b8a4 + DAT_0380b878) - 0x80) * 0x40;
-    iVar5 = 0;
-    iVar4 = DAT_0380b878;
+  source_step_q16 = dac_source_step_q16;
+  if (output_sample_count != 0) {
+    pcm_value = (*(byte *)((int)&dac_staged_bytes + dac_source_index) - 0x80) * 0x40;
+    output_sample_index = 0;
+    source_index = dac_source_index;
     do {
-      DAT_0380b87c = DAT_0380b87c + iVar2;
-      iVar1 = iVar5 * 2;
-      iVar5 = iVar5 + 1;
-      *(short *)(iVar1 + param_1) = sVar3;
-      DAT_0380b878 = iVar4;
-      if (0xffff < DAT_0380b87c) {
-        DAT_0380b878 = iVar4 + 1;
-        sVar3 = (*(byte *)((int)&DAT_0380b8a4 + iVar4 + 1) - 0x80) * 0x40;
-        DAT_0380b87c = DAT_0380b87c - 0x10000;
+      dac_source_fraction_q16 = dac_source_fraction_q16 + source_step_q16;
+      output_byte_offset = output_sample_index * 2;
+      output_sample_index = output_sample_index + 1;
+      *(short *)(output_byte_offset + pcm_destination) = pcm_value;
+      dac_source_index = source_index;
+      if (0xffff < dac_source_fraction_q16) {
+        dac_source_index = source_index + 1;
+        pcm_value = (*(byte *)((int)&dac_staged_bytes + source_index + 1) - 0x80) * 0x40;
+        dac_source_fraction_q16 = dac_source_fraction_q16 - 0x10000;
       }
-      iVar4 = DAT_0380b878;
-    } while (param_2 != iVar5);
+      source_index = dac_source_index;
+    } while (output_sample_count != output_sample_index);
   }
   return;
 }
@@ -60,61 +60,61 @@ void render_unsigned_dac_to_pcm16(int param_1,int param_2)
 
 // 0x037fbda8  service_dac_buffer
 
-void service_dac_buffer(int param_1)
+void service_dac_buffer(int output_sample_count)
 
 {
-  bool bVar1;
+  bool render_dac_audio;
   int iVar2;
   int iVar3;
-  undefined2 *puVar4;
+  undefined2 *pcm_clear_cursor;
   
-  if ((DAT_0380b8a0 == 0) || (iVar2 = read_ym2612_dac_enable(), iVar2 == 0)) {
-    bVar1 = false;
+  if ((dac_staged_byte_count == 0) || (iVar2 = read_ym2612_dac_enable(), iVar2 == 0)) {
+    render_dac_audio = false;
   }
   else {
-    bVar1 = true;
+    render_dac_audio = true;
   }
-  if (0xfff < param_1) {
-    param_1 = 0x1000;
+  if (0xfff < output_sample_count) {
+    output_sample_count = 0x1000;
   }
-  reset_dac_sample_cursor(param_1);
-  iVar2 = param_1 * 2;
-  if (DAT_0380bdd4 < DAT_0380bdd0 + param_1) {
-    iVar2 = (int)DAT_0380bdd4 - (int)DAT_0380bdd0 >> 1;
-    if (bVar1) {
-      render_unsigned_dac_to_pcm16(DAT_0380bdd0,iVar2);
-      param_1 = param_1 - iVar2;
-      DAT_0380bdd0 = DAT_0380bdcc;
-      iVar2 = param_1 * 2;
+  reset_dac_sample_cursor(output_sample_count);
+  iVar2 = output_sample_count * 2;
+  if (dac_pcm_end < dac_pcm_write_cursor + output_sample_count) {
+    iVar2 = (int)dac_pcm_end - (int)dac_pcm_write_cursor >> 1;
+    if (render_dac_audio) {
+      render_unsigned_dac_to_pcm16(dac_pcm_write_cursor,iVar2);
+      output_sample_count = output_sample_count - iVar2;
+      dac_pcm_write_cursor = dac_pcm_base;
+      iVar2 = output_sample_count * 2;
     }
     else {
       iVar3 = iVar2;
       if (0 < iVar2) {
         do {
           iVar3 = iVar3 + -1;
-          *DAT_0380bdd0 = 0;
-          DAT_0380bdd0 = DAT_0380bdd0 + 1;
+          *dac_pcm_write_cursor = 0;
+          dac_pcm_write_cursor = dac_pcm_write_cursor + 1;
         } while (iVar3 != 0);
       }
-      param_1 = param_1 - iVar2;
-      DAT_0380bdd0 = DAT_0380bdcc;
-      iVar2 = param_1 * 2;
+      output_sample_count = output_sample_count - iVar2;
+      dac_pcm_write_cursor = dac_pcm_base;
+      iVar2 = output_sample_count * 2;
     }
   }
-  if (bVar1) {
-    render_unsigned_dac_to_pcm16(DAT_0380bdd0,param_1);
+  if (render_dac_audio) {
+    render_unsigned_dac_to_pcm16(dac_pcm_write_cursor,output_sample_count);
   }
   else {
-    puVar4 = DAT_0380bdd0;
-    if (0 < param_1) {
+    pcm_clear_cursor = dac_pcm_write_cursor;
+    if (0 < output_sample_count) {
       do {
-        param_1 = param_1 + -1;
-        *puVar4 = 0;
-        puVar4 = puVar4 + 1;
-      } while (param_1 != 0);
+        output_sample_count = output_sample_count + -1;
+        *pcm_clear_cursor = 0;
+        pcm_clear_cursor = pcm_clear_cursor + 1;
+      } while (output_sample_count != 0);
     }
   }
-  DAT_0380bdd0 = (undefined2 *)((int)DAT_0380bdd0 + iVar2);
+  dac_pcm_write_cursor = (undefined2 *)((int)dac_pcm_write_cursor + iVar2);
   return;
 }
 

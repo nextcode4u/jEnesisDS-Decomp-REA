@@ -20,64 +20,64 @@ void initialize_sound_message_handler(void)
 void handle_arm9_audio_command(undefined4 command_id,undefined4 *payload)
 
 {
-  undefined2 *puVar1;
+  undefined2 *destination_halfword_cursor;
   undefined4 *puVar2;
-  int iVar4;
-  undefined2 *puVar5;
+  int bytes_or_halfwords_remaining;
+  undefined2 *source_or_pcm_cursor;
   undefined4 *puVar3;
   
   puVar2 = shared_audio_descriptor;
   switch(command_id) {
   case 0:
-    puVar5 = (undefined2 *)&DAT_06000000;
+    source_or_pcm_cursor = (undefined2 *)&DAT_06000000;
     DAT_0380bde0 = 0x1cb;
-    DAT_0380bdd8 = 0x800;
-    DAT_0380bde8 = 0x6bab;
-    DAT_0380bdf8 = 0;
-    DAT_0380bdec = 0;
-    DAT_0380bdf0 = 0;
-    DAT_0380bdf4 = 0;
+    fm_psg_ring_samples = 0x800;
+    fm_psg_sample_rate_hz = 0x6bab;
+    audio_reset_requested = 0;
+    fm_psg_previous_timer_count = 0;
+    dac_previous_timer_count = 0;
+    audio_refills_enabled = 0;
     DAT_0380bddc = 0x200;
     DAT_0380bde4 = 1;
-    iVar4 = 0x7000;
-    puVar1 = puVar5;
+    bytes_or_halfwords_remaining = 0x7000;
+    destination_halfword_cursor = source_or_pcm_cursor;
     do {
-      iVar4 = iVar4 + -1;
-      *puVar1 = 0;
-      puVar1 = puVar1 + 1;
-    } while (iVar4 != 0);
-    puVar2 = &DAT_0380b884;
+      bytes_or_halfwords_remaining = bytes_or_halfwords_remaining + -1;
+      *destination_halfword_cursor = 0;
+      destination_halfword_cursor = destination_halfword_cursor + 1;
+    } while (bytes_or_halfwords_remaining != 0);
+    puVar2 = &fm_channel_pcm_bases;
     do {
       puVar3 = puVar2 + 1;
-      *puVar2 = puVar5;
-      puVar5 = puVar5 + 0x800;
+      *puVar2 = source_or_pcm_cursor;
+      source_or_pcm_cursor = source_or_pcm_cursor + 0x800;
       puVar2 = puVar3;
-    } while (puVar3 != &DAT_0380b8a0);
-    iVar4 = 0x1000;
-    puVar1 = (undefined2 *)&DAT_06007000;
+    } while (puVar3 != &dac_staged_byte_count);
+    bytes_or_halfwords_remaining = 0x1000;
+    destination_halfword_cursor = (undefined2 *)&DAT_06007000;
     do {
-      iVar4 = iVar4 + -1;
-      *puVar1 = 0;
-      puVar1 = puVar1 + 1;
-    } while (iVar4 != 0);
-    DAT_0380bdd4 = 0x6009000;
-    DAT_0380bdbc = DAT_0380bdd8 * 2 + 0x6000000;
-    DAT_0380bafc = 0x369e99;
-    DAT_0380bdd0 = &DAT_06007000;
+      bytes_or_halfwords_remaining = bytes_or_halfwords_remaining + -1;
+      *destination_halfword_cursor = 0;
+      destination_halfword_cursor = destination_halfword_cursor + 1;
+    } while (bytes_or_halfwords_remaining != 0);
+    dac_pcm_end = 0x6009000;
+    fm_channel_0_pcm_end = fm_psg_ring_samples * 2 + 0x6000000;
+    psg_chip_clock_hz = 0x369e99;
+    dac_pcm_write_cursor = &DAT_06007000;
     DAT_0380bdc4 = 0x6000000;
-    DAT_0380bb00 = 0x750ab5;
-    DAT_0380bdb8 = 0x6000000;
-    DAT_0380bdc0 = 0x6000000;
-    DAT_0380bdcc = &DAT_06007000;
-    DAT_0380bdc8 = DAT_0380bdbc;
-    initialize_psg_clock_and_state(0x369e99,100,DAT_0380bde8,DAT_0380bdd8);
-    initialize_ym2612_tables_and_channels(DAT_0380bb00,DAT_0380bde8,DAT_0380bdd8);
-    DAT_0380b8a0 = 0;
-    DAT_0380b870 = DAT_0380bde0 << 1;
-    DAT_0380b874 = 0x42a;
+    ym2612_chip_clock_hz = 0x750ab5;
+    fm_pcm_base = 0x6000000;
+    fm_pcm_write_cursor = 0x6000000;
+    dac_pcm_base = &DAT_06007000;
+    DAT_0380bdc8 = fm_channel_0_pcm_end;
+    initialize_psg_clock_and_state(0x369e99,100,fm_psg_sample_rate_hz,fm_psg_ring_samples);
+    initialize_ym2612_tables_and_channels(ym2612_chip_clock_hz,fm_psg_sample_rate_hz,fm_psg_ring_samples);
+    dac_staged_byte_count = 0;
+    fm_psg_refill_limit = DAT_0380bde0 << 1;
+    dac_refill_limit = 0x42a;
     return;
   case 1:
-    DAT_0380bdf8 = 1;
+    audio_reset_requested = 1;
     break;
   case 2:
     reset_ym2612_registers();
@@ -85,11 +85,11 @@ void handle_arm9_audio_command(undefined4 command_id,undefined4 *payload)
   case 5:
     _DAT_04000500 = 0x807f;
     configure_ds_audio_channels_and_timers();
-    DAT_0380bdf4 = 1;
+    audio_refills_enabled = 1;
     break;
   case 6:
     _DAT_04000500 = 0x8000;
-    DAT_0380bdf4 = 0;
+    audio_refills_enabled = 0;
     _DAT_04000400 = 0;
     _DAT_04000410 = 0;
     _DAT_04000420 = 0;
@@ -112,52 +112,52 @@ void handle_arm9_audio_command(undefined4 command_id,undefined4 *payload)
     _DAT_0400010e = 0;
     return;
   case 0xb:
-    iVar4 = shared_audio_descriptor[5];
-    if (iVar4 != 0) {
-      if (0 < iVar4) {
-        iVar4 = iVar4 + 1 >> 1;
-        puVar1 = &DAT_0380bb38;
-        puVar5 = (undefined2 *)shared_audio_descriptor[4];
+    bytes_or_halfwords_remaining = shared_audio_descriptor[5];
+    if (bytes_or_halfwords_remaining != 0) {
+      if (0 < bytes_or_halfwords_remaining) {
+        bytes_or_halfwords_remaining = bytes_or_halfwords_remaining + 1 >> 1;
+        destination_halfword_cursor = &chip_write_staging_buffer;
+        source_or_pcm_cursor = (undefined2 *)shared_audio_descriptor[4];
         do {
-          iVar4 = iVar4 + -1;
-          *puVar1 = *puVar5;
-          puVar1 = puVar1 + 1;
-          puVar5 = puVar5 + 1;
-        } while (iVar4 != 0);
+          bytes_or_halfwords_remaining = bytes_or_halfwords_remaining + -1;
+          *destination_halfword_cursor = *source_or_pcm_cursor;
+          destination_halfword_cursor = destination_halfword_cursor + 1;
+          source_or_pcm_cursor = source_or_pcm_cursor + 1;
+        } while (bytes_or_halfwords_remaining != 0);
       }
-      apply_ym2612_bank0_writes(&DAT_0380bb38);
+      apply_ym2612_bank0_writes(&chip_write_staging_buffer);
     }
-    iVar4 = shared_audio_descriptor[9];
-    if (iVar4 != 0) {
-      if (0 < iVar4) {
-        iVar4 = iVar4 + 1 >> 1;
-        puVar1 = &DAT_0380bb38;
-        puVar5 = (undefined2 *)shared_audio_descriptor[8];
+    bytes_or_halfwords_remaining = shared_audio_descriptor[9];
+    if (bytes_or_halfwords_remaining != 0) {
+      if (0 < bytes_or_halfwords_remaining) {
+        bytes_or_halfwords_remaining = bytes_or_halfwords_remaining + 1 >> 1;
+        destination_halfword_cursor = &chip_write_staging_buffer;
+        source_or_pcm_cursor = (undefined2 *)shared_audio_descriptor[8];
         do {
-          iVar4 = iVar4 + -1;
-          *puVar1 = *puVar5;
-          puVar1 = puVar1 + 1;
-          puVar5 = puVar5 + 1;
-        } while (iVar4 != 0);
+          bytes_or_halfwords_remaining = bytes_or_halfwords_remaining + -1;
+          *destination_halfword_cursor = *source_or_pcm_cursor;
+          destination_halfword_cursor = destination_halfword_cursor + 1;
+          source_or_pcm_cursor = source_or_pcm_cursor + 1;
+        } while (bytes_or_halfwords_remaining != 0);
       }
-      apply_ym2612_bank1_writes(&DAT_0380bb38);
+      apply_ym2612_bank1_writes(&chip_write_staging_buffer);
     }
-    iVar4 = shared_audio_descriptor[0xd];
-    if (iVar4 != 0) {
-      if (0 < iVar4) {
-        iVar4 = iVar4 + 1 >> 1;
-        puVar1 = &DAT_0380bb38;
-        puVar5 = (undefined2 *)shared_audio_descriptor[0xc];
+    bytes_or_halfwords_remaining = shared_audio_descriptor[0xd];
+    if (bytes_or_halfwords_remaining != 0) {
+      if (0 < bytes_or_halfwords_remaining) {
+        bytes_or_halfwords_remaining = bytes_or_halfwords_remaining + 1 >> 1;
+        destination_halfword_cursor = &chip_write_staging_buffer;
+        source_or_pcm_cursor = (undefined2 *)shared_audio_descriptor[0xc];
         do {
-          iVar4 = iVar4 + -1;
-          *puVar1 = *puVar5;
-          puVar1 = puVar1 + 1;
-          puVar5 = puVar5 + 1;
-        } while (iVar4 != 0);
+          bytes_or_halfwords_remaining = bytes_or_halfwords_remaining + -1;
+          *destination_halfword_cursor = *source_or_pcm_cursor;
+          destination_halfword_cursor = destination_halfword_cursor + 1;
+          source_or_pcm_cursor = source_or_pcm_cursor + 1;
+        } while (bytes_or_halfwords_remaining != 0);
       }
-      apply_psg_latch_and_data_bytes(&DAT_0380bb38);
+      apply_psg_latch_and_data_bytes(&chip_write_staging_buffer);
     }
-    DAT_0380bdf4 = 1;
+    audio_refills_enabled = 1;
     break;
   case 0xc:
     arm_veneer_for_bios_wait_for_vblank(command_id,*payload);
@@ -169,17 +169,17 @@ void handle_arm9_audio_command(undefined4 command_id,undefined4 *payload)
     _DAT_04000500 = 0x807f;
     break;
   case 0x10:
-    DAT_0380b8a0 = shared_audio_descriptor[1];
-    if ((DAT_0380b8a0 != 0) && (0 < DAT_0380b8a0)) {
-      iVar4 = DAT_0380b8a0 + 1 >> 1;
-      puVar1 = &DAT_0380b8a4;
-      puVar5 = (undefined2 *)*shared_audio_descriptor;
+    dac_staged_byte_count = shared_audio_descriptor[1];
+    if ((dac_staged_byte_count != 0) && (0 < dac_staged_byte_count)) {
+      bytes_or_halfwords_remaining = dac_staged_byte_count + 1 >> 1;
+      destination_halfword_cursor = &dac_staged_bytes;
+      source_or_pcm_cursor = (undefined2 *)*shared_audio_descriptor;
       do {
-        iVar4 = iVar4 + -1;
-        *puVar1 = *puVar5;
-        puVar1 = puVar1 + 1;
-        puVar5 = puVar5 + 1;
-      } while (iVar4 != 0);
+        bytes_or_halfwords_remaining = bytes_or_halfwords_remaining + -1;
+        *destination_halfword_cursor = *source_or_pcm_cursor;
+        destination_halfword_cursor = destination_halfword_cursor + 1;
+        source_or_pcm_cursor = source_or_pcm_cursor + 1;
+      } while (bytes_or_halfwords_remaining != 0);
     }
     puVar2[1] = 0;
   }
