@@ -1,20 +1,20 @@
 /* ARM9 ds services — grouped REA pseudocode.
- * Use functions.tsv for addresses, names and analysis notes.
+ * See functions.tsv for libnds source matches and corrections from native instructions.
  */
 
 // 0x02001180  wait_six_vblanks_per_unit
 
-void wait_six_vblanks_per_unit(int param_1)
+void wait_six_vblanks_per_unit(int units)
 
 {
-  int iVar1;
+  int elapsed_vblanks;
   
-  if (param_1 * 6 != 0) {
-    iVar1 = 0;
+  if (units * 6 != 0) {
+    elapsed_vblanks = 0;
     do {
-      iVar1 = iVar1 + 1;
+      elapsed_vblanks = elapsed_vblanks + 1;
       swiWaitForVBlank();
-    } while (iVar1 != param_1 * 6);
+    } while (elapsed_vblanks != units * 6);
   }
   return;
 }
@@ -34,7 +34,7 @@ undefined4 default_dldi_operation_returns_false(void)
 ushort keysDown(void)
 
 {
-  return DAT_020b4ca0 & ~DAT_020b4ca2;
+  return keys & ~keysold;
 }
 
 
@@ -42,44 +42,44 @@ ushort keysDown(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 vramSetMainBanks(undefined1 param_1,undefined1 param_2,undefined1 param_3,undefined1 param_4)
+undefined4 vramSetMainBanks(undefined1 bank_a,undefined1 bank_b,undefined1 bank_c,undefined1 bank_d)
 
 {
-  undefined4 uVar1;
+  undefined4 vramTemp;
   
-  uVar1 = _DAT_04000240;
-  _DAT_04000240 = CONCAT13(param_4,CONCAT12(param_3,CONCAT11(param_2,param_1))) | 0x80808080;
-  return uVar1;
+  vramTemp = VRAM_CR;
+  VRAM_CR = CONCAT13(bank_d,CONCAT12(bank_c,CONCAT11(bank_b,bank_a))) | 0x80808080;
+  return vramTemp;
 }
 
 
 // 0x0207fd44  vramSetBankE
 
-void vramSetBankE(byte param_1)
+void vramSetBankE(byte bank_e)
 
 {
-  DAT_04000244 = param_1 | 0x80;
+  VRAM_E_CR = bank_e | 0x80;
   return;
 }
 
 
 // 0x0207fda8  cardWriteCommand
 
-void cardWriteCommand(int param_1)
+void cardWriteCommand(int command)
 
 {
-  undefined1 *puVar1;
-  int iVar2;
-  int iVar3;
+  undefined1 *command_byte;
+  int offset_from_last_byte;
+  int index;
   
-  DAT_040001a1 = 0xc0;
-  iVar3 = 0;
+  CARD_CR1H = 0xc0;
+  index = 0;
   do {
-    puVar1 = (undefined1 *)(param_1 + iVar3);
-    iVar2 = -iVar3;
-    iVar3 = iVar3 + 1;
-    (&DAT_040001af)[iVar2] = *puVar1;
-  } while (iVar3 != 8);
+    command_byte = (undefined1 *)(command + index);
+    offset_from_last_byte = -index;
+    index = index + 1;
+    (&card_command_last_byte)[offset_from_last_byte] = *command_byte;
+  } while (index != 8);
   return;
 }
 
@@ -88,22 +88,22 @@ void cardWriteCommand(int param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void cardPolledTransfer(uint param_1,undefined4 *param_2,int param_3,undefined4 param_4)
+void cardPolledTransfer(uint flags,undefined4 *destination,int length,undefined4 command)
 
 {
-  undefined4 *puVar1;
+  undefined4 *target;
   
-  cardWriteCommand(param_4);
-  puVar1 = param_2 + param_3;
-  _DAT_040001a4 = param_1;
+  cardWriteCommand(command);
+  target = destination + length;
+  CARD_CR2 = flags;
   do {
-    if ((_DAT_040001a4 & 0x800000) != 0) {
-      if (param_2 < puVar1) {
-        *param_2 = _DAT_04100010;
+    if ((CARD_CR2 & 0x800000) != 0) {
+      if (destination < target) {
+        *destination = CARD_DATA_RD;
       }
-      param_2 = param_2 + 1;
+      destination = destination + 1;
     }
-  } while ((int)_DAT_040001a4 < 0);
+  } while ((int)CARD_CR2 < 0);
   return;
 }
 
@@ -112,15 +112,15 @@ void cardPolledTransfer(uint param_1,undefined4 *param_2,int param_3,undefined4 
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void cardStartTransfer(undefined4 param_1,undefined4 param_2,int param_3,undefined4 param_4)
+void cardStartTransfer(undefined4 command,undefined4 destination,int channel_offset,undefined4 flags)
 
 {
   cardWriteCommand();
-  param_3 = param_3 * 0xc;
-  *(undefined1 **)(param_3 + 0x40000b0) = &DAT_04100010;
-  *(undefined4 *)(param_3 + 0x40000b4) = param_2;
-  *(undefined4 *)(param_3 + 0x40000b8) = 0xaf000001;
-  _DAT_040001a4 = param_4;
+  channel_offset = channel_offset * 0xc;
+  *(undefined1 **)(channel_offset + 0x40000b0) = &CARD_DATA_RD;
+  *(undefined4 *)(channel_offset + 0x40000b4) = destination;
+  *(undefined4 *)(channel_offset + 0x40000b8) = 0xaf000001;
+  CARD_CR2 = flags;
   return;
 }
 
@@ -129,31 +129,31 @@ void cardStartTransfer(undefined4 param_1,undefined4 param_2,int param_3,undefin
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void irqSet(uint param_1,undefined4 param_2)
+void irqSet(uint mask,undefined4 handler)
 
 {
-  int iVar1;
-  uint *puVar2;
+  int i;
+  uint *entry_mask;
   
-  if (param_1 != 0) {
-    puVar2 = &DAT_010056e4;
-    iVar1 = 0;
+  if (mask != 0) {
+    entry_mask = &irq_table_first_mask;
+    i = 0;
     do {
-      if ((*puVar2 == 0) || (param_1 == *puVar2)) {
-        (&DAT_010056e0)[iVar1 * 2] = param_2;
-        (&DAT_010056e4)[iVar1 * 2] = param_1;
-        if ((int)(param_1 << 0x1f) < 0) {
-          _DAT_04000004 = _DAT_04000004 | 8;
+      if ((*entry_mask == 0) || (mask == *entry_mask)) {
+        (&irq_table_first_handler)[i * 2] = handler;
+        (&irq_table_first_mask)[i * 2] = mask;
+        if ((int)(mask << 0x1f) < 0) {
+          REG_DISPSTAT = REG_DISPSTAT | 8;
         }
-        if ((int)(param_1 << 0x1e) < 0) {
-          _DAT_04000004 = _DAT_04000004 | 0x10;
+        if ((int)(mask << 0x1e) < 0) {
+          REG_DISPSTAT = REG_DISPSTAT | 0x10;
         }
-        _DAT_04000210 = _DAT_04000210 | param_1;
+        REG_IE = REG_IE | mask;
         return;
       }
-      iVar1 = iVar1 + 1;
-      puVar2 = puVar2 + 2;
-    } while (iVar1 != 0x19);
+      i = i + 1;
+      entry_mask = entry_mask + 2;
+    } while (i != 0x19);
   }
   return;
 }
@@ -166,18 +166,18 @@ void irqSet(uint param_1,undefined4 param_2)
 void irqInit(void)
 
 {
-  undefined4 *puVar1;
+  undefined4 *entry;
   
-  puVar1 = &DAT_010056e0;
+  entry = &irq_table_first_handler;
   do {
-    *puVar1 = &DAT_02080095;
-    puVar1[1] = 0;
-    puVar1 = puVar1 + 2;
-  } while (puVar1 != (undefined4 *)&DAT_010057a8);
-  _DAT_0b003ffc = &DAT_010057a8;
-  _DAT_04000210 = 0;
-  _DAT_04000214 = 0xffffffff;
-  _DAT_04000208 = 1;
+    *entry = &irqDummy;
+    entry[1] = 0;
+    entry = entry + 2;
+  } while (entry != (undefined4 *)&IntrMain);
+  IRQ_HANDLER = &IntrMain;
+  REG_IE = 0;
+  REG_IF = 0xffffffff;
+  REG_IME = 1;
   return;
 }
 
@@ -186,32 +186,32 @@ void irqInit(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void irqClear(uint param_1)
+void irqClear(uint mask)
 
 {
-  uint *puVar1;
-  int iVar2;
+  uint *entry_mask;
+  int i;
   
-  puVar1 = &DAT_010056e4;
-  iVar2 = 0;
+  entry_mask = &irq_table_first_mask;
+  i = 0;
   do {
-    if (param_1 == *puVar1) {
-      (&DAT_010056e0)[iVar2 * 2] = &DAT_02080095;
-      if ((int)(param_1 << 0x1f) < 0) {
-        _DAT_04000004 = _DAT_04000004 & 0xfff7;
+    if (mask == *entry_mask) {
+      (&irq_table_first_handler)[i * 2] = &irqDummy;
+      if ((int)(mask << 0x1f) < 0) {
+        REG_DISPSTAT = REG_DISPSTAT & 0xfff7;
       }
-      if ((int)(param_1 << 0x1e) < 0) {
-        _DAT_04000004 = _DAT_04000004 & 0xffef;
+      if ((int)(mask << 0x1e) < 0) {
+        REG_DISPSTAT = REG_DISPSTAT & 0xffef;
       }
-      if ((int)(param_1 << 0x1d) < 0) {
-        _DAT_04000004 = _DAT_04000004 & 0xffdf;
+      if ((int)(mask << 0x1d) < 0) {
+        REG_DISPSTAT = REG_DISPSTAT & 0xffdf;
       }
-      _DAT_04000210 = _DAT_04000210 & ~param_1;
+      REG_IE = REG_IE & ~mask;
       return;
     }
-    iVar2 = iVar2 + 1;
-    puVar1 = puVar1 + 2;
-  } while (iVar2 != 0x19);
+    i = i + 1;
+    entry_mask = entry_mask + 2;
+  } while (i != 0x19);
   return;
 }
 
@@ -220,13 +220,13 @@ void irqClear(uint param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void irqInitHandler(undefined4 param_1)
+void irqInitHandler(undefined4 handler)
 
 {
-  _DAT_04000214 = 0xffffffff;
-  _DAT_04000210 = 0;
-  _DAT_0b003ffc = param_1;
-  _DAT_04000208 = 1;
+  REG_IF = 0xffffffff;
+  REG_IE = 0;
+  IRQ_HANDLER = handler;
+  REG_IME = 1;
   return;
 }
 
@@ -235,20 +235,20 @@ void irqInitHandler(undefined4 param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void irqEnable(uint param_1)
+void irqEnable(uint irq)
 
 {
-  if ((param_1 & 1) != 0) {
-    _DAT_04000004 = _DAT_04000004 | 8;
+  if ((irq & 1) != 0) {
+    REG_DISPSTAT = REG_DISPSTAT | 8;
   }
-  if ((int)(param_1 << 0x1e) < 0) {
-    _DAT_04000004 = _DAT_04000004 | 0x10;
+  if ((int)(irq << 0x1e) < 0) {
+    REG_DISPSTAT = REG_DISPSTAT | 0x10;
   }
-  if ((int)(param_1 << 0x1d) < 0) {
-    _DAT_04000004 = _DAT_04000004 | 0x20;
+  if ((int)(irq << 0x1d) < 0) {
+    REG_DISPSTAT = REG_DISPSTAT | 0x20;
   }
-  _DAT_04000210 = _DAT_04000210 | param_1;
-  _DAT_04000208 = 1;
+  REG_IE = REG_IE | irq;
+  REG_IME = 1;
   return;
 }
 
@@ -257,35 +257,35 @@ void irqEnable(uint param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void irqDisable(uint param_1)
+void irqDisable(uint irq)
 
 {
-  if ((int)(param_1 << 0x1f) < 0) {
-    _DAT_04000004 = _DAT_04000004 & 0xfff7;
+  if ((int)(irq << 0x1f) < 0) {
+    REG_DISPSTAT = REG_DISPSTAT & 0xfff7;
   }
-  if ((int)(param_1 << 0x1e) < 0) {
-    _DAT_04000004 = _DAT_04000004 & 0xffef;
+  if ((int)(irq << 0x1e) < 0) {
+    REG_DISPSTAT = REG_DISPSTAT & 0xffef;
   }
-  if ((int)(param_1 << 0x1d) < 0) {
-    _DAT_04000004 = _DAT_04000004 & 0xffdf;
+  if ((int)(irq << 0x1d) < 0) {
+    REG_DISPSTAT = REG_DISPSTAT & 0xffdf;
   }
-  _DAT_04000210 = _DAT_04000210 & ~param_1;
+  REG_IE = REG_IE & ~irq;
   return;
 }
 
 
 // 0x020802c4  DC_FlushRange
 
-void DC_FlushRange(uint param_1,int param_2)
+void DC_FlushRange(uint base,int size)
 
 {
-  uint uVar1;
+  uint cache_line;
   
-  uVar1 = param_1 & 0xffffffe0;
+  cache_line = base & 0xffffffe0;
   do {
-    coproc_moveto_Invalidate_Data_Cache_by_MVA(uVar1);
-    uVar1 = uVar1 + 0x20;
-  } while ((int)uVar1 < (int)(param_2 + param_1));
+    coproc_moveto_Invalidate_Data_Cache_by_MVA(cache_line);
+    cache_line = cache_line + 0x20;
+  } while ((int)cache_line < (int)(size + base));
   return;
 }
 
@@ -335,23 +335,23 @@ void swiCopy(void)
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
 undefined4
-vramSetMainBanks(undefined1 param_1,undefined1 param_2,undefined1 param_3,undefined1 param_4)
+vramSetMainBanks(undefined1 bank_a,undefined1 bank_b,undefined1 bank_c,undefined1 bank_d)
 
 {
-  undefined4 uVar1;
+  undefined4 vramTemp;
   
-  uVar1 = _DAT_04000240;
-  _DAT_04000240 = CONCAT13(param_4,CONCAT12(param_3,CONCAT11(param_2,param_1))) | 0x80808080;
-  return uVar1;
+  vramTemp = VRAM_CR;
+  VRAM_CR = CONCAT13(bank_d,CONCAT12(bank_c,CONCAT11(bank_b,bank_a))) | 0x80808080;
+  return vramTemp;
 }
 
 
 // 0x02085934  vramSetBankE_arm_veneer
 
-void vramSetBankE(byte param_1)
+void vramSetBankE(byte bank_e)
 
 {
-  DAT_04000244 = param_1 | 0x80;
+  VRAM_E_CR = bank_e | 0x80;
   return;
 }
 

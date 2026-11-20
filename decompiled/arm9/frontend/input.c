@@ -207,7 +207,7 @@ char read_gameplay_menu_and_touch_actions(void)
 undefined2 keysHeld(void)
 
 {
-  return DAT_020b4ca0;
+  return keys;
 }
 
 
@@ -221,19 +221,19 @@ void scanKeys(void)
   ushort uVar1;
   bool bVar2;
   
-  DAT_020b4ca2 = DAT_020b4ca0;
-  uVar1 = (~_DAT_04000130 & 0x3ff | (~_DAT_027ff018 & 3) << 10 | (~_DAT_027ff018 & 0xc0) << 6) ^
+  keysold = keys;
+  uVar1 = (~REG_KEYINPUT & 0x3ff | (~_DAT_027ff018 & 3) << 10 | (~_DAT_027ff018 & 0xc0) << 6) ^
           0x2000;
-  bVar2 = DAT_020b4ca0 != uVar1;
-  DAT_020b4ca0 = uVar1;
+  bVar2 = keys != uVar1;
+  keys = uVar1;
   if (bVar2) {
-    DAT_0208f392 = '<';
-    DAT_020b4ca4 = keysDown();
+    count = '<';
+    keysrepeat = keysDown();
   }
-  DAT_0208f392 = DAT_0208f392 + -1;
-  if (DAT_0208f392 == '\0') {
-    DAT_0208f392 = '\x1e';
-    DAT_020b4ca4 = uVar1;
+  count = count + -1;
+  if (count == '\0') {
+    count = '\x1e';
+    keysrepeat = uVar1;
   }
   return;
 }

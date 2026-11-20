@@ -34,19 +34,19 @@ void _call_via_r3(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void irqDisable(uint param_1)
+void irqDisable(uint irq)
 
 {
-  if ((int)(param_1 << 0x1f) < 0) {
-    _DAT_04000004 = _DAT_04000004 & 0xfff7;
+  if ((int)(irq << 0x1f) < 0) {
+    REG_DISPSTAT = REG_DISPSTAT & 0xfff7;
   }
-  if ((int)(param_1 << 0x1e) < 0) {
-    _DAT_04000004 = _DAT_04000004 & 0xffef;
+  if ((int)(irq << 0x1e) < 0) {
+    REG_DISPSTAT = REG_DISPSTAT & 0xffef;
   }
-  if ((int)(param_1 << 0x1d) < 0) {
-    _DAT_04000004 = _DAT_04000004 & 0xffdf;
+  if ((int)(irq << 0x1d) < 0) {
+    REG_DISPSTAT = REG_DISPSTAT & 0xffdf;
   }
-  _DAT_04000210 = _DAT_04000210 & ~param_1;
+  REG_IE = REG_IE & ~irq;
   return;
 }
 
@@ -55,20 +55,20 @@ void irqDisable(uint param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void irqEnable(uint param_1)
+void irqEnable(uint irq)
 
 {
-  if ((param_1 & 1) != 0) {
-    _DAT_04000004 = _DAT_04000004 | 8;
+  if ((irq & 1) != 0) {
+    REG_DISPSTAT = REG_DISPSTAT | 8;
   }
-  if ((int)(param_1 << 0x1e) < 0) {
-    _DAT_04000004 = _DAT_04000004 | 0x10;
+  if ((int)(irq << 0x1e) < 0) {
+    REG_DISPSTAT = REG_DISPSTAT | 0x10;
   }
-  if ((int)(param_1 << 0x1d) < 0) {
-    _DAT_04000004 = _DAT_04000004 | 0x20;
+  if ((int)(irq << 0x1d) < 0) {
+    REG_DISPSTAT = REG_DISPSTAT | 0x20;
   }
-  _DAT_04000210 = _DAT_04000210 | param_1;
-  _DAT_04000208 = 1;
+  REG_IE = REG_IE | irq;
+  REG_IME = 1;
   return;
 }
 
@@ -77,31 +77,31 @@ void irqEnable(uint param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void irqSet(uint param_1,undefined4 param_2)
+void irqSet(uint mask,undefined4 handler)
 
 {
-  int iVar1;
-  uint *puVar2;
+  int i;
+  uint *entry_mask;
   
-  if (param_1 != 0) {
-    puVar2 = &DAT_010056e4;
-    iVar1 = 0;
+  if (mask != 0) {
+    entry_mask = &irq_table_first_mask;
+    i = 0;
     do {
-      if ((*puVar2 == 0) || (param_1 == *puVar2)) {
-        (&DAT_010056e0)[iVar1 * 2] = param_2;
-        (&DAT_010056e4)[iVar1 * 2] = param_1;
-        if ((int)(param_1 << 0x1f) < 0) {
-          _DAT_04000004 = _DAT_04000004 | 8;
+      if ((*entry_mask == 0) || (mask == *entry_mask)) {
+        (&irq_table_first_handler)[i * 2] = handler;
+        (&irq_table_first_mask)[i * 2] = mask;
+        if ((int)(mask << 0x1f) < 0) {
+          REG_DISPSTAT = REG_DISPSTAT | 8;
         }
-        if ((int)(param_1 << 0x1e) < 0) {
-          _DAT_04000004 = _DAT_04000004 | 0x10;
+        if ((int)(mask << 0x1e) < 0) {
+          REG_DISPSTAT = REG_DISPSTAT | 0x10;
         }
-        _DAT_04000210 = _DAT_04000210 | param_1;
+        REG_IE = REG_IE | mask;
         return;
       }
-      iVar1 = iVar1 + 1;
-      puVar2 = puVar2 + 2;
-    } while (iVar1 != 0x19);
+      i = i + 1;
+      entry_mask = entry_mask + 2;
+    } while (i != 0x19);
   }
   return;
 }
@@ -114,18 +114,18 @@ void irqSet(uint param_1,undefined4 param_2)
 void irqInit(void)
 
 {
-  undefined4 *puVar1;
+  undefined4 *entry;
   
-  puVar1 = &DAT_010056e0;
+  entry = &irq_table_first_handler;
   do {
-    *puVar1 = &DAT_02080095;
-    puVar1[1] = 0;
-    puVar1 = puVar1 + 2;
-  } while (puVar1 != (undefined4 *)&DAT_010057a8);
-  _DAT_0b003ffc = &DAT_010057a8;
-  _DAT_04000210 = 0;
-  _DAT_04000214 = 0xffffffff;
-  _DAT_04000208 = 1;
+    *entry = &irqDummy;
+    entry[1] = 0;
+    entry = entry + 2;
+  } while (entry != (undefined4 *)&IntrMain);
+  IRQ_HANDLER = &IntrMain;
+  REG_IE = 0;
+  REG_IF = 0xffffffff;
+  REG_IME = 1;
   return;
 }
 
@@ -134,32 +134,32 @@ void irqInit(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void irqClear(uint param_1)
+void irqClear(uint mask)
 
 {
-  uint *puVar1;
-  int iVar2;
+  uint *entry_mask;
+  int i;
   
-  puVar1 = &DAT_010056e4;
-  iVar2 = 0;
+  entry_mask = &irq_table_first_mask;
+  i = 0;
   do {
-    if (param_1 == *puVar1) {
-      (&DAT_010056e0)[iVar2 * 2] = &DAT_02080095;
-      if ((int)(param_1 << 0x1f) < 0) {
-        _DAT_04000004 = _DAT_04000004 & 0xfff7;
+    if (mask == *entry_mask) {
+      (&irq_table_first_handler)[i * 2] = &irqDummy;
+      if ((int)(mask << 0x1f) < 0) {
+        REG_DISPSTAT = REG_DISPSTAT & 0xfff7;
       }
-      if ((int)(param_1 << 0x1e) < 0) {
-        _DAT_04000004 = _DAT_04000004 & 0xffef;
+      if ((int)(mask << 0x1e) < 0) {
+        REG_DISPSTAT = REG_DISPSTAT & 0xffef;
       }
-      if ((int)(param_1 << 0x1d) < 0) {
-        _DAT_04000004 = _DAT_04000004 & 0xffdf;
+      if ((int)(mask << 0x1d) < 0) {
+        REG_DISPSTAT = REG_DISPSTAT & 0xffdf;
       }
-      _DAT_04000210 = _DAT_04000210 & ~param_1;
+      REG_IE = REG_IE & ~mask;
       return;
     }
-    iVar2 = iVar2 + 1;
-    puVar1 = puVar1 + 2;
-  } while (iVar2 != 0x19);
+    i = i + 1;
+    entry_mask = entry_mask + 2;
+  } while (i != 0x19);
   return;
 }
 
@@ -174,19 +174,19 @@ void scanKeys(void)
   ushort uVar1;
   bool bVar2;
   
-  DAT_020b4ca2 = DAT_020b4ca0;
-  uVar1 = (~_DAT_04000130 & 0x3ff | (~_DAT_027ff018 & 3) << 10 | (~_DAT_027ff018 & 0xc0) << 6) ^
+  keysold = keys;
+  uVar1 = (~REG_KEYINPUT & 0x3ff | (~_DAT_027ff018 & 3) << 10 | (~_DAT_027ff018 & 0xc0) << 6) ^
           0x2000;
-  bVar2 = DAT_020b4ca0 != uVar1;
-  DAT_020b4ca0 = uVar1;
+  bVar2 = keys != uVar1;
+  keys = uVar1;
   if (bVar2) {
-    DAT_0208f392 = '<';
-    DAT_020b4ca4 = keysDown();
+    count = '<';
+    keysrepeat = keysDown();
   }
-  DAT_0208f392 = DAT_0208f392 + -1;
-  if (DAT_0208f392 == '\0') {
-    DAT_0208f392 = '\x1e';
-    DAT_020b4ca4 = uVar1;
+  count = count + -1;
+  if (count == '\0') {
+    count = '\x1e';
+    keysrepeat = uVar1;
   }
   return;
 }
@@ -197,7 +197,7 @@ void scanKeys(void)
 undefined2 keysHeld(void)
 
 {
-  return DAT_020b4ca0;
+  return keys;
 }
 
 
