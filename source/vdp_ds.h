@@ -10,5 +10,6 @@ bool vdp_ds_prepare(const struct megadrive *md);
 void vdp_ds_present(void);
 void vdp_ds_frame_start(void);
 void vdp_ds_hide(void);
+void vdp_ds_invalidate(void);
 
 #endif

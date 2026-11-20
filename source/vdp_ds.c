@@ -19,19 +19,20 @@ struct page {
     uint32_t scroll[VDP_VIEW_HEIGHT][2];
     uint16_t control[4];
     uint16_t objects[OBJECTS][4];
-    // Retain the previous contents of each slot to skip redundant uploads.
-    uint8_t patterns[BG_PATTERNS][TILE_BYTES];
+    // Only a changed source pattern or a dirty VRAM block needs an upload.
+    uint16_t tile_slots[GENESIS_PATTERNS];
     uint16_t pattern_sources[BG_PATTERNS];
-    uint8_t name_tables[2][MAP_WORDS * 2];
+    uint32_t pattern_revisions[BG_PATTERNS];
+    uint32_t map_revision, last_revision;
     unsigned map_base[2], width, height;
     bool maps_cached;
-    uint8_t sprite_patterns[OBJ_PATTERNS * 4][TILE_BYTES];
+    uint16_t sprite_sources[OBJ_PATTERNS * 4];
+    uint32_t sprite_revisions[OBJ_PATTERNS * 4];
     unsigned used_patterns;
     unsigned used_sprite_patterns;
 };
 
 static struct page pages[2];
-static uint16_t slots[GENESIS_PATTERNS];
 static unsigned visible_page;
 static bool visible;
 static bool ready;
@@ -78,6 +79,61 @@ void vdp_ds_init(void)
     irqSet(IRQ_HBLANK, hblank);
 }
 
+static void refresh_pattern(const struct megadrive *md, struct page *page,
+                            volatile uint16_t *tiles, unsigned slot,
+                            unsigned pattern, bool already_written)
+{
+    uint32_t revision = md->vram_revisions[pattern];
+    if (!already_written || page->pattern_sources[slot] != pattern ||
+        page->pattern_revisions[slot] != revision) {
+        upload_pattern(tiles + slot * (TILE_BYTES / 2), md->vram + pattern * TILE_BYTES);
+        page->pattern_sources[slot] = pattern;
+        page->pattern_revisions[slot] = revision;
+    }
+}
+
+static bool update_map(const struct megadrive *md, struct page *page, unsigned plane,
+                       unsigned next, unsigned base, unsigned width, unsigned height,
+                       unsigned old_count, bool incremental)
+{
+    unsigned tile_base = 4 + next * 2;
+    volatile uint16_t *tiles = (uint16_t *)BG_GFX + tile_base * 8192;
+    unsigned high_map = next * MAPS_PER_PAGE + plane;
+    unsigned low_map = high_map + 2;
+    volatile uint16_t *high = (uint16_t *)BG_GFX + high_map * MAP_WORDS;
+    volatile uint16_t *low = (uint16_t *)BG_GFX + low_map * MAP_WORDS;
+    unsigned size = (width == 64 ? 1 : 0) | (height == 64 ? 2 : 0);
+    page->control[plane] = BG_MAP_BASE(high_map * 4) | BG_TILE_BASE(tile_base) | size << 14;
+    page->control[plane + 2] = BG_MAP_BASE(low_map * 4) | BG_TILE_BASE(tile_base) | size << 14 | 2;
+
+    unsigned row_shift = width == 64 ? 6 : 5;
+    for (unsigned cell = 0; cell < width * height; cell += 16) {
+        unsigned address = base + cell * 2;
+        if (incremental && (int32_t)(md->vram_revisions[address / TILE_BYTES] -
+                                     page->map_revision) <= 0)
+            continue;
+        // Genesis rows are linear. DS text maps split into 32 x 32 screens.
+        unsigned x = cell & (width - 1), y = cell >> row_shift;
+        unsigned index = ((y >> 5) * (width >> 5) + (x >> 5)) * 1024 +
+                         (y & 31) * 32 + (x & 31);
+        for (unsigned j = 0; j < 16; ++j) {
+            uint16_t attr = vram_word(md, address + 2*j);
+            unsigned pattern = attr & 0x7ff;
+            unsigned slot = page->tile_slots[pattern];
+            if (slot == UINT16_MAX) {
+                if (page->used_patterns == BG_PATTERNS)
+                    return false;
+                page->tile_slots[pattern] = slot = page->used_patterns++;
+                refresh_pattern(md, page, tiles, slot, pattern, slot < old_count);
+            }
+            unsigned entry = slot | ((attr >> 1) & 0x3c00);
+            high[index + j] = (attr & 0x8000) ? entry : 0;
+            low[index + j] = (attr & 0x8000) ? 0 : entry;
+        }
+    }
+    return true;
+}
+
 static bool prepare_maps(const struct megadrive *md, struct page *page, unsigned next,
                          unsigned width, unsigned height)
 {
@@ -87,79 +143,35 @@ static bool prepare_maps(const struct megadrive *md, struct page *page, unsigned
     unsigned bytes = width * height * 2;
     unsigned bases[2] = {(md->vdp_registers[2] & 0x38) << 10, (md->vdp_registers[4] & 7) << 13};
     bool cacheable = bases[0] + bytes <= 0x10000 && bases[1] + bytes <= 0x10000;
-    if (cacheable && page->maps_cached && page->width == width && page->height == height &&
-        page->map_base[0] == bases[0] && page->map_base[1] == bases[1] &&
-        !memcmp(page->name_tables[0], md->vram + bases[0], bytes) &&
-        !memcmp(page->name_tables[1], md->vram + bases[1], bytes)) {
-        for (unsigned slot = 1; slot < page->used_patterns; ++slot) {
-            const uint8_t *data = md->vram + page->pattern_sources[slot] * TILE_BYTES;
-            if (memcmp(page->patterns[slot], data, TILE_BYTES)) {
-                upload_pattern(tiles + slot * (TILE_BYTES / 2), data);
-                memcpy(page->patterns[slot], data, TILE_BYTES);
-            }
-        }
-        return true;
-    }
-    page->maps_cached = false;
-    memset(slots, 0xff, sizeof(slots));
-    if (!page->used_patterns)
-        for (unsigned i = 0; i < TILE_BYTES / 2; ++i)
-            tiles[i] = 0;
-    unsigned count = 1, old_count = page->used_patterns;
-    unsigned size = (width == 64 ? 1 : 0) | (height == 64 ? 2 : 0);
-    for (unsigned plane = 0; plane < 2; ++plane) {
-        unsigned base = bases[plane];
-        unsigned high_map = next * MAPS_PER_PAGE + plane;
-        unsigned low_map = high_map + 2;
-        volatile uint16_t *high = (uint16_t *)BG_GFX + high_map * MAP_WORDS;
-        volatile uint16_t *low = (uint16_t *)BG_GFX + low_map * MAP_WORDS;
-        page->control[plane] = BG_MAP_BASE(high_map * 4) | BG_TILE_BASE(tile_base) | size << 14;
-        page->control[plane+2] = BG_MAP_BASE(low_map * 4) | BG_TILE_BASE(tile_base) | size << 14 | 2;
-        unsigned index = 0;
-        for (unsigned block_y = 0; block_y < height; block_y += 32) {
-            for (unsigned block_x = 0; block_x < width; block_x += 32) {
-                for (unsigned y = block_y; y < block_y + 32; ++y) {
-                    unsigned address = base + (y * width + block_x) * 2;
-                    for (unsigned x = 0; x < 32; ++x, address += 2, ++index) {
-                        uint16_t attr = vram_word(md, address);
-                        unsigned pattern = attr & 0x7ff;
-                        unsigned slot = slots[pattern];
-                        if (slot == UINT16_MAX) {
-                            if (count == BG_PATTERNS) {
-                                page->used_patterns = 0;
-                                return false;
-                            }
-                            slots[pattern] = slot = count++;
-                            page->pattern_sources[slot] = pattern;
-                            const uint8_t *data = md->vram + pattern * TILE_BYTES;
-                            if (slot >= old_count || memcmp(page->patterns[slot], data, TILE_BYTES)) {
-                                upload_pattern(tiles + slot * (TILE_BYTES / 2), data);
-                                memcpy(page->patterns[slot], data, TILE_BYTES);
-                            }
-                        }
-                        unsigned mapped = slot | ((attr >> 1) & 0x3c00);
-                        if (attr & 0x8000) {
-                            high[index] = mapped;
-                            low[index] = 0;
-                        } else {
-                            high[index] = 0;
-                            low[index] = mapped;
-                        }
-                    }
-                }
-            }
+    unsigned old_count = page->used_patterns;
+    bool incremental = cacheable && page->maps_cached && page->width == width &&
+        page->height == height && page->map_base[0] == bases[0] &&
+        page->map_base[1] == bases[1] &&
+        md->video_revision - page->map_revision < UINT32_C(0x80000000);
+    if (incremental && update_map(md, page, 0, next, bases[0], width, height, old_count, true) &&
+        update_map(md, page, 1, next, bases[1], width, height, old_count, true)) {
+        for (unsigned slot = 1; slot < old_count; ++slot)
+            refresh_pattern(md, page, tiles, slot, page->pattern_sources[slot], true);
+    } else {
+        page->maps_cached = false;
+        old_count = page->used_patterns;
+        memset(page->tile_slots, 0xff, sizeof(page->tile_slots));
+        if (!old_count)
+            for (unsigned i = 0; i < TILE_BYTES / 2; ++i)
+                tiles[i] = 0;
+        page->used_patterns = 1;
+        if (!update_map(md, page, 0, next, bases[0], width, height, old_count, false) ||
+            !update_map(md, page, 1, next, bases[1], width, height, old_count, false)) {
+            page->used_patterns = 0;
+            return false;
         }
     }
-    page->used_patterns = count;
-    if (cacheable) {
-        for (unsigned plane = 0; plane < 2; ++plane) {
-            memcpy(page->name_tables[plane], md->vram + bases[plane], bytes);
-            page->map_base[plane] = bases[plane];
-        }
-        page->width = width;
-        page->height = height;
-        page->maps_cached = true;
-    }
+    page->map_base[0] = bases[0];
+    page->map_base[1] = bases[1];
+    page->map_revision = md->video_revision;
+    page->width = width;
+    page->height = height;
+    page->maps_cached = cacheable;
     return true;
 }
 
@@ -214,12 +226,14 @@ static bool prepare_sprites(const struct megadrive *md, struct page *page, unsig
                 for (unsigned oy = 0; oy < h; ++oy) {
                     for (unsigned ox = 0; ox < w; ++ox) {
                         unsigned pattern = ((attr & 0x7ff) + (tx+ox)*height + ty+oy) & 0x7ff;
-                        const uint8_t *data = md->vram + pattern * TILE_BYTES;
                         unsigned offset = oy*w + ox;
-                        uint8_t *cache = page->sprite_patterns[blocks*4 + offset];
-                        if (blocks + offset/4 >= old_blocks || memcmp(cache, data, TILE_BYTES)) {
-                            upload_pattern(tiles + offset * (TILE_BYTES / 2), data);
-                            memcpy(cache, data, TILE_BYTES);
+                        unsigned index = blocks*4 + offset;
+                        uint32_t revision = md->vram_revisions[pattern];
+                        if (index/4 >= old_blocks || page->sprite_sources[index] != pattern + 1 ||
+                            page->sprite_revisions[index] != revision) {
+                            upload_pattern(tiles + offset * (TILE_BYTES / 2), md->vram + pattern * TILE_BYTES);
+                            page->sprite_sources[index] = pattern + 1;
+                            page->sprite_revisions[index] = revision;
                         }
                     }
                 }
@@ -252,6 +266,13 @@ bool vdp_ds_prepare(const struct megadrive *md)
     unsigned left = wide ? 32 : 0, top = (regs[1] & 8) ? 24 : 16;
     unsigned next = visible_page ^ 1;
     struct page *page = &pages[next];
+    if (md->video_revision < page->last_revision) {
+        page->used_patterns = 0;
+        page->used_sprite_patterns = 0;
+        memset(page->sprite_sources, 0, sizeof(page->sprite_sources));
+        page->maps_cached = false;
+    }
+    page->last_revision = md->video_revision;
     if (!prepare_maps(md, page, next, (regs[16] & 1) ? 64 : 32, (regs[16] & 0x10) ? 64 : 32) ||
         !prepare_sprites(md, page, next, wide, left, top))
         return false;
@@ -302,5 +323,15 @@ void vdp_ds_hide(void)
     if (visible) {
         irqDisable(IRQ_HBLANK);
         visible = false;
+    }
+}
+
+void vdp_ds_invalidate(void)
+{
+    for (unsigned i = 0; i < 2; ++i) {
+        pages[i].used_patterns = 0;
+        pages[i].used_sprite_patterns = 0;
+        memset(pages[i].sprite_sources, 0, sizeof(pages[i].sprite_sources));
+        pages[i].maps_cached = false;
     }
 }

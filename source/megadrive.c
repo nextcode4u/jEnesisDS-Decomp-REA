@@ -193,7 +193,7 @@ static void store_vram_byte(struct megadrive *md, uint16_t address, uint8_t valu
 {
     if (md->vram[address] != value) {
         md->vram[address] = value;
-        ++md->video_revision;
+        md->vram_revisions[address >> 5] = ++md->video_revision;
     }
 }
 

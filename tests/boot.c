@@ -78,6 +78,8 @@ static void test_vdp_dma(struct megadrive *md)
     assert(md->vram[0x100] == 0 && md->vram[0x101] == 0xff);
     assert(md->vram[0x102] == 0xfe && md->vram[0x103] == 0);
     assert(md->vdp_address == 0x104 && md->vdp_registers[19] == 0);
+    uint32_t written_revision = md->vram_revisions[0x100 / 32];
+    assert(written_revision != 0 && md->vram_revisions[0x120 / 32] == 0);
 
     vdp_register(md, 15, 1);
     vdp_register(md, 19, 3);
@@ -88,6 +90,7 @@ static void test_vdp_dma(struct megadrive *md)
     assert(megadrive_write_word(md, 0xc00000, 0));
     for (unsigned i = 0; i < 5; ++i)
         assert(md->vram[0x100 + i] == 0);
+    assert(md->vram_revisions[0x100 / 32] > written_revision);
     assert(!md->vdp_fill_pending && md->vdp_address == 0x104);
 }
 

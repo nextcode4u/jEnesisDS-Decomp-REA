@@ -379,6 +379,7 @@ static const char *open_selection(struct application *app)
     app->slots[0] = app->slots[1] = false;
     int critical = enterCriticalSection();
     vdp_ds_hide();
+    vdp_ds_invalidate();
     videoSetMode(MODE_5_2D);
     current_output = pending_output = OUTPUT_NONE;
     palette_pending = false;
@@ -426,6 +427,7 @@ static bool handle_save_menu(struct application *app, uint32_t keys, const char 
             bool loaded = savestate_load(app->save_path, app->save_identity, &app->md);
             if (loaded) {
                 ++app->sound_generation;
+                vdp_ds_invalidate();
                 draw_game_frame(&app->md);
             }
             *message = loaded ? "State loaded" : "Unable to load state";
