@@ -4,11 +4,15 @@ from pathlib import Path
 import shutil
 import subprocess
 
+from generate_m68k_operand_dispatch import (
+    OPERAND_CLASSES, OUTPUT_NAME as M68K_OPERAND_SOURCE, read_handler_index,
+    write_source as write_m68k_operand_dispatch,
+)
 from generate_ym2612_tables import OUTPUT_NAME as YM2612_TABLE_SOURCE, write_source as write_ym2612_tables
 from r20 import check_match, compile_c, run, tool
 from sdk_arm7 import (ARM7_IRQ_TABLE, ARM7_SDK_EXTERNALS, ARM7_SDK_REGIONS, DIVISION_OBJECTS, TOUCH_BSS,
                       stage_arm7_sdk)
-from sdk_arm9 import ARM9_SDK_REGIONS, stage_arm9_sdk
+from sdk_arm9 import ARM9_NEWLIB_BSS, ARM9_SDK_EXTERNALS, ARM9_SDK_REGIONS, stage_arm9_sdk
 from sdk_libfat import LIBFAT_BSS, LIBFAT_DATA_SYMBOLS, LIBFAT_REGIONS, stage_libfat
 from sdk_source import irq_setup_sections, stage_sdk_bios, stage_sdk_for_reference, stage_sdk_irq_setup
 
@@ -75,10 +79,49 @@ def check_codec_image(original, rebuilt, base):
 DLDI_SOURCE = "dldi_placeholder.c"
 
 
-def arm9_region_layout(obj, filename, end_offset):
+# Function entries used by the four recovered opcode classes. The C table
+# describes which slot selects which entry, independent of its link address.
+M68K_OPERAND_SYMBOLS = read_handler_index()[-1]
+M68K_DISPATCH_SYMBOLS = {
+    "m68k_moveq": 0x01003D0C,
+    "m68k_shared_opcode_decode_020329a0": 0x020329A0,
+    "m68k_bsr_word": 0x01003CB4,
+    "m68k_bsr_byte": 0x01003C6C,
+}
+for mnemonic, word, forward, backward in (
+    ("bra", 0x01003C54, 0x01003C1C, 0x01003C34),
+    ("bhi", 0x0100312C, 0x010030F4, 0x01003114),
+    ("bls", 0x010031C0, 0x01003150, 0x01003170),
+    ("bcc", 0x01003254, 0x010031E4, 0x01003204),
+    ("bcs", 0x010032E8, 0x01003278, 0x01003298),
+    ("bne", 0x0100337C, 0x0100330C, 0x0100332C),
+    ("beq", 0x01003410, 0x010033A0, 0x010033C0),
+    ("bvc", 0x0100346C, 0x01003434, 0x01003454),
+    ("bvs", 0x010034C8, 0x01003490, 0x010034B0),
+    ("bpl", 0x0100355C, 0x010034EC, 0x0100350C),
+    ("bmi", 0x010035B8, 0x01003580, 0x010035A0),
+    ("bge", 0x0100365C, 0x010035DC, 0x01003600),
+    ("blt", 0x010036C4, 0x01003684, 0x010036A8),
+    ("bgt", 0x01003734, 0x010036EC, 0x01003714),
+    ("ble", 0x010037A8, 0x01003760, 0x01003788),
+):
+    M68K_DISPATCH_SYMBOLS.update({
+        f"m68k_{mnemonic}_word": word,
+        f"m68k_{mnemonic}_forward": forward,
+        f"m68k_{mnemonic}_backward": backward,
+    })
+
+
+def region_section(entry):
+    if entry is None:
+        return ".rodata"
+    return entry if entry.startswith(".") else ".text"
+
+
+def arm9_region_layout(obj, filename, entry, end_offset):
     if filename == DLDI_SOURCE:
         return f'"{obj}"(.rodata) "{obj}"(.text) . = {end_offset:#x};'
-    return f'"{obj}"(.text)'
+    return f'"{obj}"({region_section(entry)})'
 
 
 RECOVERED_REGIONS = (
@@ -86,8 +129,22 @@ RECOVERED_REGIONS = (
      0x020002E4, 0x0200030C, {"genesis_region": 0x0B000000}),
     ("68000 guest PC", "m68k_program_counter.c", "read_m68k_program_counter",
      0x02000310, 0x0200037C, {"m68k_context": 0x0B0000AC}),
-    ("Genesis I/O read wrapper", "controller_io.c", "read_genesis_io_as_u8",
-     0x020004C8, 0x020004E0, {"read_genesis_io_register_byte": 0x020003F4}),
+    ("Genesis I/O reads", "controller_io.c", "read_genesis_io_register_byte",
+     0x020003F4, 0x020004E0, {
+         "genesis_io": 0x0B000000,
+         "read_genesis_controller_port_pins": 0x02003828,
+         "read_genesis_controller_direction": 0x02003A48,
+     }),
+    ("Controller reset and direction write", "controller_reset.c", "reset_genesis_controller_port",
+     0x020037B4, 0x02003828, {}),
+    ("Controller direction and input mode", "controller_settings.c", "read_genesis_controller_direction",
+     0x02003A48, 0x02003A68, {}),
+    ("Controller handshake write and allocation", "controller_write.c", "write_genesis_controller_port_pins",
+     0x02003A68, 0x02003AF0, {
+         "read_m68k_cycle_counter": 0x0200052C,
+         "malloc": 0x02082724,
+         "reset_genesis_controller_port": 0x020037B4,
+     }),
     ("68000 interrupt and cycle wrappers", "m68k_timing.c", "queue_m68k_interrupt_level",
      0x020004E0, 0x02000538, {
          "__aeabi_uidiv": 0x02080380,
@@ -193,6 +250,20 @@ RECOVERED_REGIONS = (
          "genesis_work_ram_bytes": 0x023CB634,
          "z80_cartridge_bank_base": 0x02099008,
      }),
+    *(
+        (f"68000 {label} dispatch", "m68k_dispatch.c", f".rodata.m68k_{section}",
+         0x02032C28 + opcode * 4, 0x02032C28 + (opcode + 0x1000) * 4,
+         M68K_DISPATCH_SYMBOLS)
+        for label, section, opcode in (
+            ("branch", "branch", 0x6000), ("MOVEQ", "moveq", 0x7000),
+            ("line-A", "line_a", 0xA000), ("line-F", "line_f", 0xF000),
+        )
+    ),
+    *(
+        (f"68000 {name.replace('_', ' ')} dispatch", M68K_OPERAND_SOURCE, f".rodata.m68k_{name}",
+         0x02032C28 + (line << 14), 0x02032C28 + ((line + 1) << 14), M68K_OPERAND_SYMBOLS)
+        for line, name in OPERAND_CLASSES
+    ),
     ("Default DLDI interface and reserved storage", DLDI_SOURCE, "dldi_placeholder",
      0x02074DC0, 0x0207CDC0, {"dldi_reservation_end": 0x0207CDC0}),
     ("Save-state layout and slot path", "savestate_layout.c", "prepare_savestate_header_and_regions",
@@ -246,9 +317,12 @@ def with_libnds_headers(compiler, r20):
 
 
 def compile_arm9_source(compiler, work, filename):
+    if filename == M68K_OPERAND_SOURCE:
+        write_m68k_operand_dispatch(work / filename)
     flags = {
         # Keep the last stream read in r0 on decoder exit.
         "lzss_decode.c": ("-fno-tree-vrp",),
+        "controller_write.c": ("-fno-unit-at-a-time",),
         # Preserve the original write-then-read function order.
         "z80_memory.c": ("-fno-unit-at-a-time",),
     }.get(filename, ())
@@ -345,7 +419,7 @@ def prepare_reference_arm7(work, compiler, image, base, runtime, r20, libnds=Non
     for _, filename, entry, start, end, symbols in ARM7_REGIONS:
         obj = compile_arm7_source(compiler, work, filename).name
         objects.append(obj)
-        section = ".text" if entry else ".rodata"
+        section = region_section(entry)
         regions.append((start, end, f'"{obj}"({section})'))
         externals.update(symbols)
     script = work / "arm7.ld"
@@ -375,10 +449,13 @@ def prepare_reference_arm9(work, compiler, image, base, runtime, r20, libnds=Non
     objects = list(runtime)
     assembly = []
 
-    for _, filename, _, start, end, symbols in RECOVERED_REGIONS:
-        obj = compile_arm9_source(compiler, work, filename).name
-        objects.append(obj)
-        regions.append((start, end, arm9_region_layout(obj, filename, end - base)))
+    compiled = {}
+    for _, filename, entry, start, end, symbols in RECOVERED_REGIONS:
+        if filename not in compiled:
+            compiled[filename] = compile_arm9_source(compiler, work, filename).name
+            objects.append(compiled[filename])
+        obj = compiled[filename]
+        regions.append((start, end, arm9_region_layout(obj, filename, entry, end - base)))
         externals.update(symbols)
 
     if replace_codec:
@@ -404,6 +481,7 @@ def prepare_reference_arm9(work, compiler, image, base, runtime, r20, libnds=Non
         objects.extend(stage_arm9_sdk(work, compiler, r20, libnds))
         objects.extend(stage_sdk_irq_setup(work, compiler, r20, libnds, 9))
         regions.extend(ARM9_SDK_REGIONS)
+        externals.update(ARM9_SDK_EXTERNALS)
         if libfat:
             objects.extend(stage_libfat(work, r20, libfat))
             regions.extend(LIBFAT_REGIONS)
@@ -429,6 +507,10 @@ def prepare_reference_arm9(work, compiler, image, base, runtime, r20, libnds=Non
                           for address, member in LIBFAT_BSS) if libfat else ""
         source = source.replace(". = 0x023eb350 - 0x02098f70;",
                                 fat_bss + f'. = 0x020b4ca0 - 0x02098f70;\n        "{keys}"(.bss)\n'
+                                f"        . = {ARM9_NEWLIB_BSS:#x} - 0x02098f70;\n"
+                                "        lib_a-mallocr.o(.bss)\n"
+                                "        . = 0x023eb34c - 0x02098f70;\n"
+                                "        lib_a-reent.o(COMMON)\n"
                                 "        . = 0x023eb350 - 0x02098f70;")
         source = source.replace("    arm9_main =", f'    /DISCARD/ : {{ "{keys}"(.text.*) irq-setup-arm9.o(.text.irqDummy) }}\n    arm9_main =')
         externals.update(__irq_flags=0x0B003FF8, __irq_vector=0x0B003FFC)

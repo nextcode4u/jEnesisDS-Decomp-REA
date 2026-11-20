@@ -10,7 +10,7 @@ from tempfile import TemporaryDirectory
 
 from r20 import EXPECTED_ROM_SHA256, check_match, compile_c, compiler_command, run, tool
 from recovered import (ARM7_REGIONS, DLDI_SOURCE, RECOVERED_REGIONS, SOURCE,
-                       arm9_region_layout, compile_arm7_source, compile_arm9_source, with_libnds_headers)
+                       arm9_region_layout, compile_arm7_source, compile_arm9_source, region_section, with_libnds_headers)
 from sdk_source import (LIBNDS_APR_2006, LIBNDS_ITCM_APR_2006, LIBNDS_OCT_2007, assemble_sdk_irq,
                         compile_sdk_keys, snapshot)
 
@@ -130,21 +130,25 @@ def recovered_artifacts(directory, cpu):
 
 def build_recovered_regions(compiler, prefix, work, cpu):
     linker, objcopy = (tool(prefix, name) for name in ("ld", "objcopy"))
+    compiled = {}
     for region, artifact in zip(REGIONS_BY_CPU[cpu], recovered_artifacts(work, cpu)):
         _, filename, entry, _, _, symbols = region
         label, start, end, elf, binary = artifact
-        if cpu == 9:
-            obj = compile_arm9_source(compiler, work, filename)
-        else:
-            obj = compile_arm7_source(compiler, work, filename)
+        if filename not in compiled:
+            compile_source = compile_arm9_source if cpu == 9 else compile_arm7_source
+            compiled[filename] = compile_source(compiler, work, filename)
+        obj = compiled[filename]
         definitions = [f"--defsym={name}={address:#x}" for name, address in symbols.items()]
-        section = ".text" if entry else ".rodata"
-        entry_option = ["-e", entry] if entry else ["-e", f"{start:#x}"]
-        if filename == DLDI_SOURCE:
-            section = ".dldi"
-            script = work / "dldi.ld"
-            layout = arm9_region_layout(obj.name, filename, end - start)
-            script.write_text(f"SECTIONS {{ {section} {start:#x} : {{ {layout} }} }}\n")
+        section = region_section(entry)
+        entry_option = ["-e", entry if section == ".text" else f"{start:#x}"]
+        if filename == DLDI_SOURCE or (entry and entry.startswith(".")):
+            layout = arm9_region_layout(obj.name, filename, entry, end - start)
+            if filename == DLDI_SOURCE:
+                section = ".dldi"
+            script = elf.with_suffix(".ld")
+            linked_symbols = "".join(f"{name} = {address:#x};\n" for name, address in symbols.items())
+            script.write_text(f"SECTIONS {{ {section} {start:#x} : {{ {layout} }} }}\n" + linked_symbols)
+            definitions = []
             position = ["-T", script.name]
         else:
             position = [f"--section-start={section}={start:#x}"]

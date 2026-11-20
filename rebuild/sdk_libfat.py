@@ -1,12 +1,13 @@
-"""Place unchanged libfat-nds 20070127 objects at the release's ARM9 addresses."""
+"""Place libfat-nds 20070127 objects at the release's ARM9 addresses."""
+from hashlib import sha256
 from pathlib import Path
 import shutil
+from struct import pack_into, unpack_from
 
 from r20 import run, tool
 
 
-# The SDK supplied these members. The directory object's pooled strings still
-# need reconstruction. The default DLDI area already builds from recovered C.
+# The default DLDI area builds from recovered C.
 LIBFAT_TEXT = (
     (0x02072C50, 0x02072CEC, "libfat"),
     (0x02072CEC, 0x020731BC, "partition"),
@@ -28,6 +29,7 @@ LIBFAT_TEXT = (
     (0x0207E8E4, 0x0207EBF0, "io_cf_common"),
     (0x0207EBF0, 0x0207EC90, "io_m3_common"),
     (0x0207EC90, 0x0207ECA8, "io_sc_common"),
+    (0x0207ECA8, 0x0207FB70, "directory"),
 )
 LIBFAT_REGIONS = (
     *((start, end, f"fat-{member}.o(.text)") for start, end, member in LIBFAT_TEXT),
@@ -39,7 +41,11 @@ LIBFAT_REGIONS = (
     (0x0208EDC4, 0x0208EDE4, "fat-io_nmmc.o(.rodata)"),
     (0x0208EDE4, 0x0208EE28, "fat-io_sccf.o(.rodata)"),
     (0x0208EE28, 0x0208EE48, "fat-io_scsd.o(.rodata)"),
+    (0x0208EE48, 0x0208EE7C, "fat-directory.o(.rodata)"),
+    (0x0208F224, 0x0208F228, "LONG(0x2e);"),
+    (0x0208F254, 0x0208F258, "LONG(0x2e2e);"),
     (0x0208F2F8, 0x0208F304, "fat-libfat.o(.rodata.str1.4) fat-partition.o(.rodata.str1.4)"),
+    (0x0208F304, 0x0208F322, "fat-directory.o(.rodata.str1.4)"),
     (0x0208F360, 0x0208F364, "fat-partition.o(.data)"),
     (0x0208F364, 0x0208F384, "fat-disc.o(.data)"),
     (0x0208F384, 0x0208F390, "fat-io_nmmc.o(.data)"),
@@ -57,15 +63,6 @@ LIBFAT_DATA_SYMBOLS = {"_io_dldi": 0x02074E20, "__ctype_ptr": 0x0208F394}
 # Rename these imports inside the extracted archive members so the recovered
 # ARM code can also link to the distinct ARM entry points.
 THUMB_IMPORTS = {
-    "_FAT_directory_addEntry": 0x0207F5BC,
-    "_FAT_directory_chdir": 0x0207F208,
-    "_FAT_directory_entryFromPath": 0x0207F07C,
-    "_FAT_directory_entryFromPosition": 0x0207F320,
-    "_FAT_directory_entryGetCluster": 0x0207ED1C,
-    "_FAT_directory_entryStat": 0x0207F4F0,
-    "_FAT_directory_getFirstEntry": 0x0207EFC4,
-    "_FAT_directory_getNextEntry": 0x0207EE00,
-    "_FAT_directory_removeEntry": 0x0207F430,
     "_SCSD_writeData_s": 0x02085990,
     "AddDevice": 0x02085940,
     "__aeabi_idiv": 0x020859E0,
@@ -94,6 +91,47 @@ THUMB_IMPORTS = {
 }
 
 
+DIRECTORY_OBJECT_SHA256 = "85bc05a796a25157bfcc1386738060afd53a6adb6e0adbd88bcdeac53ba9ef70"
+DIRECTORY_STRING_POOL = 0x0208F304
+
+
+def place_directory_strings(path):
+    """Retarget only the directory object's string relocations to the shared pool."""
+    data = bytearray(path.read_bytes())
+    if sha256(data).hexdigest() != DIRECTORY_OBJECT_SHA256:
+        raise ValueError("Expected directory.o from libfat-nds 20070127")
+    section_headers, = unpack_from("<I", data, 32)
+    stride, count, strings = unpack_from("<HHH", data, 46)
+    string_table, = unpack_from("<I", data, section_headers + stride * strings + 16)
+    sections = {}
+    for index in range(count):
+        header = section_headers + stride * index
+        name, = unpack_from("<I", data, header)
+        name += string_table
+        sections[bytes(data[name:data.index(0, name)])] = header
+    text, = unpack_from("<I", data, sections[b".text"] + 16)
+    pool = sections[b".rodata.str1.4"]
+    pool_start, = unpack_from("<I", data, pool + 16)
+    # "." and ".." were pooled with frontend strings. Keep the two directory
+    # character sets from the archive and link the other literals to those
+    # shared locations. The offsets below are R_ARM_ABS32 addends in .text.
+    string_targets = {
+        0x55C: 0x0208F224,
+        0x628: DIRECTORY_STRING_POOL,
+        0x674: DIRECTORY_STRING_POOL + 20,
+        0xCE8: 0x0208F224,
+        0xCF0: 0x0208F254,
+    }
+    for offset, address in string_targets.items():
+        pack_into("<i", data, text + offset, address - DIRECTORY_STRING_POOL)
+    string_data = data[pool_start + 4:pool_start + 34]
+    data[pool_start:pool_start + len(string_data)] = string_data
+    pack_into("<I", data, pool + 8, 2)  # SHF_ALLOC only. Do not pool it again.
+    pack_into("<I", data, pool + 20, len(string_data))
+    pack_into("<I", data, pool + 36, 0)
+    path.write_bytes(data)
+
+
 def stage_libfat(work, r20, archive):
     prefix = r20 / "bin/arm-eabi-"
     staging = work / "archive-libfat"
@@ -101,6 +139,7 @@ def stage_libfat(work, r20, archive):
     shutil.copyfile(archive, staging / "libfat.a")
     members = [f"{member}.o" for _, _, member in LIBFAT_TEXT]
     run(staging, tool(prefix, "ar"), "x", "libfat.a", *members)
+    place_directory_strings(staging / "directory.o")
 
     aliases = [".thumb"]
     renames = []

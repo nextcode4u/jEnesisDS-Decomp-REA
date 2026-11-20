@@ -32,7 +32,7 @@ CPU_FLAGS := -mcpu=arm7tdmi -mtune=arm7tdmi
 SOURCES := $(wildcard $(SOURCE)/arm7_*.c) arm7_ym2612_tables.c
 else
 CPU_FLAGS := -march=armv5te -mtune=arm946e-s
-SOURCES := $(filter-out $(SOURCE)/arm7_%.c,$(wildcard $(SOURCE)/*.c))
+SOURCES := $(filter-out $(SOURCE)/arm7_%.c,$(wildcard $(SOURCE)/*.c)) m68k_operand_dispatch.c
 LIBDIRS += $(LIBFAT)
 LIBS := -lrecovered -lfat -lnds9
 endif
@@ -58,10 +58,13 @@ librecovered.a: $(RECOVERED_OBJECTS)
 
 $(OFILES) $(RECOVERED_OBJECTS): $(SDK_HEADERS)
 
+m68k_operand_dispatch.c: ../../../rebuild/generate_m68k_operand_dispatch.py ../../../decompiled/arm9/functions.tsv
+	$(PYTHON) $< $@
+
 arm7_ym2612_tables.c: ../../../rebuild/generate_ym2612_tables.py
 	$(PYTHON) $< $@
 
 lzss_decode.o: CFLAGS += -fno-tree-vrp
-z80_memory.o: CFLAGS += -fno-unit-at-a-time
+controller_write.o z80_memory.o: CFLAGS += -fno-unit-at-a-time
 
 -include $(OFILES:.o=.d) $(RECOVERED_OBJECTS:.o=.d)
