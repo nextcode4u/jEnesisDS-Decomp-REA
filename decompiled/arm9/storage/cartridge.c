@@ -1,5 +1,5 @@
 /* ARM9 cartridge — grouped REA pseudocode.
- * Use the processor functions.tsv for names, descriptions and source hashes.
+ * Opening a selection, decoding BIN or SMD, reading headers and stream helpers.
  */
 
 // 0x020002e4  helper_for_load_genesis_rom_from_stream
@@ -162,7 +162,7 @@ LAB_02001804:
 }
 
 
-// 0x02001b08  detect_genesis_rom_header
+// 0x02001b08  rom_header_lacks_sega_signature
 
 bool FUN_02001b08(int param_1)
 

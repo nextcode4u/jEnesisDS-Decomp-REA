@@ -143,64 +143,6 @@ LAB_02000794:
 }
 
 
-// 0x02000868  helper_calls_run_z80_cycle_budget
-
-void FUN_02000868(void)
-
-{
-  uint uVar1;
-  int iVar2;
-  int iVar3;
-  uint uVar4;
-  int iVar5;
-  uint uVar6;
-  
-  iVar3 = DAT_0b000018;
-  iVar2 = DAT_0b000014;
-  uVar1 = DAT_0b000004;
-  iVar5 = DAT_0b000000;
-  FUN_0200b438();
-  if (uVar1 == 0) {
-    uVar6 = 0;
-  }
-  else {
-    uVar4 = 0;
-    do {
-      uVar6 = uVar4 + 0x10;
-      FUN_0200b284(0x24);
-      for (; uVar4 < uVar6; uVar4 = uVar4 + 1) {
-        DAT_0b00000c = uVar4;
-        FUN_020090e8(uVar4);
-        (*DAT_023dcea8)(uVar4);
-      }
-      (*DAT_0b000040)(iVar2 << 4);
-      if ((((DAT_023cb610 & 2) == 0) && (DAT_02099001 == '\x01')) && (DAT_02099000 == '\0')) {
-        FUN_0200df50(&DAT_0b000158,iVar3 << 4);
-      }
-      uVar4 = uVar6;
-    } while (uVar6 < uVar1);
-  }
-  DAT_0b00000c = uVar6;
-  FUN_02009144(uVar6);
-  FUN_0200b284(0);
-  DAT_0b000080 = 4;
-  DAT_0b00007c = 8;
-  (*DAT_0b000040)(0x4a);
-  FUN_020004e0(6);
-  FUN_02004ef4(&DAT_0b000158,1,1);
-  DAT_0b000080 = 0;
-  (*DAT_0b000040)(iVar2 + -0x4a);
-  iVar5 = (iVar5 - uVar6) + -1;
-  (*DAT_0b000040)(iVar5 * iVar2);
-  if ((((DAT_023cb610 & 2) == 0) && (DAT_02099001 == '\x01')) && (DAT_02099000 == '\0')) {
-    FUN_0200df50(&DAT_0b000158,iVar5 * iVar3);
-  }
-  FUN_020061a8();
-  DAT_0b000008 = DAT_0b000008 + 1;
-  return;
-}
-
-
 // 0x0200df50  run_z80_cycle_budget
 
 /* WARNING: Removing unreachable block (ram,0x01001fbc) */

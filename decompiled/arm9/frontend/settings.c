@@ -1,8 +1,8 @@
 /* ARM9 settings — grouped REA pseudocode.
- * Use the processor functions.tsv for names, descriptions and source hashes.
+ * Configuration menu and selection of the frame timing callbacks.
  */
 
-// 0x02000d10  helper_for_run_configuration_menu
+// 0x02000d10  configure_frame_timing_callbacks
 
 void FUN_02000d10(void)
 

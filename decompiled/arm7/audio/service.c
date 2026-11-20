@@ -1,5 +1,5 @@
 /* ARM7 service — grouped REA pseudocode.
- * Use the processor functions.tsv for names, descriptions and source hashes.
+ * ARM7 audio initialization and timer-driven refill of looping PCM buffers.
  */
 
 // 0x037f81f4  run_arm7_audio_service

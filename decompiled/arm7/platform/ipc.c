@@ -1,5 +1,5 @@
 /* ARM7 ipc — grouped REA pseudocode.
- * Use the processor functions.tsv for names, descriptions and source hashes.
+ * FIFO receive and message decoding, including ARM9 audio commands.
  */
 
 // 0x037fc0cc  initialize_sound_message_handler

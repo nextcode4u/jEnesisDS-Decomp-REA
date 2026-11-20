@@ -1,5 +1,5 @@
 /* ARM9 save states — grouped REA pseudocode.
- * Use the processor functions.tsv for names, descriptions and source hashes.
+ * Slot filenames, save-file I/O, and restoring live emulator state.
  */
 
 // 0x02002e54  display_savestate_slot_status

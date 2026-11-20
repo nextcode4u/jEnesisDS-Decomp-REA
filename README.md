@@ -9,7 +9,7 @@ This branch groups the static REA and Ghidra analysis of jEnesisDS 0.7.4 into 66
 | ARM9 | [Emulator and startup](decompiled/arm9/system), [68000 and Z80](decompiled/arm9/cpu), [video](decompiled/arm9/video), [menus and input](decompiled/arm9/frontend), [ROM and save storage](decompiled/arm9/storage), [DS services and runtime](decompiled/arm9/platform) |
 | ARM7 | [Audio, PSG, DAC, and YM2612](decompiled/arm7/audio), [IPC, interrupts, and DS services](decompiled/arm7/platform) |
 
-Start with the [handoff](docs/HANDOFF.md) for a folder map, entry points, and validation steps. The [ARM9 index](decompiled/arm9/functions.tsv) and [ARM7 index](decompiled/arm7/functions.tsv) map each address to its module and starting line. Each module keeps a single address-and-role label above each pseudocode body. To check every indexed body in the checkout, run `python3 scripts/check_pseudocode.py`.
+Start with the [reading guide](docs/READING-GUIDE.md) to follow a ROM from the browser through gameplay, display, audio, and saves. The [handoff](docs/HANDOFF.md) covers the folder map, memory layout, and verification. Run `python3 scripts/find_routine.py FUN_020033a4` to resolve a Ghidra symbol without opening the indexes. The [ARM9 index](decompiled/arm9/functions.tsv) and [ARM7 index](decompiled/arm7/functions.tsv) map each address to its module and starting line. Each module keeps a single address-and-role label above each pseudocode body. To check every indexed body in the checkout, run `python3 scripts/check_pseudocode.py`.
 
 ## Matching ROM rebuild in WSL
 

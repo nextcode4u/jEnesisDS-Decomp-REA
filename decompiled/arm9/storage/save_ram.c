@@ -1,5 +1,5 @@
 /* ARM9 save ram — grouped REA pseudocode.
- * Use the processor functions.tsv for names, descriptions and source hashes.
+ * Loading and flushing cartridge SRAM files separately from emulator slots.
  */
 
 // 0x0200157c  helper_for_flush_cartridge_save_ram

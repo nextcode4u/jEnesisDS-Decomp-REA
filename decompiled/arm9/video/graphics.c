@@ -1,8 +1,8 @@
 /* ARM9 graphics — grouped REA pseudocode.
- * Use the processor functions.tsv for names, descriptions and source hashes.
+ * Viewport offsets and routines that convert graphics data for the DS.
  */
 
-// 0x02007358  graphics_access_shared_state
+// 0x02007358  adjust_horizontal_viewport_offset
 
 void FUN_02007358(int param_1)
 
@@ -22,7 +22,7 @@ void FUN_02007358(int param_1)
 }
 
 
-// 0x020073a4  graphics_access_shared_state
+// 0x020073a4  adjust_vertical_viewport_offset
 
 void FUN_020073a4(int param_1)
 
@@ -42,7 +42,7 @@ void FUN_020073a4(int param_1)
 }
 
 
-// 0x020073f0  graphics_access_shared_state
+// 0x020073f0  center_viewport
 
 void FUN_020073f0(void)
 

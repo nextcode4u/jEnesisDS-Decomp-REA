@@ -1,5 +1,5 @@
 /* ARM9 vdp — grouped REA pseudocode.
- * Use the processor functions.tsv for names, descriptions and source hashes.
+ * DS display setup, palette conversion and renderer refresh from Genesis VDP state.
  */
 
 // 0x01004160  write_display_palette
@@ -1744,7 +1744,7 @@ void FUN_02000f3c(void)
 }
 
 
-// 0x0200106c  write_display_status_and_interrupt_master_enable
+// 0x0200106c  configure_gameplay_display_interrupts
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -4209,7 +4209,7 @@ void FUN_020090a0(void)
 }
 
 
-// 0x02009cf0  write_display_palette
+// 0x02009cf0  rebuild_display_from_vdp_state
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 

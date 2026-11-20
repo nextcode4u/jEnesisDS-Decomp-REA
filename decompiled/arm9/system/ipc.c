@@ -1,5 +1,5 @@
 /* ARM9 ipc — grouped REA pseudocode.
- * Use the processor functions.tsv for names, descriptions and source hashes.
+ * ARM9 messages to ARM7, including audio control and shared-buffer notifications.
  */
 
 // 0x02005ba0  poll_ipc_sync
@@ -159,7 +159,7 @@ void FUN_02005ba0(uint param_1,uint param_2)
 }
 
 
-// 0x020061a8  write_ipc_fifo_control_and_ipc_fifo_send
+// 0x020061a8  submit_arm7_dac_sample_buffer
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -221,7 +221,7 @@ void FUN_02006228(void)
 }
 
 
-// 0x020062c4  write_ipc_fifo_control_and_ipc_fifo_send
+// 0x020062c4  request_arm7_audio_stop
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -245,7 +245,7 @@ bool FUN_020062c4(void)
 }
 
 
-// 0x020062f0  write_ipc_fifo_control_and_ipc_fifo_send
+// 0x020062f0  set_arm7_audio_muted
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -322,7 +322,7 @@ uint FUN_02006308(int param_1)
 }
 
 
-// 0x020063dc  write_ipc_fifo_control_and_ipc_fifo_send
+// 0x020063dc  request_arm7_audio_start
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 

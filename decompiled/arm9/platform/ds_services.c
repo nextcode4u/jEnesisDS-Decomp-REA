@@ -1,68 +1,6 @@
 /* ARM9 ds services — grouped REA pseudocode.
- * Use the processor functions.tsv for names, descriptions and source hashes.
+ * DS service helpers used by application code.
  */
-
-// 0x02000c08  helper_calls_nds_swiwaitforvblank
-
-void FUN_02000c08(void)
-
-{
-  DAT_0b000000 = 0x106;
-  if (DAT_0b000020 == 0) {
-    DAT_0b000000 = 0x138;
-  }
-  DAT_0b000004 = 0xe0;
-  DAT_0b000014 = 0x1e7;
-  DAT_0b000018 = 0xe3;
-  DAT_0b000010 = 0x19d;
-  DAT_0b00000c = 0;
-  DAT_0b000008 = 0;
-  DAT_0b000024 = 0;
-  DAT_0b0000a8 = 0;
-  FUN_020054d4(&DAT_0b0000ac);
-  FUN_02004dcc(&DAT_0b000158);
-  if ((DAT_023cb610 & 1) == 0) {
-    FUN_02003a50(DAT_0b000030,0);
-    FUN_02003a50(DAT_0b000034,0);
-  }
-  else {
-    FUN_02003a50(DAT_0b000030);
-    FUN_02003a50(DAT_0b000034,1);
-  }
-  FUN_020037b4(DAT_0b000030);
-  FUN_020037b4(DAT_0b000034);
-  FUN_02004bf0();
-  FUN_02004d94();
-  FUN_0200b6a8();
-  FUN_020062c4();
-  thunk_FUN_0208031c();
-  thunk_FUN_0208031c();
-  FUN_02006308(1);
-  thunk_FUN_0208031c();
-  thunk_FUN_0208031c();
-  FUN_020063dc();
-  if ((DAT_023cb610 & 4) == 0) {
-    DAT_023dcea8 = FUN_0200c280;
-  }
-  else {
-    switch(DAT_023dcdb0) {
-    case 0:
-      DAT_023dcea8 = (code *)&LAB_0200bbd0;
-      return;
-    case 1:
-      DAT_023dcea8 = (code *)&LAB_0200c0cc;
-      return;
-    case 2:
-      DAT_023dcea8 = (code *)&LAB_0200bf18;
-      return;
-    case 3:
-      DAT_023dcea8 = (code *)&LAB_0200bd6c;
-      return;
-    }
-  }
-  return;
-}
-
 
 // 0x02001180  helper_calls_nds_swiwaitforvblank
 

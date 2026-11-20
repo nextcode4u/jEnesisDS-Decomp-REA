@@ -1,5 +1,5 @@
 /* ARM9 rom browser — grouped REA pseudocode.
- * Use the processor functions.tsv for names, descriptions and source hashes.
+ * Directory listing, page navigation, selection and return to the game.
  */
 
 // 0x02002088  helper_for_run_rom_browser_event_loop
