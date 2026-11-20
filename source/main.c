@@ -1,6 +1,8 @@
 #include "cartridge.h"
 #include "frontend.h"
 #include "megadrive.h"
+#include "savestate.h"
+#include "vdp_ds.h"
 #include "vdp_render.h"
 
 #include <dirent.h>
@@ -102,41 +104,105 @@ struct application {
     struct cartridge cart;
     struct megadrive md;
     char filename[29];
+    char *save_path;
+    uint32_t save_identity;
+    unsigned save_slot;
+    int save_line;
+    bool slots[2];
     enum frontend_view view;
     enum frontend_view before_settings;
+    enum frontend_view before_save;
     enum genesis_region region;
 };
 
 static int display_bg;
-static unsigned display_page;
+static unsigned bitmap_visible, bitmap_queued;
 static uint32_t display_revision;
 static bool display_visible;
+enum game_output { OUTPUT_NONE, OUTPUT_BITMAP, OUTPUT_TILES };
+static enum game_output current_output;
+static volatile enum game_output pending_output;
+static uint16_t palette_queued[64];
+static volatile bool palette_pending;
+static volatile uint32_t vblank_count;
 
 static void init_game_display(void)
 {
     videoSetMode(MODE_5_2D);
-    vramSetBankA(VRAM_A_MAIN_BG);
-    display_bg = bgInit(2, BgType_Bmp8, BgSize_B8_256x256, 0, 0);
+    vdp_ds_init();
+    vramSetBankD(VRAM_D_MAIN_BG_0x06040000);
+    bitmap_visible = 16;
+    display_bg = bgInit(2, BgType_Bmp8, BgSize_B8_256x256, bitmap_visible, 0);
     bgHide(display_bg);
     BG_PALETTE[0] = 0;
 }
 
+static void present_game_frame(void)
+{
+    if (pending_output == OUTPUT_TILES) {
+        vdp_ds_present();
+    } else if (pending_output == OUTPUT_BITMAP) {
+        if (current_output != OUTPUT_BITMAP) {
+            vdp_ds_hide();
+            videoSetMode(MODE_5_2D);
+            display_bg = bgInit(2, BgType_Bmp8, BgSize_B8_256x256, bitmap_queued, 0);
+        } else {
+            bgSetMapBase(display_bg, bitmap_queued);
+        }
+        bitmap_visible = bitmap_queued;
+        bgShow(display_bg);
+    } else {
+        return;
+    }
+    current_output = pending_output;
+    pending_output = OUTPUT_NONE;
+}
+
+static void video_vblank(void)
+{
+    present_game_frame();
+    vdp_ds_frame_start();
+    if (palette_pending) {
+        BG_PALETTE[0] = palette_queued[0];
+        for (unsigned i = 1; i < 64; ++i) {
+            BG_PALETTE[i] = palette_queued[i];
+            SPRITE_PALETTE[i] = palette_queued[i];
+        }
+        palette_pending = false;
+    }
+    ++vblank_count;
+}
+
 static void draw_game_frame(const struct megadrive *md)
 {
-    BG_PALETTE[0] = megadrive_backdrop(md);
-    for (unsigned i = 1; i < 64; ++i)
-        BG_PALETTE[i] = vdp_ds_color(md->cram[i]);
+    enum game_output output = OUTPUT_NONE;
     if (!display_visible || display_revision != md->video_revision) {
-        // Render into the other 64 KiB bitmap before switching the visible page.
-        unsigned next_page = display_page ^ 4;
-        uint16_t *bitmap = (uint16_t *)BG_GFX + next_page * (0x4000 / sizeof(uint16_t));
-        vdp_render_frame(md, bitmap);
-        bgSetMapBase(display_bg, next_page);
-        display_page = next_page;
+        // Replace an undisplayed frame before touching its off-screen page.
+        int critical = enterCriticalSection();
+        pending_output = OUTPUT_NONE;
+        palette_pending = false;
+        leaveCriticalSection(critical);
+        if (vdp_ds_prepare(md)) {
+            output = OUTPUT_TILES;
+        } else {
+            bitmap_queued = bitmap_visible ^ 4;
+            uint16_t *bitmap = (uint16_t *)BG_GFX + bitmap_queued * (0x4000 / sizeof(uint16_t));
+            vdp_render_frame(md, bitmap);
+            output = OUTPUT_BITMAP;
+        }
         display_revision = md->video_revision;
         display_visible = true;
-        bgShow(display_bg);
     }
+    uint16_t palette[64];
+    palette[0] = megadrive_backdrop(md);
+    for (unsigned i = 1; i < 64; ++i)
+        palette[i] = vdp_ds_color(md->cram[i]);
+    int critical = enterCriticalSection();
+    memcpy(palette_queued, palette, sizeof(palette));
+    palette_pending = true;
+    if (output != OUTPUT_NONE)
+        pending_output = output;
+    leaveCriticalSection(critical);
 }
 
 static void draw_browser(const struct browser *browser)
@@ -204,6 +270,24 @@ static void draw_settings(enum genesis_region region)
     fputs("A Change       SELECT Back", stdout);
 }
 
+static void draw_save_menu(const struct application *app)
+{
+    frontend_cursor(2, 6);
+    printf("Savestate Slot %u", app->save_slot + 1);
+    frontend_cursor(2, 8);
+    printf("%.28s", app->filename);
+    if (app->slots[app->save_slot]) {
+        frontend_cursor(2, 16);
+        fputs("LOAD", stdout);
+    }
+    frontend_cursor(2, 17);
+    fputs("SAVE", stdout);
+    frontend_cursor(2, 18);
+    fputs("CANCEL", stdout);
+    frontend_cursor(2, 21);
+    fputs("A Choose       SELECT Back", stdout);
+}
+
 static void draw_screen(const struct application *app, const char *message)
 {
     const struct browser *browser = &app->browser;
@@ -213,6 +297,8 @@ static void draw_screen(const struct application *app, const char *message)
         selected = MENU_FIRST_ROW + (int)(browser->selected - browser->first_visible);
     if (app->view == VIEW_SETTINGS)
         selected = 8;
+    if (app->view == VIEW_SAVE)
+        selected = app->save_line;
 
     frontend_draw(app->view, selected);
     switch (app->view) {
@@ -230,6 +316,9 @@ static void draw_screen(const struct application *app, const char *message)
     case VIEW_SETTINGS:
         draw_settings(app->region);
         break;
+    case VIEW_SAVE:
+        draw_save_menu(app);
+        break;
     }
     if (message) {
         frontend_cursor(2, 22);
@@ -243,6 +332,37 @@ static void draw_screen(const struct application *app, const char *message)
     }
 }
 
+static void select_save_path(struct application *app, unsigned slot)
+{
+    // The slot digit is directly before the four-character extension ".jsc".
+    app->save_path[strlen(app->save_path) - 5] = '1' + slot;
+}
+
+static void setup_savestates(struct application *app, const char *name)
+{
+    char *directory = getcwd(NULL, 0);
+    if (!directory)
+        return;
+    size_t length = strlen(directory);
+    const char *extension = strrchr(name, '.');
+    size_t stem = extension ? (size_t)(extension - name) : strlen(name);
+    if (stem > 200)
+        stem = 200;
+    size_t capacity = length + stem + 20;
+    app->save_path = malloc(capacity);
+    if (app->save_path) {
+        app->save_identity = savestate_identity(&app->md);
+        const char *separator = length && directory[length - 1] == '/' ? "" : "/";
+        snprintf(app->save_path, capacity, "%s%s%.*s-%08lX_1.jsc", directory, separator,
+                 (int)stem, name, (unsigned long)app->save_identity);
+        for (unsigned i = 0; i < 2; ++i) {
+            select_save_path(app, i);
+            app->slots[i] = savestate_exists(app->save_path);
+        }
+    }
+    free(directory);
+}
+
 static const char *open_selection(struct application *app)
 {
     struct browser *browser = &app->browser;
@@ -252,13 +372,22 @@ static const char *open_selection(struct application *app)
 
     // Keep one cartridge in memory so a large ROM can replace another.
     cartridge_unload(&app->cart);
-    bgHide(display_bg);
+    free(app->save_path);
+    app->save_path = NULL;
+    app->slots[0] = app->slots[1] = false;
+    int critical = enterCriticalSection();
+    vdp_ds_hide();
+    videoSetMode(MODE_5_2D);
+    current_output = pending_output = OUTPUT_NONE;
+    palette_pending = false;
     display_visible = false;
     BG_PALETTE[0] = 0;
+    leaveCriticalSection(critical);
     const char *error = cartridge_load(&app->cart, entry->name);
     if (!error) {
         snprintf(app->filename, sizeof(app->filename), "%.28s", entry->name);
         megadrive_reset(&app->md, &app->cart, app->region);
+        setup_savestates(app, entry->name);
         app->view = VIEW_CARTRIDGE;
     }
     return error;
@@ -279,9 +408,40 @@ static void change_selection(struct browser *browser, uint32_t keys)
     browser->first_visible = browser->selected / MENU_ROW_COUNT * MENU_ROW_COUNT;
 }
 
+static bool handle_save_menu(struct application *app, uint32_t keys, const char **message)
+{
+    int first = app->slots[app->save_slot] ? 16 : 17;
+    if (keys & (KEY_SELECT | KEY_B)) {
+        app->view = app->before_save;
+    } else if ((keys & KEY_UP) && app->save_line > first) {
+        --app->save_line;
+    } else if ((keys & KEY_DOWN) && app->save_line < 18) {
+        ++app->save_line;
+    } else if (keys & KEY_A) {
+        select_save_path(app, app->save_slot);
+        if (app->save_line == 16) {
+            bool loaded = savestate_load(app->save_path, app->save_identity, &app->md);
+            if (loaded)
+                draw_game_frame(&app->md);
+            *message = loaded ? "State loaded" : "Unable to load state";
+        } else if (app->save_line == 17) {
+            bool saved = savestate_save(app->save_path, app->save_identity, &app->md);
+            if (saved)
+                app->slots[app->save_slot] = true;
+            *message = saved ? "State saved" : "Unable to save state";
+        }
+        app->view = app->before_save;
+    } else {
+        return false;
+    }
+    return true;
+}
+
 static bool handle_menu(struct application *app, uint32_t keys, const touchPosition *touch,
                         const char **message)
 {
+    if (app->view == VIEW_SAVE)
+        return handle_save_menu(app, keys, message);
     bool tapped_header = touch && touch->py < 24;
     bool tapped_rom = tapped_header && touch->px >= 8 && touch->px < 40;
     bool tapped_settings = tapped_header && touch->px >= 48 && touch->px < 88;
@@ -325,7 +485,14 @@ static bool handle_menu(struct application *app, uint32_t keys, const touchPosit
     if (!touch || touch->py < 24)
         return false;
     if (touch->py >= 168 && touch->px >= 160 && touch->px < 208) {
-        *message = "Save states pending";
+        if (!app->save_path) {
+            *message = "SD path unavailable";
+        } else {
+            app->before_save = app->view;
+            app->save_slot = touch->px < 184 ? 0 : 1;
+            app->save_line = 18;
+            app->view = VIEW_SAVE;
+        }
     } else if (!app->md.cpu.stopped) {
         app->view = app->view == VIEW_PAUSED ? VIEW_CARTRIDGE : VIEW_PAUSED;
     } else {
@@ -350,6 +517,7 @@ int main(void)
 {
     frontend_init();
     init_game_display();
+    irqSet(IRQ_VBLANK, video_vblank);
     if (!fatInitDefault()) {
         frontend_draw(VIEW_BROWSER, -1);
         frontend_cursor(2, MENU_FIRST_ROW);
@@ -363,8 +531,11 @@ int main(void)
     keysSetRepeat(18, 4);
     draw_screen(&app, read_directory(&app.browser));
 
+    uint32_t observed_vblank = vblank_count;
     for (;;) {
-        swiWaitForVBlank();
+        if (observed_vblank == vblank_count)
+            swiWaitForVBlank();
+        observed_vblank = vblank_count;
         scanKeys();
         uint32_t keys = keysDown() | (keysDownRepeat() & (KEY_UP | KEY_DOWN));
         touchPosition touch;

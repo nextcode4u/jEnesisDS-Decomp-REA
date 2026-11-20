@@ -46,6 +46,11 @@ static unsigned run_cpu_until(struct megadrive *md, unsigned cycles, unsigned en
 {
     while (cycles < end && !md->cpu.stopped) {
         unsigned elapsed = m68k_step(&md->cpu, md);
+        uint16_t op = md->cpu.opcode;
+        if (elapsed == 10 && md->cpu.pc <= md->cpu.instruction_address &&
+            elapsed < end - cycles &&
+            ((op & 0xfff8) == 0x51c8 || op == 0x66fa || op == 0x67fa))
+            elapsed += m68k_skip_idle(&md->cpu, md, end - cycles - elapsed);
         md->ym_busy_cycles = md->ym_busy_cycles > elapsed ? md->ym_busy_cycles - elapsed : 0;
         cycles += elapsed;
     }
@@ -115,6 +120,10 @@ uint8_t megadrive_read_byte(const struct megadrive *md, uint32_t address)
 uint16_t megadrive_read_word(struct megadrive *md, uint32_t address)
 {
     address &= 0xffffff;
+    if (address < md->rom_size && md->rom_size - address >= 2)
+        return (uint16_t)md->rom[address] << 8 | md->rom[address + 1];
+    if (address >= 0xe00000)
+        return (uint16_t)md->ram[address & 0xffff] << 8 | md->ram[(address + 1) & 0xffff];
     if (address == 0xc00004 || address == 0xc00006) {
         md->vdp_command_pending = false;
         // Synchronous transfers leave the FIFO empty and DMA idle.
@@ -307,6 +316,11 @@ static bool vdp_write_control(struct megadrive *md, uint16_t value)
 bool megadrive_write_word(struct megadrive *md, uint32_t address, uint16_t value)
 {
     address &= 0xffffff;
+    if (address >= 0xe00000) {
+        md->ram[address & 0xffff] = value >> 8;
+        md->ram[(address + 1) & 0xffff] = value;
+        return true;
+    }
     switch (address) {
     case 0xc00000:
     case 0xc00002:

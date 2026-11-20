@@ -6,6 +6,7 @@ enum frontend_view {
     VIEW_CARTRIDGE,
     VIEW_PAUSED,
     VIEW_SETTINGS,
+    VIEW_SAVE,
 };
 
 enum {

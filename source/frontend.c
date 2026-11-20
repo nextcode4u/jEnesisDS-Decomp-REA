@@ -183,7 +183,7 @@ void frontend_draw(enum frontend_view view, int selected_row)
     draw_frame(21, 22, TILES_FOOTER, -1);
     draw_icon(1, TILES_CARTRIDGE_ICON, view == VIEW_BROWSER);
     draw_icon(6, TILES_PAD_ICON, view == VIEW_SETTINGS);
-    if (view == VIEW_CARTRIDGE || view == VIEW_PAUSED)
+    if (view == VIEW_CARTRIDGE || view == VIEW_PAUSED || view == VIEW_SAVE)
         fill_tiles(20, 21, 6, 1, TILE_SLOT);
     consoleClear();
     consoleSetColor(text, CONSOLE_LIGHT_YELLOW);

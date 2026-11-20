@@ -1,11 +1,13 @@
 #include "cartridge.h"
 #include "megadrive.h"
+#include "savestate.h"
 #include "vdp_render.h"
 
 #include <assert.h>
+#include <stdio.h>
 #include <string.h>
 
-static uint8_t rom[0x254] = {
+static uint8_t rom[0x26a] = {
     0x00, 0xff, 0xfe, 0x00,  // Initial supervisor stack at $fffe00.
     0x00, 0x00, 0x02, 0x00,  // Reset PC at $200.
     [0x78] = 0x00, 0x00, 0x02, 0x48,            // Level 6 autovector.
@@ -33,6 +35,13 @@ static uint8_t rom[0x254] = {
     0x4e, 0x73,                                // rte
     0xc3, 0xfc, 0xff, 0xfd,                    // muls #-3,d1
     0x83, 0xfc, 0x00, 0x04,                    // divs #4,d1
+    0x51, 0xc8, 0xff, 0xfe,                    // dbra d0, self
+    0x4e, 0x71,                                // nop
+    0x51, 0xc8, 0xff, 0xfc,                    // dbra d0, previous nop
+    0x4a, 0x38, 0xf6, 0x20,                    // tst.b $f620.w
+    0x66, 0xfa,                                // bne.s to the TST
+    0xc1, 0x41,                                // exg d0,d1
+    0xe0, 0xe8, 0x00, 0x10,                    // asr.w $10(a0)
 };
 
 static void vdp_register(struct megadrive *md, unsigned reg, unsigned value)
@@ -119,6 +128,53 @@ static void test_vdp_render(struct megadrive *md)
     assert(bitmap[0] == 0);
 }
 
+static void test_idle_loops(struct megadrive *md)
+{
+    struct m68k *cpu = &md->cpu;
+    cpu->pc = 0x254;
+    cpu->d[0] = 0x56780004;
+    assert(m68k_step(cpu, md) == 10);
+    assert(m68k_skip_idle(cpu, md, 29) == 20 && cpu->d[0] == 0x56780001);
+    assert(m68k_step(cpu, md) == 10);
+    assert(m68k_skip_idle(cpu, md, 40) == 0);
+    assert(m68k_step(cpu, md) == 14 && cpu->pc == 0x258);
+
+    cpu->d[0] = 4;
+    assert(m68k_step(cpu, md) == 4 && m68k_step(cpu, md) == 10);
+    assert(m68k_skip_idle(cpu, md, 29) == 28 && cpu->d[0] == 1);
+    assert(cpu->pc == 0x258);
+
+    cpu->pc = 0x25e;
+    md->ram[0xf620] = 1;
+    assert(m68k_step(cpu, md) == 12 && m68k_step(cpu, md) == 10);
+    assert(m68k_skip_idle(cpu, md, 50) == 44 && cpu->pc == 0x25e);
+    md->ram[0xf620] = 0;
+    assert(m68k_skip_idle(cpu, md, 50) == 0);
+}
+
+static void test_savestate(struct megadrive *md)
+{
+    const char *path = "build/c/boot-test.jsc";
+    remove(path);
+    uint32_t identity = savestate_identity(md);
+    const uint32_t pc = md->cpu.pc;
+    md->ram[75] = 0x81;
+    md->vram[5] = 0x93;
+    assert(savestate_save(path, identity, md));
+    assert(savestate_exists(path));
+    md->ram[75] = md->vram[5] = 0;
+    md->cpu.pc = 0;
+    assert(!savestate_load(path, identity ^ 1, md));
+    assert(md->cpu.pc == 0 && md->ram[75] == 0);
+    assert(savestate_load(path, identity, md));
+    assert(md->cpu.pc == pc && md->ram[75] == 0x81 && md->vram[5] == 0x93);
+    FILE *file = fopen(path, "ab");
+    assert(file && fputc(0xff, file) != EOF && fclose(file) == 0);
+    assert(!savestate_load(path, identity, md));
+    assert(md->cpu.pc == pc && md->ram[75] == 0x81);
+    assert(remove(path) == 0);
+}
+
 int main(void)
 {
     static struct megadrive md;
@@ -169,4 +225,15 @@ int main(void)
     md.cpu.pc = 0x24c;
     assert(m68k_step(&md.cpu, &md) != 0 && md.cpu.d[1] == 0xffffffeb);
     assert(m68k_step(&md.cpu, &md) != 0 && md.cpu.d[1] == 0xfffffffb);
+    test_idle_loops(&md);
+    md.cpu.pc = 0x264;
+    md.cpu.d[0] = 0x12345678;
+    md.cpu.d[1] = 0x89abcdef;
+    assert(m68k_step(&md.cpu, &md) == 6);
+    assert(md.cpu.d[0] == 0x89abcdef && md.cpu.d[1] == 0x12345678);
+    md.cpu.a[0] = 0xff0000;
+    assert(megadrive_write_word(&md, 0xff0010, 0x8001));
+    assert(m68k_step(&md.cpu, &md) == 16);
+    assert(megadrive_read_word(&md, 0xff0010) == 0xc000 && (md.cpu.sr & 31) == 25);
+    test_savestate(&md);
 }

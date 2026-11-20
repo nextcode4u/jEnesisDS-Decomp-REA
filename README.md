@@ -1,6 +1,6 @@
 # jEnesisDS BlocksDS C port
 
-The port compiles the project's ARM7 and ARM9 programs from C with Wonderful's compiler. It links against libnds and uses the standard BlocksDS startup code. The C core runs the 68000 and VDP diagnostic and boots Sonic the Hedgehog into Green Hill Zone Act 1 in melonDS. Broader game compatibility, full-speed emulation, audio, and save states are still pending.
+The port compiles the project's ARM7 and ARM9 programs from C with Wonderful's compiler. It links against libnds and uses the standard BlocksDS startup code. The C core runs the 68000 and VDP diagnostic and boots Sonic the Hedgehog into Green Hill Zone Act 1 in melonDS. The touch menu provides two save slots. Broader game compatibility, sustained full-speed emulation, and audio are still pending.
 
 ## Build on Linux or WSL
 
@@ -19,7 +19,7 @@ In melonDS, enable a virtual DLDI SD card and add Genesis ROMs to it. The bottom
 - In the ROM browser, use **Up** and **Down** to highlight an entry, **Left** and **Right** to change pages, **A** to open or run the selection, and **B** to open the parent folder.
 - During emulation, touch the panel to pause and touch again or press **SELECT** to resume. Press **SELECT** while running or tap the cartridge icon to open the browser. Press **SELECT** in the browser to return to the current cartridge.
 - Tap the controller icon to open configuration. Use **A** or tap **Country** to cycle the region for the next cartridge.
-- The two save-slot controls show their status when tapped. Save and load operations are pending.
+- Tap **[1]** or **[2]**, choose **SAVE** or **LOAD** with the D-pad, and press **A**. The portable C build's versioned `.jsc` files live next to the cartridge and have their own format.
 
 ## C sources
 
@@ -29,11 +29,12 @@ In melonDS, enable a virtual DLDI SD card and add Genesis ROMs to it. The bottom
 - [Cartridge loader](source/cartridge.c) reads raw ROMs, decodes SMD blocks, parses the cartridge header, and computes the Genesis checksum.
 - [68000 interpreter](source/m68k.c) reads the reset vectors, runs the supported instructions, delivers VBlank interrupts, and reports the address and opcode where unsupported work stops execution.
 - [Genesis bus and VDP](source/megadrive.c) map the cartridge and mirrored RAM, handle three-button input and Z80 bus requests, and write VRAM, CRAM, and VSRAM through the VDP.
-- [VDP renderer](source/vdp_render.c) draws the two scrolling planes, window, and sprites into an indexed DS bitmap. The viewport is centered on the Genesis picture.
+- [DS renderer](source/vdp_ds.c) uses tiled backgrounds and hardware sprites for supported modes. The [bitmap renderer](source/vdp_render.c) handles the remaining modes. Both renderers center the viewport on the Genesis picture.
+- [Save states](source/savestate.c) serialize the emulated hardware state, verify the cartridge identity, and reject invalid files before restoring the running state.
 
 The C ROM booted in melonDS 1.1 and loaded Sonic the Hedgehog in both BIN and SMD formats from a subdirectory on the virtual SD card. A host check verified that the loader decoded a cartridge from BIN and SMD into identical bytes and rejected truncated and invalid files.
 
-The C build runs the Genesis backdrop diagnostic in melonDS 1.1. Both captured top-screen colors match the original jEnesisDS 0.7.4 frames pixel for pixel. Sonic's intro, title screen, and basic movement and jumping in the first act were tested in melonDS. The renderer currently samples video state once per frame. Scanline effects, some sprite limits, and interlace are pending. The VDP uses synchronous DMA, and the sound-chip interfaces accept startup writes while awaiting synthesis and Z80 execution. Run `make check` for host checks of the CPU, controller port, Z80 bus access, VDP DMA, and tile and sprite priority.
+The C build runs the Genesis backdrop diagnostic in melonDS 1.1. Both captured top-screen colors match the original jEnesisDS 0.7.4 frames pixel for pixel. Sonic's intro, title screen, movement, jumping, and both save slots were tested in melonDS. A restored Green Hill Zone frame matched the frame at the time of saving and matched across both renderers. The renderer samples video state once per frame. Mid-frame palette effects and interlace are pending. The VDP uses synchronous DMA, and the sound-chip interfaces accept startup writes while awaiting synthesis and Z80 execution. Run `make check` for host checks covering the CPU, idle-loop scheduling, controller port, Z80 bus access, VDP DMA, tile and sprite priority, and save-file validation.
 
 ## Gameplay reference
 
