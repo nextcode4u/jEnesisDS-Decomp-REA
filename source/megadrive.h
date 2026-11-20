@@ -1,13 +1,12 @@
 #ifndef JENESIS_MEGADRIVE_H
 #define JENESIS_MEGADRIVE_H
 
+#include "cartridge.h"
 #include "dac.h"
 #include "m68k.h"
 #include "third_party/z80/z80.h"
 
 #include <stddef.h>
-
-struct cartridge;
 
 enum genesis_region {
     GENESIS_REGION_AUTO,
@@ -32,6 +31,9 @@ struct megadrive {
     struct m68k cpu;
     const uint8_t *rom;
     size_t rom_size;
+    uint32_t sram_start, sram_size;
+    uint8_t sram_control;
+    bool sram_dirty;
     uint8_t ram[0x10000];
     uint8_t z80_ram[0x2000];
     z80 sound_cpu;
@@ -75,7 +77,13 @@ struct megadrive {
     unsigned frame_cycles;
     unsigned cycle_carry;
     unsigned frame_cycle;
+    uint8_t sram[CARTRIDGE_SRAM_CAPACITY];
 };
+
+static inline bool megadrive_sram_visible(const struct megadrive *md, uint32_t address)
+{
+    return (md->sram_control & 1) && address - md->sram_start < md->sram_size;
+}
 
 void megadrive_reset_serial(struct megadrive *md);
 void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum genesis_region region);

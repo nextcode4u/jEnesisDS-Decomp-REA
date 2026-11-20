@@ -9,6 +9,7 @@ enum {
     SYSTEM_NAME = 0x100,
     INTERNATIONAL_TITLE = 0x150,
     CHECKSUM = 0x18e,
+    SRAM = 0x1b0,
     REGION = 0x1f0,
     SMD_HEADER_SIZE = 0x200,
     SMD_BLOCK_SIZE = 0x4000,
@@ -71,6 +72,30 @@ static uint16_t rom_checksum(const uint8_t *data, size_t size)
     return (uint16_t)sum;
 }
 
+static uint32_t read_be32(const uint8_t *data)
+{
+    return (uint32_t)data[0] << 24 | (uint32_t)data[1] << 16 |
+           (uint32_t)data[2] << 8 | data[3];
+}
+
+static void read_sram_header(struct cartridge *cart)
+{
+    const uint8_t *header = cart->data + SRAM;
+    if (header[0] != 'R' || header[1] != 'A' || header[2] == 0xe8)
+        return;
+    uint32_t start = read_be32(header + 4);
+    uint32_t end = read_be32(header + 8);
+    // The original .srm format stores full bus words, including the unused lane.
+    if (start >= end || end >= 0x400000)
+        return;
+    start &= ~1U;
+    end |= 1;
+    if (end - start >= CARTRIDGE_SRAM_CAPACITY)
+        return;
+    cart->sram_start = start;
+    cart->sram_size = end - start + 1;
+}
+
 static const char *load_stream(struct cartridge *cart, FILE *file)
 {
     if (fseek(file, 0, SEEK_END) != 0)
@@ -112,6 +137,7 @@ static const char *load_stream(struct cartridge *cart, FILE *file)
     cart->header_checksum = ((uint16_t)cart->data[CHECKSUM] << 8) |
                             cart->data[CHECKSUM + 1];
     cart->computed_checksum = rom_checksum(cart->data, cart->size);
+    read_sram_header(cart);
     return NULL;
 }
 

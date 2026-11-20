@@ -22,13 +22,20 @@ static void set_status(struct m68k *cpu, uint16_t value)
     cpu->sr = value & 0xa71f;
 }
 
+static inline bool rom_visible(const struct megadrive *md, uint32_t address, unsigned size)
+{
+    return address < md->rom_size && md->rom_size - address >= size &&
+           (!(md->sram_control & 1) || address + size <= md->sram_start ||
+            address >= md->sram_start + md->sram_size);
+}
+
 static ITCM_CODE uint32_t read_memory(struct megadrive *md, uint32_t address, unsigned size)
 {
     address &= 0xffffff;
     const uint8_t *memory = NULL;
     if (address >= 0xe00000 && (address & 0xffff) <= 0x10000 - size)
         memory = md->ram + (address & 0xffff);
-    else if (address < md->rom_size && md->rom_size - address >= size)
+    else if (rom_visible(md, address, size))
         memory = md->rom + address;
     if (memory) {
         if (size == 1)
@@ -71,7 +78,7 @@ static uint32_t fetch(struct m68k *cpu, struct megadrive *md, unsigned size)
 {
     uint32_t address = cpu->pc & 0xffffff;
     cpu->pc += size;
-    if (address < md->rom_size && md->rom_size - address >= size) {
+    if (rom_visible(md, address, size)) {
         const uint8_t *rom = md->rom + address;
         uint32_t value = (uint32_t)rom[0] << 8 | rom[1];
         if (size == 4)
@@ -109,11 +116,10 @@ static void set_data(struct m68k *cpu, unsigned reg, unsigned size, uint32_t val
 
 static void set_logic_flags(struct m68k *cpu, unsigned size, uint32_t value)
 {
-    cpu->sr &= ~(CCR_N | CCR_Z | CCR_V | CCR_C);
-    if (!(value & size_mask(size)))
-        cpu->sr |= CCR_Z;
-    if (value & (UINT32_C(1) << (size * 8 - 1)))
-        cpu->sr |= CCR_N;
+    // Normalize the active operand so one shift supplies both N and Z.
+    uint32_t normalized = value << (32 - size * 8);
+    uint16_t nz = normalized == 0 ? CCR_Z : (normalized >> 31) * CCR_N;
+    cpu->sr = (cpu->sr & ~(CCR_N | CCR_Z | CCR_V | CCR_C)) | nz;
 }
 
 static bool condition_true(uint16_t sr, unsigned condition)
@@ -169,13 +175,9 @@ static ITCM_CODE bool address_operand(struct m68k *cpu, struct megadrive *md,
 
 static unsigned memory_cycles(unsigned mode, unsigned reg, unsigned size)
 {
-    unsigned overhead = mode == 4 ? 2 : 0;
-    if (mode == 5 || (mode == 7 && reg == 0) || (mode == 7 && reg == 2))
-        overhead = 4;
-    if (mode == 6 || (mode == 7 && reg == 3))
-        overhead = 6;
-    if (mode == 7 && reg == 1)
-        overhead = 8;
+    static const uint8_t mode_cost[8] DTCM_DATA = {0, 0, 0, 0, 2, 4, 6, 0};
+    static const uint8_t extended_cost[8] DTCM_DATA = {4, 8, 4, 6, 0, 0, 0, 0};
+    unsigned overhead = mode == 7 ? extended_cost[reg] : mode_cost[mode];
     return overhead + (size == 4 ? 8 : 4);
 }
 
@@ -243,6 +245,17 @@ static uint32_t unary_result(struct m68k *cpu, unsigned size, uint16_t op, uint3
     unsigned kind = op & 0xff00;
     uint32_t mask = size_mask(size);
     operand &= mask;
+    if (kind == 0x4000) {
+        uint32_t sign = (mask >> 1) + 1;
+        bool extend = (cpu->sr & CCR_X) != 0;
+        uint32_t result = (-operand - extend) & mask;
+        uint16_t flags = (result & sign ? CCR_N : 0) |
+                         (result ? 0 : cpu->sr & CCR_Z) |
+                         (operand & result & sign ? CCR_V : 0) |
+                         ((operand || extend) ? CCR_X | CCR_C : 0);
+        cpu->sr = (cpu->sr & ~31) | flags;
+        return result;
+    }
     uint32_t result = kind == 0x4200 ? 0 : kind == 0x4400 ? -operand : ~operand;
     set_logic_flags(cpu, size, result);
     if (kind == 0x4400) {
@@ -754,8 +767,7 @@ static unsigned execute_misc(struct m68k *cpu, struct megadrive *md, uint16_t op
     }
     if ((op & 0xff00) == 0x4a00)
         return test_operand(cpu, md, op);
-    if (((op & 0xff00) == 0x4200 || (op & 0xff00) == 0x4400 ||
-         (op & 0xff00) == 0x4600) && (op & 0xc0) != 0xc0)
+    if ((op & 0xf900) == 0x4000 && (op & 0xc0) != 0xc0)
         return unary_operand(cpu, md, op);
     if ((op & 0xff80) == 0x4c80)
         return load_multiple(cpu, md, op);
@@ -825,6 +837,25 @@ static unsigned execute_misc(struct m68k *cpu, struct megadrive *md, uint16_t op
             cpu->sr = (cpu->sr & ~31) | (value & 31);
         return cycles;
     }
+    if ((op & 0xfff8) == 0x4e50) {
+        unsigned frame = op & 7;
+        int16_t displacement = fetch(cpu, md, 2);
+        cpu->a[7] -= 4;
+        if (!write_memory(md, cpu->a[7], 4, cpu->a[frame]))
+            return 0;
+        cpu->a[frame] = cpu->a[7];
+        cpu->a[7] += displacement;
+        return 16;
+    }
+    if ((op & 0xfff8) == 0x4e58) {
+        unsigned frame = op & 7;
+        uint32_t stack = cpu->a[frame];
+        if (stack & 1)
+            return 0;
+        cpu->a[7] = stack + 4;
+        cpu->a[frame] = read_memory(md, stack, 4);
+        return 12;
+    }
     if ((op & 0xfff0) == 0x4e60) {
         if (!(cpu->sr & SR_SUPERVISOR))
             return 0;
@@ -834,6 +865,8 @@ static unsigned execute_misc(struct m68k *cpu, struct megadrive *md, uint16_t op
             cpu->inactive_sp = cpu->a[op & 7];
         return 4;
     }
+    if ((op & 0xfff0) == 0x4e40)
+        return enter_exception(cpu, md, 32 + (op & 15), cpu->sr) ? 34 : 0;
     switch (op) {
     case 0x4e71:
         return 4;
@@ -844,6 +877,16 @@ static unsigned execute_misc(struct m68k *cpu, struct megadrive *md, uint16_t op
         cpu->pc = read_memory(md, cpu->a[7] + 2, 4);
         cpu->a[7] += 6;
         set_status(cpu, status);
+        return 20;
+    }
+    case 0x4e77: {
+        uint32_t stack = cpu->a[7];
+        if (stack & 1)
+            return 0;
+        uint16_t flags = read_memory(md, stack, 2);
+        cpu->pc = read_memory(md, stack + 2, 4);
+        cpu->a[7] = stack + 6;
+        cpu->sr = (cpu->sr & ~31) | (flags & 31);
         return 20;
     }
     case 0x4e75:
@@ -857,8 +900,45 @@ static unsigned execute_misc(struct m68k *cpu, struct megadrive *md, uint16_t op
     }
 }
 
+static unsigned move_peripheral(struct m68k *cpu, struct megadrive *md, uint16_t op)
+{
+    unsigned reg = (op >> 9) & 7;
+    unsigned count = (op & 0x40) ? 4 : 2;
+    uint32_t address = cpu->a[op & 7] + (int16_t)fetch(cpu, md, 2);
+    if (op & 0x80) {
+        for (unsigned i = 0; i < count; ++i) {
+            uint8_t byte = cpu->d[reg] >> ((count - i - 1) * 8);
+            if (!megadrive_write_byte(md, address + i * 2, byte))
+                return 0;
+        }
+    } else {
+        uint32_t value = 0;
+        for (unsigned i = 0; i < count; ++i)
+            value = value << 8 | megadrive_read_byte(md, address + i * 2);
+        set_data(cpu, reg, count, value);
+    }
+    return count == 4 ? 24 : 16;
+}
+
+static unsigned compare_memory(struct m68k *cpu, struct megadrive *md, uint16_t op)
+{
+    unsigned size = 1U << ((op >> 6) & 3);
+    uint32_t source, destination;
+    address_operand(cpu, md, 3, op & 7, size, &source);
+    if (size != 1 && (source & 1))
+        return 0;
+    uint32_t right = read_memory(md, source, size);
+    address_operand(cpu, md, 3, (op >> 9) & 7, size, &destination);
+    if (size != 1 && (destination & 1))
+        return 0;
+    arithmetic_flags(cpu, size, read_memory(md, destination, size), right, true, true);
+    return size == 4 ? 20 : 12;
+}
+
 static unsigned execute_immediate(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
+    if ((op & 0xf138) == 0x0108)
+        return move_peripheral(cpu, md, op);
     if ((op & 0x100) || (op & 0xff00) == 0x0800)
         return bit_operation(cpu, md, op);
     if ((op & 0xff00) == 0 || (op & 0xff00) == 0x0200 || (op & 0xff00) == 0x0a00)
@@ -954,6 +1034,8 @@ static unsigned execute(struct m68k *cpu, struct megadrive *md, uint16_t op)
             return multiply_or_divide(cpu, md, op);
         return data_alu(cpu, md, op);
     case 11:
+        if ((op & 0xf138) == 0xb108 && (op & 0xc0) != 0xc0)
+            return compare_memory(cpu, md, op);
         if ((op & 0x100) && (op & 0xc0) != 0xc0)
             return exclusive_or(cpu, md, op);
         return data_alu(cpu, md, op);
@@ -1021,7 +1103,7 @@ static unsigned skip_inactive_objects(struct m68k *cpu, const struct megadrive *
     unsigned length = cpu->instruction_address - cpu->pc;
     if (length != 20 && length != 16)
         return 0;
-    if (pc >= md->rom_size || md->rom_size - pc < length)
+    if (!rom_visible(md, pc, length))
         return 0;
     const uint8_t *rom = md->rom + pc;
     bool move_byte = length == 20;
@@ -1072,7 +1154,7 @@ ITCM_CODE unsigned m68k_skip_idle(struct m68k *cpu, struct megadrive *md, unsign
         if (cpu->pc != cpu->instruction_address) {
             if (cpu->pc + 2 != cpu->instruction_address)
                 return skip_inactive_objects(cpu, md, budget, pc);
-            if (pc >= md->rom_size || md->rom_size - pc < 2)
+            if (!rom_visible(md, pc, 2))
                 return 0;
             uint16_t first = rom_word(md->rom, pc);
             if (first != 0x4e71)
@@ -1088,7 +1170,7 @@ ITCM_CODE unsigned m68k_skip_idle(struct m68k *cpu, struct megadrive *md, unsign
     }
     if ((op != 0x66fa && op != 0x67fa) || cpu->pc + 4 != cpu->instruction_address)
         return 0;
-    if (pc >= md->rom_size || md->rom_size - pc < 4 ||
+    if (!rom_visible(md, pc, 4) ||
         md->rom[pc] != 0x4a || md->rom[pc + 1] != 0x38)
         return 0;
     // TST.B (abs).W followed by BNE/BEQ reads an unchanged work-RAM byte.

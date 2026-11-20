@@ -42,6 +42,10 @@ void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum ge
     memset(md, 0, sizeof(*md));
     md->rom = cart->data;
     md->rom_size = cart->size;
+    md->sram_start = cart->sram_start;
+    md->sram_size = cart->sram_size;
+    if (md->sram_size && md->sram_start >= md->rom_size)
+        md->sram_control = 1;
     md->z80_reset = true;
     genesis_z80_reset(md);
     md->ym_registers[0][0x2a] = 0x80;
@@ -281,6 +285,8 @@ static uint16_t read_vdp_counters(const struct megadrive *md)
 uint8_t megadrive_read_byte(struct megadrive *md, uint32_t address)
 {
     address &= 0xffffff;
+    if (megadrive_sram_visible(md, address))
+        return md->sram[address - md->sram_start];
     if (address < md->rom_size)
         return md->rom[address];
     if (address >= 0xe00000)
@@ -316,7 +322,8 @@ uint8_t megadrive_read_byte(struct megadrive *md, uint32_t address)
 uint16_t megadrive_read_word(struct megadrive *md, uint32_t address)
 {
     address &= 0xffffff;
-    if (address < md->rom_size && md->rom_size - address >= 2)
+    if (address < md->rom_size && md->rom_size - address >= 2 &&
+        !megadrive_sram_visible(md, address))
         return (uint16_t)md->rom[address] << 8 | md->rom[address + 1];
     if (address >= 0xe00000)
         return (uint16_t)md->ram[address & 0xffff] << 8 | md->ram[(address + 1) & 0xffff];
@@ -348,6 +355,19 @@ bool megadrive_write_byte(struct megadrive *md, uint32_t address, uint8_t value)
     address &= 0xffffff;
     if (address >= 0xe00000) {
         md->ram[address & 0xffff] = value;
+        return true;
+    }
+    if (megadrive_sram_visible(md, address)) {
+        uint8_t *byte = &md->sram[address - md->sram_start];
+        if (!(md->sram_control & 2) && *byte != value) {
+            *byte = value;
+            md->sram_dirty = true;
+        }
+        return true;
+    }
+    if (address == 0xa130f1) {
+        if (md->sram_size)
+            md->sram_control = value & 3;
         return true;
     }
     if (address >= 0xa00000 && address < 0xa04000 && md->z80_bus_requested) {
@@ -414,7 +434,7 @@ static void store_vram_byte(struct megadrive *md, uint16_t address, uint8_t valu
     }
 }
 
-static bool vdp_store(struct megadrive *md, uint16_t value)
+static void vdp_store(struct megadrive *md, uint16_t value)
 {
     uint16_t address = md->vdp_address;
     unsigned word = (address >> 1) & 0x3f;
@@ -434,10 +454,9 @@ static bool vdp_store(struct megadrive *md, uint16_t value)
         }
         break;
     default:
-        return false;
+        break;
     }
     md->vdp_address += md->vdp_registers[15];
-    return true;
 }
 
 static unsigned dma_length(const struct megadrive *md)
@@ -474,8 +493,7 @@ static bool vdp_dma(struct megadrive *md)
         const uint32_t bank = (md->vdp_registers[23] & 0x7f) << 17;
         for (unsigned i = 0; i < length; ++i) {
             uint16_t value = megadrive_read_word(md, bank | ((uint16_t)offset << 1));
-            if (!vdp_store(md, value))
-                return false;
+            vdp_store(md, value);
             ++offset;
         }
     }
@@ -491,8 +509,7 @@ static bool vdp_write_data(struct megadrive *md, uint16_t value)
     if (md->vdp_fill_pending) {
         md->vdp_fill_pending = false;
         // The initial word precedes the repeated high-byte writes.
-        if (!vdp_store(md, value))
-            return false;
+        vdp_store(md, value);
         unsigned length = dma_length(md);
         for (unsigned i = 0; i < length; ++i) {
             store_vram_byte(md, md->vdp_address ^ 1, value >> 8);
@@ -501,7 +518,8 @@ static bool vdp_write_data(struct megadrive *md, uint16_t value)
         dma_complete(md);
         return true;
     }
-    return vdp_store(md, value);
+    vdp_store(md, value);
+    return true;
 }
 
 static bool vdp_write_control(struct megadrive *md, uint16_t value)
@@ -547,6 +565,8 @@ bool megadrive_write_word(struct megadrive *md, uint32_t address, uint16_t value
     case 0xc00004:
     case 0xc00006:
         return vdp_write_control(md, value);
+    case 0xa130f0:
+        return megadrive_write_byte(md, address + 1, value);
     case 0xa11100:
     case 0xa11200:
         return megadrive_write_byte(md, address, value >> 8);

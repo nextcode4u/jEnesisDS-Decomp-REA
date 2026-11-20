@@ -64,6 +64,10 @@ static void test_status_immediates(void)
         0xd3, 0x40,             // ADDX.W D0,D1
         0x93, 0x40,             // SUBX.W D0,D1
         0x48, 0x7a, 0x00, 0x06, // PEA 6(PC)
+        0x4e, 0x56, 0xff, 0xf0, // LINK A6,#-16
+        0x40, 0x44,             // NEGX.W D4
+        0x40, 0x44,             // NEGX.W D4
+        0x4e, 0x5e,             // UNLK A6
     };
     md.rom = code;
     md.rom_size = sizeof(code);
@@ -80,6 +84,18 @@ static void test_status_immediates(void)
     md.cpu.a[7] = 0xfffffc;
     assert(m68k_step(&md.cpu, &md) == 16 && md.cpu.a[7] == 0xfffff8);
     assert(megadrive_read_word(&md, 0xfffff8) == 0 && megadrive_read_word(&md, 0xfffffa) == 24);
+    md.cpu.a[6] = 0x12345678;
+    assert(m68k_step(&md.cpu, &md) == 16 && md.cpu.a[6] == 0xfffff4);
+    assert(md.cpu.a[7] == 0xffffe4 && md.cpu.sr == 0x2715);
+    assert(megadrive_read_word(&md, 0xfffff4) == 0x1234);
+    assert(megadrive_read_word(&md, 0xfffff6) == 0x5678);
+    md.cpu.d[4] = 0x1234ffff;
+    assert(m68k_step(&md.cpu, &md) == 4 && md.cpu.sr == 0x2715);
+    assert(md.cpu.d[4] == 0x12340000);
+    assert(m68k_step(&md.cpu, &md) == 4 && md.cpu.sr == 0x2719);
+    assert(md.cpu.d[4] == 0x1234ffff);
+    assert(m68k_step(&md.cpu, &md) == 12 && md.cpu.a[6] == 0x12345678);
+    assert(md.cpu.a[7] == 0xfffff8 && md.cpu.sr == 0x2719);
 }
 
 static void vdp_register(struct megadrive *md, unsigned reg, unsigned value)
@@ -462,6 +478,61 @@ static void test_savestate(struct megadrive *md)
     assert(remove(path) == 0);
 }
 
+static void test_cartridge_sram(void)
+{
+    static struct megadrive md;
+    uint8_t rom[0x204] = {
+        [0x84] = 0x00, 0x00, 0x02, 0x00, // TRAP #1 vector
+        [0x100] = 0x34, 0x56,
+        [0x120] = 0x4e, 0x41,             // TRAP #1
+        [0x122] = 0x07, 0x88, 0x00, 0x02, // MOVEP.W D3,2(A0)
+        [0x126] = 0xb3, 0x08,             // CMPM.B (A0)+,(A1)+
+        [0x200] = 0x4e, 0x77,             // RTR
+    };
+    struct cartridge cart = {.data = rom, .size = sizeof(rom), .sram_start = 0x100, .sram_size = 4};
+    megadrive_reset(&md, &cart, GENESIS_REGION_AUTO);
+    assert(megadrive_read_word(&md, 0x100) == 0x3456);
+    assert(megadrive_write_word(&md, 0xa130f0, 1));
+    assert(megadrive_read_word(&md, 0x100) == 0);
+    assert(megadrive_write_word(&md, 0x100, 0x1234) && md.sram_dirty);
+    assert(megadrive_write_byte(&md, 0xa130f1, 3));
+    assert(megadrive_write_byte(&md, 0x101, 0xff));
+    assert(megadrive_read_word(&md, 0x100) == 0x1234);
+
+    const char *path = "build/c/boot-test.srm";
+    remove(path);
+    assert(saveram_flush(path, &md) && !md.sram_dirty);
+    memset(md.sram, 0, md.sram_size);
+    saveram_load(path, &md);
+    assert(megadrive_read_word(&md, 0x100) == 0x1234 && !md.sram_dirty);
+    assert(remove(path) == 0);
+
+    md.cpu.pc = 0x120;
+    md.cpu.a[7] = 0xfff000;
+    md.cpu.sr = 0x2010;
+    assert(m68k_step(&md.cpu, &md) == 34 && md.cpu.pc == 0x200);
+    assert(m68k_step(&md.cpu, &md) == 20 && md.cpu.pc == 0x122);
+    assert(md.cpu.a[7] == 0xfff000 && md.cpu.sr == 0x2010);
+    md.cpu.d[3] = 0x23456789;
+    md.cpu.a[0] = 0xff0020;
+    md.cpu.a[1] = 0xff0024;
+    assert(m68k_step(&md.cpu, &md) == 16 && md.cpu.sr == 0x2010);
+    assert(megadrive_read_word(&md, 0xff0022) == 0x6700);
+    assert(megadrive_read_word(&md, 0xff0024) == 0x8900);
+    assert(m68k_step(&md.cpu, &md) == 12 && md.cpu.sr == 0x2018);
+    assert(md.cpu.a[0] == 0xff0021 && md.cpu.a[1] == 0xff0025);
+
+    const char *state = "build/c/boot-sram-test.jsc";
+    remove(state);
+    unsigned identity = savestate_identity(&md);
+    assert(savestate_save(state, identity, &md));
+    md.sram[0] = 0xff;
+    assert(megadrive_write_byte(&md, 0xa130f1, 0));
+    assert(savestate_load(state, identity, &md));
+    assert(md.sram_control == 3 && md.sram_dirty && megadrive_read_word(&md, 0x100) == 0x1234);
+    assert(remove(state) == 0);
+}
+
 static void test_psg(void)
 {
     struct psg chip;
@@ -518,6 +589,7 @@ int main(void)
     assert(megadrive_read_byte(&md, 0xa10001) == 0xe1);
     assert(md.frame_cycles > 150000 && !md.cpu.stopped);
     test_status_immediates();
+    test_cartridge_sram();
     test_fm_output();
     test_dac_timing(&cartridge);
     test_z80_dac_writes(&cartridge);

@@ -8,7 +8,7 @@
 
 enum { FNV_PRIME = 16777619 };
 static const uint32_t fnv_start = UINT32_C(2166136261);
-static const uint8_t magic[4] = {'J', 'S', 'C', 7};
+static const uint8_t magic[4] = {'J', 'S', 'C', 8};
 
 struct state_io {
     FILE *file;
@@ -138,6 +138,10 @@ static void transfer_state(struct state_io *io, struct megadrive *md, unsigned v
         SCALAR(md->vdp_odd_field);
     else
         md->vdp_odd_field = false;
+    if (version >= 8 && md->sram_size) {
+        SCALAR(md->sram_control);
+        transfer(io, md->sram, md->sram_size);
+    }
 #undef SCALAR
 #undef ARRAY_BYTES
 }
@@ -188,6 +192,27 @@ bool savestate_exists(const char *path)
     return exists;
 }
 
+static bool promote_save(const char *temp, const char *path)
+{
+    if (!rename(temp, path))
+        return true;
+    // FatFs can reject replacement. Preserve the old file until promotion succeeds.
+    char *backup = with_suffix(path, ".bak");
+    bool ok = false;
+    if (backup && file_exists(path)) {
+        remove(backup);
+        if (!rename(path, backup)) {
+            ok = !rename(temp, path);
+            if (ok)
+                remove(backup);
+            else
+                rename(backup, path);
+        }
+    }
+    free(backup);
+    return ok;
+}
+
 bool savestate_save(const char *path, uint32_t identity, struct megadrive *md)
 {
     char *temp = with_suffix(path, ".tmp");
@@ -197,25 +222,64 @@ bool savestate_save(const char *path, uint32_t identity, struct megadrive *md)
     bool ok = file && transfer_file(file, identity, md, true);
     if (file && fclose(file))
         ok = false;
-    if (ok && rename(temp, path)) {
-        // FatFs can reject replacement. Keep the old file until promotion succeeds.
-        char *backup = with_suffix(path, ".bak");
-        ok = false;
-        if (backup && file_exists(path)) {
-            remove(backup);
-            if (rename(path, backup) == 0) {
-                ok = rename(temp, path) == 0;
-                if (ok)
-                    remove(backup);
-                else
-                    rename(backup, path);
-            }
-        }
-        free(backup);
-    }
+    if (ok)
+        ok = promote_save(temp, path);
     if (!ok)
         remove(temp);
     free(temp);
+    return ok;
+}
+
+static bool read_save_ram(const char *path, uint8_t *data, unsigned size)
+{
+    FILE *file = fopen(path, "rb");
+    if (!file)
+        return false;
+    bool ok = fread(data, 1, size, file) == size && fgetc(file) == EOF && !ferror(file);
+    if (fclose(file))
+        ok = false;
+    return ok;
+}
+
+void saveram_load(const char *path, struct megadrive *md)
+{
+    if (!md->sram_size)
+        return;
+    uint8_t *data = malloc(md->sram_size);
+    if (!data)
+        return;
+    bool ok = read_save_ram(path, data, md->sram_size);
+    if (!ok) {
+        char *backup = with_suffix(path, ".bak");
+        ok = backup && read_save_ram(backup, data, md->sram_size);
+        free(backup);
+    }
+    if (ok) {
+        memcpy(md->sram, data, md->sram_size);
+        md->sram_dirty = false;
+    }
+    free(data);
+}
+
+bool saveram_flush(const char *path, struct megadrive *md)
+{
+    if (!md->sram_dirty)
+        return true;
+    if (!path)
+        return false;
+    char *temp = with_suffix(path, ".tmp");
+    if (!temp)
+        return false;
+    FILE *file = fopen(temp, "wb");
+    bool ok = file && fwrite(md->sram, 1, md->sram_size, file) == md->sram_size;
+    if (file && fclose(file))
+        ok = false;
+    if (ok)
+        ok = promote_save(temp, path);
+    if (!ok)
+        remove(temp);
+    free(temp);
+    md->sram_dirty = !ok;
     return ok;
 }
 
@@ -236,14 +300,21 @@ bool savestate_load(const char *path, uint32_t identity, struct megadrive *md)
         return false;
     loaded->rom = md->rom;
     loaded->rom_size = md->rom_size;
+    loaded->sram_start = md->sram_start;
+    loaded->sram_size = md->sram_size;
+    loaded->sram_control = md->sram_control;
+    memcpy(loaded->sram, md->sram, md->sram_size);
     genesis_z80_reset(loaded);
     bool ok = load_file(path, identity, loaded);
     if (!ok) {
         char *backup = with_suffix(path, ".bak");
+        // The first parse may have partially filled SRAM before checksum verification.
+        loaded->sram_control = md->sram_control;
+        memcpy(loaded->sram, md->sram, md->sram_size);
         ok = backup && load_file(backup, identity, loaded);
         free(backup);
     }
-    if (ok && loaded->psg_latch < 8 &&
+    if (ok && loaded->sram_control <= 3 && loaded->psg_latch < 8 &&
         (loaded->frame_cycles == 3420 * 262 / 7 || loaded->frame_cycles == 3420 * 313 / 7) &&
         loaded->cycle_carry < loaded->frame_cycles &&
         loaded->z80_bank <= 0x1ff && loaded->z80_clock_phase < 15 &&
@@ -251,6 +322,8 @@ bool savestate_load(const char *path, uint32_t identity, struct megadrive *md)
         loaded->ym_timer_clocks[0] <= 1024 * 144 * 7 &&
         loaded->ym_timer_clocks[1] <= 256 * 16 * 144 * 7 &&
         loaded->sound_cpu.interrupt_mode <= 2 && loaded->sound_cpu.iff_delay <= 2) {
+        loaded->sram_dirty = md->sram_dirty ||
+                             memcmp(loaded->sram, md->sram, md->sram_size) != 0;
         loaded->video_revision = md->video_revision + 1;
         *md = *loaded;
         genesis_z80_bind(md);

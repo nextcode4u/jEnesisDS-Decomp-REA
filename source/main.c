@@ -106,6 +106,7 @@ struct application {
     struct megadrive md;
     char filename[29];
     char *save_path;
+    char *sram_path;
     uint32_t save_identity;
     uint16_t sound_generation;
     unsigned save_slot;
@@ -353,15 +354,23 @@ static void setup_savestates(struct application *app, const char *name)
     if (stem > 200)
         stem = 200;
     size_t capacity = length + stem + 20;
+    const char *separator = length && directory[length - 1] == '/' ? "" : "/";
     app->save_path = malloc(capacity);
     if (app->save_path) {
         app->save_identity = savestate_identity(&app->md);
-        const char *separator = length && directory[length - 1] == '/' ? "" : "/";
         snprintf(app->save_path, capacity, "%s%s%.*s-%08lX_1.jsc", directory, separator,
                  (int)stem, name, (unsigned long)app->save_identity);
         for (unsigned i = 0; i < 2; ++i) {
             select_save_path(app, i);
             app->slots[i] = savestate_exists(app->save_path);
+        }
+    }
+    if (app->md.sram_size) {
+        app->sram_path = malloc(capacity);
+        if (app->sram_path) {
+                snprintf(app->sram_path, capacity, "%s%s%.*s.srm", directory, separator,
+                     (int)stem, name);
+            saveram_load(app->sram_path, &app->md);
         }
     }
     free(directory);
@@ -373,6 +382,11 @@ static const char *open_selection(struct application *app)
     const struct entry *entry = &browser->entries[browser->selected];
     if (entry->directory)
         return chdir(entry->name) == 0 ? read_directory(browser) : "Cannot open folder";
+
+    if (!saveram_flush(app->sram_path, &app->md))
+        return "Cannot write cartridge SRAM";
+    free(app->sram_path);
+    app->sram_path = NULL;
 
     // Keep one cartridge in memory so a large ROM can replace another.
     cartridge_unload(&app->cart);
@@ -658,6 +672,13 @@ int main(void)
                 draw_game_frame(&app.md);
             if (app.md.cpu.stopped)
                 draw_screen(&app, NULL);
+        }
+        static unsigned sram_flush_vblank;
+        if (app.md.sram_dirty &&
+            ((was_running && !running) || vblank_count - sram_flush_vblank >= 120)) {
+            sram_flush_vblank = vblank_count;
+            if (!saveram_flush(app.sram_path, &app.md))
+                draw_screen(&app, "Cannot write cartridge SRAM");
         }
         was_running = running && !app.md.cpu.stopped;
         if (running && !app.md.cpu.stopped) {
