@@ -1,6 +1,8 @@
 """Stage the matched ARM9 Slot-1, video, and runtime code."""
+from hashlib import sha256
 from pathlib import Path
 import shutil
+from struct import pack_into
 
 from r20 import compile_c, run, tool
 from sdk_source import LIBNDS_APR_2006, LIBNDS_OCT_2007, snapshot
@@ -29,6 +31,8 @@ R20_ARM9_ARCHIVES = (
         (0x02082EC0, 0x02082F5C, "lib_a-memcpy.o"),
         (0x02082F5C, 0x02083058, "lib_a-memmove.o"),
         (0x02083058, 0x020830F0, "lib_a-memset.o"),
+        (0x020830F0, 0x020830F8, "lib_a-mlock.o"),
+        (0x020830F8, 0x02083144, "lib_a-openr.o"),
         (0x02083144, 0x020832E8, "lib_a-reent.o"),
         (0x020832E8, 0x020834C8, "lib_a-refill.o"),
         (0x020834C8, 0x02083510, "lib_a-sbrkr.o"),
@@ -48,12 +52,28 @@ R20_ARM9_ARCHIVES = (
         (0x02083F18, 0x02083F68, "lib_a-strpbrk.o"),
         (0x02083F68, 0x02083FB8, "lib_a-strrchr.o"),
         (0x02083FB8, 0x02083FFC, "lib_a-strupr.o"),
+        (0x02083FFC, 0x02084048, "lib_a-writer.o"),
         (0x02084048, 0x0208408C, "lib_a-closer.o"),
         (0x0208408C, 0x02084130, "lib_a-flags.o"),
         (0x02084130, 0x02084574, "lib_a-fvwrite.o"),
+        (0x02084574, 0x020845C0, "lib_a-lseekr.o"),
         (0x020845C0, 0x020846C0, "lib_a-memchr.o"),
+        (0x020846C0, 0x0208470C, "lib_a-readr.o"),
         (0x0208470C, 0x02084D28, "lib_a-reallocr.o"),
         (0x02084D28, 0x02084E34, "lib_a-wsetup.o"),
+    )),
+    ("arm-eabi/lib/libsysbase.a", (
+        (0x02084E34, 0x02084FC0, "iosupport.o"),
+        (0x02084FC0, 0x0208502C, "close.o"),
+        (0x0208502C, 0x020850A0, "fstat.o"),
+        (0x020850A0, 0x020850A8, "isatty.o"),
+        (0x020850A8, 0x020850FC, "lseek.o"),
+        (0x020850FC, 0x020851CC, "open.o"),
+        (0x020851CC, 0x0208523C, "read.o"),
+        (0x0208523C, 0x020852BC, "sbrk.o"),
+        (0x020852BC, 0x0208532C, "write.o"),
+        (0x0208532C, 0x0208568C, "chdir.o"),
+        (0x0208568C, 0x02085898, "dir.o"),
     )),
     ("lib/gcc/arm-eabi/4.1.1/libgcc.a", (
         (0x020805DC, 0x02080618, "_call_via_rX.o"),
@@ -63,22 +83,24 @@ R20_ARM9_ARCHIVES = (
     )),
 )
 ARM9_NEWLIB_BSS = 0x020B4CA8
-ARM9_SDK_EXTERNALS = {
-    "__ctype_ptr": 0x0208F394,
-    "__malloc_lock": 0x020830F0,
-    "__malloc_unlock": 0x020830F4,
-    "_close": 0x02084FC0,
-    "_fstat": 0x0208502C,
-    "_global_impure_ptr": 0x0208EF88,
-    "_impure_ptr": 0x0208F398,
-    "_lseek_r": 0x02084574,
-    "_open_r": 0x020830F8,
-    "_read_r": 0x020846C0,
-    "_sbrk": 0x0208523C,
-    "_write_r": 0x02083FFC,
-    "isatty": 0x020850A0,
+ARM9_SYSBASE_BSS = 0x020B4CDC
+ARM9_SDK_EXTERNALS = {"__end__": 0x023EB350}
+IMPURE_OBJECT_SHA256 = "bc46d64d6a8d9ca8f59bccacd7ad6cf22125ffc41a402f60730e42c4738ab15d"
+ARM9_ARCHIVE_DATA = {
+    "arm-eabi/lib/libc.a": ("lib_a-ctype_.o", "lib_a-impure.o"),
+    "arm-eabi/lib/libsysbase.a": ("malloc_vars.o",),
 }
 ARM9_SDK_REGIONS = (
+    (0x0208EE84, 0x0208EF85, "lib_a-ctype_.o(.rodata)"),
+    (0x0208EF88, 0x0208EF8C, "lib_a-impure.o(.rodata)"),
+    (0x0208EF8C, 0x0208EFD8, "iosupport.o(.rodata)"),
+    (0x0208EFD8, 0x0208EFE4, "chdir.o(.rodata)"),
+    (0x0208F324, 0x0208F328, "lib_a-impure.o(.rodata.str1.4)"),
+    (0x0208F328, 0x0208F330, "iosupport.o(.rodata.str1.4)"),
+    (0x0208F394, 0x0208F398, "lib_a-ctype_.o(.data)"),
+    (0x0208F398, 0x0208F7B0, "lib_a-impure.o(.data)"),
+    (0x0208FBC0, 0x0208FC04, "iosupport.o(.data)"),
+    (0x0208FC04, 0x02090004, "chdir.o(.data)"),
     (0x0208F7B0, 0x0208FBC0, "lib_a-mallocr.o(.data)"),
     (0x0207FC98, 0x0207FDA8, "arm9-video.o(.text)"),
     (0x0207FDA8, 0x02080094, "arm9-card.o(.text)"),
@@ -88,6 +110,21 @@ ARM9_SDK_REGIONS = (
     *((start, end, f"{member}(.text)")
       for _, regions in R20_ARM9_ARCHIVES for start, end, member in regions),
 )
+
+
+
+def place_impure_string_padding(path):
+    """Reproduce the two fill bytes after the pooled newlib locale name."""
+    member = bytearray(path.read_bytes())
+    if sha256(member).hexdigest() != IMPURE_OBJECT_SHA256:
+        raise ValueError("Expected lib_a-impure.o from devkitARM r20")
+    # The release's merged string pool pads "C\0" with 0xff to four
+    # bytes. This is inside the input object's .rodata.str1.4 section.
+    pool_header = 0x61c
+    pack_into("<I", member, pool_header + 8, 2)  # SHF_ALLOC only.
+    pack_into("<I", member, pool_header + 36, 0)
+    member[0x456:0x458] = b"\xff\xff"
+    path.write_bytes(member)
 
 
 def stage_arm9_sdk(work, compiler, r20, libnds):
@@ -114,7 +151,9 @@ def stage_arm9_sdk(work, compiler, r20, libnds):
     for path, regions in R20_ARM9_ARCHIVES:
         archive = Path(path).name
         members = [member for _, _, member in regions]
+        members.extend(ARM9_ARCHIVE_DATA.get(path, ()))
         shutil.copyfile(r20 / path, work / archive)
         run(work, tool(prefix, "ar"), "x", archive, *members)
         objects.extend(members)
+    place_impure_string_padding(work / "lib_a-impure.o")
     return objects

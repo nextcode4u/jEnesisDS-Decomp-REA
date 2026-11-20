@@ -82,23 +82,7 @@ void _close_r(int *param_1,undefined4 param_2)
 }
 
 
-// 0x02084574  _read_r
-
-void _read_r(int *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)
-
-{
-  int iVar1;
-  
-  DAT_023eb34c = 0;
-  iVar1 = _read(param_2,param_3,param_4);
-  if ((iVar1 == -1) && (DAT_023eb34c != 0)) {
-    *param_1 = DAT_023eb34c;
-  }
-  return;
-}
-
-
-// 0x020846c0  _lseek_r
+// 0x02084574  _lseek_r
 
 void _lseek_r(int *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)
 
@@ -114,9 +98,25 @@ void _lseek_r(int *param_1,undefined4 param_2,undefined4 param_3,undefined4 para
 }
 
 
-// 0x02084e34  set_default_device_slot
+// 0x020846c0  _read_r
 
-void set_default_device_slot(int param_1)
+void _read_r(int *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)
+
+{
+  int iVar1;
+  
+  DAT_023eb34c = 0;
+  iVar1 = _read(param_2,param_3,param_4);
+  if ((iVar1 == -1) && (DAT_023eb34c != 0)) {
+    *param_1 = DAT_023eb34c;
+  }
+  return;
+}
+
+
+// 0x02084e34  setDefaultDevice
+
+void setDefaultDevice(int param_1)
 
 {
   if (param_1 - 3U < 0xe) {
@@ -163,9 +163,9 @@ int AddDevice(undefined4 *param_1)
 }
 
 
-// 0x02084ee0  select_device_for_path_prefix
+// 0x02084ee0  FindDevice
 
-int select_device_for_path_prefix(int param_1)
+int FindDevice(int param_1)
 
 {
   int iVar1;
@@ -200,14 +200,14 @@ int select_device_for_path_prefix(int param_1)
 }
 
 
-// 0x02084f84  unregister_device_by_path_prefix
+// 0x02084f84  RemoveDevice
 
-int unregister_device_by_path_prefix(void)
+int RemoveDevice(void)
 
 {
   int iVar1;
   
-  iVar1 = select_device_for_path_prefix();
+  iVar1 = FindDevice();
   if (iVar1 != -1) {
     (&DAT_0208fbc0)[iVar1] = &DAT_0208ef8c;
     iVar1 = 0;
@@ -271,9 +271,9 @@ undefined4 * _fstat(undefined4 *param_1,undefined4 param_2)
 }
 
 
-// 0x020850a8  _read
+// 0x020850a8  _lseek
 
-undefined4 _read(int *param_1,undefined4 param_2,undefined4 param_3)
+undefined4 _lseek(int *param_1,undefined4 param_2,undefined4 param_3)
 
 {
   undefined4 uVar1;
@@ -299,7 +299,7 @@ int * _open(undefined4 param_1,undefined4 param_2,undefined4 param_3)
   int *piVar4;
   int iVar5;
   
-  iVar2 = select_device_for_path_prefix();
+  iVar2 = FindDevice();
   if ((iVar2 == -1) || (*(int *)((&DAT_0208fbc0)[iVar2] + 8) == 0)) {
     DAT_0208f3a0 = 0x58;
     piVar4 = (int *)0xffffffff;
@@ -331,9 +331,9 @@ int * _open(undefined4 param_1,undefined4 param_2,undefined4 param_3)
 }
 
 
-// 0x020851cc  _lseek
+// 0x020851cc  _read
 
-undefined4 _lseek(undefined4 *param_1,undefined4 param_2,undefined4 param_3)
+undefined4 _read(undefined4 *param_1,undefined4 param_2,undefined4 param_3)
 
 {
   undefined4 uVar1;
@@ -418,9 +418,9 @@ undefined4 _write(undefined4 *param_1,undefined4 param_2,undefined4 param_3)
 }
 
 
-// 0x02085394  normalize_device_directory_path
+// 0x02085394  _concatenate_path
 
-undefined4 normalize_device_directory_path(undefined4 *param_1,int param_2,char *param_3,int param_4)
+undefined4 _concatenate_path(undefined4 *param_1,int param_2,char *param_3,int param_4)
 
 {
   char cVar1;
@@ -529,16 +529,16 @@ undefined4 chdir(int param_1)
     }
     iVar2 = strchr(auStack_410,0x3a);
     if (*(char *)(iVar2 + 1) == '/') {
-      iVar2 = normalize_device_directory_path(&DAT_0208f3a0,auStack_410,param_1,0x400);
+      iVar2 = _concatenate_path(&DAT_0208f3a0,auStack_410,param_1,0x400);
       if (iVar2 != -1) {
-        iVar2 = select_device_for_path_prefix(auStack_410);
+        iVar2 = FindDevice(auStack_410);
         if ((iVar2 < 0) || (*(code **)((&DAT_0208fbc0)[iVar2] + 0x2c) == (code *)0x0)) {
           DAT_0208f3a0 = 0x13;
           return 0xffffffff;
         }
         iVar3 = (**(code **)((&DAT_0208fbc0)[iVar2] + 0x2c))(&DAT_0208f3a0,auStack_410);
         if (iVar3 != -1) {
-          set_default_device_slot(iVar2);
+          setDefaultDevice(iVar2);
           strncpy(&DAT_0208fc04,auStack_410,0x400);
           return 0;
         }
@@ -555,9 +555,9 @@ undefined4 chdir(int param_1)
 }
 
 
-// 0x020856f0  devoptab_read_next_directory_entry
+// 0x020856f0  dirnext
 
-undefined4 devoptab_read_next_directory_entry(int *param_1,undefined4 param_2,undefined4 param_3)
+undefined4 dirnext(int *param_1,undefined4 param_2,undefined4 param_3)
 
 {
   undefined4 uVar1;
@@ -583,9 +583,9 @@ undefined4 devoptab_read_next_directory_entry(int *param_1,undefined4 param_2,un
 }
 
 
-// 0x02085760  devoptab_close_directory
+// 0x02085760  dirclose
 
-undefined4 devoptab_close_directory(int *param_1)
+undefined4 dirclose(int *param_1)
 
 {
   code *pcVar1;
@@ -611,15 +611,15 @@ undefined4 devoptab_close_directory(int *param_1)
 }
 
 
-// 0x020857d4  devoptab_open_directory
+// 0x020857d4  diropen
 
-int * devoptab_open_directory(undefined4 param_1)
+int * diropen(undefined4 param_1)
 
 {
   int iVar1;
   int *piVar2;
   
-  iVar1 = select_device_for_path_prefix();
+  iVar1 = FindDevice();
   if ((iVar1 == -1) || (*(int *)((&DAT_0208fbc0)[iVar1] + 0x3c) == 0)) {
     piVar2 = (int *)0x0;
     DAT_0208f3a0 = 0x58;

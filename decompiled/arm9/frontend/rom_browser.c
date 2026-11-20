@@ -159,8 +159,8 @@ void enumerate_rom_browser_directory(void)
   uint entry_mode;
   
   free_rom_directory_list();
-  DAT_023cb614 = devoptab_open_directory(&DAT_0208f224);
-  while (directory_result = devoptab_read_next_directory_entry(DAT_023cb614,&DAT_023cb510,entry_stat_prefix), directory_result == 0) {
+  DAT_023cb614 = diropen(&DAT_0208f224);
+  while (directory_result = dirnext(DAT_023cb614,&DAT_023cb510,entry_stat_prefix), directory_result == 0) {
     while (directory_result = strcmp(&DAT_023cb510,&DAT_0208f224), directory_result != 0) {
       if ((entry_mode & 0x4000) == 0) {
         entry_kind = 1;
@@ -169,7 +169,7 @@ void enumerate_rom_browser_directory(void)
         entry_kind = 2;
       }
       add_rom_browser_entry(&DAT_023cb510,entry_kind);
-      directory_result = devoptab_read_next_directory_entry(DAT_023cb614,&DAT_023cb510,entry_stat_prefix);
+      directory_result = dirnext(DAT_023cb614,&DAT_023cb510,entry_stat_prefix);
       if (directory_result != 0) goto LAB_02003330;
     }
   }
@@ -179,7 +179,7 @@ LAB_02003330:
   DAT_02098fe4 = 0;
   restore_overlay_tilemap_row(DAT_0208f344);
   DAT_0208f344 = 4;
-  devoptab_close_directory(DAT_023cb614);
+  dirclose(DAT_023cb614);
   return;
 }
 

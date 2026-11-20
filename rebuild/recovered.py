@@ -9,10 +9,14 @@ from generate_m68k_operand_dispatch import (
     write_source as write_m68k_operand_dispatch,
 )
 from generate_ym2612_tables import OUTPUT_NAME as YM2612_TABLE_SOURCE, write_source as write_ym2612_tables
+from generate_z80_dispatch import (
+    OUTPUT_NAME as Z80_DISPATCH_SOURCE, PAGES as Z80_PAGES, dispatch_pages,
+    write_source as write_z80_dispatch,
+)
 from r20 import check_match, compile_c, run, tool
 from sdk_arm7 import (ARM7_IRQ_TABLE, ARM7_SDK_EXTERNALS, ARM7_SDK_REGIONS, DIVISION_OBJECTS, TOUCH_BSS,
                       stage_arm7_sdk)
-from sdk_arm9 import ARM9_NEWLIB_BSS, ARM9_SDK_EXTERNALS, ARM9_SDK_REGIONS, stage_arm9_sdk
+from sdk_arm9 import ARM9_NEWLIB_BSS, ARM9_SDK_EXTERNALS, ARM9_SDK_REGIONS, ARM9_SYSBASE_BSS, stage_arm9_sdk
 from sdk_libfat import LIBFAT_BSS, LIBFAT_DATA_SYMBOLS, LIBFAT_REGIONS, stage_libfat
 from sdk_source import irq_setup_sections, stage_sdk_bios, stage_sdk_for_reference, stage_sdk_irq_setup
 
@@ -77,6 +81,7 @@ def check_codec_image(original, rebuilt, base):
 
 
 DLDI_SOURCE = "dldi_placeholder.c"
+Z80_DISPATCH_SYMBOLS = dispatch_pages()[1]
 
 
 # Function entries used by the four recovered opcode classes. The C table
@@ -159,8 +164,15 @@ RECOVERED_REGIONS = (
          "update_vdp_timing": 0x0200B284,
          "run_m68k": 0x01002F60,
      }),
+    ("Z80 reset line", "z80_reset_line.c", "reset_z80_core_state",
+     0x02000BFC, 0x02000C08, {
+         "z80_context": 0x0B000158,
+         "reset_z80_cpu_registers_and_latches": 0x02004DCC,
+     }),
     ("Cartridge byte order", "cartridge_byte_order.c", "swap_adjacent_bytes_in_backing_buffer",
      0x0200157C, 0x020015C0, {}),
+    ("Unmapped bus reads and writes", "m68k_default_bus.c", "read_default_m68k_bus_byte",
+     0x02004368, 0x020043CC, {}),
     ("Z80 cartridge bank", "z80_bank_state.c", "get_z80_bank_latch_for_savestate",
      0x02004438, 0x02004484, {
          "z80_cartridge_bank_base": 0x02099008,
@@ -187,6 +199,11 @@ RECOVERED_REGIONS = (
      }),
     ("Z80 PC and SP save state", "savestate_z80_pointers.c", "encode_z80_pc_and_sp_as_ram_offsets",
      0x02004F70, 0x020050A8, {}),
+    *(
+        (f"Z80 {prefix} dispatch", Z80_DISPATCH_SOURCE, f".rodata.z80_{name}",
+         start, start + count * 4, Z80_DISPATCH_SYMBOLS)
+        for prefix, name, start, count in Z80_PAGES
+    ),
     ("Z80 context initialization", "z80_context.c", "initialize_z80_state_and_dispatch_pointers",
      0x020050A8, 0x020050CC, {
          "memset": 0x02083058,
@@ -264,6 +281,8 @@ RECOVERED_REGIONS = (
          0x02032C28 + (line << 14), 0x02032C28 + ((line + 1) << 14), M68K_OPERAND_SYMBOLS)
         for line, name in OPERAND_CLASSES
     ),
+    ("68000 condition and rotate counts", "m68k_condition_tables.c", None,
+     0x020168B0, 0x02016A70, {}),
     ("Default DLDI interface and reserved storage", DLDI_SOURCE, "dldi_placeholder",
      0x02074DC0, 0x0207CDC0, {"dldi_reservation_end": 0x0207CDC0}),
     ("Save-state layout and slot path", "savestate_layout.c", "prepare_savestate_header_and_regions",
@@ -298,6 +317,20 @@ ARM7_REGIONS = (
          "psg_ring_samples": 0x03806DB8,
          "reset_psg_channel_state": 0x037F89BC,
      }),
+    ("ARM7 YM2612 bank 1 packet", "arm7_ym2612_bank1.c", "apply_ym2612_bank1_writes",
+     0x037F9394, 0x037F93D0, {
+         "write_ym2612_channel_or_operator_register": 0x037F8E1C,
+     }),
+    ("ARM7 YM2612 DAC enable", "arm7_dac_enable.c", "read_ym2612_dac_enable",
+     0x037F93D8, 0x037F93E8, {"ym2612_state": 0x03806EA8}),
+    ("ARM7 DAC resampling cursor", "arm7_dac_cursor.c", "reset_dac_sample_cursor",
+     0x037FBC10, 0x037FBC68, {
+         "dac_source_index": 0x0380B878,
+         "dac_source_fraction_q16": 0x0380B87C,
+         "dac_source_step_q16": 0x0380B880,
+         "dac_staged_byte_count": 0x0380B8A0,
+         "__aeabi_uidiv": 0x038018D8,
+     }),
     ("ARM7 YM2612 lookup tables", YM2612_TABLE_SOURCE, None,
      0x038026F8, 0x03806D34, {}),
     ("ARM7 PSG attenuation table", "arm7_psg_attenuation.c", None,
@@ -319,10 +352,14 @@ def with_libnds_headers(compiler, r20):
 def compile_arm9_source(compiler, work, filename):
     if filename == M68K_OPERAND_SOURCE:
         write_m68k_operand_dispatch(work / filename)
+    elif filename == Z80_DISPATCH_SOURCE:
+        write_z80_dispatch(work / filename)
     flags = {
         # Keep the last stream read in r0 on decoder exit.
         "lzss_decode.c": ("-fno-tree-vrp",),
         "controller_write.c": ("-fno-unit-at-a-time",),
+        # Preserve the wrapper calls and their original function order.
+        "m68k_default_bus.c": ("-fno-unit-at-a-time", "-fno-optimize-sibling-calls"),
         # Preserve the original write-then-read function order.
         "z80_memory.c": ("-fno-unit-at-a-time",),
     }.get(filename, ())
@@ -332,7 +369,9 @@ def compile_arm9_source(compiler, work, filename):
 def compile_arm7_source(compiler, work, filename):
     if filename == YM2612_TABLE_SOURCE:
         write_ym2612_tables(work / filename)
-    return compile_c(compiler, work, Path(filename), 7, "-O2", "-marm")
+    # Keep the empty-packet branch aimed at the shared return.
+    flags = ("-fno-reorder-blocks",) if filename == "arm7_ym2612_bank1.c" else ()
+    return compile_c([*compiler, *flags], work, Path(filename), 7, "-O2", "-marm")
 
 
 def stage_c_runtime_sections(work, r20, objcopy):
@@ -509,6 +548,8 @@ def prepare_reference_arm9(work, compiler, image, base, runtime, r20, libnds=Non
                                 fat_bss + f'. = 0x020b4ca0 - 0x02098f70;\n        "{keys}"(.bss)\n'
                                 f"        . = {ARM9_NEWLIB_BSS:#x} - 0x02098f70;\n"
                                 "        lib_a-mallocr.o(.bss)\n"
+                                f"        . = {ARM9_SYSBASE_BSS:#x} - 0x02098f70;\n"
+                                "        sbrk.o(.bss) malloc_vars.o(.bss)\n"
                                 "        . = 0x023eb34c - 0x02098f70;\n"
                                 "        lib_a-reent.o(COMMON)\n"
                                 "        . = 0x023eb350 - 0x02098f70;")

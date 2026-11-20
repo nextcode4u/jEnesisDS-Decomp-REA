@@ -8,6 +8,7 @@ import shutil
 import struct
 from tempfile import TemporaryDirectory
 
+from banner import render_banner
 from r20 import EXPECTED_ROM_SHA256, check_match, compiler_command, run, tool
 from recovered import (check_codec_image, prepare_reference_arm7, prepare_reference_arm9,
                        stage_c_runtime_sections, with_libnds_headers)
@@ -31,13 +32,12 @@ def package_reference_rom(rom, arm9, arm7):
         rom[:arm9_offset] + arm9 +
         bytes(arm7_offset - arm9_offset - len(arm9)) + arm7 +
         bytes(fnt_offset - arm7_offset - len(arm7)) + fnt +
-        bytes(banner_offset - fnt_offset - len(fnt)) + rom[banner_offset:]
+        bytes(banner_offset - fnt_offset - len(fnt)) + render_banner()
     )
 
 
-def package_r20_rom(work, r20, rom):
-    banner_offset = struct.unpack_from("<I", rom, 0x68)[0]
-    (work / "banner.bin").write_bytes(rom[banner_offset:])
+def package_r20_rom(work, r20):
+    (work / "banner.bin").write_bytes(render_banner())
     packager = tool(r20 / "bin/ndstool", "")
     run(work, packager, "-c", "packed.nds", "-9", "arm9.bin", "-7", "arm7.bin",
         "-t", "banner.bin", "-h", "0x200",
@@ -122,7 +122,7 @@ def main():
             check_match(arm9, rebuilt9, "ARM9 image")
         check_match(arm7, rebuilt7, "ARM7 image")
         if r20:
-            rebuilt_rom = package_r20_rom(work, r20, rom)
+            rebuilt_rom = package_r20_rom(work, r20)
         else:
             rebuilt_rom = package_reference_rom(rom, rebuilt9, rebuilt7)
         if not args.replace_codec:

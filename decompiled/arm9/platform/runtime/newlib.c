@@ -1946,7 +1946,7 @@ void __swrite(int param_1,undefined4 param_2,undefined4 param_3)
   
   uVar1 = *(ushort *)(param_1 + 0xc);
   if ((uVar1 & 0x100) != 0) {
-    _read_r(&DAT_0208f3a0,*(undefined4 *)(param_1 + 0x10),0,2);
+    _lseek_r(&DAT_0208f3a0,*(undefined4 *)(param_1 + 0x10),0,2);
     uVar1 = *(ushort *)(param_1 + 0xc);
   }
   *(ushort *)(param_1 + 0xc) = uVar1 & 0xefff;

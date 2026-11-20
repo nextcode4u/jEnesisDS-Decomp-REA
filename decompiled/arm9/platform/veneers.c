@@ -332,16 +332,16 @@ undefined4 chdir(int param_1)
     }
     iVar2 = strchr(auStack_410,0x3a);
     if (*(char *)(iVar2 + 1) == '/') {
-      iVar2 = normalize_device_directory_path(&DAT_0208f3a0,auStack_410,param_1,0x400);
+      iVar2 = _concatenate_path(&DAT_0208f3a0,auStack_410,param_1,0x400);
       if (iVar2 != -1) {
-        iVar2 = select_device_for_path_prefix(auStack_410);
+        iVar2 = FindDevice(auStack_410);
         if ((iVar2 < 0) || (*(code **)((&DAT_0208fbc0)[iVar2] + 0x2c) == (code *)0x0)) {
           DAT_0208f3a0 = 0x13;
           return 0xffffffff;
         }
         iVar3 = (**(code **)((&DAT_0208fbc0)[iVar2] + 0x2c))(&DAT_0208f3a0,auStack_410);
         if (iVar3 != -1) {
-          set_default_device_slot(iVar2);
+          setDefaultDevice(iVar2);
           strncpy(&DAT_0208fc04,auStack_410,0x400);
           return 0;
         }
@@ -381,16 +381,16 @@ undefined4 chdir(int param_1)
     }
     iVar2 = strchr(auStack_410,0x3a);
     if (*(char *)(iVar2 + 1) == '/') {
-      iVar2 = normalize_device_directory_path(&DAT_0208f3a0,auStack_410,param_1,0x400);
+      iVar2 = _concatenate_path(&DAT_0208f3a0,auStack_410,param_1,0x400);
       if (iVar2 != -1) {
-        iVar2 = select_device_for_path_prefix(auStack_410);
+        iVar2 = FindDevice(auStack_410);
         if ((iVar2 < 0) || (*(code **)((&DAT_0208fbc0)[iVar2] + 0x2c) == (code *)0x0)) {
           DAT_0208f3a0 = 0x13;
           return 0xffffffff;
         }
         iVar3 = (**(code **)((&DAT_0208fbc0)[iVar2] + 0x2c))(&DAT_0208f3a0,auStack_410);
         if (iVar3 != -1) {
-          set_default_device_slot(iVar2);
+          setDefaultDevice(iVar2);
           strncpy(&DAT_0208fc04,auStack_410,0x400);
           return 0;
         }
