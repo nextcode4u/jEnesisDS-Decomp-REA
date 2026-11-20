@@ -102,6 +102,7 @@ ARM9_SDK_REGIONS = (
     (0x0208FBC0, 0x0208FC04, "iosupport.o(.data)"),
     (0x0208FC04, 0x02090004, "chdir.o(.data)"),
     (0x0208F7B0, 0x0208FBC0, "lib_a-mallocr.o(.data)"),
+    (0x0207FC70, 0x0207FC98, "arm9-touch.o(.text)"),
     (0x0207FC98, 0x0207FDA8, "arm9-video.o(.text)"),
     (0x0207FDA8, 0x02080094, "arm9-card.o(.text)"),
     (0x02080298, 0x02080308, "arm9-dcache.o(.text)"),
@@ -130,13 +131,15 @@ def place_impure_string_padding(path):
 def stage_arm9_sdk(work, compiler, r20, libnds):
     prefix = r20 / "bin/arm-eabi-"
     april, october = work / "arm9-sdk-april", work / "arm9-sdk-october"
-    snapshot(libnds, LIBNDS_APR_2006, april, ("include", "source/common/card.c"))
+    snapshot(libnds, LIBNDS_APR_2006, april, ("include", "source/common/card.c", "source/arm9/touch.c"))
     snapshot(libnds, LIBNDS_OCT_2007, october,
              ("include", "source/arm9/video.c", "source/arm9/dcache.s"))
     card = compile_c(compiler, april, Path("source/common/card.c"), 9, "-O2", "-mthumb")
     run(april, tool(prefix, "objcopy"), "--redefine-sym", "memcpy=arm9_thumb_memcpy",
         card.name, "arm9-card.o")
     shutil.copyfile(april / "arm9-card.o", work / "arm9-card.o")
+    touch = compile_c(compiler, april, Path("source/arm9/touch.c"), 9, "-O2", "-mthumb")
+    shutil.copyfile(touch, work / "arm9-touch.o")
     video = compile_c(compiler, october, Path("source/arm9/video.c"), 9, "-O2", "-mthumb")
     shutil.copyfile(video, work / "arm9-video.o")
     run(october, *compiler, "-DARM9", "-mcpu=arm946e-s", "-x", "assembler-with-cpp",
@@ -147,7 +150,7 @@ def stage_arm9_sdk(work, compiler, r20, libnds):
     shutil.copyfile(SOURCE / veneer, work / veneer)
     run(work, tool(prefix, "as"), "-mcpu=arm946e-s", "-mthumb-interwork",
         "-o", "arm9-memcpy-veneer.o", veneer)
-    objects = ["arm9-card.o", "arm9-video.o", "arm9-dcache.o", "arm9-memcpy-veneer.o"]
+    objects = ["arm9-card.o", "arm9-touch.o", "arm9-video.o", "arm9-dcache.o", "arm9-memcpy-veneer.o"]
     for path, regions in R20_ARM9_ARCHIVES:
         archive = Path(path).name
         members = [member for _, _, member in regions]

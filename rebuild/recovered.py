@@ -86,6 +86,24 @@ def check_codec_image(original, rebuilt, base):
 
 
 DLDI_SOURCE = "dldi_placeholder.c"
+
+
+def alignment_fill(size):
+    return f"FILL(0xffffffff); . += {size:#x}; FILL(0);"
+
+
+ARM7_ALIGNMENT = (
+    (0x03801778, 0x03801780, alignment_fill(8)),
+    (0x03806D48, 0x03806D4C, alignment_fill(4)),
+)
+ARM9_ALIGNMENT = (
+    (0x02074D84, 0x02074DC0, alignment_fill(60)),
+    (0x02080308, 0x02080310, alignment_fill(8)),
+    (0x0208EF85, 0x0208EF88, alignment_fill(3)),
+    (0x0208F322, 0x0208F324, alignment_fill(2)),
+    (0x0208F393, 0x0208F394, alignment_fill(1)),
+)
+
 Z80_DISPATCH_SYMBOLS = dispatch_pages()[1]
 
 
@@ -174,6 +192,17 @@ RECOVERED_REGIONS = (
          "m68k_context": 0x0B0000AC,
          "update_vdp_timing": 0x0200B284,
          "run_m68k": 0x01002F60,
+     }),
+    ("Z80 cycle scheduler", "z80_cycle_driver.c", "run_remaining_z80_cycles",
+     0x02000588, 0x02000868, {
+         "frame_timing": 0x0B000000,
+         "z80_context": 0x0B000158,
+         "z80_scheduled_cycles": 0x02098F90,
+         "z80_accounted_cycles": 0x02098F98,
+         "emulator_option_flags": 0x023CB610,
+         "z80_reset_released": 0x02099001,
+         "z80_bus_request_asserted": 0x02099000,
+         "run_z80_cycle_budget": 0x0200DF50,
      }),
     ("Z80 reset line", "z80_reset_line.c", "reset_z80_core_state",
      0x02000BFC, 0x02000C08, {
@@ -298,6 +327,8 @@ RECOVERED_REGIONS = (
          "z80_reset_word_1": 0x02099038,
          "memset": 0x02083058,
      }),
+    ("Z80 pending interrupts", "z80_interrupt.c", "set_or_clear_z80_pending_interrupt_bits",
+     0x02004EF4, 0x02004F70, {}),
     ("Z80 PC and SP save state", "savestate_z80_pointers.c", "encode_z80_pc_and_sp_as_ram_offsets",
      0x02004F70, 0x020050A8, {}),
     *(
@@ -387,6 +418,12 @@ RECOVERED_REGIONS = (
          "cartridge_rom_bytes": 0x020B4CEC,
          "genesis_work_ram_bytes": 0x023CB634,
      }),
+    ("68000 memory reads", "m68k_loads.c", "read_m68k_byte_from_page",
+     0x02003B34, 0x02003C58, {
+         "m68k_byte_read_handlers": 0x0B00061C,
+         "m68k_word_read_handlers": 0x0B000A1C,
+         "cartridge_rom_bytes": 0x020B4CEC,
+     }),
     ("Cartridge bus", "cartridge_bus.c", "get_cartridge_rom_buffer",
      0x02003CA4, 0x02003CF8, {
          "cartridge_rom_bytes": 0x020B4CEC,
@@ -409,6 +446,7 @@ RECOVERED_REGIONS = (
     ),
     ("68000 condition and rotate counts", "m68k_condition_tables.c", None,
      0x020168B0, 0x02016A70, {}),
+    ("Hexadecimal digits", "hex_digits.c", None, 0x0208EC90, 0x0208ECA0, {}),
     ("Default DLDI interface and reserved storage", DLDI_SOURCE, "dldi_placeholder",
      0x02074DC0, 0x0207CDC0, {"dldi_reservation_end": 0x0207CDC0}),
     ("Save-state layout and slot path", "savestate_layout.c", "prepare_savestate_header_and_regions",
@@ -465,6 +503,17 @@ ARM7_REGIONS = (
          "set_fifo_message_callback": 0x037FC504,
          "handle_arm9_audio_command": 0x037FC218,
      }),
+    ("ARM7 PCM and chip reset", "arm7_audio_reset.c", "clear_audio_pcm_buffers",
+     0x037FC0F0, 0x037FC218, {
+         "pcm_rings": 0x0380BDB8,
+         "fm_pcm_vram_base": 0x03806D8C,
+         "dac_pcm_vram_base": 0x03806D90,
+         "psg_chip_clock_hz": 0x0380BAFC,
+         "dac_staged_byte_count": 0x0380B8A0,
+         "reset_psg_channel_state": 0x037F89BC,
+         "reset_ym2612_registers": 0x037F9238,
+         "send_fifo_command_and_payload": 0x037FC514,
+     }),
     ("ARM7 audio FIFO", "arm7_ipc_fifo.c", "dispatch_fifo_receive_interrupt",
      0x037FC468, 0x037FC590, {
          "arm7_ipc_receive_callback": 0x0380BE00,
@@ -477,6 +526,7 @@ ARM7_REGIONS = (
      0x038026F8, 0x03806D34, {}),
     ("ARM7 PSG attenuation table", "arm7_psg_attenuation.c", None,
      0x03806D4C, 0x03806D8C, {}),
+    ("ARM7 PCM VRAM bases", "arm7_pcm_bases.c", ".data", 0x03806D8C, 0x03806D94, {}),
 )
 
 
@@ -508,6 +558,7 @@ def compile_arm9_source(compiler, work, filename):
         "m68k_default_bus.c": ("-fno-unit-at-a-time", "-fno-optimize-sibling-calls"),
         "m68k_io_read.c": ("-fno-unit-at-a-time", "-fno-optimize-sibling-calls"),
         "m68k_io_write.c": ("-fno-unit-at-a-time",),
+        "m68k_loads.c": ("-fno-unit-at-a-time",),
         "m68k_vdp_word_read.c": ("-fno-optimize-sibling-calls",),
         "m68k_vdp_write.c": ("-fno-unit-at-a-time",),
         "m68k_bus_pages.c": ("-fno-unit-at-a-time",),
@@ -517,9 +568,13 @@ def compile_arm9_source(compiler, work, filename):
         "psg_queue.c": ("-fno-strict-aliasing",),
         # Preserve the original write-then-read function order.
         "z80_bus_lines.c": ("-fno-unit-at-a-time",),
+        "z80_cycle_driver.c": ("-fno-unit-at-a-time",),
         "z80_memory.c": ("-fno-unit-at-a-time",),
     }.get(filename, ())
-    return compile_c([*compiler, *flags], work, Path(filename), 9, "-O2", "-marm")
+    # The page table contains ARM-only entries. The original uses LDR pc
+    # instead of an interworking call for accesses through those pointers.
+    return compile_c([*compiler, *flags], work, Path(filename), 9, "-O2", "-marm",
+                     interwork=filename != "m68k_loads.c")
 
 
 def compile_arm7_source(compiler, work, filename):
@@ -528,9 +583,12 @@ def compile_arm7_source(compiler, work, filename):
     # Keep the empty-packet branch aimed at the shared return.
     flags = {
         "arm7_ym2612_bank1.c": ("-fno-reorder-blocks",),
+        # The PCM clear also appears inline in the chip reset entry.
+        "arm7_audio_reset.c": ("-finline-functions", "-fno-optimize-sibling-calls"),
         "arm7_fm_reset.c": ("-fno-optimize-sibling-calls",),
         "arm7_ipc_init.c": ("-fno-optimize-sibling-calls",),
         "arm7_ipc_fifo.c": ("-fno-unit-at-a-time",),
+        "arm7_pcm_bases.c": ("-fno-unit-at-a-time",),
     }.get(filename, ())
     return compile_c([*compiler, *flags], work, Path(filename), 7, "-O2", "-marm")
 
@@ -615,6 +673,7 @@ def write_payload_layout(work, core, image, base, begin, end, veneer, regions, *
 def prepare_reference_arm7(work, compiler, image, base, runtime, r20, libnds=None):
     regions, externals = runtime_layout(
         base, 0x037F80D0, 0x038026E0, 0x037F814C, 0x038024D8, 0x03806D34)
+    regions.extend(ARM7_ALIGNMENT)
     objects = list(runtime)
     recovered_compiler = with_libnds_headers(compiler, r20)
     for _, filename, entry, start, end, symbols in ARM7_REGIONS:
@@ -647,6 +706,7 @@ def prepare_reference_arm9(work, compiler, image, base, runtime, r20, libnds=Non
     """Generate ROM gaps and link input for rebuilding with matched C objects."""
     regions, externals = runtime_layout(
         base, 0x02000220, 0x020859F0, 0x02000240, 0x02082324, 0x0208F330)
+    regions.extend(ARM9_ALIGNMENT)
     objects = list(runtime)
     assembly = []
 
@@ -688,9 +748,10 @@ def prepare_reference_arm9(work, compiler, image, base, runtime, r20, libnds=Non
             regions.extend(LIBFAT_REGIONS)
             externals.update(LIBFAT_DATA_SYMBOLS)
         key_sections = " ".join(f'"{keys}"(.text.{name})'
-                                for name in ("keysHeld", "keysDown", "scanKeys"))
+                                for name in ("keysHeld", "keysDown", "scanKeys",
+                                             "keysDownRepeat", "keysSetRepeat", "keysUp"))
         regions.extend((
-            (0x0207FB70, 0x0207FC24, key_sections),
+            (0x0207FB70, 0x0207FC70, key_sections),
             (0x02080094, 0x02080298, irq_setup_sections(9)),
             (0x02080310, 0x02080380, f'"{bios}"(.text)'),
             (0x02080380, 0x020805DC, " ".join(f'"{obj}"(.text)' for obj in DIVISION_OBJECTS)),

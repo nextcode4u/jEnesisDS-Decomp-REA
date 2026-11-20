@@ -70,14 +70,16 @@ vdp_timing_tables.c: ../../../rebuild/generate_vdp_timing_tables.py
 arm7_ym2612_tables.c: ../../../rebuild/generate_ym2612_tables.py
 	$(PYTHON) $< $@
 
+arm7_audio_reset.o: CFLAGS += -finline-functions -fno-optimize-sibling-calls
 arm7_ym2612_bank1.o: CFLAGS += -fno-reorder-blocks
 lzss_decode.o: CFLAGS += -fno-tree-vrp
 arm7_fm_reset.o arm7_ipc_init.o: CFLAGS += -fno-optimize-sibling-calls
 m68k_default_bus.o m68k_io_read.o: CFLAGS += -fno-unit-at-a-time -fno-optimize-sibling-calls
+m68k_loads.o: CFLAGS += -fno-unit-at-a-time -mno-thumb-interwork
 m68k_refresh_pages.o: CFLAGS += -fno-tree-loop-optimize
 psg_queue.o: CFLAGS += -fno-strict-aliasing
 m68k_vdp_word_read.o: CFLAGS += -fno-optimize-sibling-calls
-arm7_ipc_fifo.o arm9_audio_controls.o controller_io_write.o controller_write.o m68k_bus_pages.o m68k_io_write.o m68k_page_defaults.o \
-m68k_vdp_write.o z80_bus_lines.o z80_memory.o: CFLAGS += -fno-unit-at-a-time
+arm7_ipc_fifo.o arm7_pcm_bases.o arm9_audio_controls.o controller_io_write.o controller_write.o m68k_bus_pages.o m68k_io_write.o m68k_page_defaults.o \
+m68k_vdp_write.o z80_bus_lines.o z80_cycle_driver.o z80_memory.o: CFLAGS += -fno-unit-at-a-time
 
 -include $(OFILES:.o=.d) $(RECOVERED_OBJECTS:.o=.d)

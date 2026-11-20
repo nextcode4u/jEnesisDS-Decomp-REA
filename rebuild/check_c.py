@@ -176,12 +176,12 @@ def check_sdk_keys(compiler, linker, objcopy, sdk, arm9):
     shutil.copyfile(SOURCE / "sdk_keys.ld", sdk / "sdk_keys.ld")
     run(sdk, linker, "-T", "sdk_keys.ld", "-o", "keys.elf", obj.name)
     base, memory = arm9
-    for section, address, length in ((".text", 0x0207FB70, 180), (".data", 0x0208F390, 3)):
+    for section, address, length in ((".text", 0x0207FB70, 256), (".data", 0x0208F390, 3)):
         run(sdk, objcopy, "-O", "binary", f"--only-section={section}", "keys.elf", "keys.bin")
         start = address - base
         check_match(memory[start:start + length], (sdk / "keys.bin").read_bytes(),
                     f"linked libnds key routines {section}")
-    print("  0x0207fb70 keysHeld, keysDown, scanKeys: 180/180 linked code bytes and 3/3 data bytes")
+    print("  0x0207fb70 six libnds key routines: 256/256 linked code bytes and 3/3 data bytes")
 
 
 def check_sdk_irq(compiler, linker, objcopy, sdk, arm9):
@@ -213,6 +213,7 @@ def check_sdk(compiler, prefix, work, images, libnds, ndslib):
         (sdk_2005, "lib/ARM9/keys.c", 9, "-O2", KEY_FUNCTIONS, set()),
         (sdk_2005, "lib/common/interrupts.c", 9, "-O2", IRQ_FUNCTIONS, set()),
         (sdk_2006, "source/arm7/touch.c", 7, "-O2", TOUCH_FUNCTIONS, set(TOUCH_FUNCTIONS)),
+        (sdk_2006, "source/arm9/touch.c", 9, "-O2", {"touchReadXY": 0x0207FC70}, {"touchReadXY"}),
         (sdk_2006, "source/arm7/clock.c", 7, "-O2", RTC_FUNCTIONS, set(RTC_FUNCTIONS)),
         (sdk_2006, "source/common/card.c", 9, "-O2", CARD_FUNCTIONS, set(CARD_FUNCTIONS)),
         (sdk_2007, "source/arm7/touch.c", 7, "-O2", TOUCH_FUNCTIONS, {"touchRead", "touchReadTemperature"}),
