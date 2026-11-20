@@ -22,6 +22,7 @@ typedef struct {
 } GenesisControllerPort;
 
 void reset_genesis_controller_port(volatile GenesisControllerPort *port);
+void set_controller_six_button_mode(GenesisControllerPort *port, unsigned char enabled);
 unsigned read_genesis_controller_port_pins(GenesisControllerPort *port);
 unsigned read_genesis_controller_direction(const GenesisControllerPort *port);
 void write_genesis_controller_port_pins(GenesisControllerPort *port, unsigned value);

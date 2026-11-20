@@ -43,8 +43,10 @@ def stage_sdk_bios(work, compiler, repository, cpu):
     snapshot(repository, LIBNDS_OCT_2007, sdk, ("source/common/biosCalls.s",))
     processor = "arm946e-s" if cpu == 9 else "arm7tdmi"
     name = f"arm{cpu}-bios.o"
-    run(sdk, *compiler, f"-DARM{cpu}", f"-mcpu={processor}", "-x", "assembler-with-cpp",
-        "-c", "source/common/biosCalls.s", "-o", name)
+    # ARM9 reset calls the original ARM veneer instead of the Thumb entry.
+    arm9_bios_exports = ["-DswiWaitForVBlank=arm9_thumb_swiWaitForVBlank"] if cpu == 9 else []
+    run(sdk, *compiler, f"-DARM{cpu}", f"-mcpu={processor}", *arm9_bios_exports,
+        "-x", "assembler-with-cpp", "-c", "source/common/biosCalls.s", "-o", name)
     shutil.copyfile(sdk / name, work / name)
     return name
 
@@ -79,6 +81,7 @@ def stage_sdk_irq_setup(work, compiler, r20, repository, cpu):
     setup_name, enable_name = f"irq-setup-arm{cpu}.o", f"irq-enable-arm{cpu}.o"
     run(sdk, objcopy, "--remove-section=.text.irqEnable", "--weaken-symbol=irqDummy",
         "--redefine-sym", f"irqSet=arm{cpu}_thumb_irqSet",
+        "--redefine-sym", f"irqDisable=arm{cpu}_thumb_irqDisable",
         setup.name, setup_name)
     run(sdk, objcopy, "--only-section=.text.irqEnable",
         "--redefine-sym", f"irqEnable=arm{cpu}_thumb_irqEnable",

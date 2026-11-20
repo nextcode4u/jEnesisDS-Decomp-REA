@@ -260,6 +260,25 @@ RECOVERED_REGIONS = (
          "select_vdp_scanline_render_callback": 0x02009570,
          "invalidate_viewport_mode_cache": 0x02006A44,
      }),
+    ("Cartridge emulator reset", "emulator_reset.c", "reset_emulation_for_cartridge",
+     0x02000C08, 0x02000D10, {
+         "frame_timing": 0x0B000000,
+         "m68k_context": 0x0B0000AC,
+         "z80_context": 0x0B000158,
+         "emulator_option_flags": 0x023CB610,
+         "reset_m68k_registers_and_load_vectors": 0x020054D4,
+         "reset_z80_cpu_registers_and_latches": 0x02004DCC,
+         "set_controller_six_button_mode": 0x02003A50,
+         "reset_genesis_controller_port": 0x020037B4,
+         "reset_bus_tables_work_ram_and_z80_bus_lines": 0x02004BF0,
+         "clear_z80_work_ram": 0x02004D94,
+         "reset_vdp_memory_and_renderer_state": 0x0200B6A8,
+         "request_arm7_audio_stop": 0x020062C4,
+         "swiWaitForVBlank": 0x020858A4,
+         "clear_audio_queues_and_reset_or_stop_arm7_audio": 0x02006308,
+         "request_arm7_audio_start": 0x020063DC,
+         "select_vdp_scanline_render_callback": 0x02009570,
+     }),
     ("Z80 reset line", "z80_reset_line.c", "reset_z80_core_state",
      0x02000BFC, 0x02000C08, {
          "z80_context": 0x0B000158,
@@ -440,6 +459,37 @@ RECOVERED_REGIONS = (
          "vdp_h_interrupt_pending": 0x0B00362D,
          "vdp_v_interrupt_pending": 0x0B00362E,
      }),
+    ("VDP scanline recorder selection", "scanline_callback.c",
+     "select_vdp_scanline_render_callback", 0x02009570, 0x02009614, {
+         "emulator_option_flags": 0x023CB610,
+         "vdp_hscroll_mode": 0x023DCDB0,
+         "record_vdp_scanline_state": 0x023DCEA8,
+         "record_unscaled_scanline_scroll_and_backdrop": 0x0200C280,
+         "record_scaled_scanline_hscroll_mode_0": 0x0200BBD0,
+         "record_scaled_scanline_hscroll_mode_1": 0x0200C0CC,
+         "record_scaled_scanline_hscroll_mode_2": 0x0200BF18,
+         "record_scaled_scanline_hscroll_mode_3": 0x0200BD6C,
+     }),
+    ("VDP counter register read", "vdp_counter_read.c",
+     "read_vdp_horizontal_and_vertical_counters", 0x02009274, 0x020092E0, {
+         "frame_timing": 0x0B000000,
+         "vdp_line_cycle_position": 0x0B003624,
+         "vdp_wide_display_mode": 0x023DDB05,
+         "vdp_scanline": 0x020B4BEC,
+         "vdp_vertical_counter": 0x0208E5E0,
+         "vdp_horizontal_counter_h32": 0x0208E720,
+         "vdp_horizontal_counter_h40": 0x0208E908,
+     }),
+    ("DS display compare IRQ", "display_compare_irq.c", "advance_ds_display_compare_irq_phase",
+     0x02000F3C, 0x02000FDC, {
+         "ds_display_compare_phase": 0x020B4CE8,
+         "ds_display_compare_lines": 0x02085A08,
+         "irqDisable": 0x020858B0,
+         "irqEnable": 0x020858BC,
+         "apply_prepared_scanline_display_state": 0x020083EC,
+     }),
+    ("DS display compare scanlines", "display_compare_lines.c", None,
+     0x02085A08, 0x02085A10, {}),
     ("VDP cycle-position interrupt scheduling", "vdp_line_cycles.c",
      "update_vdp_line_cycles_and_queue_m68k_interrupts", 0x0200B284, 0x0200B354,
      VDP_LINE_CYCLE_SYMBOLS),
@@ -638,6 +688,10 @@ def compile_arm9_source(compiler, work, filename):
         "arm9_dac_submit.c": ("-fno-unit-at-a-time",),
         "vdp_line_cycles.c": ("-fno-unit-at-a-time",),
         "vdp_line_cycles_immediate.c": ("-fno-unit-at-a-time",),
+        "vdp_counter_read.c": ("-fno-unit-at-a-time",),
+        "scanline_callback.c": ("-fno-unit-at-a-time",),
+        "display_compare_irq.c": ("-fno-unit-at-a-time",),
+        "emulator_reset.c": ("-fno-unit-at-a-time",),
         "arm9_audio_controls.c": ("-fno-unit-at-a-time",),
         "controller_io_write.c": ("-fno-unit-at-a-time",),
         "controller_write.c": ("-fno-unit-at-a-time",),
@@ -665,8 +719,9 @@ def compile_arm9_source(compiler, work, filename):
     # The page table contains ARM-only entries. The original uses LDR pc
     # instead of an interworking call for accesses through those pointers.
     arm_only = ("frame_h_int_on.c", "m68k_loads.c", "m68k_predecrement_write.c")
-    # The immediate callbacks match the release with GCC's ARM926EJ-S scheduler.
-    tune = "arm926ej-s" if filename == "vdp_line_cycles_immediate.c" else None
+    # Match the release instruction scheduling for these VDP routines.
+    tuned_sources = ("vdp_line_cycles_immediate.c", "vdp_counter_read.c")
+    tune = "arm926ej-s" if filename in tuned_sources else None
     return compile_c([*compiler, *flags], work, Path(filename), 9, "-O2", "-marm",
                      interwork=filename not in arm_only, tune=tune)
 
