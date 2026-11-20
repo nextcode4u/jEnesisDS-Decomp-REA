@@ -2,13 +2,13 @@
  * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x02073274  set_m3_mode_and_probe_ata_registers
+// 0x02073274  fat_m3cf_startup
 
-void set_m3_mode_and_probe_ata_registers(void)
+void fat_m3cf_startup(void)
 
 {
   fat_m3_changemode(0x400003);
-  fat_cf_startup(&DAT_0208ed0c);
+  fat_cf_startup(&m3cf_ata_register_map);
   return;
 }
 

@@ -38,7 +38,7 @@ void insert_lzss_match_tree_node(int param_1)
   int iVar5;
   int iVar6;
   
-  iVar2 = (byte)(&DAT_023ddec0)[param_1] + 0x1001;
+  iVar2 = (byte)(&lzss_ring_buffer)[param_1] + 0x1001;
   *(undefined4 *)(&DAT_023e6ef0 + param_1 * 4) = 0x1000;
   DAT_023eb310 = 0;
   *(undefined4 *)(&DAT_023deee4 + param_1 * 4) = 0x1000;
@@ -51,13 +51,13 @@ LAB_0200c658:
   }
   do {
     iVar2 = iVar6;
-    puVar3 = &DAT_023ddec0 + iVar2;
+    puVar3 = &lzss_ring_buffer + iVar2;
     iVar6 = 1;
     do {
       pbVar1 = puVar3 + 1;
       iVar5 = iVar6 + param_1;
       puVar3 = puVar3 + 1;
-      if ((uint)(byte)(&DAT_023ddec0)[iVar5] != (uint)*pbVar1) break;
+      if ((uint)(byte)(&lzss_ring_buffer)[iVar5] != (uint)*pbVar1) break;
       iVar6 = iVar6 + 1;
     } while (iVar6 != 0x12);
     if (DAT_023eb310 < iVar6) {
@@ -83,7 +83,7 @@ LAB_0200c658:
         return;
       }
     }
-    if (-1 < (int)((uint)(byte)(&DAT_023ddec0)[iVar5] - (uint)*pbVar1)) goto LAB_0200c658;
+    if (-1 < (int)((uint)(byte)(&lzss_ring_buffer)[iVar5] - (uint)*pbVar1)) goto LAB_0200c658;
     iVar6 = *(int *)(&DAT_023deee4 + iVar2 * 4);
     if (*(int *)(&DAT_023deee4 + iVar2 * 4) == 0x1000) {
       *(int *)(&DAT_023deee4 + iVar2 * 4) = param_1;

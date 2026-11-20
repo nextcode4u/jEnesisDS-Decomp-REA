@@ -32,17 +32,28 @@ decompiled/
 
 The 256 module files group routines by processor and subsystem. The largest 68000 word and long MOVE groups also use the destination addressing mode from a representative opcode. Z80 modules use instruction family and operand type. Routines are in ascending address order within each module. Names appear in the pseudocode declarations and references. The processor indexes record their original Ghidra symbols, and each `variables.tsv` records renamed variables with evidence and scope.
 
-The latest review replaced 186 provisional labels with observed behavior or branch destinations. Open questions about callers, original symbols, and library versions are recorded below.
+The classification review replaced 186 provisional labels with observed behavior or branch destinations. Open questions about callers, original symbols, and library versions are recorded below.
 
 ## Remaining questions
 
 | Address or area | Confirmed behavior | Open question |
 | --- | --- | --- |
-| `0x02000310` | Returns the emulated 68000 PC as the difference between the host PC pointer and mapped base. | Find a caller or address reference that establishes when this accessor runs. [PC accessor](../decompiled/arm9/cpu/m68k/cycle_budget.c#L5) |
-| `0x020737b8` | Selects a fixed ATA register map and calls the probe. | Identify the exact slot-2 adapter from the register table or period library sources. |
+| `0x02000310` | Returns the emulated 68000 PC by combining the host pointer offset with retained guest page bits. | Find a caller or address reference that establishes when this accessor runs. [PC accessor](../decompiled/arm9/cpu/m68k/cycle_budget.c#L5) |
 | DS runtime | ARM and Thumb branch entries now link to their observed destinations. The startup and cache routines have documented machine behavior. | Identify the exact libnds revision and recover original symbol names where the library match is still missing. |
 
 The index records the behavior supported by the available evidence. An entry can have a verified operation and still have an unknown caller, original symbol, or hardware revision.
+
+## CompactFlash driver identification
+
+The original ARM9 image contains three CompactFlash startup entries from libfat-nds 20070127. In each case, the descriptor's startup pointer selects the Thumb entry, the nine register addresses match the object's table, and the instructions match after accounting for relocation fields. MPCF and SCCF share the same register addresses. The descriptor IDs and the SuperCard mode change distinguish their startup paths. [Period libfat-nds archive](https://sourceforge.net/projects/ndslibris/files/tool/devkitpro/r23b/libfat-nds-20070127.tar.bz2/download)
+
+| Driver | Thumb entry | ATA register table | Library object |
+| --- | --- | --- | --- |
+| M3CF | `0x02073274` | `0x0208ed0c` | `io_m3cf.o` |
+| MPCF | `0x020737b8` | `0x0208ed70` | `io_mpcf.o` |
+| SCCF | `0x0207478c` | `0x0208ee04` | `io_sccf.o` |
+
+To check MPCF, extract `lib/libfat.a` from the archive. Use `arm-none-eabi-ar x lib/libfat.a io_mpcf.o` to get the driver object, then `arm-none-eabi-objdump -dr -j .text io_mpcf.o` to see the call and table relocations. Compare the Thumb listing at `0x020737b8` in the reference ARM9 ELF using `-m armv5te -M force-thumb -D`. [MPCF routine](../decompiled/arm9/storage/fat/drivers/cf.c#L5)
 
 ## Trace a routine
 

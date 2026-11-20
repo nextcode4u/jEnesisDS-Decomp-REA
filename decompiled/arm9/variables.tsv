@@ -468,3 +468,53 @@ processor	DAT_020b4c4c	savestate_regions_initialized	Save-state initialization f
 0x02002e54	uVar4	first_available_row	The menu selects load, save or cancel based on the slot presence flag and DS keys.
 0x0200d82c	uVar1	slot_path	Opens each slot's path and sets its presence flag on success.
 0x0200d82c	iVar2	state_stream	Opens each slot's path and sets its presence flag on success.
+processor	DAT_0208ed0c	m3cf_ata_register_map	The two CompactFlash descriptors identify these driver-specific ATA register tables.
+processor	DAT_0208ed70	mpcf_ata_register_map	The two CompactFlash descriptors identify these driver-specific ATA register tables.
+processor	DAT_0208ee04	sccf_ata_register_map	The two CompactFlash descriptors identify these driver-specific ATA register tables.
+processor	DAT_023bb4f0	cartridge_sram_buffer	Cartridge SRAM configuration seeds this 64 KiB buffer and the flush routine can write from it.
+0x020002e4	param_1	region_bits	Program selects the regional version bits and combines them with the fixed register bits.
+0x02001530	param_1	rom_bytes	Accumulates the big-endian words after the cartridge header at offset 0x200.
+0x02001530	param_2	rom_size	Accumulates the big-endian words after the cartridge header at offset 0x200.
+0x02001530	sVar1	checksum	Accumulates the big-endian words after the cartridge header at offset 0x200.
+0x02001530	uVar2	byte_contribution	Accumulates the big-endian words after the cartridge header at offset 0x200.
+0x02001530	uVar3	rom_offset	Accumulates the big-endian words after the cartridge header at offset 0x200.
+0x020016d4	param_1	rom_header_bytes	Reads header title bytes, checksum and the two addresses in the RA SRAM field.
+0x020016d4	cVar1	title_character	Reads header title bytes, checksum and the two addresses in the RA SRAM field.
+0x020016d4	iVar5	title_source_offset	Reads header title bytes, checksum and the two addresses in the RA SRAM field.
+0x020016d4	cVar8	previous_title_character	Reads header title bytes, checksum and the two addresses in the RA SRAM field.
+0x020016d4	uVar6	sram_start_address	Reads header title bytes, checksum and the two addresses in the RA SRAM field.
+0x020016d4	uVar4	sram_end_address	Reads header title bytes, checksum and the two addresses in the RA SRAM field.
+0x020016d4	uVar7	sram_byte_count	Reads header title bytes, checksum and the two addresses in the RA SRAM field.
+0x02001d40	param_1	rom_stream	Loads the selected file, chooses its region, and writes the corrected header checksum when enabled.
+0x02001d40	param_2	rom_path	Loads the selected file, chooses its region, and writes the corrected header checksum when enabled.
+0x02001d40	uVar6	rom_size	Loads the selected file, chooses its region, and writes the corrected header checksum when enabled.
+0x02001d40	iVar8	computed_checksum	Loads the selected file, chooses its region, and writes the corrected header checksum when enabled.
+0x02001d40	uVar10	region_preference	Loads the selected file, chooses its region, and writes the corrected header checksum when enabled.
+0x02001d40	cVar12	preferred_region_code	Loads the selected file, chooses its region, and writes the corrected header checksum when enabled.
+0x02001d40	uVar11	load_succeeded	Loads the selected file, chooses its region, and writes the corrected header checksum when enabled.
+0x0200157c	param_1	buffer	Swaps neighboring byte lanes in-place and returns the even count processed.
+0x0200157c	param_2	byte_count	Swaps neighboring byte lanes in-place and returns the even count processed.
+0x0200157c	uVar1	saved_second_byte	Swaps neighboring byte lanes in-place and returns the even count processed.
+0x0200157c	puVar2	pair_cursor	Swaps neighboring byte lanes in-place and returns the even count processed.
+0x0200163c	iVar1	save_stream	Uses the metadata to pick backing storage, then writes the configured byte count to the save stream.
+0x0200163c	uVar3	sram_byte_count	Uses the metadata to pick backing storage, then writes the configured byte count to the save stream.
+0x0200163c	puVar4	sram_source	Uses the metadata to pick backing storage, then writes the configured byte count to the save stream.
+0x0200163c	bVar5	use_rom_backing	Uses the metadata to pick backing storage, then writes the configured byte count to the save stream.
+0x02001948	param_1	rom_path	Uses the ROM pathname to derive an SRAM pathname and loads at most the configured SRAM size.
+0x02001948	param_2	sram_byte_count	Uses the ROM pathname to derive an SRAM pathname and loads at most the configured SRAM size.
+0x02001948	param_3	rom_size	Uses the ROM pathname to derive an SRAM pathname and loads at most the configured SRAM size.
+0x02001948	iVar5	sram_path	Uses the ROM pathname to derive an SRAM pathname and loads at most the configured SRAM size.
+processor	DAT_023ddec0	lzss_ring_buffer	LZSS fills the 4096-byte ring with spaces before decoding and masks the cursor with 0xfff.
+0x0200ccb4	param_1	input_buffer	Sets up bounded input and output slots, optionally copies a plain prefix, and decodes literal or match tokens.
+0x0200ccb4	param_2	output_buffer	Sets up bounded input and output slots, optionally copies a plain prefix, and decodes literal or match tokens.
+0x0200ccb4	param_3	input_size	Sets up bounded input and output slots, optionally copies a plain prefix, and decodes literal or match tokens.
+0x0200ccb4	param_4	output_capacity	Sets up bounded input and output slots, optionally copies a plain prefix, and decodes literal or match tokens.
+0x0200ccb4	param_5	prefix_length	Sets up bounded input and output slots, optionally copies a plain prefix, and decodes literal or match tokens.
+0x0200ccb4	uVar9	ring_write_index	Sets up bounded input and output slots, optionally copies a plain prefix, and decodes literal or match tokens.
+0x0200ccb4	uVar10	token_flag_bits	Sets up bounded input and output slots, optionally copies a plain prefix, and decodes literal or match tokens.
+0x0200ccb4	uVar5	match_high_bits	Sets up bounded input and output slots, optionally copies a plain prefix, and decodes literal or match tokens.
+0x0200ccb4	uVar1	match_byte	Sets up bounded input and output slots, optionally copies a plain prefix, and decodes literal or match tokens.
+0x0200cda4	param_1	input_buffer	Reads the named file into its input buffer before decoding into the second buffer.
+0x0200cda4	param_2	output_buffer	Reads the named file into its input buffer before decoding into the second buffer.
+0x0200cda4	param_5	prefix_length	Reads the named file into its input buffer before decoding into the second buffer.
+0x0200cda4	iVar6	source_stream	Reads the named file into its input buffer before decoding into the second buffer.

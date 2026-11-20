@@ -2,23 +2,23 @@
  * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x020737b8  probe_ata_register_map_0208ed70
+// 0x020737b8  fat_mpcf_startup
 
-void probe_ata_register_map_0208ed70(void)
+void fat_mpcf_startup(void)
 
 {
-  fat_cf_startup(&DAT_0208ed70);
+  fat_cf_startup(&mpcf_ata_register_map);
   return;
 }
 
 
-// 0x0207478c  set_supercard_mode_and_probe_ata_registers
+// 0x0207478c  fat_sccf_startup
 
-void set_supercard_mode_and_probe_ata_registers(void)
+void fat_sccf_startup(void)
 
 {
   write_supercard_mode_register(3);
-  fat_cf_startup(&DAT_0208ee04);
+  fat_cf_startup(&sccf_ata_register_map);
   return;
 }
 
