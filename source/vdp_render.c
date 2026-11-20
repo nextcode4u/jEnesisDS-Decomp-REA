@@ -1,6 +1,8 @@
 #include "vdp_render.h"
 #include "megadrive.h"
 
+#include <string.h>
+
 // Keep layer priority and sprite ownership alongside the six-bit palette index.
 enum { PIXEL_COLOR = 0x3f, SPRITE_CLAIMED = 0x40, HIGH_PRIORITY = 0x80 };
 
@@ -8,6 +10,13 @@ struct sprite {
     int x, y;
     unsigned width, height;
     uint16_t attributes;
+};
+
+enum { MAX_SPRITES_PER_LINE = 20 };
+
+struct sprite_index {
+    uint8_t counts[VDP_VIEW_HEIGHT];
+    uint8_t indices[VDP_VIEW_HEIGHT][MAX_SPRITES_PER_LINE];
 };
 
 uint16_t vdp_ds_color(uint16_t cram)
@@ -144,20 +153,64 @@ static unsigned load_sprites(const uint8_t *table, bool wide, unsigned cell_shif
     return count;
 }
 
+static void index_sprite_lines(struct sprite_index *index, unsigned first, unsigned last,
+                               const struct sprite *sprites, unsigned count,
+                               unsigned top, bool wide, unsigned cell_shift, bool odd)
+{
+    const unsigned limit = wide ? MAX_SPRITES_PER_LINE : 16;
+    const bool interlace = cell_shift == 4;
+    const int field_top = (top << interlace) + (interlace && odd);
+    memset(index->counts + first, 0, last - first);
+    for (unsigned i = 0; i < count; ++i) {
+        int start = sprites[i].y - field_top;
+        int end = start + (int)(sprites[i].height << cell_shift);
+        if (start < 0)
+            start = 0;
+        if (end <= 0)
+            continue;
+        unsigned from = (start + interlace) >> interlace;
+        unsigned through = (end + interlace) >> interlace;
+        if (from < first)
+            from = first;
+        if (through > last)
+            through = last;
+        // Offscreen sprites still occupy evaluation slots, so clipping X
+        // stays in the pixel renderer.
+        for (unsigned line = from; line < through; ++line)
+            if (index->counts[line] < limit)
+                index->indices[line][index->counts[line]++] = i;
+    }
+}
+
+static void store_scanline(uint16_t *pixels, const uint8_t *line)
+{
+    line = __builtin_assume_aligned(line, 4);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+    if (!((uintptr_t)pixels & 3)) {
+        uint16_t *out = __builtin_assume_aligned(pixels, 4);
+        for (unsigned x = 0; x < VDP_VIEW_WIDTH; x += 4) {
+            uint32_t word;
+            memcpy(&word, line + x, sizeof(word));
+            word &= PIXEL_COLOR * UINT32_C(0x01010101);
+            memcpy(out + x / 2, &word, sizeof(word));
+        }
+        return;
+    }
+#endif
+    for (unsigned x = 0; x < VDP_VIEW_WIDTH; x += 2)
+        pixels[x / 2] = (line[x] | (line[x + 1] << 8)) & (PIXEL_COLOR * 0x101);
+}
+
 static void draw_sprites_line(const struct megadrive *md, uint8_t *line,
                               int screen_x, int screen_y, const struct sprite *sprites,
-                              unsigned count, bool wide, unsigned cell_shift)
+                              const uint8_t *visible, unsigned count, unsigned cell_shift)
 {
     const unsigned cell_height = 1U << cell_shift;
     if (cell_shift == 4)
         screen_y = screen_y * 2 + md->vdp_odd_field;
-    unsigned remaining = wide ? 20 : 16;
-    for (unsigned i = 0; i < count && remaining; ++i) {
-        const struct sprite *sprite = &sprites[i];
+    for (unsigned i = 0; i < count; ++i) {
+        const struct sprite *sprite = &sprites[visible[i]];
         int y = screen_y - sprite->y;
-        if (y < 0 || y >= (int)(sprite->height * cell_height))
-            continue;
-        --remaining;
         uint16_t entry = sprite->attributes;
         if (entry & 0x1000)
             y = sprite->height * cell_height - 1 - y;
@@ -209,25 +262,35 @@ void vdp_render_frame(const struct megadrive *md, uint16_t *pixels)
     unsigned cell_shift = (md->vdp_registers[12] & 6) == 6 ? 4 : 3;
     unsigned sprite_base = (md->vdp_registers[5] & (wide ? 0x7e : 0x7f)) << 9;
     struct sprite sprites[80];
-    unsigned previous_table = UINT32_MAX, count = 0;
+    struct sprite_index visible;
+    unsigned indexed_until = 0;
     for (unsigned y = 0; y < VDP_VIEW_HEIGHT; ++y) {
         unsigned guest_y = screen_y + y;
         const struct vdp_scanline *row = guest_y < md->vdp_row_count ?
                                          &md->vdp_rows[guest_y] : NULL;
-        uint8_t line[VDP_VIEW_WIDTH] = {0};
+        _Alignas(4) uint8_t line[VDP_VIEW_WIDTH] = {0};
         if (row ? row->display_enabled : display_enabled) {
-            unsigned table = row ? row->sprite_table : 0;
-            if (table != previous_table) {
+            if (y >= indexed_until) {
+                unsigned table = row ? row->sprite_table : 0;
+                indexed_until = y + 1;
+                while (indexed_until < VDP_VIEW_HEIGHT) {
+                    unsigned guest = screen_y + indexed_until;
+                    unsigned next_table = guest < md->vdp_row_count ? md->vdp_rows[guest].sprite_table : 0;
+                    if (next_table != table)
+                        break;
+                    ++indexed_until;
+                }
                 const uint8_t *sprite_data = table ? md->vdp_sprite_tables[table - 1] :
                                                       md->vram + sprite_base;
-                count = load_sprites(sprite_data, wide, cell_shift, sprites);
-                previous_table = table;
+                unsigned count = load_sprites(sprite_data, wide, cell_shift, sprites);
+                index_sprite_lines(&visible, y, indexed_until, sprites, count, screen_y,
+                                   wide, cell_shift, md->vdp_odd_field);
             }
             draw_plane_line(md, line, screen_x, guest_y, wide, 1, cell_shift);
             draw_plane_line(md, line, screen_x, guest_y, wide, 0, cell_shift);
-            draw_sprites_line(md, line, screen_x, guest_y, sprites, count, wide, cell_shift);
+            draw_sprites_line(md, line, screen_x, guest_y, sprites, visible.indices[y], visible.counts[y], cell_shift);
         }
-        for (unsigned x = 0; x < VDP_VIEW_WIDTH; x += 2)
-            *pixels++ = (line[x] | (line[x + 1] << 8)) & (PIXEL_COLOR * 0x101);
+        store_scanline(pixels, line);
+        pixels += VDP_VIEW_WIDTH / 2;
     }
 }

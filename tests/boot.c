@@ -433,6 +433,32 @@ static void test_vdp_render(struct megadrive *md)
     assert(bitmap[0] == 0);
 }
 
+static void test_sprite_scanline_limit(void)
+{
+    static struct megadrive md;
+    // Force the halfword-aligned output path as well as the sprite limit.
+    _Alignas(4) static uint16_t storage[VDP_VIEW_WIDTH * VDP_VIEW_HEIGHT / 2 + 1];
+    uint16_t *bitmap = storage + 1;
+    vdp_register(&md, 1, 0x40);
+    vdp_register(&md, 2, 0x30);
+    vdp_register(&md, 4, 0x05);
+    vdp_register(&md, 5, 0x78);
+    memset(md.vram + 32, 0x22, 32);
+    for (unsigned i = 0; i < 17; ++i) {
+        unsigned entry = 0xf000 + i * 8;
+        set_vram_word(&md, entry, 128 + 16);
+        set_vram_word(&md, entry + 2, i == 16 ? 0 : i + 1);
+        set_vram_word(&md, entry + 4, 1);
+        set_vram_word(&md, entry + 6, i == 16 ? 128 : 0);
+    }
+    vdp_render_frame(&md, bitmap);
+    assert(bitmap[0] == 0); // The first sixteen sprites are offscreen.
+    set_vram_word(&md, 0xf000 + 15 * 8 + 6, 128);
+    vdp_render_frame(&md, bitmap);
+    assert(bitmap[0] == 0x0202);
+    assert(bitmap[(VDP_VIEW_WIDTH / 2) * 8] == 0);
+}
+
 static void test_vdp_reads(const struct cartridge *cart)
 {
     static struct megadrive md;
@@ -854,6 +880,7 @@ int main(void)
     test_vdp_render(&md);
     test_vdp_reads(&cartridge);
     test_interlace(&cartridge);
+    test_sprite_scanline_limit();
     test_scanline_scroll();
 
     assert(m68k_interrupt(&md.cpu, &md, 6) == 0);  // Reset masks level 6.
