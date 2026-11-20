@@ -4,7 +4,7 @@
 #include "../dac.h"
 #include "../psg.h"
 
-enum { BLOCK_SAMPLES = 48, DAC_QUEUE_SIZE = 3, AUDIO_TIMER = 1 };
+enum { BLOCK_SAMPLES = 64, DAC_QUEUE_SIZE = 3, AUDIO_TIMER = 1 };
 static int16_t samples[2][2][BLOCK_SAMPLES] __attribute__((aligned(4)));
 static struct dac_frame dac_queue[DAC_QUEUE_SIZE];
 static unsigned dac_read, dac_count, dac_sample_index;
@@ -141,8 +141,9 @@ static void start_audio(void)
                                SOUNDXCNT_FORMAT_16BIT | SOUNDXCNT_PAN(channel * 127) |
                                SOUNDXCNT_VOL_MUL(127);
     int sample_ticks = -(int16_t)SOUNDXTMR_FREQ(PSG_RATE) * 2;
-    timerStart(AUDIO_TIMER, ClockDivider_1, (uint16_t)(-sample_ticks * BLOCK_SAMPLES),
-               audio_tick);
+    // One timer tick per 64 master-clock ticks. A 64-sample block therefore
+    // reloads with the number of master-clock ticks per output sample.
+    timerStart(AUDIO_TIMER, ClockDivider_64, (uint16_t)-sample_ticks, audio_tick);
     leaveCriticalSection(critical);
 }
 
