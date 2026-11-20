@@ -15,7 +15,7 @@ C_FLAGS := -I"$(LIBNDS)/include" -Wall -Wextra -O2 -ffunction-sections -fdata-se
 build/c/m68k.o build/c/vdp_render.o build/c/vdp_ds.o build/c/megadrive.o build/c/z80_bus.o build/c/third_party/z80/z80.o: C_FLAGS += -marm -O3
 ARM7_OBJ := build/c/arm7/main.o build/c/arm7/psg.o
 Z80_SRC := source/z80_bus.c source/third_party/z80/z80.c
-ARM9_OBJ := build/c/main.o build/c/frontend.o build/c/cartridge.o build/c/m68k.o build/c/megadrive.o build/c/vdp_render.o build/c/vdp_ds.o build/c/savestate.o $(Z80_SRC:source/%.c=build/c/%.o) build/c/frontend_assets.o
+ARM9_OBJ := build/c/main.o build/c/frontend.o build/c/cartridge.o build/c/m68k.o build/c/megadrive.o build/c/vdp_render.o build/c/vdp_ds.o build/c/savestate.o build/c/dac.o $(Z80_SRC:source/%.c=build/c/%.o) build/c/frontend_assets.o
 ARM7_ELF := build/c/arm7.elf
 ARM9_ELF := build/c/arm9.elf
 ROM := build/jEnesisDS-C.nds
@@ -26,7 +26,7 @@ all: $(ROM)
 check:
 	@mkdir -p build/c
 	"$(HOST_CC)" -std=c11 -Wall -Wextra -Werror -Isource \
-		tests/boot.c source/m68k.c source/megadrive.c source/vdp_render.c source/savestate.c source/arm7/psg.c $(Z80_SRC) -o build/c/boot-test
+		tests/boot.c source/m68k.c source/megadrive.c source/vdp_render.c source/savestate.c source/dac.c source/arm7/psg.c $(Z80_SRC) -o build/c/boot-test
 	build/c/boot-test
 
 build/c/frontend_assets.c: tools/generate_frontend_assets.py $(wildcard assets/frontend/*)

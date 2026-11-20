@@ -518,6 +518,50 @@ static uint8_t genesis_buttons(uint32_t keys)
            ((keys & KEY_START) ? GENESIS_START : 0);
 }
 
+static struct dac_frame dac_transfers[DAC_TRANSFER_SLOTS];
+static unsigned dac_in_use;
+static unsigned dac_phase;
+static uint16_t dac_generation;
+enum { DS_REFRESH = 5983, PAL_REFRESH = 4970 };
+
+static struct dac_frame *begin_audio_frame(struct application *app, bool pal)
+{
+    while (fifoCheckValue32(FIFO_USER_02)) {
+        unsigned slot = fifoGetValue32(FIFO_USER_02);
+        if (slot < DAC_TRANSFER_SLOTS)
+            dac_in_use &= ~(1U << slot);
+    }
+    if (app->sound_generation != dac_generation) {
+        dac_phase = 0;
+        dac_generation = app->sound_generation;
+    }
+
+    unsigned refresh = pal ? PAL_REFRESH : DS_REFRESH;
+    dac_phase += PSG_RATE * 100;
+    unsigned count = dac_phase / refresh;
+    dac_phase %= refresh;
+    for (unsigned slot = 0; slot < DAC_TRANSFER_SLOTS; ++slot) {
+        if (!(dac_in_use & (1U << slot))) {
+            struct dac_frame *frame = &dac_transfers[slot];
+            frame->count = count;
+            frame->generation = app->sound_generation;
+            frame->slot = slot;
+            dac_begin(&app->md, frame);
+            return frame;
+        }
+    }
+    return NULL;
+}
+
+static void submit_dac_frame(struct dac_frame *frame)
+{
+    if (frame) {
+        DC_FlushRange(frame, sizeof(*frame));
+        if (fifoSendAddress(FIFO_USER_02, frame))
+            dac_in_use |= 1U << frame->slot;
+    }
+}
+
 static void send_audio(const struct application *app)
 {
     static struct psg_message last;
@@ -552,7 +596,6 @@ int main(void)
 
     // The DS display runs at about 59.83 Hz. A 313-line PAL cartridge
     // runs at about 49.70 Hz, so present it on a subset of DS VBlanks.
-    enum { DS_REFRESH = 5983, PAL_REFRESH = 4970 };
     unsigned pal_phase = DS_REFRESH - PAL_REFRESH;
     bool was_running = false;
     uint32_t observed_vblank = vblank_count;
@@ -587,9 +630,13 @@ int main(void)
         if (running && frame_budget) {
             app.md.pad1_pressed = genesis_buttons(keysHeld());
             for (unsigned frame = 0; frame < frame_budget && !app.md.cpu.stopped; ++frame) {
+                struct dac_frame *audio = begin_audio_frame(&app, pal);
                 megadrive_run_frame(&app.md);
+                dac_end(&app.md);
                 ++measurement_frames;
                 send_audio(&app);
+                if (!app.md.cpu.stopped)
+                    submit_dac_frame(audio);
             }
             draw_game_frame(&app.md);
             if (app.md.cpu.stopped)

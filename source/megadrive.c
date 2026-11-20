@@ -44,6 +44,8 @@ void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum ge
     md->rom_size = cart->size;
     md->z80_reset = true;
     genesis_z80_reset(md);
+    md->ym_registers[0][0x2a] = 0x80;
+    md->ym_registers[1][0xb6] = 0xc0;
     megadrive_reset_serial(md);
     for (unsigned i = 1; i < 8; i += 2)
         md->psg_registers[i] = 15;
@@ -153,7 +155,7 @@ uint8_t megadrive_ym_status(const struct megadrive *md)
     return (md->ym_busy_cycles ? 0x80 : 0) | md->ym_timer_flags;
 }
 
-void megadrive_ym_write(struct megadrive *md, unsigned port, uint8_t data)
+void megadrive_ym_write_at(struct megadrive *md, unsigned port, uint8_t data, unsigned cycle)
 {
     unsigned bank = port >> 1;
     if (!(port & 1)) {
@@ -173,8 +175,16 @@ void megadrive_ym_write(struct megadrive *md, unsigned port, uint8_t data)
         }
         md->ym_timer_flags &= ~(data >> 4 & 3);
     }
+    if (md->ym_registers[bank][reg] != data &&
+        ((!bank && (reg == 0x2a || reg == 0x2b)) || (bank && reg == 0xb6)))
+        dac_sync(md, cycle);
     md->ym_registers[bank][reg] = data;
     md->ym_busy_cycles = 32;
+}
+
+void megadrive_ym_write(struct megadrive *md, unsigned port, uint8_t data)
+{
+    megadrive_ym_write_at(md, port, data, md->frame_cycle);
 }
 
 uint16_t megadrive_backdrop(const struct megadrive *md)

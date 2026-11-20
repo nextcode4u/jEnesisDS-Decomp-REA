@@ -148,6 +148,57 @@ static void test_z80_delay_loops(const struct cartridge *cart)
     assert(md.sound_cpu.sf == expected.sf && md.sound_cpu.zf == expected.zf);
 }
 
+static void test_dac_timing(const struct cartridge *cart)
+{
+    static struct megadrive md;
+    struct dac_frame frame = {.count = 8};
+    megadrive_reset(&md, cart, GENESIS_REGION_USA);
+    dac_begin(&md, &frame);
+
+    megadrive_ym_write_at(&md, 0, 0x2a, 0);
+    megadrive_ym_write_at(&md, 1, 0xe0, 0);
+    megadrive_ym_write_at(&md, 0, 0x2b, 0);
+    megadrive_ym_write_at(&md, 1, 0x80, (md.frame_cycles + 3) / 4);
+    megadrive_ym_write_at(&md, 2, 0xb6, md.frame_cycles / 2);
+    megadrive_ym_write_at(&md, 3, 0x40, (md.frame_cycles + 1) / 2);
+    megadrive_ym_write_at(&md, 0, 0x2a, 0);
+    megadrive_ym_write_at(&md, 1, 0x20, (3 * md.frame_cycles + 3) / 4);
+    dac_end(&md);
+
+    const struct dac_sample expected[] = {
+        {0, 0}, {0, 0}, {96, 96}, {96, 96},
+        {0, 96}, {0, 96}, {0, -96}, {0, -96},
+    };
+    assert(!md.dac_capture.frame);
+    assert(!memcmp(frame.samples, expected, sizeof(expected)));
+}
+
+static void test_z80_dac_writes(const struct cartridge *cart)
+{
+    static const uint8_t program[] = {
+        0x3e, 0xe0, 0x32, 0x01, 0x40, // Write $e0 to YM2612 data.
+        0x3e, 0x20, 0x32, 0x01, 0x40, // Write $20 to YM2612 data.
+        0x76,
+    };
+    static struct megadrive md;
+    struct dac_frame frame = {.count = 8};
+    megadrive_reset(&md, cart, GENESIS_REGION_USA);
+    memcpy(md.z80_ram, program, sizeof(program));
+    md.frame_cycles = 240;
+    md.z80_reset = false;
+    md.ym_registers[0][0x2b] = 0x80;
+    md.ym_address[0] = 0x2a;
+    dac_begin(&md, &frame);
+    genesis_z80_sync(&md, md.frame_cycles);
+    dac_end(&md);
+
+    assert(md.sound_cpu.halted);
+    assert(frame.samples[0].left == 0 && frame.samples[0].right == 0);
+    assert(frame.samples[1].left == 96 && frame.samples[1].right == 96);
+    for (unsigned i = 2; i < frame.count; ++i)
+        assert(frame.samples[i].left == -96 && frame.samples[i].right == -96);
+}
+
 static void test_z80_and_ym(struct megadrive *md)
 {
     static const uint8_t program[] = {
@@ -356,6 +407,8 @@ int main(void)
     assert(megadrive_read_byte(&md, 0xa10001) == 0xe1);
     assert(md.frame_cycles > 150000 && !md.cpu.stopped);
     test_status_immediates();
+    test_dac_timing(&cartridge);
+    test_z80_dac_writes(&cartridge);
     test_startup_bus(&md);
     test_z80_delay_loops(&cartridge);
     test_z80_and_ym(&md);

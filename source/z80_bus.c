@@ -23,8 +23,13 @@ static void write_byte(void *context, uint16_t address, uint8_t data)
     struct megadrive *md = context;
     if (address < 0x4000)
         md->z80_ram[address & 0x1fff] = data;
-    else if (address < 0x6000)
-        megadrive_ym_write(md, address & 3, data);
+    else if (address < 0x6000) {
+        unsigned cycle = md->z80_slice_start +
+                         (md->sound_cpu.cyc - md->z80_slice_clocks) * Z80_DIVIDER / M68K_DIVIDER;
+        if (cycle > md->z80_synced_cycle)
+            cycle = md->z80_synced_cycle;
+        megadrive_ym_write_at(md, address & 3, data, cycle);
+    }
     else if (address < 0x6100)
         md->z80_bank = md->z80_bank >> 1 | (data & 1) << 8;
     else if ((address & 0xfff9) == 0x7f11)
@@ -129,6 +134,7 @@ void genesis_z80_sync(struct megadrive *md, unsigned m68k_cycle)
     unsigned master_clocks = elapsed_m68k * M68K_DIVIDER + md->z80_clock_phase;
     unsigned budget = master_clocks / Z80_DIVIDER;
     md->z80_clock_phase = master_clocks % Z80_DIVIDER;
+    md->z80_slice_start = md->z80_synced_cycle;
     md->z80_synced_cycle = m68k_cycle;
     unsigned debt = md->z80_instruction_debt;
     md->z80_instruction_debt = debt > budget ? debt - budget : 0;
@@ -142,6 +148,8 @@ void genesis_z80_sync(struct megadrive *md, unsigned m68k_cycle)
     budget -= debt;
 
     z80 *cpu = &md->sound_cpu;
+    md->z80_slice_start += debt * Z80_DIVIDER / M68K_DIVIDER;
+    md->z80_slice_clocks = cpu->cyc;
     unsigned elapsed = 0;
     while (elapsed < budget) {
         // The pulse expires even if the driver keeps interrupts masked.

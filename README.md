@@ -1,6 +1,6 @@
-# jEnesisDS BlocksDS C port
+# jEnesisDS BlocksDS Port C
 
-The port compiles the project's ARM7 and ARM9 programs from C with Wonderful's compiler. It links against libnds and uses the standard BlocksDS startup code. The C core runs the 68000 and VDP diagnostic, boots Sonic the Hedgehog into Green Hill Zone Act 1, and starts Sonic the Hedgehog 2 in one-player Emerald Hill Zone Act 1 in melonDS. The touch menu provides two save slots, and ARM7 synthesizes PSG audio. The C Z80 executes Genesis sound drivers and handles YM2612 timer status. Broader game compatibility, sustained full-speed emulation, and FM and DAC output remain open.
+The port compiles the project's ARM7 and ARM9 programs from C with Wonderful's compiler. It links against libnds and uses the standard BlocksDS startup code. The C core runs the 68000 and VDP diagnostic, boots Sonic the Hedgehog into Green Hill Zone Act 1, and starts Sonic the Hedgehog 2 in one-player Emerald Hill Zone Act 1 in melonDS. The touch menu provides two save slots, and ARM7 synthesizes PSG audio. The C Z80 executes Genesis sound drivers and handles YM2612 timer status. The YM2612 DAC path plays sampled audio. FM synthesis, broader game compatibility, and sustained full-speed emulation remain open.
 
 ## Build on Linux or WSL
 
@@ -32,15 +32,19 @@ In melonDS, enable a virtual DLDI SD card and add Genesis ROMs to it. The bottom
 - [Z80 bus and timing](source/z80_bus.c) runs the [MIT-licensed C Z80](source/third_party/z80), synchronizes it with the 68000, and delivers the VBlank interrupt pulse. The shared bus exposes YM2612 register and timer status to both guest processors.
 - [DS renderer](source/vdp_ds.c) uses tiled backgrounds and hardware sprites for supported modes. The [bitmap renderer](source/vdp_render.c) handles the remaining modes. Both renderers center the viewport on the Genesis picture.
 - [Save states](source/savestate.c) serialize the emulated hardware state, verify the cartridge identity, and reject invalid files before restoring the running state.
-- [PSG mixer](source/arm7/psg.c) synthesizes tone and noise on the ARM7 and plays 16-bit PCM at approximately 28 kHz.
+- The [PSG mixer](source/arm7/psg.c) synthesizes tone and noise on the ARM7. The [YM2612 DAC path](source/dac.c) records timed 68000 and Z80 writes and mixes the panned samples with PSG at approximately 28 kHz.
 
 The C ROM booted in melonDS 1.1 and loaded Sonic the Hedgehog in both BIN and SMD formats from a subdirectory on the virtual SD card. A host check verified that the loader decoded a cartridge from BIN and SMD into identical bytes and rejected truncated and invalid files.
 
-The C build runs the Genesis backdrop diagnostic in melonDS 1.1. Both captured top-screen colors match the original jEnesisDS 0.7.4 frames pixel for pixel. Sonic's intro, title screen, movement, jumping, and both save slots were tested in melonDS. A restored Green Hill Zone frame matched the frame at the time of saving and matched across both renderers. A separate PSG diagnostic produced audio and muted when paused. The renderer samples video state once per frame, the VDP uses synchronous DMA, and PSG registers are sent to the mixer at frame granularity. Mid-frame rendering effects, including the split-screen Sonic 2 demo, interlace, and Sonic's soundtrack remain pending. Run `make check` for host checks covering the CPU, idle-loop scheduling, controller port, Z80 execution and bus access, YM2612 timers, VDP interrupts and DMA, tile and sprite priority, save-file validation, and PSG synthesis.
+The C build runs the Genesis backdrop diagnostic in melonDS 1.1. Both captured top-screen colors match the original jEnesisDS 0.7.4 frames pixel for pixel. Sonic's intro, title screen, movement, jumping, and both save slots were tested in melonDS. A restored Green Hill Zone frame matched the frame at the time of saving and matched across both renderers. A separate PSG diagnostic produced audio and muted when paused. The renderer samples video state once per frame, the VDP uses synchronous DMA, and PSG registers are sent to the mixer at frame granularity. Mid-frame rendering effects, including the split-screen Sonic 2 demo, interlace, and Sonic's soundtrack remain pending. Run `make check` for host checks covering the CPU, idle-loop scheduling, controller port, Z80 execution and bus access, YM2612 timers and DAC write timing, VDP interrupts and DMA, tile and sprite priority, save-file validation, and PSG synthesis.
 
 The original and BlocksDS browsers produced pixel-identical captures in melonDS with the same ROM listing. A Green Hill Zone spot check showed about 30 guest frames per second in DS mode. Its slot restored Sonic's earlier position and timer. A separate host smoke run advanced Sonic 1, Sonic 2, Gunstar Heroes, Streets of Rage 2, Castlevania Bloodlines, and Golden Axe through 1,400 frames each with scripted Start presses and no interpreter stop. The host run did not check graphical or audio output for those titles.
 
+A DAC-only cartridge test in melonDS 1.1 produced audio with the DAC enabled and silence with the DAC disabled or the menu open. Sonic also restored an existing C-port save after the audio change.
+
 ## Gameplay reference
+
+The experimental Port A release uses the recovered assembly from [`blocksds-port-a`](https://github.com/nextcode4u/jEnesisDS-Decomp-REA/tree/blocksds-port-a). This branch builds the C implementation.
 
 The date-coded handoff contains a source-only devkitARM r20 build that matches jEnesisDS 0.7.4 byte for byte. Its verified ROM provides a baseline for frontend graphics, guest timing, audio, and save states. [Handoff 20261120](https://github.com/nextcode4u/jEnesisDS-Decomp-REA/releases/tag/20261120) · [devkitARM r20 archive](https://wii.leseratte10.de/devkitPro/devkitARM/r20%20%282007%29/)
 

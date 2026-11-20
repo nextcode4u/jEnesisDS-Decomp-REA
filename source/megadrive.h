@@ -1,6 +1,7 @@
 #ifndef JENESIS_MEGADRIVE_H
 #define JENESIS_MEGADRIVE_H
 
+#include "dac.h"
 #include "m68k.h"
 #include "third_party/z80/z80.h"
 
@@ -39,6 +40,8 @@ struct megadrive {
     uint8_t z80_irq_clocks;
     uint32_t z80_instruction_debt;
     unsigned z80_synced_cycle;
+    unsigned z80_slice_start;
+    unsigned long z80_slice_clocks;
     bool z80_bus_requested;
     bool z80_reset;
     uint8_t port_data[3];
@@ -65,6 +68,7 @@ struct megadrive {
     unsigned ym_busy_cycles;
     uint32_t ym_timer_clocks[2];
     uint8_t ym_timer_flags;
+    struct dac_capture dac_capture;
     uint8_t version;
     unsigned frame_cycles;
     unsigned cycle_carry;
