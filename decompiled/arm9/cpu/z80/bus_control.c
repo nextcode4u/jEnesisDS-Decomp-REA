@@ -314,3 +314,17 @@ void FUN_02004ef4(int param_1,uint param_2,int param_3)
   return;
 }
 
+
+// 0x020050a8  initialize_z80_state_and_dispatch_pointers
+
+void FUN_020050a8(int param_1)
+
+{
+  FUN_02083058(param_1,0,0x4c4);
+  *(undefined ***)(param_1 + 0x494) = &switchD_0200e01c::switchdataD_020154b0;
+  *(undefined ***)(param_1 + 0x498) = &z80_dispatch;
+  *(undefined ***)(param_1 + 0x49c) = &PTR_z80_dispatch_01002e00_02015430;
+  *(undefined ***)(param_1 + 0x4a0) = &PTR_z80_dispatch_01002ea8_02015470;
+  return;
+}
+

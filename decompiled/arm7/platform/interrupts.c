@@ -1,8 +1,8 @@
 /* ARM7 interrupts — grouped REA pseudocode.
- * Use the processor functions.tsv for names, descriptions and source hashes.
+ * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x037f8108  veneer_to_initialize_interrupt_controller
+// 0x037f8108  arm_veneer_for_initialize_interrupt_controller
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -26,7 +26,7 @@ undefined4 thunk_FUN_038015d0(void)
 }
 
 
-// 0x037f8114  veneer_to_install_interrupt_callback
+// 0x037f8114  arm_veneer_for_install_interrupt_callback
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -61,7 +61,7 @@ undefined4 thunk_FUN_03801564(uint param_1,undefined4 param_2)
 }
 
 
-// 0x037f8120  veneer_to_enable_interrupt_sources
+// 0x037f8120  arm_veneer_for_enable_interrupt_sources
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 

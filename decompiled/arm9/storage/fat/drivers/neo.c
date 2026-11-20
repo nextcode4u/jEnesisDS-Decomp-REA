@@ -349,24 +349,3 @@ undefined4 FUN_020745b4(void)
   return 0;
 }
 
-
-// 0x0207fda8  helper_for_fat_neo_selectmmc
-
-void FUN_0207fda8(int param_1)
-
-{
-  undefined1 *puVar1;
-  int iVar2;
-  int iVar3;
-  
-  DAT_040001a1 = 0xc0;
-  iVar3 = 0;
-  do {
-    puVar1 = (undefined1 *)(param_1 + iVar3);
-    iVar2 = -iVar3;
-    iVar3 = iVar3 + 1;
-    (&DAT_040001af)[iVar2] = *puVar1;
-  } while (iVar3 != 8);
-  return;
-}
-

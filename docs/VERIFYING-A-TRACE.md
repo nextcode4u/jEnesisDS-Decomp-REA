@@ -68,6 +68,54 @@ Look for `bic r1, r0, #1` at `0x020135c4`. That instruction clears bit 0 in the 
 
 If you already have the prepared Ghidra projects open, go to the same native address in the correct processor’s Listing view and use the index’s `ghidra_symbol` as a second check. The handoff gives the commands to recreate those projects. [Ghidra project setup](HANDOFF.md#validate-and-reproduce)
 
+## 4. Follow an ARM-to-Thumb branch stub
+
+At `0x02085898`, the ARM entry loads the next literal into `ip` and branches through `bx ip`. The literal is `0x020805e9`. Its low bit selects Thumb state, and execution starts at `0x020805e8`. Read that destination in Thumb mode to see `bx r3`, an indirect tail branch to a caller-supplied address. Here `ip` is another name for `r12`. [Branch stub](../decompiled/arm9/platform/veneers.c#L19)
+
+```sh
+arm-none-eabi-objdump -m armv5te -D --start-address=0x02085898 --stop-address=0x020858a4 build/arm9.elf
+arm-none-eabi-objdump -m armv5te -M force-thumb -D --start-address=0x020805e8 --stop-address=0x020805ec build/arm9.elf
+python3 scripts/find_routine.py 0x020805e8
+```
+
+Read the original literal as a word even if the disassembler prints an instruction at that location. For a Thumb entry that begins with `bx pc`, switch the listing to ARM mode after the aligned entry point. Some of these stubs have separate index rows for callers entering in Thumb and callers entering directly in ARM state.
+
+## 5. Check the DS display transfers
+
+```sh
+arm-none-eabi-objdump -m armv5te -D --start-address=0x02008914 --stop-address=0x02008984 build/arm9.elf
+arm-none-eabi-objdump -m armv5te -D --start-address=0x020090a0 --stop-address=0x020090e8 build/arm9.elf
+arm-none-eabi-objdump -m armv5te -D --start-address=0x020802c4 --stop-address=0x020802dc build/arm9.elf
+```
+
+1. In the sprite copy, follow the load from DMA3 control at `0x040000dc` and the conditional branch back to the load. The routine returns after bit 31 clears. The pseudocode presents this wait as an infinite loop. [Sprite copy](../decompiled/arm9/video/sprites/state_updates.c#L36)
+2. In the palette upload, look for writes to the DMA3 destination at `0x020090c4` and `0x020090d4`. The instruction between them adds `0x200` to the destination. Each write to DMA3 control uses the literal `0x80000040`, which starts a 64-halfword transfer. [Palette upload](../decompiled/arm9/video/vdp/display_updates.c#L5)
+3. In the cache helper, the operation at `0x020802cc` is `mcr p15, 0, r0, c7, c14, 1`. It cleans and invalidates a data cache line. The loop advances by 32 bytes. [Cache helper](../decompiled/arm9/platform/ds_services.c#L277) · [ARM946E-S technical reference manual](https://documentation-service.arm.com/static/5f032835cafe527e86f5b8ad)
+
+## 6. Read a tile-based UI label
+
+The Now Playing screen calls `0x020069a8` immediately before it draws the slot indicators. The routine writes three tiles on each of two rows in the sub-engine BG1 map. Startup configures BG1 for 8-bit palette indices and copies its character tiles from ARM9 address `0x020874a8`. Read the six tiles from the original ROM to see the two words `STATE` and `SLOTS`. [Label routine](../decompiled/arm9/frontend/ui.c#L356) · [Tile loader](../decompiled/arm9/frontend/ui.c#L416)
+
+```sh
+python3 - <<'PY2'
+from pathlib import Path
+from struct import unpack_from
+
+rom = Path('input/jEnesisDS.nds').read_bytes()
+rom_offset, _, load_address, image_size = unpack_from('<4I', rom, 0x20)
+tiles = 0x020874a8 - load_address
+assert 0 <= tiles and tiles + 0x2700 <= image_size
+base = rom_offset + tiles
+for tile_ids in ((0x8a, 0x8b, 0x8c), (0x99, 0x9a, 0x9b)):
+    for row in range(8):
+        pixels = []
+        for tile in tile_ids:
+            start = base + tile * 64 + row * 8
+            pixels.extend(rom[start:start + 8])
+        print(''.join('#' if color == 0x0b else ' ' for color in pixels))
+PY2
+```
+
 ## Record what you verified
 
 Keep the guest opcode, table slot, and native address in your notes. Record which ARM instructions or caller branches support the role. If you can confirm the operation but cannot prove when it runs, say so in the description. Keep new working labels in the module header and index. Run `python3 scripts/check_pseudocode.py` to confirm the label, line range, and body hash still agree. [Analysis basis](HANDOFF.md#trace-a-routine)

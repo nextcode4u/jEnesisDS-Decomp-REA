@@ -1,5 +1,5 @@
 /* ARM7 startup — grouped REA pseudocode.
- * Use the processor functions.tsv for names, descriptions and source hashes.
+ * Use functions.tsv for addresses, names and analysis notes.
  */
 
 // 0x037f8000  start_arm7_audio_processor
@@ -38,7 +38,7 @@ void FUN_037f805c(undefined4 *param_1,int param_2)
 }
 
 
-// 0x037f80d0  helper_for_run_arm7_c_runtime_initializers
+// 0x037f80d0  arm7_empty_runtime_initializer
 
 void FUN_037f80d0(void)
 

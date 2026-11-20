@@ -1,5 +1,5 @@
 /* ARM9 ui — grouped REA pseudocode.
- * Use the processor functions.tsv for names, descriptions and source hashes.
+ * Use functions.tsv for addresses, names and analysis notes.
  */
 
 // 0x020023e0  write_popup_text_tiles
@@ -34,7 +34,7 @@ void FUN_020023e0(char *param_1)
 }
 
 
-// 0x020025a4  veneer_to_load_subscreen_palette_tiles_and_map
+// 0x020025a4  arm_tail_branch_to_load_subscreen_palette_tiles_and_map
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -154,7 +154,7 @@ void FUN_020027d0(void)
 }
 
 
-// 0x02002b2c  helper_calls_restore_overlay_tilemap_row
+// 0x02002b2c  move_settings_highlight_down
 
 void FUN_02002b2c(void)
 
@@ -179,7 +179,7 @@ void FUN_02002b2c(void)
 }
 
 
-// 0x02002b5c  helper_calls_restore_overlay_tilemap_row
+// 0x02002b5c  move_settings_highlight_up
 
 void FUN_02002b5c(void)
 
@@ -204,7 +204,7 @@ void FUN_02002b5c(void)
 }
 
 
-// 0x02002b8c  helper_calls_restore_overlay_tilemap_row
+// 0x02002b8c  select_next_rom_browser_page
 
 void FUN_02002b8c(void)
 
@@ -230,7 +230,7 @@ void FUN_02002b8c(void)
 }
 
 
-// 0x02002be8  helper_calls_restore_overlay_tilemap_row
+// 0x02002be8  move_rom_browser_highlight_down
 
 void FUN_02002be8(void)
 
@@ -255,7 +255,7 @@ void FUN_02002be8(void)
 }
 
 
-// 0x02002c28  helper_calls_restore_overlay_tilemap_row
+// 0x02002c28  move_rom_browser_highlight_up
 
 void FUN_02002c28(void)
 
@@ -280,7 +280,7 @@ void FUN_02002c28(void)
 }
 
 
-// 0x020067d4  helper_for_draw_current_rom_information
+// 0x020067d4  draw_rom_region_indicator
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -318,7 +318,7 @@ void FUN_020067d4(int param_1)
 }
 
 
-// 0x02006890  helper_for_draw_current_rom_information
+// 0x02006890  draw_cartridge_sram_indicator
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -331,7 +331,7 @@ void FUN_02006890(void)
 }
 
 
-// 0x020068ac  helper_for_draw_current_rom_information
+// 0x020068ac  draw_rom_video_standard_indicator
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -353,7 +353,7 @@ void FUN_020068ac(int param_1)
 }
 
 
-// 0x020069a8  helper_for_draw_current_rom_information
+// 0x020069a8  draw_state_slots_label
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -370,7 +370,7 @@ void FUN_020069a8(void)
 }
 
 
-// 0x020069e4  helper_for_draw_current_rom_information
+// 0x020069e4  draw_savestate_slot_presence_indicator
 
 void FUN_020069e4(uint param_1,int param_2)
 
@@ -393,7 +393,7 @@ void FUN_020069e4(uint param_1,int param_2)
 }
 
 
-// 0x02006b78  helper_for_draw_current_rom_information
+// 0x02006b78  copy_rom_information_overlay_tiles
 
 undefined8 FUN_02006b78(void)
 

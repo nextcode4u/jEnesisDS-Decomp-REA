@@ -1,8 +1,8 @@
 /* ARM7 peripherals — grouped REA pseudocode.
- * Use the processor functions.tsv for names, descriptions and source hashes.
+ * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x037f80fc  veneer_to_initialize_rtc_control
+// 0x037f80fc  arm_veneer_for_initialize_rtc_control
 
 undefined4 thunk_FUN_03801200(void)
 
@@ -23,7 +23,7 @@ undefined4 thunk_FUN_03801200(void)
 }
 
 
-// 0x037f8138  veneer_to_calibrate_touch_coordinates
+// 0x037f8138  arm_veneer_for_calibrate_touch_coordinates
 
 /* WARNING: Restarted to delay deadcode elimination for space: ram */
 

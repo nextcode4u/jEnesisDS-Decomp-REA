@@ -1,8 +1,8 @@
 /* ARM9 rom browser — grouped REA pseudocode.
- * Directory listing, page navigation, selection and return to the game.
+ * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x02002088  helper_for_run_rom_browser_event_loop
+// 0x02002088  select_previous_rom_browser_page
 
 void FUN_02002088(void)
 
@@ -333,103 +333,5 @@ void FUN_02006784(int param_1)
     *(undefined2 *)(iVar2 + 0x6201002) = 0x4c;
   } while (iVar1 != 0x3c);
   return;
-}
-
-
-// 0x02072cdc  helper_for_run_rom_browser_event_loop
-
-void FUN_02072cdc(void)
-
-{
-  FUN_02072c8c(8,1);
-  return;
-}
-
-
-// 0x020856f0  helper_for_enumerate_rom_browser_directory
-
-undefined4 FUN_020856f0(int *param_1,undefined4 param_2,undefined4 param_3)
-
-{
-  undefined4 uVar1;
-  undefined4 uVar2;
-  code *pcVar3;
-  
-  uVar2 = 0xffffffff;
-  uVar1 = DAT_0208f3a0;
-  if (param_1 != (int *)0x0) {
-    pcVar3 = *(code **)((&DAT_0208fbc0)[*param_1] + 0x44);
-    if (pcVar3 == (code *)0x0) {
-      param_3 = 0x58;
-    }
-    uVar2 = 0xffffffff;
-    uVar1 = param_3;
-    if (pcVar3 != (code *)0x0) {
-      uVar2 = (*pcVar3)(&DAT_0208f3a0,param_1,param_2);
-      uVar1 = DAT_0208f3a0;
-    }
-  }
-  DAT_0208f3a0 = uVar1;
-  return uVar2;
-}
-
-
-// 0x02085760  helper_for_enumerate_rom_browser_directory
-
-undefined4 FUN_02085760(int *param_1)
-
-{
-  code *pcVar1;
-  undefined4 uVar2;
-  bool bVar3;
-  
-  uVar2 = 0xffffffff;
-  if (param_1 != (int *)0x0) {
-    pcVar1 = *(code **)((&DAT_0208fbc0)[*param_1] + 0x48);
-    bVar3 = pcVar1 == (code *)0x0;
-    if (bVar3) {
-      pcVar1 = (code *)&SUB_00000058;
-    }
-    uVar2 = 0xffffffff;
-    if (!bVar3) {
-      uVar2 = (*pcVar1)(&DAT_0208f3a0,param_1);
-      pcVar1 = DAT_0208f3a0;
-    }
-    DAT_0208f3a0 = pcVar1;
-    FUN_020826fc(param_1);
-  }
-  return uVar2;
-}
-
-
-// 0x020857d4  helper_for_enumerate_rom_browser_directory
-
-int * FUN_020857d4(undefined4 param_1)
-
-{
-  int iVar1;
-  int *piVar2;
-  
-  iVar1 = FUN_02084ee0();
-  if ((iVar1 == -1) || (*(int *)((&DAT_0208fbc0)[iVar1] + 0x3c) == 0)) {
-    piVar2 = (int *)0x0;
-    DAT_0208f3a0 = 0x58;
-  }
-  else {
-    piVar2 = (int *)FUN_02082724(*(int *)((&DAT_0208fbc0)[iVar1] + 0x38) + 8);
-    if (piVar2 == (int *)0x0) {
-      DAT_0208f3a0 = 0x3f;
-    }
-    else {
-      piVar2[1] = (int)(piVar2 + 2);
-      *piVar2 = iVar1;
-      iVar1 = (**(code **)((&DAT_0208fbc0)[iVar1] + 0x3c))(&DAT_0208f3a0,piVar2,param_1);
-      if (iVar1 == 0) {
-        FUN_020826fc(piVar2);
-        piVar2 = (int *)0x0;
-      }
-    }
-  }
-  return piVar2;
 }
 

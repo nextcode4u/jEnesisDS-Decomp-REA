@@ -11,14 +11,18 @@ decompiled/
   arm9/
     cpu/
       m68k/        Instruction families, addressing modes, and bus access
+        shifts_and_bits/  Shifts, rotates, bit tests, and bit changes
       z80/         Base and prefixed instructions, bus control, and timing
+        ed_prefix/          ED operands and operations
+        indexed/            IX and IY addressing and register transfers
         indexed_bit_set_and_reset/  SET and RES folders with a file per bit
     frontend/      ROM browser, settings, UI, and input
     platform/      DS services, runtime, and interworking veneers
     storage/       Cartridge loading, FAT, SRAM, save states, and LZSS
     system/        Startup, emulator control, and IPC
     video/         VDP registers, timing, and DS graphics
-      vdp/         Display setup, updates, palette paths, and overlay
+      vdp/         Display setup, port access, DMA, and background tilemaps
+      sprites/     Genesis tile copies and DS sprite attribute updates
   arm7/
     audio/         Service, timers, PSG, DAC, and YM2612
       ym2612/
@@ -26,9 +30,19 @@ decompiled/
     platform/      Startup, IPC, interrupts, BIOS, runtime, and peripherals
 ```
 
-The 242 module files group routines by processor and subsystem. The largest 68000 word and long MOVE groups also use the destination addressing mode from a representative opcode. Z80 modules use instruction family and operand type. Routines are in ascending address order within each module. The branch keeps working names in short headers and detailed annotations in two processor indexes.
+The 256 module files group routines by processor and subsystem. The largest 68000 word and long MOVE groups also use the destination addressing mode from a representative opcode. Z80 modules use instruction family and operand type. Routines are in ascending address order within each module. The branch keeps working names in short headers and detailed annotations in two processor indexes.
 
-The 40 routines previously in the unresolved folders were traced to CPU bus and state helpers, sprite tile copies, audio and FIFO control, LZSS, and platform startup or storage stubs. Some other index entries still have provisional names. The standalone 68000 PC accessor has a confirmed operation and no identified caller. [Reading guide and evidence](READING-GUIDE.md#read-a-large-export)
+The latest review replaced 186 provisional labels with observed behavior or branch destinations. Open questions about callers, original symbols, and library versions are recorded below.
+
+## Remaining questions
+
+| Address or area | Confirmed behavior | Open question |
+| --- | --- | --- |
+| `0x02000310` | Returns the emulated 68000 PC as the difference between the host PC pointer and mapped base. | Find a caller or address reference that establishes when this accessor runs. [PC accessor](../decompiled/arm9/cpu/m68k/cycle_budget.c#L5) |
+| `0x020737b8` | Selects a fixed ATA register map and calls the probe. | Identify the exact slot-2 adapter from the register table or period library sources. |
+| DS runtime | ARM and Thumb branch entries now link to their observed destinations. The startup and cache routines have documented machine behavior. | Identify the exact libnds revision and recover original symbol names where the library match is still missing. |
+
+The index records the behavior supported by the available evidence. An entry can have a verified operation and still have an unknown caller, original symbol, or hardware revision.
 
 ## Trace a routine
 

@@ -1,8 +1,22 @@
 /* ARM9 veneers — grouped REA pseudocode.
- * Use the processor functions.tsv for names, descriptions and source hashes.
+ * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x02085898  interworking_veneer
+// 0x020805e8  thumb_call_via_r3
+
+void FUN_020805e8(void)
+
+{
+  code *UNRECOVERED_JUMPTABLE;
+  
+                    /* WARNING: Could not recover jumptable at 0x020805e8. Too many branches */
+                    /* WARNING: Treating indirect jump as call */
+  (*UNRECOVERED_JUMPTABLE)();
+  return;
+}
+
+
+// 0x02085898  arm_veneer_for_thumb_call_via_r3
 
 void thunk_FUN_020805e8(void)
 
@@ -16,7 +30,7 @@ void thunk_FUN_020805e8(void)
 }
 
 
-// 0x020858b0  interworking_veneer
+// 0x020858b0  arm_veneer_for_disable_arm9_interrupt_sources
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -37,7 +51,7 @@ void thunk_FUN_0208024c(uint param_1)
 }
 
 
-// 0x020858bc  interworking_veneer
+// 0x020858bc  arm_veneer_for_enable_arm9_interrupt_sources
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -59,7 +73,7 @@ void thunk_FUN_020801fc(uint param_1)
 }
 
 
-// 0x020858c8  interworking_veneer
+// 0x020858c8  arm_veneer_for_install_arm9_interrupt_handler
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -93,7 +107,7 @@ void thunk_FUN_02080098(uint param_1,undefined4 param_2)
 }
 
 
-// 0x020858d4  interworking_veneer
+// 0x020858d4  arm_veneer_for_initialize_arm9_interrupt_table
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -116,7 +130,7 @@ void thunk_FUN_02080100(void)
 }
 
 
-// 0x020858e0  interworking_veneer
+// 0x020858e0  arm_veneer_for_remove_arm9_interrupt_handler
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -150,7 +164,7 @@ void thunk_FUN_0208014c(uint param_1)
 }
 
 
-// 0x020858ec  interworking_veneer
+// 0x020858ec  arm_veneer_for_sample_ds_keys_and_update_repeat_state
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -178,7 +192,7 @@ void thunk_FUN_0207fb90(void)
 }
 
 
-// 0x020858f8  interworking_veneer
+// 0x020858f8  arm_veneer_for_read_latched_ds_key_state
 
 undefined2 thunk_FUN_0207fb70(void)
 
@@ -187,7 +201,7 @@ undefined2 thunk_FUN_0207fb70(void)
 }
 
 
-// 0x02085904  interworking_veneer
+// 0x02085904  arm_veneer_for_read_shared_arm7_touch_sample
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -211,7 +225,7 @@ undefined2 * thunk_FUN_0207fc70(undefined2 *param_1)
 }
 
 
-// 0x02085910  interworking_veneer
+// 0x02085910  arm_veneer_for_mount_browser_fat_storage
 
 void thunk_FUN_02072cdc(void)
 
@@ -221,7 +235,7 @@ void thunk_FUN_02072cdc(void)
 }
 
 
-// 0x02085940  interworking_veneer
+// 0x02085940  thumb_veneer_for_register_named_device
 
 int thunk_FUN_02084e4c(undefined4 *param_1)
 
@@ -258,7 +272,7 @@ int thunk_FUN_02084e4c(undefined4 *param_1)
 }
 
 
-// 0x02085944  interworking_veneer
+// 0x02085944  arm_entry_for_register_named_device
 
 int thunk_FUN_02084e4c(undefined4 *param_1)
 
@@ -295,7 +309,7 @@ int thunk_FUN_02084e4c(undefined4 *param_1)
 }
 
 
-// 0x02085948  interworking_veneer
+// 0x02085948  thumb_veneer_for_change_working_directory_on_device
 
 undefined4 thunk_FUN_0208553c(int param_1)
 
@@ -344,7 +358,7 @@ undefined4 thunk_FUN_0208553c(int param_1)
 }
 
 
-// 0x0208594c  interworking_veneer
+// 0x0208594c  arm_entry_for_change_working_directory_on_device
 
 undefined4 thunk_FUN_0208553c(int param_1)
 
@@ -393,7 +407,7 @@ undefined4 thunk_FUN_0208553c(int param_1)
 }
 
 
-// 0x02085968  interworking_veneer
+// 0x02085968  thumb_veneer_for_newlib_free_global_reent_wrapper
 
 void thunk_FUN_020826fc(undefined4 param_1)
 
@@ -403,7 +417,7 @@ void thunk_FUN_020826fc(undefined4 param_1)
 }
 
 
-// 0x0208596c  interworking_veneer
+// 0x0208596c  arm_entry_for_newlib_free_global_reent_wrapper
 
 void thunk_FUN_020826fc(undefined4 param_1)
 
@@ -413,7 +427,7 @@ void thunk_FUN_020826fc(undefined4 param_1)
 }
 
 
-// 0x02085978  interworking_veneer
+// 0x02085978  thumb_veneer_for_newlib_malloc_global_reent_wrapper
 
 void thunk_FUN_02082724(undefined4 param_1)
 
@@ -423,7 +437,7 @@ void thunk_FUN_02082724(undefined4 param_1)
 }
 
 
-// 0x0208597c  interworking_veneer
+// 0x0208597c  arm_entry_for_newlib_malloc_global_reent_wrapper
 
 void thunk_FUN_02082724(undefined4 param_1)
 
@@ -433,7 +447,7 @@ void thunk_FUN_02082724(undefined4 param_1)
 }
 
 
-// 0x02085990  interworking_veneer
+// 0x02085990  thumb_veneer_for_scsd_write_sector_data_and_crc
 
 /* WARNING: Removing unreachable block (ram,0x0207ce54) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
@@ -481,7 +495,7 @@ LAB_0207ce18:
 }
 
 
-// 0x02085994  interworking_veneer
+// 0x02085994  arm_entry_for_scsd_write_sector_data_and_crc
 
 /* WARNING: Removing unreachable block (ram,0x0207ce54) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
@@ -529,7 +543,7 @@ LAB_0207ce18:
 }
 
 
-// 0x020859b0  interworking_veneer
+// 0x020859b0  thumb_veneer_for_bounded_string_length
 
 int thunk_FUN_02083ed0(char *param_1,int param_2)
 
@@ -548,7 +562,7 @@ int thunk_FUN_02083ed0(char *param_1,int param_2)
 }
 
 
-// 0x020859b4  interworking_veneer
+// 0x020859b4  arm_entry_for_bounded_string_length
 
 int thunk_FUN_02083ed0(char *param_1,int param_2)
 
@@ -567,7 +581,7 @@ int thunk_FUN_02083ed0(char *param_1,int param_2)
 }
 
 
-// 0x020859d8  interworking_veneer
+// 0x020859d8  thumb_veneer_for_uppercase_string_in_place_using_ctype_table
 
 void thunk_FUN_02083fb8(byte *param_1)
 
@@ -586,7 +600,7 @@ void thunk_FUN_02083fb8(byte *param_1)
 }
 
 
-// 0x020859dc  interworking_veneer
+// 0x020859dc  arm_entry_for_uppercase_string_in_place_using_ctype_table
 
 void thunk_FUN_02083fb8(byte *param_1)
 

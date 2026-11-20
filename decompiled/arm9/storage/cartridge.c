@@ -1,8 +1,8 @@
 /* ARM9 cartridge — grouped REA pseudocode.
- * Opening a selection, decoding BIN or SMD, reading headers and stream helpers.
+ * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x020002e4  helper_for_load_genesis_rom_from_stream
+// 0x020002e4  set_genesis_region_and_version_register
 
 void FUN_020002e4(uint param_1)
 
@@ -13,7 +13,7 @@ void FUN_020002e4(uint param_1)
 }
 
 
-// 0x02001530  helper_for_load_genesis_rom_from_stream
+// 0x02001530  compute_genesis_rom_checksum
 
 short FUN_02001530(int param_1,uint param_2)
 

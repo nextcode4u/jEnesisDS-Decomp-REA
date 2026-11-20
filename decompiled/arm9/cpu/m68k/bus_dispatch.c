@@ -363,3 +363,21 @@ uint FUN_02004adc(uint param_1)
   return uVar1;
 }
 
+
+// 0x02004bf0  reset_bus_tables_work_ram_and_z80_bus_lines
+
+void FUN_02004bf0(void)
+
+{
+  DAT_0209900e = 0;
+  FUN_020042f0();
+  FUN_02083058(&DAT_023cb634,0,0x10000);
+  DAT_02099008 = 0;
+  DAT_0208f34a = 1;
+  DAT_02099010 = 0;
+  DAT_02099001 = 0;
+  DAT_02099000 = 0;
+  DAT_0208f349 = 1;
+  return;
+}
+

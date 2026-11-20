@@ -2,7 +2,7 @@
  * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x02085950  veneer_to_newlib_strlen
+// 0x02085950  thumb_veneer_for_newlib_strlen
 
 int thunk_FUN_02083a6c(uint *param_1)
 
@@ -28,7 +28,7 @@ int thunk_FUN_02083a6c(uint *param_1)
 }
 
 
-// 0x02085954  veneer_to_newlib_strlen
+// 0x02085954  arm_entry_for_newlib_strlen
 
 int thunk_FUN_02083a6c(uint *param_1)
 
@@ -54,7 +54,7 @@ int thunk_FUN_02083a6c(uint *param_1)
 }
 
 
-// 0x02085958  veneer_to_newlib_strchr
+// 0x02085958  thumb_veneer_for_newlib_strchr
 
 uint * thunk_FUN_020836d4(uint *param_1,uint param_2)
 
@@ -98,7 +98,7 @@ uint * thunk_FUN_020836d4(uint *param_1,uint param_2)
 }
 
 
-// 0x0208595c  veneer_to_newlib_strchr
+// 0x0208595c  arm_entry_for_newlib_strchr
 
 uint * thunk_FUN_020836d4(uint *param_1,uint param_2)
 
@@ -142,7 +142,7 @@ uint * thunk_FUN_020836d4(uint *param_1,uint param_2)
 }
 
 
-// 0x02085960  veneer_to_newlib_strncmp
+// 0x02085960  thumb_veneer_for_newlib_strncmp
 
 int thunk_FUN_02083c80(uint *param_1,uint *param_2,uint param_3)
 
@@ -208,7 +208,7 @@ LAB_02083db4:
 }
 
 
-// 0x02085964  veneer_to_newlib_strncmp
+// 0x02085964  arm_entry_for_newlib_strncmp
 
 int thunk_FUN_02083c80(uint *param_1,uint *param_2,uint param_3)
 
@@ -274,7 +274,7 @@ LAB_02083db4:
 }
 
 
-// 0x02085970  veneer_to_newlib_memset
+// 0x02085970  thumb_veneer_for_newlib_memset
 
 void thunk_FUN_02083058(undefined4 *param_1,undefined1 param_2,uint param_3)
 
@@ -316,7 +316,7 @@ LAB_020830d0:
 }
 
 
-// 0x02085974  veneer_to_newlib_memset
+// 0x02085974  arm_entry_for_newlib_memset
 
 void thunk_FUN_02083058(undefined4 *param_1,undefined1 param_2,uint param_3)
 
@@ -358,7 +358,7 @@ LAB_020830d0:
 }
 
 
-// 0x02085980  veneer_to_compiler_udivsi3
+// 0x02085980  thumb_veneer_for_compiler_udivsi3
 
 uint thunk_FUN_02080380(uint param_1,uint param_2)
 
@@ -445,7 +445,7 @@ uint thunk_FUN_02080380(uint param_1,uint param_2)
 }
 
 
-// 0x02085984  veneer_to_compiler_udivsi3
+// 0x02085984  arm_entry_for_compiler_udivsi3
 
 uint thunk_FUN_02080380(uint param_1,uint param_2)
 
@@ -532,7 +532,7 @@ uint thunk_FUN_02080380(uint param_1,uint param_2)
 }
 
 
-// 0x02085988  veneer_to_newlib_memcpy
+// 0x02085988  thumb_veneer_for_newlib_memcpy
 
 void thunk_FUN_02082ec0(undefined4 *param_1,undefined4 *param_2,uint param_3)
 
@@ -567,7 +567,7 @@ void thunk_FUN_02082ec0(undefined4 *param_1,undefined4 *param_2,uint param_3)
 }
 
 
-// 0x0208598c  veneer_to_newlib_memcpy
+// 0x0208598c  arm_entry_for_newlib_memcpy
 
 void thunk_FUN_02082ec0(undefined4 *param_1,undefined4 *param_2,uint param_3)
 
@@ -602,7 +602,7 @@ void thunk_FUN_02082ec0(undefined4 *param_1,undefined4 *param_2,uint param_3)
 }
 
 
-// 0x02085998  veneer_to_newlib_strncpy
+// 0x02085998  thumb_veneer_for_newlib_strncpy
 
 uint * thunk_FUN_02083dbc(uint *param_1,uint *param_2,uint param_3)
 
@@ -663,7 +663,7 @@ uint * thunk_FUN_02083dbc(uint *param_1,uint *param_2,uint param_3)
 }
 
 
-// 0x0208599c  veneer_to_newlib_strncpy
+// 0x0208599c  arm_entry_for_newlib_strncpy
 
 uint * thunk_FUN_02083dbc(uint *param_1,uint *param_2,uint param_3)
 
@@ -724,7 +724,7 @@ uint * thunk_FUN_02083dbc(uint *param_1,uint *param_2,uint param_3)
 }
 
 
-// 0x020859a0  veneer_to_newlib_strrchr
+// 0x020859a0  thumb_veneer_for_newlib_strrchr
 
 int thunk_FUN_02083f68(int param_1,int param_2)
 
@@ -746,7 +746,7 @@ int thunk_FUN_02083f68(int param_1,int param_2)
 }
 
 
-// 0x020859a4  veneer_to_newlib_strrchr
+// 0x020859a4  arm_entry_for_newlib_strrchr
 
 int thunk_FUN_02083f68(int param_1,int param_2)
 
@@ -768,7 +768,7 @@ int thunk_FUN_02083f68(int param_1,int param_2)
 }
 
 
-// 0x020859a8  veneer_to_compiler_aeabi_uidivmod
+// 0x020859a8  thumb_veneer_for_compiler_aeabi_uidivmod
 
 void thunk_FUN_0208047c(void)
 
@@ -778,7 +778,7 @@ void thunk_FUN_0208047c(void)
 }
 
 
-// 0x020859ac  veneer_to_compiler_aeabi_uidivmod
+// 0x020859ac  arm_entry_for_compiler_aeabi_uidivmod
 
 void thunk_FUN_0208047c(void)
 
@@ -788,7 +788,7 @@ void thunk_FUN_0208047c(void)
 }
 
 
-// 0x020859b8  veneer_to_newlib_strcasecmp
+// 0x020859b8  thumb_veneer_for_newlib_strcasecmp
 
 int thunk_FUN_02083638(byte *param_1,byte *param_2)
 
@@ -831,7 +831,7 @@ LAB_02083694:
 }
 
 
-// 0x020859bc  veneer_to_newlib_strcasecmp
+// 0x020859bc  arm_entry_for_newlib_strcasecmp
 
 int thunk_FUN_02083638(byte *param_1,byte *param_2)
 
@@ -874,7 +874,7 @@ LAB_02083694:
 }
 
 
-// 0x020859c0  veneer_to_newlib_strncasecmp
+// 0x020859c0  thumb_veneer_for_newlib_strncasecmp
 
 int thunk_FUN_02083afc(byte *param_1,byte *param_2,int param_3)
 
@@ -920,7 +920,7 @@ LAB_02083b74:
 }
 
 
-// 0x020859c4  veneer_to_newlib_strncasecmp
+// 0x020859c4  arm_entry_for_newlib_strncasecmp
 
 int thunk_FUN_02083afc(byte *param_1,byte *param_2,int param_3)
 
@@ -966,7 +966,7 @@ LAB_02083b74:
 }
 
 
-// 0x020859c8  veneer_to_newlib_strpbrk
+// 0x020859c8  thumb_veneer_for_newlib_strpbrk
 
 char * thunk_FUN_02083f18(char *param_1,char *param_2)
 
@@ -997,7 +997,7 @@ char * thunk_FUN_02083f18(char *param_1,char *param_2)
 }
 
 
-// 0x020859cc  veneer_to_newlib_strpbrk
+// 0x020859cc  arm_entry_for_newlib_strpbrk
 
 char * thunk_FUN_02083f18(char *param_1,char *param_2)
 
@@ -1028,7 +1028,7 @@ char * thunk_FUN_02083f18(char *param_1,char *param_2)
 }
 
 
-// 0x020859d0  veneer_to_newlib_memmove
+// 0x020859d0  thumb_veneer_for_newlib_memmove
 
 undefined4 * thunk_FUN_02082f5c(undefined4 *param_1,undefined4 *param_2,uint param_3)
 
@@ -1080,7 +1080,7 @@ undefined4 * thunk_FUN_02082f5c(undefined4 *param_1,undefined4 *param_2,uint par
 }
 
 
-// 0x020859d4  veneer_to_newlib_memmove
+// 0x020859d4  arm_entry_for_newlib_memmove
 
 undefined4 * thunk_FUN_02082f5c(undefined4 *param_1,undefined4 *param_2,uint param_3)
 
@@ -1132,7 +1132,7 @@ undefined4 * thunk_FUN_02082f5c(undefined4 *param_1,undefined4 *param_2,uint par
 }
 
 
-// 0x020859e0  veneer_to_compiler_divsi3
+// 0x020859e0  thumb_veneer_for_compiler_divsi3
 
 uint thunk_FUN_02080494(uint param_1,uint param_2)
 
@@ -1247,7 +1247,7 @@ uint thunk_FUN_02080494(uint param_1,uint param_2)
 }
 
 
-// 0x020859e4  veneer_to_compiler_divsi3
+// 0x020859e4  arm_entry_for_compiler_divsi3
 
 uint thunk_FUN_02080494(uint param_1,uint param_2)
 
@@ -1362,7 +1362,7 @@ uint thunk_FUN_02080494(uint param_1,uint param_2)
 }
 
 
-// 0x020859e8  veneer_to_compiler_aeabi_idivmod
+// 0x020859e8  thumb_veneer_for_compiler_aeabi_idivmod
 
 void thunk_FUN_020805c0(void)
 
@@ -1372,7 +1372,7 @@ void thunk_FUN_020805c0(void)
 }
 
 
-// 0x020859ec  veneer_to_compiler_aeabi_idivmod
+// 0x020859ec  arm_entry_for_compiler_aeabi_idivmod
 
 void thunk_FUN_020805c0(void)
 

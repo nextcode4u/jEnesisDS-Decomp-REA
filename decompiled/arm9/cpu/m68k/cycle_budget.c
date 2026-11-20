@@ -34,6 +34,22 @@ void FUN_020004e0(int param_1)
 }
 
 
+// 0x020004f0  calculate_m68k_cycles_per_frame_line
+
+void FUN_020004f0(void)
+
+{
+  undefined4 uVar1;
+  
+  if (DAT_0b000008 != 0) {
+    uVar1 = FUN_02005144(&DAT_0b0000ac);
+    FUN_02080380(uVar1,DAT_0b000008 * DAT_0b000000);
+    return;
+  }
+  return;
+}
+
+
 // 0x0200052c  read_m68k_cycle_counter
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */

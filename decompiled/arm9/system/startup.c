@@ -1,5 +1,5 @@
 /* ARM9 startup — grouped REA pseudocode.
- * Use the processor functions.tsv for names, descriptions and source hashes.
+ * Use functions.tsv for addresses, names and analysis notes.
  */
 
 // 0x02000000  start_arm9_and_map_tcm
@@ -101,7 +101,7 @@ void FUN_02000180(undefined4 param_1,undefined4 *param_2,undefined4 *param_3)
 }
 
 
-// 0x02000220  helper_for_run_arm9_c_runtime_initializers
+// 0x02000220  arm9_empty_runtime_initializer
 
 void FUN_02000220(void)
 
@@ -143,151 +143,6 @@ void FUN_020011b0(void)
     puVar1 = puVar2;
   } while (puVar2 != (undefined2 *)0x5000600);
   software_interrupt(5);
-  return;
-}
-
-
-// 0x02006f2c  helper_for_initialize_ds_display_and_overlay
-
-/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
-
-void FUN_02006f2c(int param_1)
-
-{
-  if (param_1 != 0xff) {
-    DAT_020993c4 = 0;
-    switch(param_1) {
-    case 0:
-      DAT_023dc69c = FUN_020077b8;
-      DAT_023dc6ac = FUN_02007b4c;
-      DAT_023dc6a0 = FUN_02007ed8;
-      _DAT_04000008 = 0x820;
-      _DAT_0400000a = 0xc29;
-      _DAT_0400000c = 0x22;
-      DAT_023dc6a4 = 0x22;
-      DAT_023dc6a8 = 0x820;
-      _DAT_0400000e = 0x42b;
-      break;
-    case 1:
-    case 3:
-      DAT_023dc6a8 = 0x8820;
-      DAT_023dc69c = FUN_020077b8;
-      DAT_023dc6ac = FUN_02007b4c;
-      _DAT_04000008 = 0x8820;
-      DAT_023dc6a0 = FUN_02007ed8;
-      _DAT_0400000a = 0x8c29;
-      DAT_023dc6a4 = 0x8022;
-      _DAT_0400000c = 0x8022;
-      _DAT_0400000e = 0x842b;
-      break;
-    default:
-      DAT_023dc69c = FUN_020077b8;
-      DAT_023dc6ac = FUN_02007b4c;
-      DAT_023dc6a0 = FUN_02007ed8;
-      break;
-    case 0x10:
-      DAT_023dc69c = FUN_02007830;
-      DAT_023dc6ac = FUN_02007c04;
-      DAT_023dc6a0 = FUN_02007f94;
-      _DAT_04000008 = 0x4820;
-      _DAT_0400000a = 0x4c29;
-      _DAT_0400000c = 0x4022;
-      DAT_023dc6a4 = 0x4022;
-      DAT_023dc6a8 = 0x4820;
-      _DAT_0400000e = 0x442b;
-      break;
-    case 0x11:
-    case 0x13:
-      DAT_023dc6a8 = 0xc820;
-      DAT_023dc69c = FUN_020078c8;
-      DAT_023dc6ac = FUN_02007ce4;
-      DAT_023dc6a0 = FUN_02008078;
-      DAT_023dc6a4 = 0xc022;
-                    /* WARNING: Read-only address (ram,0x0208f350) is written */
-      DAT_0208f350 = param_1;
-      _DAT_0400000e = 0xc42b;
-      _DAT_04000008 = 0xc820;
-      _DAT_0400000a = 0xcc29;
-      _DAT_0400000c = 0xc022;
-      return;
-    case 0x30:
-    case 0x31:
-      DAT_023dc69c = FUN_0200797c;
-      DAT_023dc6ac = FUN_02007ddc;
-      DAT_023dc6a0 = FUN_02008174;
-      DAT_023dc6a8 = 0x4820;
-      DAT_020993c4 = 1;
-      DAT_023dc6a4 = 0x4022;
-                    /* WARNING: Read-only address (ram,0x0208f350) is written */
-      DAT_0208f350 = param_1;
-      _DAT_04000008 = 0x4820;
-      _DAT_0400000a = 0x4c29;
-      _DAT_0400000c = 0x4022;
-      _DAT_0400000e = 0x442b;
-      return;
-    }
-                    /* WARNING (jumptable): Read-only address (ram,0x0208f350) is written */
-                    /* WARNING: Read-only address (ram,0x0208f350) is written */
-    DAT_0208f350 = param_1;
-    return;
-  }
-  DAT_0208f350 = 0xff;
-  return;
-}
-
-
-// 0x02008edc  helper_for_initialize_ds_display_and_overlay
-
-/* WARNING: Removing unreachable block (ram,0x02008ed0) */
-/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
-
-void FUN_02008edc(void)
-
-{
-  undefined4 *puVar1;
-  undefined4 *puVar2;
-  
-  puVar1 = (undefined4 *)&DAT_023dc1a8;
-  do {
-    puVar2 = puVar1;
-    *(undefined2 *)puVar2 = 0x200;
-    *(undefined2 *)((int)puVar2 + 2) = 0;
-    *(undefined2 *)(puVar2 + 1) = 0;
-    *(undefined2 *)((int)puVar2 + 6) = 0;
-    puVar1 = puVar2 + 2;
-  } while (puVar2 + 2 != &DAT_023dc5a8);
-  *(undefined2 *)((int)puVar2 + -0x3f2) = 0x100;
-  *(undefined2 *)((int)puVar2 + -0x3ba) = 0x122;
-  *(undefined2 *)((int)puVar2 + -0x3ea) = 0;
-  *(undefined2 *)((int)puVar2 + -0x3e2) = 0;
-  *(undefined2 *)((int)puVar2 + -0x3da) = 0x122;
-  *(undefined2 *)((int)puVar2 + -0x3ca) = 0;
-  *(undefined2 *)((int)puVar2 + -0x3c2) = 0;
-  *(undefined2 *)((int)puVar2 + -0x3d2) = 0xff06;
-  *(undefined2 *)((int)puVar2 + -0x3b2) = 0x100;
-  *(undefined2 *)((int)puVar2 + -0x37a) = 0xfede;
-  *(undefined2 *)((int)puVar2 + -0x3aa) = 0;
-  *(undefined2 *)((int)puVar2 + -0x3a2) = 0;
-  *(undefined2 *)((int)puVar2 + -0x39a) = 0xfede;
-  *(undefined2 *)((int)puVar2 + -0x392) = 0xff06;
-  *(undefined2 *)((int)puVar2 + -0x38a) = 0;
-  *(undefined2 *)((int)puVar2 + -0x382) = 0;
-  FUN_020802c4(&DAT_023dc1a8,0x400);
-  do {
-  } while( true );
-}
-
-
-// 0x020805e8  helper_for_start_arm9_and_map_tcm
-
-void FUN_020805e8(void)
-
-{
-  code *UNRECOVERED_JUMPTABLE;
-  
-                    /* WARNING: Could not recover jumptable at 0x020805e8. Too many branches */
-                    /* WARNING: Treating indirect jump as call */
-  (*UNRECOVERED_JUMPTABLE)();
   return;
 }
 

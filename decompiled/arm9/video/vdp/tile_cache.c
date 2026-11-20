@@ -117,3 +117,57 @@ void FUN_02007630(undefined2 *param_1,uint param_2,int param_3)
   return;
 }
 
+
+// 0x020076d0  update_cached_ds_pattern_from_vdp_word
+
+void FUN_020076d0(uint param_1,undefined2 param_2)
+
+{
+  uint uVar1;
+  uint uVar2;
+  ushort uVar3;
+  undefined1 *puVar4;
+  bool bVar5;
+  
+  uVar2 = param_1 >> 5;
+  uVar3 = (&DAT_020993cc)[uVar2];
+  puVar4 = &DAT_0209c3e0;
+  bVar5 = (uVar3 & 0x8000) != 0;
+  (&DAT_0209c3e0)[uVar2] = 1;
+  if (bVar5) {
+    puVar4 = &DAT_06020000;
+  }
+  if (bVar5) {
+    *(undefined2 *)(puVar4 + ((param_1 & 0x1f | (uVar3 & 0x3ff) << 5) >> 1 ^ 1) * 2) = param_2;
+  }
+  else {
+    (&DAT_020993cc)[uVar2] = uVar3 | 0x4000;
+  }
+  uVar3 = (&DAT_0209a3cc)[uVar2];
+  puVar4 = (undefined1 *)(uVar3 & 0x3ff);
+  uVar1 = (int)puVar4 << 5;
+  bVar5 = (uVar3 & 0x8000) != 0;
+  if (bVar5) {
+    puVar4 = &DAT_06028000;
+  }
+  if (bVar5) {
+    *(undefined2 *)(puVar4 + ((param_1 & 0x1f | uVar1) >> 1 ^ 1) * 2) = param_2;
+  }
+  if (!bVar5) {
+    (&DAT_0209a3cc)[uVar2] = uVar3 | 0x4000;
+  }
+  uVar3 = (&DAT_0209b3cc)[uVar2];
+  bVar5 = (uVar3 & 0x8000) != 0;
+  puVar4 = (undefined1 *)(uVar3 | 0x4000);
+  if (bVar5) {
+    puVar4 = &DAT_06030000;
+  }
+  if (bVar5) {
+    *(undefined2 *)(puVar4 + ((param_1 & 0x1f | (uVar3 & 0x3ff) << 5) >> 1 ^ 1) * 2) = param_2;
+  }
+  else {
+    (&DAT_0209b3cc)[uVar2] = (ushort)puVar4;
+  }
+  return;
+}
+

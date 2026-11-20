@@ -1,8 +1,8 @@
 /* ARM7 bios — grouped REA pseudocode.
- * Use the processor functions.tsv for names, descriptions and source hashes.
+ * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x037f812c  veneer_to_bios_wait_for_vblank
+// 0x037f812c  arm_veneer_for_bios_wait_for_vblank
 
 void thunk_FUN_0380178c(void)
 

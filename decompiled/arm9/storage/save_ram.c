@@ -1,8 +1,8 @@
 /* ARM9 save ram — grouped REA pseudocode.
- * Loading and flushing cartridge SRAM files separately from emulator slots.
+ * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x0200157c  helper_for_flush_cartridge_save_ram
+// 0x0200157c  swap_adjacent_bytes_in_backing_buffer
 
 uint FUN_0200157c(undefined1 *param_1,uint param_2)
 

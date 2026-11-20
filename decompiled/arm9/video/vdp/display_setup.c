@@ -1,8 +1,8 @@
 /* ARM9 display setup — grouped REA pseudocode.
- * DS display configuration, video memory setup, and display interrupts.
+ * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x02000f3c  write_display_status
+// 0x02000f3c  advance_ds_display_compare_irq_phase
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -55,7 +55,7 @@ void FUN_0200106c(void)
 }
 
 
-// 0x02001118  write_display_status_and_interrupt_master_enable
+// 0x02001118  configure_menu_vblank_interrupt
 
 /* WARNING: Removing unreachable block (ram,0x02080216) */
 /* WARNING: Removing unreachable block (ram,0x02080228) */
@@ -80,7 +80,7 @@ void FUN_02001118(void)
 }
 
 
-// 0x02006d20  write_display_control_and_subscreen_display_control
+// 0x02006d20  show_startup_graphics_and_run_scanline_transition
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -179,7 +179,96 @@ void FUN_02006d20(void)
 }
 
 
-// 0x020072a8  helper_for_configure_ds_display_windows
+// 0x02006f2c  select_background_tilemap_layout
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+void FUN_02006f2c(int param_1)
+
+{
+  if (param_1 != 0xff) {
+    DAT_020993c4 = 0;
+    switch(param_1) {
+    case 0:
+      DAT_023dc69c = FUN_020077b8;
+      DAT_023dc6ac = FUN_02007b4c;
+      DAT_023dc6a0 = FUN_02007ed8;
+      _DAT_04000008 = 0x820;
+      _DAT_0400000a = 0xc29;
+      _DAT_0400000c = 0x22;
+      DAT_023dc6a4 = 0x22;
+      DAT_023dc6a8 = 0x820;
+      _DAT_0400000e = 0x42b;
+      break;
+    case 1:
+    case 3:
+      DAT_023dc6a8 = 0x8820;
+      DAT_023dc69c = FUN_020077b8;
+      DAT_023dc6ac = FUN_02007b4c;
+      _DAT_04000008 = 0x8820;
+      DAT_023dc6a0 = FUN_02007ed8;
+      _DAT_0400000a = 0x8c29;
+      DAT_023dc6a4 = 0x8022;
+      _DAT_0400000c = 0x8022;
+      _DAT_0400000e = 0x842b;
+      break;
+    default:
+      DAT_023dc69c = FUN_020077b8;
+      DAT_023dc6ac = FUN_02007b4c;
+      DAT_023dc6a0 = FUN_02007ed8;
+      break;
+    case 0x10:
+      DAT_023dc69c = FUN_02007830;
+      DAT_023dc6ac = FUN_02007c04;
+      DAT_023dc6a0 = FUN_02007f94;
+      _DAT_04000008 = 0x4820;
+      _DAT_0400000a = 0x4c29;
+      _DAT_0400000c = 0x4022;
+      DAT_023dc6a4 = 0x4022;
+      DAT_023dc6a8 = 0x4820;
+      _DAT_0400000e = 0x442b;
+      break;
+    case 0x11:
+    case 0x13:
+      DAT_023dc6a8 = 0xc820;
+      DAT_023dc69c = FUN_020078c8;
+      DAT_023dc6ac = FUN_02007ce4;
+      DAT_023dc6a0 = FUN_02008078;
+      DAT_023dc6a4 = 0xc022;
+                    /* WARNING: Read-only address (ram,0x0208f350) is written */
+      DAT_0208f350 = param_1;
+      _DAT_0400000e = 0xc42b;
+      _DAT_04000008 = 0xc820;
+      _DAT_0400000a = 0xcc29;
+      _DAT_0400000c = 0xc022;
+      return;
+    case 0x30:
+    case 0x31:
+      DAT_023dc69c = FUN_0200797c;
+      DAT_023dc6ac = FUN_02007ddc;
+      DAT_023dc6a0 = FUN_02008174;
+      DAT_023dc6a8 = 0x4820;
+      DAT_020993c4 = 1;
+      DAT_023dc6a4 = 0x4022;
+                    /* WARNING: Read-only address (ram,0x0208f350) is written */
+      DAT_0208f350 = param_1;
+      _DAT_04000008 = 0x4820;
+      _DAT_0400000a = 0x4c29;
+      _DAT_0400000c = 0x4022;
+      _DAT_0400000e = 0x442b;
+      return;
+    }
+                    /* WARNING (jumptable): Read-only address (ram,0x0208f350) is written */
+                    /* WARNING: Read-only address (ram,0x0208f350) is written */
+    DAT_0208f350 = param_1;
+    return;
+  }
+  DAT_0208f350 = 0xff;
+  return;
+}
+
+
+// 0x020072a8  select_window_tilemap_layout
 
 void FUN_020072a8(int param_1)
 
@@ -245,7 +334,7 @@ void FUN_02007420(void)
 }
 
 
-// 0x020083ec  write_display_control_and_display_palette
+// 0x020083ec  apply_prepared_scanline_display_state
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -362,7 +451,7 @@ undefined4 FUN_02008f7c(void)
 }
 
 
-// 0x0200b6a8  helper_calls_configure_ds_display_windows
+// 0x0200b6a8  reset_vdp_memory_and_renderer_state
 
 void FUN_0200b6a8(void)
 
@@ -561,116 +650,5 @@ void FUN_0200b6a8(void)
       *pcVar10 = cVar11;
     } while (uVar2 % 7 != 0);
   } while( true );
-}
-
-
-// 0x02080098  write_display_status_and_interrupt_enable
-
-/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
-
-void FUN_02080098(uint param_1,undefined4 param_2)
-
-{
-  int iVar1;
-  uint *puVar2;
-  
-  if (param_1 != 0) {
-    puVar2 = &DAT_010056e4;
-    iVar1 = 0;
-    do {
-      if ((*puVar2 == 0) || (param_1 == *puVar2)) {
-        (&DAT_010056e0)[iVar1 * 2] = param_2;
-        (&DAT_010056e4)[iVar1 * 2] = param_1;
-        if ((int)(param_1 << 0x1f) < 0) {
-          _DAT_04000004 = _DAT_04000004 | 8;
-        }
-        if ((int)(param_1 << 0x1e) < 0) {
-          _DAT_04000004 = _DAT_04000004 | 0x10;
-        }
-        _DAT_04000210 = _DAT_04000210 | param_1;
-        return;
-      }
-      iVar1 = iVar1 + 1;
-      puVar2 = puVar2 + 2;
-    } while (iVar1 != 0x19);
-  }
-  return;
-}
-
-
-// 0x0208014c  write_display_status_and_interrupt_enable
-
-/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
-
-void FUN_0208014c(uint param_1)
-
-{
-  uint *puVar1;
-  int iVar2;
-  
-  puVar1 = &DAT_010056e4;
-  iVar2 = 0;
-  do {
-    if (param_1 == *puVar1) {
-      (&DAT_010056e0)[iVar2 * 2] = &DAT_02080095;
-      if ((int)(param_1 << 0x1f) < 0) {
-        _DAT_04000004 = _DAT_04000004 & 0xfff7;
-      }
-      if ((int)(param_1 << 0x1e) < 0) {
-        _DAT_04000004 = _DAT_04000004 & 0xffef;
-      }
-      if ((int)(param_1 << 0x1d) < 0) {
-        _DAT_04000004 = _DAT_04000004 & 0xffdf;
-      }
-      _DAT_04000210 = _DAT_04000210 & ~param_1;
-      return;
-    }
-    iVar2 = iVar2 + 1;
-    puVar1 = puVar1 + 2;
-  } while (iVar2 != 0x19);
-  return;
-}
-
-
-// 0x020801fc  write_display_status_and_interrupt_master_enable
-
-/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
-
-void FUN_020801fc(uint param_1)
-
-{
-  if ((param_1 & 1) != 0) {
-    _DAT_04000004 = _DAT_04000004 | 8;
-  }
-  if ((int)(param_1 << 0x1e) < 0) {
-    _DAT_04000004 = _DAT_04000004 | 0x10;
-  }
-  if ((int)(param_1 << 0x1d) < 0) {
-    _DAT_04000004 = _DAT_04000004 | 0x20;
-  }
-  _DAT_04000210 = _DAT_04000210 | param_1;
-  _DAT_04000208 = 1;
-  return;
-}
-
-
-// 0x0208024c  write_display_status_and_interrupt_enable
-
-/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
-
-void FUN_0208024c(uint param_1)
-
-{
-  if ((int)(param_1 << 0x1f) < 0) {
-    _DAT_04000004 = _DAT_04000004 & 0xfff7;
-  }
-  if ((int)(param_1 << 0x1e) < 0) {
-    _DAT_04000004 = _DAT_04000004 & 0xffef;
-  }
-  if ((int)(param_1 << 0x1d) < 0) {
-    _DAT_04000004 = _DAT_04000004 & 0xffdf;
-  }
-  _DAT_04000210 = _DAT_04000210 & ~param_1;
-  return;
 }
 

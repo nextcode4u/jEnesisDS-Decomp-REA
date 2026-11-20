@@ -2,7 +2,7 @@
  * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x02072c5c  helper_calls_fat_fat_partition_unsafeunmount
+// 0x02072c5c  fat_unsafe_unmount_partition_wrapper
 
 void FUN_02072c5c(void)
 
@@ -12,7 +12,7 @@ void FUN_02072c5c(void)
 }
 
 
-// 0x02072c68  helper_calls_fat_fat_partition_unmount
+// 0x02072c68  fat_unmount_partition_wrapper
 
 void FUN_02072c68(void)
 
@@ -22,7 +22,7 @@ void FUN_02072c68(void)
 }
 
 
-// 0x02072c74  helper_calls_fat_fat_partition_mountcustominterface
+// 0x02072c74  fat_mount_custom_interface_wrapper
 
 void FUN_02072c74(void)
 
@@ -32,7 +32,7 @@ void FUN_02072c74(void)
 }
 
 
-// 0x02072c80  helper_calls_fat_fat_partition_mount
+// 0x02072c80  fat_mount_partition_wrapper
 
 void FUN_02072c80(void)
 
@@ -42,7 +42,7 @@ void FUN_02072c80(void)
 }
 
 
-// 0x02072c8c  helper_calls_fat_fat_partition_mount
+// 0x02072c8c  fat_mount_default_and_register_device
 
 undefined4 FUN_02072c8c(undefined4 param_1,int param_2)
 
@@ -66,6 +66,16 @@ undefined4 FUN_02072c8c(undefined4 param_1,int param_2)
     thunk_FUN_0208553c(&DAT_0208f2f8);
   }
   return 1;
+}
+
+
+// 0x02072cdc  mount_browser_fat_storage
+
+void FUN_02072cdc(void)
+
+{
+  FUN_02072c8c(8,1);
+  return;
 }
 
 

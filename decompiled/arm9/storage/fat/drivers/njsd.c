@@ -443,27 +443,3 @@ undefined4 FUN_02073f04(int param_1,uint param_2,uint param_3)
   return 0;
 }
 
-
-// 0x0207fdcc  helper_for_fat_njsd_readsectors
-
-/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
-
-void FUN_0207fdcc(uint param_1,undefined4 *param_2,int param_3,undefined4 param_4)
-
-{
-  undefined4 *puVar1;
-  
-  FUN_0207fda8(param_4);
-  puVar1 = param_2 + param_3;
-  _DAT_040001a4 = param_1;
-  do {
-    if ((_DAT_040001a4 & 0x800000) != 0) {
-      if (param_2 < puVar1) {
-        *param_2 = _DAT_04100010;
-      }
-      param_2 = param_2 + 1;
-    }
-  } while ((int)_DAT_040001a4 < 0);
-  return;
-}
-

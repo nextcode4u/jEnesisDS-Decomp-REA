@@ -2,7 +2,7 @@
  * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x020737b8  helper_calls_fat_cf_startup
+// 0x020737b8  probe_ata_register_map_0208ed70
 
 void FUN_020737b8(void)
 
@@ -12,7 +12,7 @@ void FUN_020737b8(void)
 }
 
 
-// 0x0207478c  helper_calls_fat_cf_startup
+// 0x0207478c  set_supercard_mode_and_probe_ata_registers
 
 void FUN_0207478c(void)
 

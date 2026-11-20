@@ -2,7 +2,7 @@
  * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x02073274  helper_calls_fat_m3_changemode
+// 0x02073274  set_m3_mode_and_probe_ata_registers
 
 void FUN_02073274(void)
 

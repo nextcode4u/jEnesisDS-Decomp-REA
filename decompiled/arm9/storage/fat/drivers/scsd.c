@@ -332,7 +332,7 @@ undefined4 FUN_02074a68(int param_1,int param_2,int param_3)
 }
 
 
-// 0x0207cdc0  helper_for_fat_scsd_writesectors
+// 0x0207cdc0  scsd_write_sector_data_and_crc
 
 /* WARNING: Removing unreachable block (ram,0x0207ce54) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
@@ -380,7 +380,7 @@ LAB_0207ce18:
 }
 
 
-// 0x0207ec90  helper_for_fat_scsd_shutdown
+// 0x0207ec90  write_supercard_mode_register
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 

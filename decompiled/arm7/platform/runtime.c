@@ -2,7 +2,7 @@
  * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x037f8144  veneer_to_compiler_divsi3
+// 0x037f8144  thumb_veneer_for_compiler_divsi3
 
 uint thunk_FUN_038019ec(uint param_1,uint param_2)
 
@@ -117,7 +117,7 @@ uint thunk_FUN_038019ec(uint param_1,uint param_2)
 }
 
 
-// 0x037f8148  veneer_to_compiler_divsi3
+// 0x037f8148  arm_entry_for_compiler_divsi3
 
 uint thunk_FUN_038019ec(uint param_1,uint param_2)
 
@@ -467,7 +467,7 @@ void FUN_03801b18(void)
 }
 
 
-// 0x03801b30  helper_for_compiler_udivsi3
+// 0x03801b30  arm7_divide_by_zero_return_stub
 
 void FUN_03801b30(void)
 
@@ -970,7 +970,7 @@ ulonglong FUN_03801f8c(undefined4 param_1,uint param_2,uint param_3,uint param_4
 }
 
 
-// 0x03802184  helper_for_compiler_muldf3
+// 0x03802184  compiler_muldf3_special_operands
 
 ulonglong FUN_03802184(int param_1,uint param_2,int param_3,uint param_4)
 
@@ -1222,7 +1222,7 @@ LAB_0380235c:
 }
 
 
-// 0x038023b8  helper_for_compiler_divdf3
+// 0x038023b8  compiler_divdf3_special_operands
 
 ulonglong FUN_038023b8(int param_1,uint param_2,int param_3,uint param_4)
 

@@ -4,6 +4,7 @@ Start with the feature you want to understand. The Nintendo DS has two host CPUs
 
 - [Start a game from the ROM browser](#start-a-game-from-the-rom-browser)
 - [Follow the gameplay loop and display](#follow-the-gameplay-loop-and-display)
+- [Follow a VDP write to a DS display update](#follow-a-vdp-write-to-a-ds-display-update)
 - [Read a large export](#read-a-large-export)
 - [Follow a 68000 controller-port read](#follow-a-68000-controller-port-read)
 - [Follow audio from ARM9 to ARM7](#follow-an-arm7-audio-command)
@@ -22,6 +23,7 @@ The result gives a file and the line with its address label. The final bracketed
 ## Start a game from the ROM browser
 
 1. **Build the file list.** The browser enumerates the current directory, renders the page, and polls DS buttons. On selection it passes the highlighted row plus the page offset to the cartridge module. The browser returns to the application loop after a successful load. [Browser loop](../decompiled/arm9/frontend/rom_browser.c#L187)
+   Directory enumeration calls device-table wrappers to open the path, read successive entries, and close the handle. The wrapper loads the driver callback from a fixed table offset. This gives you a route from the browser to the storage implementation. [Directory enumeration](../decompiled/arm9/frontend/rom_browser.c#L151) · [Device wrappers](../decompiled/arm9/platform/runtime/device_io.c#L614)
 2. **Open the selection.** A file entry opens a stream, calls the ROM loader, then closes the stream and configures cartridge save RAM if the cartridge supports it. A directory entry changes the current directory and refreshes the listing. [Selection handler](../decompiled/arm9/storage/cartridge.c#L377)
 3. **Decode the ROM.** The loader reads into a shared cartridge buffer. It uses a `SEGA` signature check to choose the direct read or SMD path. The SMD path skips the 512-byte copier header and deinterleaves the data before parsing the Genesis header. The loader also picks a region and probes for existing emulator save slots. [Signature check](../decompiled/arm9/storage/cartridge.c#L165) · [Stream loader](../decompiled/arm9/storage/cartridge.c#L260)
 4. **Enter gameplay.** Back on ARM9, the application prepares CPU state and shared audio buffers, resets cartridge emulation, and enters its frame loop. A return from the browser to an already loaded game takes a separate path. [Application loop](../decompiled/arm9/system/emulator.c#L343) · [Initialize emulator](../decompiled/arm9/system/emulator.c#L196) · [Reset for cartridge](../decompiled/arm9/system/emulator.c#L134)
@@ -36,13 +38,13 @@ The normal frame path calls the scheduler selected by the **H-INT Emulation** se
 | On | Runs active scanlines individually. The loop calls the renderer and runs CPU timing work for each line. [Frame scheduler](../decompiled/arm9/system/emulator.c#L63) |
 | Auto | An assembly dispatcher at `0x02000bbc` selects one of the two schedulers based on the emulated VDP's H-INT state. |
 
-H-INT is the Genesis horizontal interrupt. The settings routine provides the Off and On targets. The VDP register update saves the H-INT enable bit in `0x0b003644`. The Auto dispatcher reads that byte and selects the per-line scheduler when it is nonzero. To see its two branches, run the following against the ARM9 ELF from the reference build. [VDP register update](../decompiled/arm9/video/graphics.c#L1283)
+H-INT is the Genesis horizontal interrupt. The settings routine provides the Off and On targets. The VDP register update saves the H-INT enable bit in `0x0b003644`. The Auto dispatcher reads that byte and selects the per-line scheduler when it is nonzero. To see its two branches, run the following against the ARM9 ELF from the reference build. [VDP register update](../decompiled/arm9/video/graphics.c#L243)
 
 ```sh
 arm-none-eabi-objdump -D --start-address=0x02000bbc --stop-address=0x02000bec build/arm9.elf
 ```
 
-During visible scanlines the VDP decrements its horizontal interrupt counter and reloads it from register 10 when it underflows. At the first blank line the timing code also sets the vertical blanking state. This connects the frame scheduler to VDP timing. [Horizontal counter](../decompiled/arm9/video/graphics.c#L1202) · [Start of vertical blanking](../decompiled/arm9/video/graphics.c#L1219)
+During visible scanlines the VDP decrements its horizontal interrupt counter and reloads it from register 10 when it underflows. At the first blank line the timing code also sets the vertical blanking state. This connects the frame scheduler to VDP timing. [Horizontal counter](../decompiled/arm9/video/graphics.c#L162) · [Start of vertical blanking](../decompiled/arm9/video/graphics.c#L179)
 
 Menu actions run through a separate key and touch handler. The pause screen uses the D-pad to move the viewport by changing and clamping two screen offsets. Those offsets affect how the Genesis image fits on the smaller DS screen. [Key and touch actions](../decompiled/arm9/frontend/input.c#L111) · [Viewport adjustment](../decompiled/arm9/system/emulator.c#L484) · [Graphics offsets](../decompiled/arm9/video/graphics.c#L15)
 
@@ -51,6 +53,19 @@ To see how Genesis video data reaches the DS, follow the display rebuild used by
 The emulated CPU handlers have their own folders. The original ROM's 68000 handler table maps opcode `0x4e71` to the NOP routine in ARM9 instruction TCM. The indirect jump at the end of that routine is part of opcode dispatch. For a representative Z80 path, start at the routine that accepts a cycle budget and loads the Z80 state before dispatch. [68000 NOP](../decompiled/arm9/cpu/m68k/exceptions_and_control.c#L157) · [Z80 cycle budget](../decompiled/arm9/cpu/z80/core.c#L146)
 
 The larger 68000 MOVE groups use the source and destination addressing modes in their paths. The MOVEM files use transfer direction and operand size. For Z80 register loads, look under `data_transfer/`. Indexed SET and RES files each cover one bit and its eight destination variants. [68000 instructions](../decompiled/arm9/cpu/m68k) · [Indexed Z80 SET and RES](../decompiled/arm9/cpu/z80/indexed_bit_set_and_reset)
+
+### Follow a VDP write to a DS display update
+
+| Task | Where to read |
+| --- | --- |
+| Decode a Genesis control or data write | The control port handles register writes and assembles two-word commands. The data port uses the resulting address and access code. [Control and data ports](../decompiled/arm9/video/vdp/port_access.c) |
+| Run a Genesis DMA command | The emulated VDP dispatches transfers from the 68000 bus, fills, and VRAM copies from the latched mode and length. [Genesis DMA](../decompiled/arm9/video/vdp/dma.c) |
+| Update DS background tilemaps | The renderer selects a layout for Plane A, Plane B, or the window. The active layout determines where a tilemap word goes and which bulk copy routine applies. [Plane selector](../decompiled/arm9/video/vdp/display_setup.c#L182) · [Tilemap writes](../decompiled/arm9/video/vdp/tilemap_writes.c) · [Tilemap transfers](../decompiled/arm9/video/vdp/tilemap_transfers.c) |
+| Submit DS sprite attributes | The renderer writes coordinates and attributes into a staging buffer. It cleans and invalidates the affected ARM9 data cache lines and starts DMA3 to hardware sprite attribute memory (OAM). [Sprite updates](../decompiled/arm9/video/sprites/state_updates.c) · [ARM946E-S technical reference manual](https://documentation-service.arm.com/static/5f032835cafe527e86f5b8ad) |
+
+Genesis DMA changes the emulator's VDP state. DS DMA3 moves prepared data to the DS display hardware. In the native OAM copy at `0x02008914`, the polling branch repeats only while the DMA3 control register has its busy bit set. In the native palette upload at `0x020090a0`, DMA3 transfers 64 halfwords from the staging buffer to each of `0x05000000` (main background) and `0x05000200` (main sprite). Use the ARM instructions to see both transfers and the sprite wait condition. [Display checks](VERIFYING-A-TRACE.md#5-check-the-ds-display-transfers)
+
+For the 68000, shifts, rotates, bit tests, and bit changes have separate files. The Z80 ED arithmetic, absolute-address transfers, and interrupt or special-register instructions also have separate files. Under indexed register loads, follow the direction of the data to find transfers into or out of the high and low bytes of IX or IY. [68000 shifts and bit operations](../decompiled/arm9/cpu/m68k/shifts_and_bits) · [Z80 ED instructions](../decompiled/arm9/cpu/z80/ed_prefix) · [Z80 indexed register loads](../decompiled/arm9/cpu/z80/indexed/register_loads)
 
 ### Read a large export
 
@@ -63,7 +78,7 @@ arm-none-eabi-objdump -D --start-address=0x020135b0 --stop-address=0x020135ec bu
 arm-none-eabi-objdump -D --start-address=0x0200081c --stop-address=0x02000858 build/arm9.elf
 ```
 
-Other routines are easiest to follow from their consumers. The 68000 interrupt entry at `0x01002ff0` stacks the PC using the same expression as the standalone accessor at `0x02000310`. The sprite size switch identifies 16 tile-copy helpers by width and height. The LZSS encoder calls the match tree to initialize, insert, and remove positions in its 4 KiB dictionary. [68000 PC accessor](../decompiled/arm9/cpu/m68k/cycle_budget.c#L5) · [Sprite size switch](../decompiled/arm9/video/graphics.c#L909) · [LZSS match tree](../decompiled/arm9/storage/compression/lzss_match_tree.c#L5)
+Other routines are easiest to follow from their consumers. The 68000 interrupt entry at `0x01002ff0` stacks the PC using the same expression as the standalone accessor at `0x02000310`. The sprite size switch identifies 16 tile-copy helpers by width and height. The LZSS encoder calls the match tree to initialize, insert, and remove positions in its 4 KiB dictionary. [68000 PC accessor](../decompiled/arm9/cpu/m68k/cycle_budget.c#L5) · [Sprite size switch](../decompiled/arm9/video/graphics.c#L67) · [LZSS match tree](../decompiled/arm9/storage/compression/lzss_match_tree.c#L5)
 
 ## Follow a 68000 controller-port read
 

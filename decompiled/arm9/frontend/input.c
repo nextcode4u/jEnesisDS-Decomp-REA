@@ -1,5 +1,5 @@
 /* ARM9 input — grouped REA pseudocode.
- * Use the processor functions.tsv for names, descriptions and source hashes.
+ * Use functions.tsv for addresses, names and analysis notes.
  */
 
 // 0x020003f4  read_genesis_io_register_byte
@@ -202,7 +202,7 @@ char FUN_020025a8(void)
 }
 
 
-// 0x0207fb70  helper_for_read_gameplay_menu_and_touch_actions
+// 0x0207fb70  read_latched_ds_key_state
 
 undefined2 FUN_0207fb70(void)
 
@@ -211,7 +211,7 @@ undefined2 FUN_0207fb70(void)
 }
 
 
-// 0x0207fb90  read_key_input
+// 0x0207fb90  sample_ds_keys_and_update_repeat_state
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -239,7 +239,7 @@ void FUN_0207fb90(void)
 }
 
 
-// 0x0207fc70  helper_for_read_gameplay_menu_and_touch_actions
+// 0x0207fc70  read_shared_arm7_touch_sample
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
