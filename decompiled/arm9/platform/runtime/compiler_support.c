@@ -4,7 +4,7 @@
 
 // 0x02080380  compiler_udivsi3
 
-uint FUN_02080380(uint param_1,uint param_2)
+uint compiler_udivsi3(uint param_1,uint param_2)
 
 {
   uint uVar1;
@@ -16,7 +16,7 @@ uint FUN_02080380(uint param_1,uint param_2)
     return param_1;
   }
   if (param_2 == 0) {
-    FUN_020805d8();
+    arm9_divide_by_zero_return_stub();
     return 0;
   }
   if (param_1 <= param_2) {
@@ -91,17 +91,17 @@ uint FUN_02080380(uint param_1,uint param_2)
 
 // 0x0208047c  compiler_aeabi_uidivmod
 
-void FUN_0208047c(void)
+void compiler_aeabi_uidivmod(void)
 
 {
-  FUN_02080380();
+  compiler_udivsi3();
   return;
 }
 
 
 // 0x02080494  compiler_divsi3
 
-uint FUN_02080494(uint param_1,uint param_2)
+uint compiler_divsi3(uint param_1,uint param_2)
 
 {
   uint uVar1;
@@ -114,7 +114,7 @@ uint FUN_02080494(uint param_1,uint param_2)
   
   uVar6 = param_1 ^ param_2;
   if (param_2 == 0) {
-    FUN_020805d8();
+    arm9_divide_by_zero_return_stub();
     return 0;
   }
   uVar4 = param_2;
@@ -216,17 +216,17 @@ uint FUN_02080494(uint param_1,uint param_2)
 
 // 0x020805c0  compiler_aeabi_idivmod
 
-void FUN_020805c0(void)
+void compiler_aeabi_idivmod(void)
 
 {
-  FUN_02080494();
+  compiler_divsi3();
   return;
 }
 
 
 // 0x02080620  compiler_subdf3
 
-ulonglong FUN_02080620(uint param_1,uint param_2,uint param_3,uint param_4)
+ulonglong compiler_subdf3(uint param_1,uint param_2,uint param_3,uint param_4)
 
 {
   int iVar1;
@@ -468,7 +468,7 @@ LAB_020807f8:
 
 // 0x02080624  compiler_adddf3
 
-ulonglong FUN_02080624(uint param_1,uint param_2,uint param_3,uint param_4)
+ulonglong compiler_adddf3(uint param_1,uint param_2,uint param_3,uint param_4)
 
 {
   int iVar1;
@@ -711,7 +711,7 @@ LAB_020807f8:
 
 /* WARNING: Removing unreachable block (ram,0x02080778) */
 
-ulonglong FUN_02080958(uint param_1)
+ulonglong compiler_floatsidf(uint param_1)
 
 {
   uint uVar1;
@@ -801,7 +801,7 @@ LAB_020807f8:
 
 // 0x02080a34  compiler_muldf3
 
-ulonglong FUN_02080a34(undefined4 param_1,uint param_2,uint param_3,uint param_4)
+ulonglong compiler_muldf3(undefined4 param_1,uint param_2,uint param_3,uint param_4)
 
 {
   longlong lVar1;
@@ -835,7 +835,7 @@ ulonglong FUN_02080a34(undefined4 param_1,uint param_2,uint param_3,uint param_4
     bVar11 = unaff_r5 == 0x7ff;
   }
   if (bVar11) {
-    uVar14 = FUN_02080c2c();
+    uVar14 = compiler_muldf3_special_operands();
   }
   uVar4 = (uint)(uVar14 >> 0x20);
   iVar7 = uVar6 + unaff_r5;
@@ -948,7 +948,7 @@ ulonglong FUN_02080a34(undefined4 param_1,uint param_2,uint param_3,uint param_4
 
 // 0x02080cc4  compiler_divdf3
 
-ulonglong FUN_02080cc4(undefined4 param_1,uint param_2,uint param_3,uint param_4)
+ulonglong compiler_divdf3(undefined4 param_1,uint param_2,uint param_3,uint param_4)
 
 {
   uint uVar1;
@@ -984,7 +984,7 @@ ulonglong FUN_02080cc4(undefined4 param_1,uint param_2,uint param_3,uint param_4
     bVar13 = unaff_r5 == 0x7ff;
   }
   if (bVar13) {
-    uVar16 = FUN_02080e60();
+    uVar16 = compiler_divdf3_special_operands();
   }
   uVar8 = (uint)((ulonglong)uVar16 >> 0x20);
   uVar2 = (uint)uVar16;
@@ -1144,7 +1144,7 @@ LAB_02080e04:
 
 // 0x02080ed0  compiler_fixunsdfsi
 
-uint FUN_02080ed0(uint param_1,uint param_2)
+uint compiler_fixunsdfsi(uint param_1,uint param_2)
 
 {
   int iVar1;

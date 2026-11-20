@@ -4,7 +4,7 @@
 
 // 0x01003d34  m68k_move_long
 
-void m68k_dispatch_01003d34(void)
+void m68k_move_long_01003d34(void)
 
 {
   uint uVar1;
@@ -26,15 +26,15 @@ void m68k_dispatch_01003d34(void)
     return;
   }
   uVar2 = uVar2 & 0xffffff;
-  (*(code *)(&DAT_0b00121c)[uVar2 >> 0x10])(uVar2 + 2,uVar1 & 0xffff);
-  (*(code *)(&DAT_0b00121c)[uVar2 >> 0x10])(uVar2,uVar1 >> 0x10);
+  (*(code *)(&m68k_word_write_handlers)[uVar2 >> 0x10])(uVar2 + 2,uVar1 & 0xffff);
+  (*(code *)(&m68k_word_write_handlers)[uVar2 >> 0x10])(uVar2,uVar1 >> 0x10);
   return;
 }
 
 
 // 0x02016f44  m68k_move_long
 
-void m68k_dispatch_02016f44(void)
+void m68k_move_long_02016f44(void)
 
 {
   undefined2 *puVar1;
@@ -54,8 +54,8 @@ void m68k_dispatch_02016f44(void)
     return;
   }
   uVar3 = uVar3 & 0xffffff;
-  (*(code *)(&DAT_0b00121c)[uVar3 >> 0x10])(uVar3 + 2,uVar2 & 0xffff);
-  (*(code *)(&DAT_0b00121c)[uVar3 >> 0x10])(uVar3,uVar2 >> 0x10);
+  (*(code *)(&m68k_word_write_handlers)[uVar3 >> 0x10])(uVar3 + 2,uVar2 & 0xffff);
+  (*(code *)(&m68k_word_write_handlers)[uVar3 >> 0x10])(uVar3,uVar2 >> 0x10);
   return;
 }
 

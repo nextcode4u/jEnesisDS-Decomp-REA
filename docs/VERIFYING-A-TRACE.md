@@ -14,9 +14,16 @@ Follow this walkthrough when a pseudocode body gets too long, a function name is
 python3 scripts/find_routine.py FUN_020033a4
 ```
 
-The first output line is `decompiled/arm9/storage/cartridge.c:377  0x020033a4  open_rom_from_browser_selection`. Open the file at line 377 to see its short label above the original body. The second output line explains what the routine does and how the name was assigned. Given a working name instead, try `python3 scripts/find_routine.py open rom from browser selection`. Use `--cpu arm7` to limit a search to ARM7 or `--show` to print a single matched body. [Selection handler](../decompiled/arm9/storage/cartridge.c#L377)
+The first output line is `decompiled/arm9/storage/cartridge.c:377  0x020033a4  open_rom_from_browser_selection`. Open the file at line 377 to see its short label above the named pseudocode. The second output line explains what the routine does and how the name was assigned. Given a working name instead, try `python3 scripts/find_routine.py open rom from browser selection`. Use `--cpu arm7` to limit a search to ARM7 or `--show` to print a single matched body. [Selection handler](../decompiled/arm9/storage/cartridge.c#L377)
 
-For an offline editor search, use the zero-padded address `0x020033a4` or the Ghidra symbol `FUN_020033a4`. The indexes are tab-separated text. In an index row, `module` is relative to the processor directory, and `line` starts the original REA body, one line after its address label. [ARM9 index](../decompiled/arm9/functions.tsv) · [ARM7 index](../decompiled/arm7/functions.tsv)
+To compare a renamed body with its original identifiers, run these commands.
+
+```sh
+python3 scripts/find_routine.py open_rom_from_browser_selection --show
+python3 scripts/find_routine.py FUN_020033a4 --show --raw
+```
+
+For an offline editor search, use the zero-padded address `0x020033a4` or the displayed identifier. In each processor's tab-separated index, `symbol` is the displayed identifier, `ghidra_symbol` is the original, and `line` starts the body one line after its address label. [ARM9 index](../decompiled/arm9/functions.tsv) · [ARM7 index](../decompiled/arm7/functions.tsv)
 
 ## 2. Read the dispatch pointer in the original ROM
 
@@ -118,4 +125,4 @@ PY2
 
 ## Record what you verified
 
-Keep the guest opcode, table slot, and native address in your notes. Record which ARM instructions or caller branches support the role. If you can confirm the operation but cannot prove when it runs, say so in the description. Keep new working labels in the module header and index. Run `python3 scripts/check_pseudocode.py` to confirm the label, line range, and body hash still agree. [Analysis basis](HANDOFF.md#trace-a-routine)
+Keep the guest opcode, table slot, and native address in your notes. Record which ARM instructions or caller branches support the role. If you can confirm the operation but cannot prove when it runs, say so in the description. Record new displayed function names in the processor index and variable names in `variables.tsv`. Run `python3 scripts/check_pseudocode.py` to confirm the names, line ranges, and restored REA hashes agree. [Analysis basis](HANDOFF.md#trace-a-routine)

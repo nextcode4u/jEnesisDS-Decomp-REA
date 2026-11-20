@@ -4,7 +4,7 @@
 
 // 0x010030f4  m68k_bhi
 
-int m68k_dispatch_010030f4(void)
+int m68k_bhi_010030f4(void)
 
 {
   int unaff_r6;
@@ -33,7 +33,7 @@ int m68k_dispatch_010030f4(void)
 
 // 0x01003114  m68k_bhi
 
-int m68k_dispatch_01003114(void)
+int m68k_bhi_01003114(void)
 
 {
   int unaff_r6;
@@ -70,7 +70,7 @@ int m68k_dispatch_01003114(void)
 
 // 0x0100312c  m68k_bhi
 
-int m68k_dispatch_0100312c(void)
+int m68k_bhi_0100312c(void)
 
 {
   int unaff_r6;
@@ -102,7 +102,7 @@ int m68k_dispatch_0100312c(void)
 
 // 0x01003150  m68k_bls
 
-int m68k_dispatch_01003150(void)
+int m68k_bls_01003150(void)
 
 {
   int unaff_r6;
@@ -131,7 +131,7 @@ int m68k_dispatch_01003150(void)
 
 // 0x01003170  m68k_bls
 
-int m68k_dispatch_01003170(void)
+int m68k_bls_01003170(void)
 
 {
   int unaff_r6;
@@ -141,7 +141,7 @@ int m68k_dispatch_01003170(void)
   ushort *unaff_r10;
   char unaff_r11;
   
-  FUN_020052ec();
+  classify_and_rewrite_m68k_short_loop_branch();
   if ((unaff_r7 & 5) == 0) {
     iVar1 = unaff_r7 - 0x80000;
     if (iVar1 != 0 && 0x7ffff < (int)unaff_r7) {
@@ -169,7 +169,7 @@ int m68k_dispatch_01003170(void)
 
 // 0x010031c0  m68k_bls
 
-int m68k_dispatch_010031c0(void)
+int m68k_bls_010031c0(void)
 
 {
   int unaff_r6;
@@ -201,7 +201,7 @@ int m68k_dispatch_010031c0(void)
 
 // 0x010031e4  m68k_bcc
 
-int m68k_dispatch_010031e4(void)
+int m68k_bcc_010031e4(void)
 
 {
   int unaff_r6;
@@ -230,7 +230,7 @@ int m68k_dispatch_010031e4(void)
 
 // 0x01003204  m68k_bcc
 
-int m68k_dispatch_01003204(void)
+int m68k_bcc_01003204(void)
 
 {
   int unaff_r6;
@@ -240,7 +240,7 @@ int m68k_dispatch_01003204(void)
   ushort *unaff_r10;
   char unaff_r11;
   
-  FUN_020052ec();
+  classify_and_rewrite_m68k_short_loop_branch();
   if ((unaff_r7 & 1) == 0) {
     unaff_r10 = (ushort *)((int)unaff_r10 + (int)unaff_r11);
     iVar1 = unaff_r7 - 0xa0000;
@@ -268,7 +268,7 @@ int m68k_dispatch_01003204(void)
 
 // 0x01003254  m68k_bcc
 
-int m68k_dispatch_01003254(void)
+int m68k_bcc_01003254(void)
 
 {
   int unaff_r6;
@@ -300,7 +300,7 @@ int m68k_dispatch_01003254(void)
 
 // 0x01003278  m68k_bcs
 
-int m68k_dispatch_01003278(void)
+int m68k_bcs_01003278(void)
 
 {
   int unaff_r6;
@@ -329,7 +329,7 @@ int m68k_dispatch_01003278(void)
 
 // 0x01003298  m68k_bcs
 
-int m68k_dispatch_01003298(void)
+int m68k_bcs_01003298(void)
 
 {
   int unaff_r6;
@@ -339,7 +339,7 @@ int m68k_dispatch_01003298(void)
   ushort *unaff_r10;
   char unaff_r11;
   
-  FUN_020052ec();
+  classify_and_rewrite_m68k_short_loop_branch();
   if ((unaff_r7 & 1) == 0) {
     iVar1 = unaff_r7 - 0x80000;
     if (iVar1 != 0 && 0x7ffff < (int)unaff_r7) {
@@ -367,7 +367,7 @@ int m68k_dispatch_01003298(void)
 
 // 0x010032e8  m68k_bcs
 
-int m68k_dispatch_010032e8(void)
+int m68k_bcs_010032e8(void)
 
 {
   int unaff_r6;
@@ -399,7 +399,7 @@ int m68k_dispatch_010032e8(void)
 
 // 0x0100330c  m68k_bne
 
-int m68k_dispatch_0100330c(void)
+int m68k_bne_0100330c(void)
 
 {
   int unaff_r6;
@@ -428,7 +428,7 @@ int m68k_dispatch_0100330c(void)
 
 // 0x0100332c  m68k_bne
 
-int m68k_dispatch_0100332c(void)
+int m68k_bne_0100332c(void)
 
 {
   int unaff_r6;
@@ -438,7 +438,7 @@ int m68k_dispatch_0100332c(void)
   ushort *unaff_r10;
   char unaff_r11;
   
-  FUN_020052ec();
+  classify_and_rewrite_m68k_short_loop_branch();
   if ((unaff_r7 & 4) == 0) {
     unaff_r10 = (ushort *)((int)unaff_r10 + (int)unaff_r11);
     iVar1 = unaff_r7 - 0xa0000;
@@ -466,7 +466,7 @@ int m68k_dispatch_0100332c(void)
 
 // 0x0100337c  m68k_bne
 
-int m68k_dispatch_0100337c(void)
+int m68k_bne_0100337c(void)
 
 {
   int unaff_r6;
@@ -498,7 +498,7 @@ int m68k_dispatch_0100337c(void)
 
 // 0x010033a0  m68k_beq
 
-int m68k_dispatch_010033a0(void)
+int m68k_beq_010033a0(void)
 
 {
   int unaff_r6;
@@ -527,7 +527,7 @@ int m68k_dispatch_010033a0(void)
 
 // 0x010033c0  m68k_beq
 
-int m68k_dispatch_010033c0(void)
+int m68k_beq_010033c0(void)
 
 {
   int unaff_r6;
@@ -537,7 +537,7 @@ int m68k_dispatch_010033c0(void)
   ushort *unaff_r10;
   char unaff_r11;
   
-  FUN_020052ec();
+  classify_and_rewrite_m68k_short_loop_branch();
   if ((unaff_r7 & 4) == 0) {
     iVar1 = unaff_r7 - 0x80000;
     if (iVar1 != 0 && 0x7ffff < (int)unaff_r7) {
@@ -565,7 +565,7 @@ int m68k_dispatch_010033c0(void)
 
 // 0x01003410  m68k_beq
 
-int m68k_dispatch_01003410(void)
+int m68k_beq_01003410(void)
 
 {
   int unaff_r6;
@@ -597,7 +597,7 @@ int m68k_dispatch_01003410(void)
 
 // 0x01003434  m68k_bvc
 
-int m68k_dispatch_01003434(void)
+int m68k_bvc_01003434(void)
 
 {
   int unaff_r6;
@@ -626,7 +626,7 @@ int m68k_dispatch_01003434(void)
 
 // 0x01003454  m68k_bvc
 
-int m68k_dispatch_01003454(void)
+int m68k_bvc_01003454(void)
 
 {
   int unaff_r6;
@@ -663,7 +663,7 @@ int m68k_dispatch_01003454(void)
 
 // 0x0100346c  m68k_bvc
 
-int m68k_dispatch_0100346c(void)
+int m68k_bvc_0100346c(void)
 
 {
   int unaff_r6;
@@ -695,7 +695,7 @@ int m68k_dispatch_0100346c(void)
 
 // 0x01003490  m68k_bvs
 
-int m68k_dispatch_01003490(void)
+int m68k_bvs_01003490(void)
 
 {
   int unaff_r6;
@@ -724,7 +724,7 @@ int m68k_dispatch_01003490(void)
 
 // 0x010034b0  m68k_bvs
 
-int m68k_dispatch_010034b0(void)
+int m68k_bvs_010034b0(void)
 
 {
   int unaff_r6;
@@ -761,7 +761,7 @@ int m68k_dispatch_010034b0(void)
 
 // 0x010034c8  m68k_bvs
 
-int m68k_dispatch_010034c8(void)
+int m68k_bvs_010034c8(void)
 
 {
   int unaff_r6;
@@ -793,7 +793,7 @@ int m68k_dispatch_010034c8(void)
 
 // 0x010034ec  m68k_bpl
 
-int m68k_dispatch_010034ec(void)
+int m68k_bpl_010034ec(void)
 
 {
   int unaff_r6;
@@ -822,7 +822,7 @@ int m68k_dispatch_010034ec(void)
 
 // 0x0100350c  m68k_bpl
 
-int m68k_dispatch_0100350c(void)
+int m68k_bpl_0100350c(void)
 
 {
   int unaff_r6;
@@ -832,7 +832,7 @@ int m68k_dispatch_0100350c(void)
   ushort *unaff_r10;
   char unaff_r11;
   
-  FUN_020052ec();
+  classify_and_rewrite_m68k_short_loop_branch();
   if ((unaff_r7 & 8) == 0) {
     unaff_r10 = (ushort *)((int)unaff_r10 + (int)unaff_r11);
     iVar1 = unaff_r7 - 0xa0000;
@@ -860,7 +860,7 @@ int m68k_dispatch_0100350c(void)
 
 // 0x0100355c  m68k_bpl
 
-int m68k_dispatch_0100355c(void)
+int m68k_bpl_0100355c(void)
 
 {
   int unaff_r6;
@@ -892,7 +892,7 @@ int m68k_dispatch_0100355c(void)
 
 // 0x01003580  m68k_bmi
 
-int m68k_dispatch_01003580(void)
+int m68k_bmi_01003580(void)
 
 {
   int unaff_r6;
@@ -921,7 +921,7 @@ int m68k_dispatch_01003580(void)
 
 // 0x010035a0  m68k_bmi
 
-int m68k_dispatch_010035a0(void)
+int m68k_bmi_010035a0(void)
 
 {
   int unaff_r6;
@@ -958,7 +958,7 @@ int m68k_dispatch_010035a0(void)
 
 // 0x010035b8  m68k_bmi
 
-int m68k_dispatch_010035b8(void)
+int m68k_bmi_010035b8(void)
 
 {
   int unaff_r6;
@@ -990,7 +990,7 @@ int m68k_dispatch_010035b8(void)
 
 // 0x010035dc  m68k_bge
 
-int m68k_dispatch_010035dc(void)
+int m68k_bge_010035dc(void)
 
 {
   int unaff_r6;
@@ -1019,7 +1019,7 @@ int m68k_dispatch_010035dc(void)
 
 // 0x01003600  m68k_bge
 
-int m68k_dispatch_01003600(void)
+int m68k_bge_01003600(void)
 
 {
   int unaff_r6;
@@ -1029,7 +1029,7 @@ int m68k_dispatch_01003600(void)
   ushort *unaff_r10;
   char unaff_r11;
   
-  FUN_020052ec();
+  classify_and_rewrite_m68k_short_loop_branch();
   if (((unaff_r7 ^ unaff_r7 >> 2) & 2) == 0) {
     unaff_r10 = (ushort *)((int)unaff_r10 + (int)unaff_r11);
     iVar1 = unaff_r7 - 0xa0000;
@@ -1057,7 +1057,7 @@ int m68k_dispatch_01003600(void)
 
 // 0x0100365c  m68k_bge
 
-int m68k_dispatch_0100365c(void)
+int m68k_bge_0100365c(void)
 
 {
   int unaff_r6;
@@ -1089,7 +1089,7 @@ int m68k_dispatch_0100365c(void)
 
 // 0x01003684  m68k_blt
 
-int m68k_dispatch_01003684(void)
+int m68k_blt_01003684(void)
 
 {
   int unaff_r6;
@@ -1118,7 +1118,7 @@ int m68k_dispatch_01003684(void)
 
 // 0x010036a8  m68k_blt
 
-int m68k_dispatch_010036a8(void)
+int m68k_blt_010036a8(void)
 
 {
   int unaff_r6;
@@ -1155,7 +1155,7 @@ int m68k_dispatch_010036a8(void)
 
 // 0x010036c4  m68k_blt
 
-int m68k_dispatch_010036c4(void)
+int m68k_blt_010036c4(void)
 
 {
   int unaff_r6;
@@ -1187,7 +1187,7 @@ int m68k_dispatch_010036c4(void)
 
 // 0x010036ec  m68k_bgt
 
-int m68k_dispatch_010036ec(void)
+int m68k_bgt_010036ec(void)
 
 {
   uint unaff_r5;
@@ -1222,7 +1222,7 @@ int m68k_dispatch_010036ec(void)
 
 // 0x01003714  m68k_bgt
 
-int m68k_dispatch_01003714(void)
+int m68k_bgt_01003714(void)
 
 {
   uint unaff_r5;
@@ -1265,7 +1265,7 @@ int m68k_dispatch_01003714(void)
 
 // 0x01003734  m68k_bgt
 
-int m68k_dispatch_01003734(void)
+int m68k_bgt_01003734(void)
 
 {
   uint unaff_r5;
@@ -1303,7 +1303,7 @@ int m68k_dispatch_01003734(void)
 
 // 0x01003760  m68k_ble
 
-int m68k_dispatch_01003760(void)
+int m68k_ble_01003760(void)
 
 {
   uint unaff_r5;
@@ -1338,7 +1338,7 @@ int m68k_dispatch_01003760(void)
 
 // 0x01003788  m68k_ble
 
-int m68k_dispatch_01003788(void)
+int m68k_ble_01003788(void)
 
 {
   uint unaff_r5;
@@ -1381,7 +1381,7 @@ int m68k_dispatch_01003788(void)
 
 // 0x010037a8  m68k_ble
 
-int m68k_dispatch_010037a8(void)
+int m68k_ble_010037a8(void)
 
 {
   uint unaff_r5;
@@ -1419,7 +1419,7 @@ int m68k_dispatch_010037a8(void)
 
 // 0x010037f8  m68k_dbra
 
-int m68k_dispatch_010037f8(void)
+int m68k_dbra_010037f8(void)
 
 {
   short sVar1;
@@ -1463,7 +1463,7 @@ int m68k_dispatch_010037f8(void)
 
 // 0x01003838  m68k_dbra
 
-int m68k_dispatch_01003838(void)
+int m68k_dbra_01003838(void)
 
 {
   short sVar1;
@@ -1508,7 +1508,7 @@ int m68k_dispatch_01003838(void)
 
 // 0x01003878  m68k_dbra
 
-int m68k_dispatch_01003878(void)
+int m68k_dbra_01003878(void)
 
 {
   short sVar1;
@@ -1553,7 +1553,7 @@ int m68k_dispatch_01003878(void)
 
 // 0x010038b8  m68k_dbra
 
-int m68k_dispatch_010038b8(void)
+int m68k_dbra_010038b8(void)
 
 {
   short sVar1;
@@ -1598,7 +1598,7 @@ int m68k_dispatch_010038b8(void)
 
 // 0x010038f8  m68k_dbra
 
-int m68k_dispatch_010038f8(void)
+int m68k_dbra_010038f8(void)
 
 {
   short sVar1;
@@ -1643,7 +1643,7 @@ int m68k_dispatch_010038f8(void)
 
 // 0x01003938  m68k_dbra
 
-int m68k_dispatch_01003938(void)
+int m68k_dbra_01003938(void)
 
 {
   short sVar1;
@@ -1688,7 +1688,7 @@ int m68k_dispatch_01003938(void)
 
 // 0x01003978  m68k_dbra
 
-int m68k_dispatch_01003978(void)
+int m68k_dbra_01003978(void)
 
 {
   short sVar1;
@@ -1733,7 +1733,7 @@ int m68k_dispatch_01003978(void)
 
 // 0x010039b8  m68k_dbra
 
-int m68k_dispatch_010039b8(void)
+int m68k_dbra_010039b8(void)
 
 {
   short sVar1;
@@ -1778,7 +1778,7 @@ int m68k_dispatch_010039b8(void)
 
 // 0x01003c1c  m68k_bra
 
-int m68k_dispatch_01003c1c(void)
+int m68k_bra_01003c1c(void)
 
 {
   int unaff_r6;
@@ -1805,7 +1805,7 @@ int m68k_dispatch_01003c1c(void)
 
 // 0x01003c34  m68k_bra
 
-int m68k_dispatch_01003c34(void)
+int m68k_bra_01003c34(void)
 
 {
   int unaff_r6;
@@ -1830,7 +1830,7 @@ int m68k_dispatch_01003c34(void)
 
 // 0x01003c54  m68k_bra
 
-int m68k_dispatch_01003c54(void)
+int m68k_bra_01003c54(void)
 
 {
   short sVar1;
@@ -1856,7 +1856,7 @@ int m68k_dispatch_01003c54(void)
 
 // 0x01003c6c  m68k_bsr
 
-int m68k_dispatch_01003c6c(void)
+int m68k_bsr_01003c6c(void)
 
 {
   uint uVar1;
@@ -1899,7 +1899,7 @@ int m68k_dispatch_01003c6c(void)
 
 // 0x01003cb4  m68k_bsr
 
-int m68k_dispatch_01003cb4(void)
+int m68k_bsr_01003cb4(void)
 
 {
   uint uVar1;
@@ -1942,7 +1942,7 @@ int m68k_dispatch_01003cb4(void)
 
 // 0x020052ec  classify_and_rewrite_m68k_short_loop_branch
 
-int FUN_020052ec(ushort *param_1)
+int classify_and_rewrite_m68k_short_loop_branch(ushort *param_1)
 
 {
   ushort uVar1;
@@ -2035,7 +2035,7 @@ LAB_020053c0:
 
 // 0x02032400  m68k_dbt
 
-int m68k_dispatch_02032400(void)
+int m68k_dbt(void)
 
 {
   int unaff_r6;
@@ -2059,7 +2059,7 @@ int m68k_dispatch_02032400(void)
 
 // 0x02032414  m68k_dbhi
 
-int m68k_dispatch_02032414(void)
+int m68k_dbhi(void)
 
 {
   short sVar1;
@@ -2108,7 +2108,7 @@ int m68k_dispatch_02032414(void)
 
 // 0x02032454  m68k_dbls
 
-int m68k_dispatch_02032454(void)
+int m68k_dbls(void)
 
 {
   short sVar1;
@@ -2157,7 +2157,7 @@ int m68k_dispatch_02032454(void)
 
 // 0x02032494  m68k_dbcc
 
-int m68k_dispatch_02032494(void)
+int m68k_dbcc(void)
 
 {
   short sVar1;
@@ -2206,7 +2206,7 @@ int m68k_dispatch_02032494(void)
 
 // 0x020324d4  m68k_dbcs
 
-int m68k_dispatch_020324d4(void)
+int m68k_dbcs(void)
 
 {
   short sVar1;
@@ -2255,7 +2255,7 @@ int m68k_dispatch_020324d4(void)
 
 // 0x02032514  m68k_dbne
 
-int m68k_dispatch_02032514(void)
+int m68k_dbne(void)
 
 {
   short sVar1;
@@ -2304,7 +2304,7 @@ int m68k_dispatch_02032514(void)
 
 // 0x02032554  m68k_dbeq
 
-int m68k_dispatch_02032554(void)
+int m68k_dbeq(void)
 
 {
   short sVar1;
@@ -2353,7 +2353,7 @@ int m68k_dispatch_02032554(void)
 
 // 0x02032594  m68k_dbvc
 
-int m68k_dispatch_02032594(void)
+int m68k_dbvc(void)
 
 {
   short sVar1;
@@ -2402,7 +2402,7 @@ int m68k_dispatch_02032594(void)
 
 // 0x020325d4  m68k_dbvs
 
-int m68k_dispatch_020325d4(void)
+int m68k_dbvs(void)
 
 {
   short sVar1;
@@ -2451,7 +2451,7 @@ int m68k_dispatch_020325d4(void)
 
 // 0x02032614  m68k_dbpl
 
-int m68k_dispatch_02032614(void)
+int m68k_dbpl(void)
 
 {
   short sVar1;
@@ -2500,7 +2500,7 @@ int m68k_dispatch_02032614(void)
 
 // 0x02032654  m68k_dbmi
 
-int m68k_dispatch_02032654(void)
+int m68k_dbmi(void)
 
 {
   short sVar1;
@@ -2549,7 +2549,7 @@ int m68k_dispatch_02032654(void)
 
 // 0x02032694  m68k_dbge
 
-int m68k_dispatch_02032694(void)
+int m68k_dbge(void)
 
 {
   short sVar1;
@@ -2598,7 +2598,7 @@ int m68k_dispatch_02032694(void)
 
 // 0x020326d8  m68k_dblt
 
-int m68k_dispatch_020326d8(void)
+int m68k_dblt(void)
 
 {
   short sVar1;
@@ -2647,7 +2647,7 @@ int m68k_dispatch_020326d8(void)
 
 // 0x0203271c  m68k_dbgt
 
-int m68k_dispatch_0203271c(void)
+int m68k_dbgt(void)
 
 {
   short sVar1;
@@ -2702,7 +2702,7 @@ int m68k_dispatch_0203271c(void)
 
 // 0x02032764  m68k_dble
 
-int m68k_dispatch_02032764(void)
+int m68k_dble(void)
 
 {
   short sVar1;

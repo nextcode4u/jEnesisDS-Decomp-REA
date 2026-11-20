@@ -4,18 +4,18 @@
 
 // 0x020002e4  set_genesis_region_and_version_register
 
-void FUN_020002e4(uint param_1)
+void set_genesis_region_and_version_register(uint param_1)
 
 {
   DAT_0b000020 = (uint)(param_1 == 0 || param_1 == 0x80);
-  DAT_0b00001c = param_1 | 0x21;
+  genesis_version_register = param_1 | 0x21;
   return;
 }
 
 
 // 0x02001530  compute_genesis_rom_checksum
 
-short FUN_02001530(int param_1,uint param_2)
+short compute_genesis_rom_checksum(int param_1,uint param_2)
 
 {
   short sVar1;
@@ -43,7 +43,7 @@ short FUN_02001530(int param_1,uint param_2)
 
 // 0x020016d4  parse_cartridge_header
 
-undefined4 FUN_020016d4(int param_1)
+undefined4 parse_cartridge_header(int param_1)
 
 {
   char cVar1;
@@ -58,8 +58,8 @@ undefined4 FUN_020016d4(int param_1)
   if (param_1 == 0) {
     return 0;
   }
-  FUN_02083058(DAT_02098fc8 + 0x200,0,0x20);
-  FUN_02083058(DAT_02098fc8 + 0x220,0,0x20);
+  newlib_memset(DAT_02098fc8 + 0x200,0,0x20);
+  newlib_memset(DAT_02098fc8 + 0x220,0,0x20);
   iVar3 = DAT_02098fc8;
   iVar5 = 0x120;
   iVar2 = 0;
@@ -164,7 +164,7 @@ LAB_02001804:
 
 // 0x02001b08  rom_header_lacks_sega_signature
 
-bool FUN_02001b08(int param_1)
+bool rom_header_lacks_sega_signature(int param_1)
 
 {
   uint uVar1;
@@ -174,13 +174,13 @@ bool FUN_02001b08(int param_1)
   char local_11;
   
   local_11 = '\0';
-  FUN_02081ff0(param_1,0x100,0);
-  FUN_02081788(&local_11,1,1,param_1);
+  newlib_fseek(param_1,0x100,0);
+  newlib_fread(&local_11,1,1,param_1);
   if ((local_11 == ' ') &&
      (uVar1 = *(ushort *)(param_1 + 0xc) & 0x20, (*(ushort *)(param_1 + 0xc) & 0x20) == 0)) {
     do {
       uVar3 = uVar1;
-      FUN_02081788(&local_11,1,1,param_1);
+      newlib_fread(&local_11,1,1,param_1);
       if (local_11 != ' ') break;
       uVar1 = uVar3 + 1;
     } while ((*(ushort *)(param_1 + 0xc) & 0x20) == 0);
@@ -189,29 +189,29 @@ bool FUN_02001b08(int param_1)
   else {
     iVar2 = 0x100;
   }
-  FUN_02081ff0(param_1,iVar2,0);
-  FUN_02081788(&local_11,1,1,param_1);
+  newlib_fseek(param_1,iVar2,0);
+  newlib_fread(&local_11,1,1,param_1);
   cVar4 = local_11 == 'S';
-  FUN_02081788(&local_11,1,1,param_1);
+  newlib_fread(&local_11,1,1,param_1);
   if (local_11 == 'E') {
     cVar4 = cVar4 + '\x01';
   }
-  FUN_02081788(&local_11,1,1,param_1);
+  newlib_fread(&local_11,1,1,param_1);
   if (local_11 == 'G') {
     cVar4 = cVar4 + '\x01';
   }
-  FUN_02081788(&local_11,1,1,param_1);
+  newlib_fread(&local_11,1,1,param_1);
   if (local_11 == 'A') {
     cVar4 = cVar4 + '\x01';
   }
-  FUN_02081ff0(param_1,0,0);
+  newlib_fseek(param_1,0,0);
   return cVar4 != '\x04';
 }
 
 
 // 0x02001c4c  deinterleave_smd_rom_blocks
 
-void FUN_02001c4c(int param_1,uint param_2)
+void deinterleave_smd_rom_blocks(int param_1,uint param_2)
 
 {
   uint uVar1;
@@ -223,14 +223,14 @@ void FUN_02001c4c(int param_1,uint param_2)
   if (param_1 == 0 || param_2 < 0x200) {
     return;
   }
-  DAT_023bb4ec = FUN_02082724(0x4000);
+  DAT_023bb4ec = newlib_malloc_global_reent_wrapper(0x4000);
   if (param_2 >> 0xe != 0) {
     uVar3 = 1;
     uVar2 = 0;
     uVar5 = 0;
     iVar4 = param_1;
     do {
-      FUN_02082ec0(DAT_023bb4ec,iVar4);
+      newlib_memcpy(DAT_023bb4ec,iVar4);
       uVar1 = 0;
       do {
         while (uVar1 < 0x2000) {
@@ -252,14 +252,14 @@ LAB_02001d14:
       iVar4 = iVar4 + 0x4000;
     } while (param_2 >> 0xe != uVar5);
   }
-  FUN_020818d4(&DAT_0208f3a0,DAT_023bb4ec);
+  newlib_free_r(&DAT_0208f3a0,DAT_023bb4ec);
   return;
 }
 
 
 // 0x02001d40  load_genesis_rom_from_stream
 
-undefined4 FUN_02001d40(int param_1,undefined4 param_2)
+undefined4 load_genesis_rom_from_stream(int param_1,undefined4 param_2)
 
 {
   uint *puVar1;
@@ -275,36 +275,36 @@ undefined4 FUN_02001d40(int param_1,undefined4 param_2)
   undefined4 uVar11;
   char cVar12;
   
-  FUN_02083058(&DAT_020b4cec,0,0x306800);
+  newlib_memset(&DAT_020b4cec,0,0x306800);
   if (DAT_02098fc8 == 0) {
-    DAT_02098fc8 = FUN_02082724(0x268);
+    DAT_02098fc8 = newlib_malloc_global_reent_wrapper(0x268);
   }
-  FUN_02083dbc(DAT_02098fc8,param_2,0x100);
+  newlib_strncpy(DAT_02098fc8,param_2,0x100);
   *(undefined4 *)(DAT_02098fc8 + 600) = 0;
   if (param_1 != 0) {
-    FUN_02081ff0(param_1,0,2);
-    uVar6 = FUN_0208212c(param_1);
-    FUN_02081ff0(param_1,0,0);
+    newlib_fseek(param_1,0,2);
+    uVar6 = newlib_ftell(param_1);
+    newlib_fseek(param_1,0,0);
     if (0x306800 < uVar6) {
       *(uint *)(DAT_02098fc8 + 600) = *(uint *)(DAT_02098fc8 + 600) | 6;
       return 0;
     }
     if (uVar6 != 0) {
-      iVar7 = FUN_02001b08(param_1);
+      iVar7 = rom_header_lacks_sega_signature(param_1);
       if (iVar7 == 0) {
-        FUN_02081788(&DAT_020b4cec,1,uVar6,param_1);
+        newlib_fread(&DAT_020b4cec,1,uVar6,param_1);
         *(undefined1 *)(DAT_02098fc8 + 0x260) = 0;
       }
       else {
         uVar6 = uVar6 - 0x200;
-        FUN_02081ff0(param_1,0x200,0);
-        FUN_02081788(&DAT_020b4cec,1,uVar6,param_1);
-        FUN_02001c4c(&DAT_020b4cec,uVar6);
+        newlib_fseek(param_1,0x200,0);
+        newlib_fread(&DAT_020b4cec,1,uVar6,param_1);
+        deinterleave_smd_rom_blocks(&DAT_020b4cec,uVar6);
         *(undefined1 *)(DAT_02098fc8 + 0x260) = 1;
       }
-      FUN_020016d4(&DAT_020b4cec,uVar6);
+      parse_cartridge_header(&DAT_020b4cec,uVar6);
       if (((DAT_023cb610 & 0x20) != 0) &&
-         (iVar8 = FUN_02001530(&DAT_020b4cec,uVar6), iVar7 = DAT_02098fc8,
+         (iVar8 = compute_genesis_rom_checksum(&DAT_020b4cec,uVar6), iVar7 = DAT_02098fc8,
          iVar8 != *(int *)(DAT_02098fc8 + 0x240))) {
         *(uint *)(DAT_02098fc8 + 600) = *(uint *)(DAT_02098fc8 + 600) | 0x10;
         *(int *)(iVar7 + 0x240) = iVar8;
@@ -342,12 +342,12 @@ undefined4 FUN_02001d40(int param_1,undefined4 param_2)
       case '1':
       case 'J':
         *(undefined1 *)(DAT_02098fc8 + 0x254) = 0;
-        FUN_020002e4();
+        set_genesis_region_and_version_register();
         uVar11 = 1;
         break;
       default:
         *(undefined1 *)(DAT_02098fc8 + 0x254) = 2;
-        FUN_020002e4(0xc0);
+        set_genesis_region_and_version_register(0xc0);
         uVar11 = 1;
         break;
       case '4':
@@ -356,7 +356,7 @@ undefined4 FUN_02001d40(int param_1,undefined4 param_2)
       case 'U':
         uVar11 = 1;
         *(undefined1 *)(DAT_02098fc8 + 0x254) = 1;
-        FUN_020002e4(0x80);
+        set_genesis_region_and_version_register(0x80);
       }
       goto LAB_02001dd4;
     }
@@ -368,51 +368,51 @@ LAB_02001dd4:
   puVar1 = (uint *)(DAT_02098fc8 + 600);
   *(uint *)(DAT_02098fc8 + 0x244) = uVar6;
   *(uint *)(iVar7 + 600) = *puVar1 | 1;
-  FUN_0200d82c();
-  FUN_0200157c(&DAT_020b4cec,uVar6);
+  probe_savestate_slots();
+  swap_adjacent_bytes_in_backing_buffer(&DAT_020b4cec,uVar6);
   return uVar11;
 }
 
 
 // 0x020033a4  open_rom_from_browser_selection
 
-undefined1 FUN_020033a4(uint param_1)
+undefined1 open_rom_from_browser_selection(uint selected_row)
 
 {
-  undefined1 uVar1;
-  int *piVar2;
-  undefined4 uVar3;
-  uint uVar4;
+  undefined1 rom_loaded;
+  int *entry_or_filename;
+  undefined4 rom_stream;
+  uint row_index;
   
-  if (param_1 < DAT_02098fd4) {
-    piVar2 = DAT_02098ff0;
-    if (param_1 != 0 && DAT_02098ff0 != (int *)0x0) {
-      uVar4 = 0;
+  if (selected_row < DAT_02098fd4) {
+    entry_or_filename = DAT_02098ff0;
+    if (selected_row != 0 && DAT_02098ff0 != (int *)0x0) {
+      row_index = 0;
       do {
-        piVar2 = (int *)*piVar2;
-        uVar4 = uVar4 + 1;
-      } while ((piVar2 == (int *)0x0 || uVar4 <= param_1) &&
-               (piVar2 != (int *)0x0 && param_1 != uVar4));
+        entry_or_filename = (int *)*entry_or_filename;
+        row_index = row_index + 1;
+      } while ((entry_or_filename == (int *)0x0 || row_index <= selected_row) &&
+               (entry_or_filename != (int *)0x0 && selected_row != row_index));
     }
-    if (piVar2 == (int *)0x0) {
+    if (entry_or_filename == (int *)0x0) {
       return 0;
     }
-    if (piVar2[2] != 2) {
-      piVar2 = piVar2 + 3;
-      thunk_FUN_0208031c();
-      FUN_0200276c(piVar2);
-      uVar3 = FUN_02081588(piVar2,&DAT_0208f074);
-      uVar1 = FUN_02001d40(uVar3,piVar2);
-      FUN_02081020(uVar3);
+    if (entry_or_filename[2] != 2) {
+      entry_or_filename = entry_or_filename + 3;
+      arm_veneer_for_nds_swiwaitforvblank();
+      draw_loading_message(entry_or_filename);
+      rom_stream = newlib_fopen(entry_or_filename,&DAT_0208f074);
+      rom_loaded = load_genesis_rom_from_stream(rom_stream,entry_or_filename);
+      newlib_fclose(rom_stream);
       if (*(char *)(DAT_02098fc8 + 0x265) != '\0') {
-        FUN_02001948(DAT_02098fc8,*(undefined4 *)(DAT_02098fc8 + 0x248),
+        configure_cartridge_save_ram(DAT_02098fc8,*(undefined4 *)(DAT_02098fc8 + 0x248),
                      *(undefined4 *)(DAT_02098fc8 + 0x244));
       }
       DAT_02098ff8 = 0;
-      return uVar1;
+      return rom_loaded;
     }
-    FUN_0208553c(piVar2 + 3);
-    FUN_020032a8();
+    change_working_directory_on_device(entry_or_filename + 3);
+    enumerate_rom_browser_directory();
   }
   return 0;
 }
@@ -420,7 +420,7 @@ undefined1 FUN_020033a4(uint param_1)
 
 // 0x0200c82c  read_bounded_stream_byte
 
-uint FUN_0200c82c(undefined4 *param_1)
+uint read_bounded_stream_byte(undefined4 *param_1)
 
 {
   byte *pbVar1;
@@ -446,7 +446,7 @@ uint FUN_0200c82c(undefined4 *param_1)
 
 // 0x0200c858  write_bounded_stream_byte
 
-void FUN_0200c858(undefined1 param_1,undefined4 *param_2)
+void write_bounded_stream_byte(undefined1 param_1,undefined4 *param_2)
 
 {
   undefined1 *puVar1;
@@ -463,7 +463,7 @@ void FUN_0200c858(undefined1 param_1,undefined4 *param_2)
 
 // 0x0200c87c  encode_lzss_stream
 
-void FUN_0200c87c(void)
+void encode_lzss_stream(void)
 
 {
   byte *pbVar1;
@@ -481,7 +481,7 @@ void FUN_0200c87c(void)
   int iVar13;
   byte local_39 [21];
   
-  FUN_0200c5d8();
+  initialize_lzss_match_trees();
   puVar8 = &DAT_023ddec0;
   do {
     puVar7 = puVar8 + 1;
@@ -490,7 +490,7 @@ void FUN_0200c87c(void)
   } while (puVar7 != &DAT_023deeae);
   iVar13 = 0;
   do {
-    iVar3 = FUN_0200c82c(DAT_023ddebc);
+    iVar3 = read_bounded_stream_byte(DAT_023ddebc);
     if (iVar3 == -1) {
       if (iVar13 == 0) {
         DAT_020b4c40 = iVar13;
@@ -508,14 +508,14 @@ void FUN_0200c87c(void)
   DAT_020b4c40 = 0x12;
 LAB_0200c8e0:
   do {
-    FUN_0200c610(iVar3);
+    insert_lzss_match_tree_node(iVar3);
     iVar3 = iVar3 + -1;
   } while (iVar3 != 0xfdb);
   iVar3 = 1;
   uVar11 = 0xfee;
   local_39[0] = 0;
   uVar9 = 0;
-  FUN_0200c610(0xfee);
+  insert_lzss_match_tree_node(0xfee);
   bVar6 = 1;
   do {
     if (iVar13 < DAT_023eb310) {
@@ -541,7 +541,7 @@ LAB_0200c8e0:
         do {
           pbVar1 = local_39 + iVar12;
           iVar12 = iVar12 + 1;
-          FUN_0200c858(*pbVar1,DAT_023eb2f8);
+          write_bounded_stream_byte(*pbVar1,DAT_023eb2f8);
         } while (iVar3 != iVar12);
       }
       local_39[0] = 0;
@@ -557,10 +557,10 @@ LAB_0200c8e0:
     else {
       iVar10 = 0;
       do {
-        iVar4 = FUN_0200c82c(DAT_023ddebc);
+        iVar4 = read_bounded_stream_byte(DAT_023ddebc);
         iVar5 = iVar10;
         if (iVar4 == -1) break;
-        FUN_0200c75c(uVar9);
+        remove_lzss_match_tree_node(uVar9);
         puVar8 = (undefined1 *)(uVar11 + 1);
         if (uVar9 < 0x11) {
           puVar8 = &DAT_023deec0 + uVar9;
@@ -571,18 +571,18 @@ LAB_0200c8e0:
           *puVar8 = (char)iVar4;
         }
         iVar10 = iVar10 + 1;
-        FUN_0200c610(uVar11);
+        insert_lzss_match_tree_node(uVar11);
         uVar9 = uVar9 + 1 & 0xfff;
         iVar5 = iVar12;
       } while (iVar12 != iVar10);
     }
     DAT_020b4c40 = iVar5 + DAT_020b4c40;
     while (iVar10 < iVar12) {
-      FUN_0200c75c(uVar9);
+      remove_lzss_match_tree_node(uVar9);
       uVar11 = uVar11 + 1 & 0xfff;
       iVar13 = iVar13 + -1;
       if (iVar13 != 0) {
-        FUN_0200c610(uVar11);
+        insert_lzss_match_tree_node(uVar11);
       }
       uVar9 = uVar9 + 1 & 0xfff;
       iVar10 = iVar10 + 1;
@@ -593,7 +593,7 @@ LAB_0200c8e0:
         do {
           pbVar1 = local_39 + iVar13;
           iVar13 = iVar13 + 1;
-          FUN_0200c858(*pbVar1,DAT_023eb2f8);
+          write_bounded_stream_byte(*pbVar1,DAT_023eb2f8);
         } while (iVar13 != iVar3);
         DAT_020b4c44 = DAT_020b4c44 + iVar3;
       }
@@ -605,7 +605,7 @@ LAB_0200c8e0:
 
 // 0x0200cb78  decode_lzss_stream
 
-void FUN_0200cb78(void)
+void decode_lzss_stream(void)
 
 {
   undefined1 uVar1;
@@ -630,17 +630,17 @@ void FUN_0200cb78(void)
     if ((uVar8 & 0x100) == 0) goto LAB_0200cc00;
     while ((uVar8 & 1) != 0) {
       while( true ) {
-        uVar2 = FUN_0200c82c(DAT_023ddebc);
+        uVar2 = read_bounded_stream_byte(DAT_023ddebc);
         if (uVar2 == 0xffffffff) {
           return;
         }
-        FUN_0200c858(uVar2 & 0xff,DAT_023eb2f8);
+        write_bounded_stream_byte(uVar2 & 0xff,DAT_023eb2f8);
         uVar8 = uVar8 >> 1;
         (&DAT_023ddec0)[uVar7] = (char)uVar2;
         uVar7 = uVar7 + 1 & 0xfff;
         if ((uVar8 & 0x100) != 0) break;
 LAB_0200cc00:
-        uVar2 = FUN_0200c82c(DAT_023ddebc);
+        uVar2 = read_bounded_stream_byte(DAT_023ddebc);
         if (uVar2 == 0xffffffff) {
           return;
         }
@@ -650,13 +650,13 @@ LAB_0200cc00:
     }
 LAB_0200cc20:
     iVar6 = 0;
-    uVar2 = FUN_0200c82c(DAT_023ddebc);
-    if ((uVar2 == 0xffffffff) || (uVar3 = FUN_0200c82c(DAT_023ddebc), uVar3 == 0xffffffff)) {
+    uVar2 = read_bounded_stream_byte(DAT_023ddebc);
+    if ((uVar2 == 0xffffffff) || (uVar3 = read_bounded_stream_byte(DAT_023ddebc), uVar3 == 0xffffffff)) {
       return;
     }
     do {
       uVar1 = (&DAT_023ddec0)[(uVar2 | (uVar3 & 0xf0) << 4) + iVar6 & 0xfff];
-      FUN_0200c858(uVar1,DAT_023eb2f8);
+      write_bounded_stream_byte(uVar1,DAT_023eb2f8);
       iVar6 = iVar6 + 1;
       (&DAT_023ddec0)[uVar7] = uVar1;
       uVar7 = uVar7 + 1 & 0xfff;

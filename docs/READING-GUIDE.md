@@ -2,6 +2,7 @@
 
 Start with the feature you want to understand. The Nintendo DS has two host CPUs in this codebase. ARM9 runs the emulator and draws the display. It emulates both the Genesis 68000 and Z80. ARM7 receives sound commands from ARM9 and turns them into sample buffers for the DS sound hardware.
 
+- [Compare the hardware paths with other emulators](#compare-the-hardware-paths-with-other-emulators)
 - [Start a game from the ROM browser](#start-a-game-from-the-rom-browser)
 - [Follow the gameplay loop and display](#follow-the-gameplay-loop-and-display)
 - [Follow a VDP write to a DS display update](#follow-a-vdp-write-to-a-ds-display-update)
@@ -10,15 +11,26 @@ Start with the feature you want to understand. The Nintendo DS has two host CPUs
 - [Follow audio from ARM9 to ARM7](#follow-an-arm7-audio-command)
 - [Follow saved data to disk](#follow-saved-data-to-disk)
 
-Names in the short `// 0x…` headers describe what a routine does. Inside a body, Ghidra often uses `FUN_…` for a routine, `DAT_…` for a memory location, and `LAB_…` for a jump destination. Use the lookup command from the repository root to turn a call you are reading into a module and line number. Quote a phrase or type it as separate words.
+Function names in declarations, calls, and tables come from the routine index. When a role applies to several routines, a native address suffix identifies the exact entry. `DAT_…`, `LAB_…`, and numbered locals still appear where the original representation is useful or the evidence supports only part of their meaning. Lookup accepts a displayed name, native address, or original Ghidra symbol.
 
 ```sh
-python3 scripts/find_routine.py FUN_020033a4
-python3 scripts/find_routine.py 0x037f86f4 --show
+python3 scripts/find_routine.py write_vdp_control_port_word --show
+python3 scripts/find_routine.py 0x037f86f4 --show --raw
 python3 scripts/find_routine.py rom browser --limit 5
 ```
 
 The result gives a file and the line with its address label. The final bracketed word is the evidence behind the working name. For a complete example that checks the address and operation against the ROM, follow the [worked trace](VERIFYING-A-TRACE.md).
+
+## Compare the hardware paths with other emulators
+
+| Area | Behavior that supports the names |
+| --- | --- |
+| VDP control and data ports | Genesis Plus GX and PicoDrive both track the two-word command, access code, VRAM address, and DMA mode. In jEnesisDS, the first word supplies the low address and code bits. The second completes them and can trigger DMA. Follow the resulting writes to `vdp_vram`, `vdp_cram`, or `vdp_vsram`. [jEnesisDS ports](../decompiled/arm9/video/vdp/port_access.c) · [Genesis Plus GX VDP](https://github.com/ekeeke/Genesis-Plus-GX/blob/2499cd3e3d1d8b7d0130d8b2825adb4cc608b2c0/core/vdp_ctrl.c) · [PicoDrive VDP](https://github.com/notaz/picodrive/blob/26ecb2b6358fefba24e3d68b9eb2efba7f10d5ee/pico/videoport.c) |
+| Genesis controller ports | Genesis Plus GX reads the TH line and handshake phase to select the six-button group. In jEnesisDS, offsets `0x1e` and `0x0c` in `port_state` choose the phase and group. The emitted levels are named for their data pins because the same pins carry different buttons at different phases. [jEnesisDS controller](../decompiled/arm9/frontend/controller_ports.c#L36) · [Genesis Plus GX gamepad](https://github.com/ekeeke/Genesis-Plus-GX/blob/2499cd3e3d1d8b7d0130d8b2825adb4cc608b2c0/core/input_hw/gamepad.c) |
+| PSG | PicoDrive and Genesis Plus GX interpret bit 7 as a register latch, track the tone periods and attenuation, and advance a noise shift register. jEnesisDS uses the same register roles. ARM7's fixed-point tick accumulator controls when it updates the channel outputs. [jEnesisDS PSG](../decompiled/arm7/audio/psg.c) · [PicoDrive PSG](https://github.com/notaz/picodrive/blob/26ecb2b6358fefba24e3d68b9eb2efba7f10d5ee/pico/sound/sn76496.c) · [Genesis Plus GX PSG](https://github.com/ekeeke/Genesis-Plus-GX/blob/2499cd3e3d1d8b7d0130d8b2825adb4cc608b2c0/core/sound/psg.c) |
+| YM2612 envelope | PicoDrive takes the rate shift from the high byte of a packed word, selects one of eight three-bit fields with the shifted tick counter, and derives the attenuation step from that field. jEnesisDS uses the same calculation in its per-operator envelope routine, with a loop that advances to `end_tick`. [jEnesisDS envelope](../decompiled/arm7/audio/ym2612/channel_rendering.c#L5) · [PicoDrive YM2612](https://github.com/notaz/picodrive/blob/26ecb2b6358fefba24e3d68b9eb2efba7f10d5ee/pico/sound/ym2612.c) |
+
+The name tables cite jEnesisDS addresses and operations. These comparisons establish hardware roles and an arithmetic resemblance. The source history of the jEnesisDS routines remains open. [ARM9 variable evidence](../decompiled/arm9/variables.tsv) · [ARM7 variable evidence](../decompiled/arm7/variables.tsv)
 
 ## Start a game from the ROM browser
 

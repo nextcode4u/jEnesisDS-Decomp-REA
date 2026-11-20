@@ -6,7 +6,7 @@
 
 /* WARNING: Removing unreachable block (ram,0x02000260) */
 
-void FUN_02000240(void)
+void run_arm9_finalizer_once(void)
 
 {
   if (DAT_02098f70 == '\0') {
@@ -22,7 +22,7 @@ void FUN_02000240(void)
 /* WARNING: Removing unreachable block (ram,0x020002bc) */
 /* WARNING: Removing unreachable block (ram,0x020002b8) */
 
-void FUN_02000284(void)
+void call_optional_arm9_registration_hooks(void)
 
 {
   return;

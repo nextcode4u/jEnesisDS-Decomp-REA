@@ -4,7 +4,7 @@
 
 // 0x01003d6c  m68k_move_long
 
-void m68k_dispatch_01003d6c(void)
+void m68k_move_long_01003d6c(void)
 
 {
   uint uVar1;
@@ -15,7 +15,7 @@ void m68k_dispatch_01003d6c(void)
   short *unaff_r10;
   uint unaff_r11;
   
-  uVar1 = FUN_010040fc((int)*unaff_r10);
+  uVar1 = read_m68k_bus_long((int)*unaff_r10);
   uVar2 = *(int *)(unaff_r6 + 0x20 + ((unaff_r11 & 0xe00) >> 7)) - 4;
   *(uint *)(unaff_r6 + 0x20 + ((unaff_r11 & 0xe00) >> 7)) = uVar2;
   if (0xdfffff < (uVar2 & 0xf00000)) {
@@ -25,15 +25,15 @@ void m68k_dispatch_01003d6c(void)
     return;
   }
   uVar2 = uVar2 & 0xffffff;
-  (*(code *)(&DAT_0b00121c)[uVar2 >> 0x10])(uVar2 + 2,uVar1 & 0xffff);
-  (*(code *)(&DAT_0b00121c)[uVar2 >> 0x10])(uVar2,uVar1 >> 0x10);
+  (*(code *)(&m68k_word_write_handlers)[uVar2 >> 0x10])(uVar2 + 2,uVar1 & 0xffff);
+  (*(code *)(&m68k_word_write_handlers)[uVar2 >> 0x10])(uVar2,uVar1 >> 0x10);
   return;
 }
 
 
 // 0x0201a6dc  m68k_move_long
 
-void m68k_dispatch_0201a6dc(void)
+void m68k_move_long_0201a6dc(void)
 
 {
   undefined2 *puVar1;
@@ -45,7 +45,7 @@ void m68k_dispatch_0201a6dc(void)
   undefined2 *unaff_r10;
   uint unaff_r11;
   
-  uVar2 = FUN_010040fc(CONCAT22(*unaff_r10,unaff_r10[1]));
+  uVar2 = read_m68k_bus_long(CONCAT22(*unaff_r10,unaff_r10[1]));
   puVar4 = (uint *)(unaff_r6 + 0x20 + ((unaff_r11 & 0xe00) >> 7));
   uVar3 = *puVar4 - 4;
   *puVar4 = uVar3;
@@ -56,15 +56,15 @@ void m68k_dispatch_0201a6dc(void)
     return;
   }
   uVar3 = uVar3 & 0xffffff;
-  (*(code *)(&DAT_0b00121c)[uVar3 >> 0x10])(uVar3 + 2,uVar2 & 0xffff);
-  (*(code *)(&DAT_0b00121c)[uVar3 >> 0x10])(uVar3,uVar2 >> 0x10);
+  (*(code *)(&m68k_word_write_handlers)[uVar3 >> 0x10])(uVar3 + 2,uVar2 & 0xffff);
+  (*(code *)(&m68k_word_write_handlers)[uVar3 >> 0x10])(uVar3,uVar2 >> 0x10);
   return;
 }
 
 
 // 0x0201bf6c  m68k_move_long
 
-void m68k_dispatch_0201bf6c(void)
+void m68k_move_long_0201bf6c(void)
 
 {
   undefined2 uVar1;
@@ -89,8 +89,8 @@ void m68k_dispatch_0201bf6c(void)
     return;
   }
   uVar4 = uVar4 & 0xffffff;
-  (*(code *)(&DAT_0b00121c)[uVar4 >> 0x10])(uVar4 + 2,uVar2);
-  (*(code *)(&DAT_0b00121c)[uVar4 >> 0x10])(uVar4,uVar1);
+  (*(code *)(&m68k_word_write_handlers)[uVar4 >> 0x10])(uVar4 + 2,uVar2);
+  (*(code *)(&m68k_word_write_handlers)[uVar4 >> 0x10])(uVar4,uVar1);
   return;
 }
 

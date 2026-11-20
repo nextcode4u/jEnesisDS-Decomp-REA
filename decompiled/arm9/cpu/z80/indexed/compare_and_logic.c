@@ -4,7 +4,7 @@
 
 // 0x020119f8  z80_ix_iy_and_a_index_high
 
-undefined8 z80_dispatch_020119f8(uint param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_and_a_index_high(uint param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -168,7 +168,7 @@ undefined8 z80_dispatch_020119f8(uint param_1,undefined4 param_2,int param_3,int
 
 // 0x02011a20  z80_ix_iy_and_a_index_low
 
-undefined8 z80_dispatch_02011a20(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_and_a_index_low(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -331,7 +331,7 @@ undefined8 z80_dispatch_02011a20(int param_1,undefined4 param_2,int param_3,int 
 
 // 0x02011a48  z80_ix_iy_and_a_indexed_memory
 
-undefined8 z80_dispatch_02011a48(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_and_a_indexed_memory(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   uint uVar1;
@@ -361,7 +361,7 @@ undefined8 z80_dispatch_02011a48(int param_1,undefined4 param_2,int param_3,int 
   
   uVar1 = (uint)(param_1 + *unaff_r11 * 0x10000) >> 0x10;
   if (0x1fff < uVar1) {
-    uVar1 = FUN_01002cd0();
+    uVar1 = dispatch_z80_mapped_read_by_address_page();
   }
   iVar5 = in_stack_00000028;
   uVar1 = unaff_r5 & 0xffffff28 |
@@ -502,7 +502,7 @@ undefined8 z80_dispatch_02011a48(int param_1,undefined4 param_2,int param_3,int 
 
 // 0x02011a84  z80_ix_iy_xor_a_index_high
 
-undefined8 z80_dispatch_02011a84(uint param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_xor_a_index_high(uint param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -666,7 +666,7 @@ undefined8 z80_dispatch_02011a84(uint param_1,undefined4 param_2,int param_3,int
 
 // 0x02011aac  z80_ix_iy_xor_a_index_low
 
-undefined8 z80_dispatch_02011aac(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_xor_a_index_low(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -829,7 +829,7 @@ undefined8 z80_dispatch_02011aac(int param_1,undefined4 param_2,int param_3,int 
 
 // 0x02011ad4  z80_ix_iy_xor_a_indexed_memory
 
-undefined8 z80_dispatch_02011ad4(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_xor_a_indexed_memory(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   uint uVar1;
@@ -859,7 +859,7 @@ undefined8 z80_dispatch_02011ad4(int param_1,undefined4 param_2,int param_3,int 
   
   uVar1 = (uint)(param_1 + *unaff_r11 * 0x10000) >> 0x10;
   if (0x1fff < uVar1) {
-    uVar1 = FUN_01002cd0();
+    uVar1 = dispatch_z80_mapped_read_by_address_page();
   }
   iVar5 = in_stack_00000028;
   uVar1 = unaff_r5 & 0xffffff28 |
@@ -1000,7 +1000,7 @@ undefined8 z80_dispatch_02011ad4(int param_1,undefined4 param_2,int param_3,int 
 
 // 0x02011b10  z80_ix_iy_or_a_index_high
 
-undefined8 z80_dispatch_02011b10(uint param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_or_a_index_high(uint param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1164,7 +1164,7 @@ undefined8 z80_dispatch_02011b10(uint param_1,undefined4 param_2,int param_3,int
 
 // 0x02011b38  z80_ix_iy_or_a_index_low
 
-undefined8 z80_dispatch_02011b38(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_or_a_index_low(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1327,7 +1327,7 @@ undefined8 z80_dispatch_02011b38(int param_1,undefined4 param_2,int param_3,int 
 
 // 0x02011b60  z80_ix_iy_or_a_indexed_memory
 
-undefined8 z80_dispatch_02011b60(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_or_a_indexed_memory(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   uint uVar1;
@@ -1357,7 +1357,7 @@ undefined8 z80_dispatch_02011b60(int param_1,undefined4 param_2,int param_3,int 
   
   uVar1 = (uint)(param_1 + *unaff_r11 * 0x10000) >> 0x10;
   if (0x1fff < uVar1) {
-    uVar1 = FUN_01002cd0();
+    uVar1 = dispatch_z80_mapped_read_by_address_page();
   }
   iVar5 = in_stack_00000028;
   uVar1 = unaff_r5 & 0xffffff28 |
@@ -1498,7 +1498,7 @@ undefined8 z80_dispatch_02011b60(int param_1,undefined4 param_2,int param_3,int 
 
 // 0x02011ba0  z80_ix_iy_cp_a_index_high
 
-undefined8 z80_dispatch_02011ba0(uint param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cp_a_index_high(uint param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1674,7 +1674,7 @@ undefined8 z80_dispatch_02011ba0(uint param_1,undefined4 param_2,int param_3,int
 
 // 0x02011bd0  z80_ix_iy_cp_a_index_low
 
-undefined8 z80_dispatch_02011bd0(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cp_a_index_low(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   uint uVar1;
@@ -1851,7 +1851,7 @@ undefined8 z80_dispatch_02011bd0(int param_1,undefined4 param_2,int param_3,int 
 
 // 0x02011c00  z80_ix_iy_cp_a_indexed_memory
 
-undefined8 z80_dispatch_02011c00(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cp_a_indexed_memory(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   uint uVar1;
@@ -1883,7 +1883,7 @@ undefined8 z80_dispatch_02011c00(int param_1,undefined4 param_2,int param_3,int 
   
   uVar2 = (uint)(param_1 + *unaff_r11 * 0x10000) >> 0x10;
   if (0x1fff < uVar2) {
-    uVar2 = FUN_01002cd0();
+    uVar2 = dispatch_z80_mapped_read_by_address_page();
   }
   iVar7 = in_stack_00000028;
   uVar1 = (uint)*(byte *)(param_4 + uVar2) * 0x1000000;

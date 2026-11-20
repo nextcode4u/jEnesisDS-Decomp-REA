@@ -6,7 +6,7 @@
 
 /* WARNING: Removing unreachable block (ram,0x0200f01c) */
 
-undefined8 z80_dispatch_0200f010(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_cb_test_bit_2_b(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -174,7 +174,7 @@ undefined8 z80_dispatch_0200f010(undefined4 param_1,undefined4 param_2,int param
 
 /* WARNING: Removing unreachable block (ram,0x0200f03c) */
 
-undefined8 z80_dispatch_0200f030(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_cb_test_bit_2_c(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -342,7 +342,7 @@ undefined8 z80_dispatch_0200f030(undefined4 param_1,undefined4 param_2,int param
 
 /* WARNING: Removing unreachable block (ram,0x0200f05c) */
 
-undefined8 z80_dispatch_0200f050(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_cb_test_bit_2_d(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -510,7 +510,7 @@ undefined8 z80_dispatch_0200f050(undefined4 param_1,undefined4 param_2,int param
 
 /* WARNING: Removing unreachable block (ram,0x0200f07c) */
 
-undefined8 z80_dispatch_0200f070(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_cb_test_bit_2_e(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -678,7 +678,7 @@ undefined8 z80_dispatch_0200f070(undefined4 param_1,undefined4 param_2,int param
 
 /* WARNING: Removing unreachable block (ram,0x0200f0a0) */
 
-undefined8 z80_dispatch_0200f090(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_cb_test_bit_2_h(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -846,7 +846,7 @@ undefined8 z80_dispatch_0200f090(undefined4 param_1,undefined4 param_2,int param
 
 /* WARNING: Removing unreachable block (ram,0x0200f0c4) */
 
-undefined8 z80_dispatch_0200f0b4(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_cb_test_bit_2_l(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1014,7 +1014,7 @@ undefined8 z80_dispatch_0200f0b4(undefined4 param_1,undefined4 param_2,int param
 
 /* WARNING: Removing unreachable block (ram,0x0200f0f4) */
 
-undefined8 z80_dispatch_0200f0d8(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_cb_test_bit_2_via_hl(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1042,7 +1042,7 @@ undefined8 z80_dispatch_0200f0d8(undefined4 param_1,undefined4 param_2,int param
   int in_stack_000000a4;
   
   if (0x1fffffff < unaff_r10) {
-    FUN_01002cec();
+    dispatch_z80_mapped_read_from_r10();
   }
   iVar4 = in_stack_00000028;
   uVar2 = unaff_r5 & 0xffffff29;
@@ -1185,7 +1185,7 @@ undefined8 z80_dispatch_0200f0d8(undefined4 param_1,undefined4 param_2,int param
 
 /* WARNING: Removing unreachable block (ram,0x0200f114) */
 
-undefined8 z80_dispatch_0200f108(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_cb_test_bit_2_a(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1353,7 +1353,7 @@ undefined8 z80_dispatch_0200f108(undefined4 param_1,undefined4 param_2,int param
 
 /* WARNING: Removing unreachable block (ram,0x0200f134) */
 
-undefined8 z80_dispatch_0200f128(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_cb_test_bit_3_b(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1521,7 +1521,7 @@ undefined8 z80_dispatch_0200f128(undefined4 param_1,undefined4 param_2,int param
 
 /* WARNING: Removing unreachable block (ram,0x0200f154) */
 
-undefined8 z80_dispatch_0200f148(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_cb_test_bit_3_c(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1689,7 +1689,7 @@ undefined8 z80_dispatch_0200f148(undefined4 param_1,undefined4 param_2,int param
 
 /* WARNING: Removing unreachable block (ram,0x0200f174) */
 
-undefined8 z80_dispatch_0200f168(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_cb_test_bit_3_d(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1857,7 +1857,7 @@ undefined8 z80_dispatch_0200f168(undefined4 param_1,undefined4 param_2,int param
 
 /* WARNING: Removing unreachable block (ram,0x0200f194) */
 
-undefined8 z80_dispatch_0200f188(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_cb_test_bit_3_e(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -2025,7 +2025,7 @@ undefined8 z80_dispatch_0200f188(undefined4 param_1,undefined4 param_2,int param
 
 /* WARNING: Removing unreachable block (ram,0x0200f1b8) */
 
-undefined8 z80_dispatch_0200f1a8(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_cb_test_bit_3_h(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -2193,7 +2193,7 @@ undefined8 z80_dispatch_0200f1a8(undefined4 param_1,undefined4 param_2,int param
 
 /* WARNING: Removing unreachable block (ram,0x0200f1dc) */
 
-undefined8 z80_dispatch_0200f1cc(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_cb_test_bit_3_l(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -2361,7 +2361,7 @@ undefined8 z80_dispatch_0200f1cc(undefined4 param_1,undefined4 param_2,int param
 
 /* WARNING: Removing unreachable block (ram,0x0200f20c) */
 
-undefined8 z80_dispatch_0200f1f0(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_cb_test_bit_3_via_hl(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -2389,7 +2389,7 @@ undefined8 z80_dispatch_0200f1f0(undefined4 param_1,undefined4 param_2,int param
   int in_stack_000000a4;
   
   if (0x1fffffff < unaff_r10) {
-    FUN_01002cec();
+    dispatch_z80_mapped_read_from_r10();
   }
   iVar4 = in_stack_00000028;
   uVar2 = unaff_r5 & 0xffffff29;
@@ -2532,7 +2532,7 @@ undefined8 z80_dispatch_0200f1f0(undefined4 param_1,undefined4 param_2,int param
 
 /* WARNING: Removing unreachable block (ram,0x0200f22c) */
 
-undefined8 z80_dispatch_0200f220(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_cb_test_bit_3_a(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;

@@ -4,7 +4,7 @@
 
 // 0x0200ccb4  decode_lzss_from_memory_with_prefix
 
-void FUN_0200ccb4(int param_1,int param_2,uint param_3,uint param_4,uint param_5)
+void decode_lzss_from_memory_with_prefix(int param_1,int param_2,uint param_3,uint param_4,uint param_5)
 
 {
   undefined1 uVar1;
@@ -31,7 +31,7 @@ void FUN_0200ccb4(int param_1,int param_2,uint param_3,uint param_4,uint param_5
       DAT_023eb300 = param_2;
       DAT_023eb304 = param_4;
       if (param_5 != 0) {
-        FUN_02082ec0(param_2,param_1);
+        newlib_memcpy(param_2,param_1);
         piVar3 = DAT_023eb2f8;
         piVar2 = DAT_023ddebc;
         iVar8 = *DAT_023ddebc;
@@ -53,17 +53,17 @@ void FUN_0200ccb4(int param_1,int param_2,uint param_3,uint param_4,uint param_5
         if ((uVar10 & 0x100) == 0) goto LAB_0200cc00;
         while ((uVar10 & 1) != 0) {
           while( true ) {
-            uVar4 = FUN_0200c82c(DAT_023ddebc);
+            uVar4 = read_bounded_stream_byte(DAT_023ddebc);
             if (uVar4 == 0xffffffff) {
               return;
             }
-            FUN_0200c858(uVar4 & 0xff,DAT_023eb2f8);
+            write_bounded_stream_byte(uVar4 & 0xff,DAT_023eb2f8);
             uVar10 = uVar10 >> 1;
             (&DAT_023ddec0)[uVar9] = (char)uVar4;
             uVar9 = uVar9 + 1 & 0xfff;
             if ((uVar10 & 0x100) != 0) break;
 LAB_0200cc00:
-            uVar4 = FUN_0200c82c(DAT_023ddebc);
+            uVar4 = read_bounded_stream_byte(DAT_023ddebc);
             if (uVar4 == 0xffffffff) {
               return;
             }
@@ -73,13 +73,13 @@ LAB_0200cc00:
         }
 LAB_0200cc20:
         iVar8 = 0;
-        uVar4 = FUN_0200c82c(DAT_023ddebc);
-        if ((uVar4 == 0xffffffff) || (uVar5 = FUN_0200c82c(DAT_023ddebc), uVar5 == 0xffffffff)) {
+        uVar4 = read_bounded_stream_byte(DAT_023ddebc);
+        if ((uVar4 == 0xffffffff) || (uVar5 = read_bounded_stream_byte(DAT_023ddebc), uVar5 == 0xffffffff)) {
           return;
         }
         do {
           uVar1 = (&DAT_023ddec0)[(uVar4 | (uVar5 & 0xf0) << 4) + iVar8 & 0xfff];
-          FUN_0200c858(uVar1,DAT_023eb2f8);
+          write_bounded_stream_byte(uVar1,DAT_023eb2f8);
           iVar8 = iVar8 + 1;
           (&DAT_023ddec0)[uVar9] = uVar1;
           uVar9 = uVar9 + 1 & 0xfff;
@@ -95,7 +95,7 @@ LAB_0200cc20:
 
 /* WARNING: Removing unreachable block (ram,0x02080f50) */
 
-uint FUN_0200cda4(int param_1,int param_2,uint param_3,uint param_4,uint param_5)
+uint load_file_and_decode_lzss_with_prefix(int param_1,int param_2,uint param_3,uint param_4,uint param_5)
 
 {
   undefined1 uVar1;
@@ -113,49 +113,49 @@ uint FUN_0200cda4(int param_1,int param_2,uint param_3,uint param_4,uint param_5
   if (((param_2 != 0 && param_1 != 0) && (param_4 != 0 && param_3 != 0)) && (param_5 < param_4)) {
     DAT_023ddebc = &DAT_023deed4;
     DAT_023eb2f8 = &DAT_023eb2fc;
-    iVar6 = FUN_02081588(param_3,&DAT_0208f074);
+    iVar6 = newlib_fopen(param_3,&DAT_0208f074);
     param_3 = 0;
     if (iVar6 != 0) {
-      FUN_02081ff0(iVar6,0,2);
+      newlib_fseek(iVar6,0,2);
       piVar2 = DAT_023ddebc;
-      iVar7 = FUN_0208212c(iVar6);
+      iVar7 = newlib_ftell(iVar6);
       piVar2[2] = iVar7;
-      FUN_02081ff0(iVar6,0,0);
+      newlib_fseek(iVar6,0,0);
       if ((param_4 < (uint)DAT_023ddebc[2]) || ((uint)DAT_023ddebc[2] < param_5)) {
         if (iVar6 == 0) {
           uVar8 = 0;
         }
         else {
-          FUN_02081248();
-          FUN_02081258(&DAT_0208f3a0);
+          newlib_sfp_lock_acquire();
+          newlib_sinit(&DAT_0208f3a0);
           uVar8 = 0;
           if (*(short *)(iVar6 + 0xc) != 0) {
-            uVar8 = FUN_02081034(iVar6);
+            uVar8 = newlib_fflush(iVar6);
             if ((*(code **)(iVar6 + 0x30) != (code *)0x0) &&
                (iVar7 = (**(code **)(iVar6 + 0x30))(*(undefined4 *)(iVar6 + 0x20)), iVar7 < 0)) {
               uVar8 = 0xffffffff;
             }
             if ((*(ushort *)(iVar6 + 0xc) & 0x80) != 0) {
-              FUN_020818d4(&DAT_0208f3a0,*(undefined4 *)(iVar6 + 0x14));
+              newlib_free_r(&DAT_0208f3a0,*(undefined4 *)(iVar6 + 0x14));
             }
             if (*(int *)(iVar6 + 0x34) != 0) {
               if (*(int *)(iVar6 + 0x34) != iVar6 + 0x44) {
-                FUN_020818d4(&DAT_0208f3a0);
+                newlib_free_r(&DAT_0208f3a0);
               }
               *(undefined4 *)(iVar6 + 0x34) = 0;
             }
             if (*(int *)(iVar6 + 0x48) != 0) {
-              FUN_020818d4(&DAT_0208f3a0);
+              newlib_free_r(&DAT_0208f3a0);
               *(undefined4 *)(iVar6 + 0x48) = 0;
             }
             *(undefined2 *)(iVar6 + 0xc) = 0;
           }
-          FUN_0208124c();
+          newlib_sfp_lock_release();
         }
         return uVar8;
       }
-      FUN_02081788(param_1,1,param_4,iVar6);
-      FUN_02081020(iVar6);
+      newlib_fread(param_1,1,param_4,iVar6);
+      newlib_fclose(iVar6);
       piVar3 = DAT_023eb2f8;
       piVar2 = DAT_023ddebc;
       DAT_023eb2f8[2] = param_4;
@@ -166,7 +166,7 @@ uint FUN_0200cda4(int param_1,int param_2,uint param_3,uint param_4,uint param_5
       piVar3[3] = 0;
       piVar3[1] = param_2;
       if (param_5 != 0) {
-        FUN_02082ec0(param_2,piVar2[1],param_5);
+        newlib_memcpy(param_2,piVar2[1],param_5);
         piVar3 = DAT_023eb2f8;
         piVar2 = DAT_023ddebc;
         iVar6 = *DAT_023ddebc;
@@ -188,17 +188,17 @@ uint FUN_0200cda4(int param_1,int param_2,uint param_3,uint param_4,uint param_5
         if ((uVar8 & 0x100) == 0) goto LAB_0200cc00;
         while ((uVar8 & 1) != 0) {
           while( true ) {
-            uVar4 = FUN_0200c82c(DAT_023ddebc);
+            uVar4 = read_bounded_stream_byte(DAT_023ddebc);
             if (uVar4 == 0xffffffff) {
               return 0xffffffff;
             }
-            FUN_0200c858(uVar4 & 0xff,DAT_023eb2f8);
+            write_bounded_stream_byte(uVar4 & 0xff,DAT_023eb2f8);
             uVar8 = uVar8 >> 1;
             (&DAT_023ddec0)[uVar11] = (char)uVar4;
             uVar11 = uVar11 + 1 & 0xfff;
             if ((uVar8 & 0x100) != 0) break;
 LAB_0200cc00:
-            uVar4 = FUN_0200c82c(DAT_023ddebc);
+            uVar4 = read_bounded_stream_byte(DAT_023ddebc);
             if (uVar4 == 0xffffffff) {
               return 0xffffffff;
             }
@@ -208,14 +208,14 @@ LAB_0200cc00:
         }
 LAB_0200cc20:
         iVar6 = 0;
-        uVar5 = FUN_0200c82c(DAT_023ddebc);
+        uVar5 = read_bounded_stream_byte(DAT_023ddebc);
         uVar4 = uVar5;
-        if ((uVar5 == 0xffffffff) || (uVar4 = FUN_0200c82c(DAT_023ddebc), uVar4 == 0xffffffff)) {
+        if ((uVar5 == 0xffffffff) || (uVar4 = read_bounded_stream_byte(DAT_023ddebc), uVar4 == 0xffffffff)) {
           return uVar4;
         }
         do {
           uVar1 = (&DAT_023ddec0)[(uVar5 | (uVar4 & 0xf0) << 4) + iVar6 & 0xfff];
-          FUN_0200c858(uVar1,DAT_023eb2f8);
+          write_bounded_stream_byte(uVar1,DAT_023eb2f8);
           iVar6 = iVar6 + 1;
           (&DAT_023ddec0)[uVar11] = uVar1;
           uVar11 = uVar11 + 1 & 0xfff;

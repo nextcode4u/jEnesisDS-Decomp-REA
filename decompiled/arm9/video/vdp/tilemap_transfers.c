@@ -4,7 +4,7 @@
 
 // 0x02007b4c  transfer_vdp_words_to_background_0_tilemap_linear
 
-void FUN_02007b4c(ushort *param_1,uint param_2,int param_3,uint param_4)
+void transfer_vdp_words_to_background_0_tilemap_linear(ushort *param_1,uint param_2,int param_3,uint param_4)
 
 {
   uint uVar1;
@@ -27,7 +27,7 @@ void FUN_02007b4c(ushort *param_1,uint param_2,int param_3,uint param_4)
         return;
       }
     }
-    uVar4 = FUN_020074b8(uVar2 & 0x7ff);
+    uVar4 = map_genesis_pattern_to_ds_tile(uVar2 & 0x7ff);
     bVar7 = (uVar2 & 0x8000) == 0;
     iVar6 = uVar1 << 1;
     uVar2 = (uVar4 | (ushort)((uVar2 & 0x7800) >> 1)) ^ 0x400;
@@ -58,7 +58,7 @@ void FUN_02007b4c(ushort *param_1,uint param_2,int param_3,uint param_4)
 
 // 0x02007c04  transfer_vdp_words_to_background_0_tilemap_64_columns
 
-void FUN_02007c04(ushort *param_1,uint param_2,int param_3,uint param_4)
+void transfer_vdp_words_to_background_0_tilemap_64_columns(ushort *param_1,uint param_2,int param_3,uint param_4)
 
 {
   uint uVar1;
@@ -83,7 +83,7 @@ void FUN_02007c04(ushort *param_1,uint param_2,int param_3,uint param_4)
         return;
       }
     }
-    uVar4 = FUN_020074b8(uVar2 & 0x7ff);
+    uVar4 = map_genesis_pattern_to_ds_tile(uVar2 & 0x7ff);
     uVar5 = (uVar1 & 0x3f) + ((uVar1 & 0xffff) >> 6) * 0x20;
     if (0x1f < (uVar1 & 0x3f)) {
       uVar5 = uVar5 + 0x3e0 & 0xffff;
@@ -117,7 +117,7 @@ void FUN_02007c04(ushort *param_1,uint param_2,int param_3,uint param_4)
 
 // 0x02007ce4  transfer_vdp_words_to_background_0_tilemap_64_columns_with_vertical_blocks
 
-void FUN_02007ce4(ushort *param_1,uint param_2,int param_3,uint param_4)
+void transfer_vdp_words_to_background_0_tilemap_64_columns_with_vertical_blocks(ushort *param_1,uint param_2,int param_3,uint param_4)
 
 {
   uint uVar1;
@@ -142,7 +142,7 @@ LAB_02007d08:
         return;
       }
     }
-    uVar6 = FUN_020074b8(uVar4 & 0x7ff,0);
+    uVar6 = map_genesis_pattern_to_ds_tile(uVar4 & 0x7ff,0);
     uVar2 = (uVar1 & 0xffff) >> 6;
     uVar8 = uVar4 & 0x7800;
     uVar7 = (uVar1 & 0x3f) + uVar2 * 0x20;
@@ -176,7 +176,7 @@ LAB_02007d08:
 
 // 0x02007ddc  transfer_vdp_words_to_background_0_tilemap_128_columns
 
-void FUN_02007ddc(ushort *param_1,uint param_2,int param_3,uint param_4)
+void transfer_vdp_words_to_background_0_tilemap_128_columns(ushort *param_1,uint param_2,int param_3,uint param_4)
 
 {
   ushort uVar1;
@@ -200,7 +200,7 @@ LAB_02007e00:
       }
     }
     *(undefined1 *)(iVar2 + (uVar6 & 0xffff)) = 0;
-    uVar3 = FUN_020074b8(uVar1 & 0x7ff,0);
+    uVar3 = map_genesis_pattern_to_ds_tile(uVar1 & 0x7ff,0);
     uVar4 = uVar6 & 0x7f;
     uVar6 = (uVar6 & 0xffff) >> 7;
     uVar5 = uVar4 + uVar6 * 0x20;
@@ -233,7 +233,7 @@ LAB_02007e00:
 
 // 0x02007ed8  transfer_vdp_words_to_background_1_tilemap_linear
 
-void FUN_02007ed8(ushort *param_1,uint param_2,int param_3,uint param_4)
+void transfer_vdp_words_to_background_1_tilemap_linear(ushort *param_1,uint param_2,int param_3,uint param_4)
 
 {
   uint uVar1;
@@ -256,7 +256,7 @@ void FUN_02007ed8(ushort *param_1,uint param_2,int param_3,uint param_4)
         return;
       }
     }
-    uVar4 = FUN_020074b8(uVar2 & 0x7ff,1);
+    uVar4 = map_genesis_pattern_to_ds_tile(uVar2 & 0x7ff,1);
     bVar7 = (uVar2 & 0x8000) == 0;
     iVar5 = uVar1 << 1;
     iVar6 = uVar1 << 1;
@@ -290,7 +290,7 @@ void FUN_02007ed8(ushort *param_1,uint param_2,int param_3,uint param_4)
 
 // 0x02007f94  transfer_vdp_words_to_background_1_tilemap_64_columns
 
-void FUN_02007f94(ushort *param_1,uint param_2,int param_3,uint param_4)
+void transfer_vdp_words_to_background_1_tilemap_64_columns(ushort *param_1,uint param_2,int param_3,uint param_4)
 
 {
   uint uVar1;
@@ -315,7 +315,7 @@ void FUN_02007f94(ushort *param_1,uint param_2,int param_3,uint param_4)
         return;
       }
     }
-    uVar4 = FUN_020074b8(uVar2 & 0x7ff);
+    uVar4 = map_genesis_pattern_to_ds_tile(uVar2 & 0x7ff);
     uVar5 = (uVar1 & 0x3f) + ((uVar1 & 0xffff) >> 6) * 0x20;
     iVar7 = (uVar5 + 0x3e0) * 0x10000;
     if (0x1f < (uVar1 & 0x3f)) {
@@ -353,7 +353,7 @@ void FUN_02007f94(ushort *param_1,uint param_2,int param_3,uint param_4)
 
 // 0x02008078  transfer_vdp_words_to_background_1_tilemap_64_columns_with_vertical_blocks
 
-void FUN_02008078(ushort *param_1,uint param_2,int param_3,uint param_4)
+void transfer_vdp_words_to_background_1_tilemap_64_columns_with_vertical_blocks(ushort *param_1,uint param_2,int param_3,uint param_4)
 
 {
   uint uVar1;
@@ -378,7 +378,7 @@ LAB_0200809c:
         return;
       }
     }
-    uVar6 = FUN_020074b8(uVar4 & 0x7ff,1);
+    uVar6 = map_genesis_pattern_to_ds_tile(uVar4 & 0x7ff,1);
     uVar2 = (uVar1 & 0xffff) >> 6;
     uVar8 = uVar4 & 0x7800;
     uVar7 = (uVar1 & 0x3f) + uVar2 * 0x20;
@@ -412,7 +412,7 @@ LAB_0200809c:
 
 // 0x02008174  transfer_vdp_words_to_background_1_tilemap_128_columns
 
-void FUN_02008174(ushort *param_1,uint param_2,int param_3,uint param_4)
+void transfer_vdp_words_to_background_1_tilemap_128_columns(ushort *param_1,uint param_2,int param_3,uint param_4)
 
 {
   ushort uVar1;
@@ -434,7 +434,7 @@ LAB_02008198:
         return;
       }
     }
-    uVar3 = FUN_020074b8(uVar1 & 0x7ff,1);
+    uVar3 = map_genesis_pattern_to_ds_tile(uVar1 & 0x7ff,1);
     uVar4 = uVar5 & 0x7f;
     uVar5 = uVar4 + ((uVar5 & 0xffff) >> 7) * 0x20;
     if (0x1f < uVar4) {
@@ -465,7 +465,7 @@ LAB_02008198:
 
 // 0x02008270  transfer_vdp_words_to_window_tilemap_linear
 
-void FUN_02008270(ushort *param_1,uint param_2,int param_3,int param_4)
+void transfer_vdp_words_to_window_tilemap_linear(ushort *param_1,uint param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -479,7 +479,7 @@ void FUN_02008270(ushort *param_1,uint param_2,int param_3,int param_4)
     iVar6 = param_2 + param_3;
     do {
       uVar4 = *param_1;
-      uVar5 = FUN_020074b8(uVar4 & 0x7ff,2);
+      uVar5 = map_genesis_pattern_to_ds_tile(uVar4 & 0x7ff,2);
       uVar3 = (param_2 & 0x1ffff) >> 1;
       iVar1 = uVar3 * 2;
       uVar5 = (uVar5 | (ushort)((uVar4 & 0x7800) >> 1)) ^ 0x400;
@@ -503,7 +503,7 @@ void FUN_02008270(ushort *param_1,uint param_2,int param_3,int param_4)
 
 // 0x02008320  transfer_vdp_words_to_window_tilemap_64_columns
 
-void FUN_02008320(ushort *param_1,uint param_2,int param_3,int param_4)
+void transfer_vdp_words_to_window_tilemap_64_columns(ushort *param_1,uint param_2,int param_3,int param_4)
 
 {
   ushort uVar1;
@@ -516,7 +516,7 @@ void FUN_02008320(ushort *param_1,uint param_2,int param_3,int param_4)
     iVar5 = param_2 + param_3;
     do {
       uVar1 = *param_1;
-      uVar2 = FUN_020074b8(uVar1 & 0x7ff,2);
+      uVar2 = map_genesis_pattern_to_ds_tile(uVar1 & 0x7ff,2);
       uVar3 = param_2 >> 1 & 0x3f;
       uVar4 = uVar3 + ((param_2 >> 1 & 0xffff) >> 6) * 0x20;
       if (0x1f < uVar3) {

@@ -4,7 +4,7 @@
 
 // 0x02016d54  m68k_move_long
 
-void m68k_dispatch_02016d54(void)
+void m68k_move_long_02016d54(void)
 
 {
   int unaff_r6;
@@ -23,7 +23,7 @@ void m68k_dispatch_02016d54(void)
 
 // 0x020172c0  m68k_move_long
 
-void m68k_dispatch_020172c0(void)
+void m68k_move_long_020172c0(void)
 
 {
   int unaff_r6;

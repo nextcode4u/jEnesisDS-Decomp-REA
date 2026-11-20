@@ -4,7 +4,7 @@
 
 // 0x02074b2c  fat_sd_crc7
 
-uint FUN_02074b2c(int param_1,int param_2)
+uint fat_sd_crc7(int param_1,int param_2)
 
 {
   uint uVar1;
@@ -40,7 +40,7 @@ uint FUN_02074b2c(int param_1,int param_2)
 
 // 0x02074b88  fat_sd_crc16
 
-void FUN_02074b88(byte *param_1,int param_2,undefined1 *param_3)
+void fat_sd_crc16(byte *param_1,int param_2,undefined1 *param_3)
 
 {
   uint uVar1;
@@ -125,7 +125,7 @@ void FUN_02074b88(byte *param_1,int param_2,undefined1 *param_3)
 
 // 0x02074c84  fat_sd_initcard
 
-undefined4 FUN_02074c84(code *param_1,code *param_2,int param_3,uint *param_4)
+undefined4 fat_sd_initcard(code *param_1,code *param_2,int param_3,uint *param_4)
 
 {
   int iVar1;
@@ -136,7 +136,7 @@ undefined4 FUN_02074c84(code *param_1,code *param_2,int param_3,uint *param_4)
   byte local_2f;
   byte local_2e;
   
-  thunk_FUN_02083058(&local_31,0,0x11);
+  arm_thumb_veneer_for_newlib_memset(&local_31,0,0x11);
   iVar2 = 0;
   while( true ) {
     (*param_1)(&local_31,0x37,0);

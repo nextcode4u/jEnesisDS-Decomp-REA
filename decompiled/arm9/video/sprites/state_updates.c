@@ -4,31 +4,31 @@
 
 // 0x020085b4  update_ds_sprite_position_from_genesis_attributes
 
-void FUN_020085b4(ushort *param_1,int param_2)
+void update_ds_sprite_position_from_genesis_attributes(ushort *genesis_sprite_words,int ds_sprite_index)
 
 {
-  short sVar1;
-  ushort uVar2;
-  ushort uVar4;
+  short viewport_relative_x;
+  ushort ds_sprite_y;
+  ushort ds_sprite_x;
   uint uVar3;
   
-  sVar1 = (param_1[3] & 0x1ff) - (short)DAT_020993a4;
-  uVar4 = sVar1 - 0x80;
-  uVar3 = ((*param_1 & 0xffff01ff) - DAT_020993a8) - 0x80 & 0xffff;
+  viewport_relative_x = (genesis_sprite_words[3] & 0x1ff) - (short)DAT_020993a4;
+  ds_sprite_x = viewport_relative_x - 0x80;
+  uVar3 = ((*genesis_sprite_words & 0xffff01ff) - DAT_020993a8) - 0x80 & 0xffff;
   if (((DAT_023cb610 & 4) != 0) && ((uVar3 - 1) * 0x10000 < 0xee0001)) {
     uVar3 = uVar3 - (byte)(&DAT_023dcdb4)[uVar3] & 0xffff;
   }
-  uVar2 = (ushort)uVar3;
-  if (((param_1[1] >> 10 & 3) == 2) && ((param_1[2] & 0x800) != 0)) {
-    uVar4 = sVar1 - 0x88;
+  ds_sprite_y = (ushort)uVar3;
+  if (((genesis_sprite_words[1] >> 10 & 3) == 2) && ((genesis_sprite_words[2] & 0x800) != 0)) {
+    ds_sprite_x = viewport_relative_x - 0x88;
   }
-  if (((param_1[1] >> 8 & 3) == 2) && ((param_1[2] & 0x1000) != 0)) {
-    uVar2 = uVar2 - 8;
+  if (((genesis_sprite_words[1] >> 8 & 3) == 2) && ((genesis_sprite_words[2] & 0x1000) != 0)) {
+    ds_sprite_y = ds_sprite_y - 8;
   }
-  (&DAT_023dc1a8)[param_2 * 4] = (&DAT_023dc1a8)[param_2 * 4] & 0xff00;
-  (&DAT_023dc1aa)[param_2 * 4] = (&DAT_023dc1aa)[param_2 * 4] & 0xfe00;
-  (&DAT_023dc1a8)[param_2 * 4] = (&DAT_023dc1a8)[param_2 * 4] | uVar2 & 0xff;
-  (&DAT_023dc1aa)[param_2 * 4] = (&DAT_023dc1aa)[param_2 * 4] | uVar4 & 0x1ff;
+  (&DAT_023dc1a8)[ds_sprite_index * 4] = (&DAT_023dc1a8)[ds_sprite_index * 4] & 0xff00;
+  (&DAT_023dc1aa)[ds_sprite_index * 4] = (&DAT_023dc1aa)[ds_sprite_index * 4] & 0xfe00;
+  (&DAT_023dc1a8)[ds_sprite_index * 4] = (&DAT_023dc1a8)[ds_sprite_index * 4] | ds_sprite_y & 0xff;
+  (&DAT_023dc1aa)[ds_sprite_index * 4] = (&DAT_023dc1aa)[ds_sprite_index * 4] | ds_sprite_x & 0x1ff;
   return;
 }
 
@@ -38,17 +38,17 @@ void FUN_020085b4(ushort *param_1,int param_2)
 /* WARNING: Removing unreachable block (ram,0x02008974) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_02008914(uint param_1)
+void copy_sprite_attribute_buffer_to_ds_oam(uint sprite_count)
 
 {
-  int iVar1;
+  int attribute_bytes;
   
-  if (DAT_020993c0 <= param_1) {
-    DAT_020993c0 = param_1;
+  if (DAT_020993c0 <= sprite_count) {
+    DAT_020993c0 = sprite_count;
   }
-  iVar1 = DAT_020993c0 << 3;
-  DAT_020993c0 = param_1;
-  FUN_020802c4(&DAT_023dc1a8,iVar1);
+  attribute_bytes = DAT_020993c0 << 3;
+  DAT_020993c0 = sprite_count;
+  clean_and_invalidate_arm9_data_cache_range(&DAT_023dc1a8,attribute_bytes);
   do {
   } while( true );
 }
@@ -56,7 +56,7 @@ void FUN_02008914(uint param_1)
 
 // 0x02008984  build_ds_sprite_attributes_from_genesis_sprite_table
 
-void FUN_02008984(undefined4 param_1,uint param_2)
+void build_ds_sprite_attributes_from_genesis_sprite_table(undefined4 param_1,uint param_2)
 
 {
   int iVar1;
@@ -124,7 +124,7 @@ LAB_02008d14:
            && (((int)((*puVar15 & 0x1ff) - 0x80) < (int)(uint)DAT_023dc8ac &&
                ((((*puVar15 & 0xffff01ff) + ((puVar15[1] >> 8 & 3) + 1) * 8) - 0x80 & 0x8000) == 0))
               )) {
-          FUN_020085b4(puVar15,uVar17);
+          update_ds_sprite_position_from_genesis_attributes(puVar15,uVar17);
           uVar20 = (uint)puVar15[1];
         }
         else {
@@ -160,7 +160,7 @@ LAB_02008a40:
           }
           *puVar18 = (ushort)((uVar3 & 0x1800) << 1) ^ 0x1000 | *(ushort *)(&DAT_0208e558 + iVar1);
           puVar18[1] = uVar13 | (ushort)((uVar3 & 0x6000) >> 1) | (ushort)((uVar17 & 0xffff) << 3);
-          FUN_020086d8(puVar15,param_1,uVar17);
+          copy_sprite_tiles_for_sprite_shape(puVar15,param_1,uVar17);
           if ((puVar15[2] & 0x7ff) < uVar19) {
             puVar10 = &DAT_0209c3e0 + (puVar15[2] & 0x7ff);
             do {
@@ -223,7 +223,7 @@ LAB_02008b90:
           puVar11 = puVar11 + 4;
         } while (uVar14 < uVar2);
       }
-      FUN_02008914(uVar17);
+      copy_sprite_attribute_buffer_to_ds_oam(uVar17);
       DAT_020993bc = 0;
       return;
     }
@@ -236,7 +236,7 @@ LAB_02008b90:
 /* WARNING: Removing unreachable block (ram,0x02008ed0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_02008edc(void)
+void initialize_ds_sprite_attribute_buffer(void)
 
 {
   undefined4 *puVar1;
@@ -250,7 +250,7 @@ void FUN_02008edc(void)
     *(undefined2 *)(puVar2 + 1) = 0;
     *(undefined2 *)((int)puVar2 + 6) = 0;
     puVar1 = puVar2 + 2;
-  } while (puVar2 + 2 != &DAT_023dc5a8);
+  } while (puVar2 + 2 != &write_ds_window_tilemap_word);
   *(undefined2 *)((int)puVar2 + -0x3f2) = 0x100;
   *(undefined2 *)((int)puVar2 + -0x3ba) = 0x122;
   *(undefined2 *)((int)puVar2 + -0x3ea) = 0;
@@ -267,7 +267,7 @@ void FUN_02008edc(void)
   *(undefined2 *)((int)puVar2 + -0x392) = 0xff06;
   *(undefined2 *)((int)puVar2 + -0x38a) = 0;
   *(undefined2 *)((int)puVar2 + -0x382) = 0;
-  FUN_020802c4(&DAT_023dc1a8,0x400);
+  clean_and_invalidate_arm9_data_cache_range(&DAT_023dc1a8,0x400);
   do {
   } while( true );
 }

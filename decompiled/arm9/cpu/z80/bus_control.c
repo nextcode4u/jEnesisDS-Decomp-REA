@@ -4,7 +4,7 @@
 
 // 0x01002cdc  read_z80_mapped_byte_preserving_r1
 
-void FUN_01002cdc(uint param_1,undefined4 param_2)
+void read_z80_mapped_byte_preserving_r1(uint param_1,undefined4 param_2)
 
 {
   undefined4 uStack00000068;
@@ -22,7 +22,7 @@ void FUN_01002cdc(uint param_1,undefined4 param_2)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_02000bfc(void)
+void reset_z80_core_state(void)
 
 {
   uRam0b00057d = (undefined1)((uint3)_DAT_0b000558 >> 8);
@@ -86,16 +86,16 @@ void FUN_02000bfc(void)
 
 // 0x02003cbc  get_z80_bank_latch_address
 
-undefined4 * FUN_02003cbc(void)
+undefined4 * get_z80_bank_latch_address(void)
 
 {
-  return &DAT_02099008;
+  return &z80_cartridge_bank_base;
 }
 
 
 // 0x020043bc  return_zero_for_unhandled_z80_vdp_access
 
-undefined4 FUN_020043bc(void)
+undefined4 return_zero_for_unhandled_z80_vdp_access(void)
 
 {
   return 0;
@@ -104,7 +104,7 @@ undefined4 FUN_020043bc(void)
 
 // 0x020043cc  read_z80_bus_request_status
 
-byte FUN_020043cc(void)
+byte read_z80_bus_request_status(void)
 
 {
   uint uVar1;
@@ -123,16 +123,16 @@ byte FUN_020043cc(void)
 
 // 0x02004458  read_z80_banked_cartridge_byte
 
-undefined1 switchD_02004d20::default(uint param_1)
+undefined1 read_z80_banked_cartridge_byte(uint window_offset)
 
 {
-  return (&DAT_020b4cec)[(param_1 | DAT_02099008) & 0x3fffff ^ 1];
+  return (&DAT_020b4cec)[(window_offset | z80_cartridge_bank_base) & 0x3fffff ^ 1];
 }
 
 
 // 0x02004a1c  read_z80_window_from_m68k
 
-uint FUN_02004a1c(uint param_1)
+uint read_z80_window_from_m68k(uint param_1)
 
 {
   uint uVar1;
@@ -141,7 +141,7 @@ uint FUN_02004a1c(uint param_1)
     uVar1 = param_1 & 0x6000;
     if (uVar1 == 0x2000) {
 LAB_02004a70:
-      uVar1 = FUN_02004c24(param_1 & 0x1fff);
+      uVar1 = read_z80_work_ram_byte(param_1 & 0x1fff);
       return uVar1;
     }
     if (uVar1 < 0x2001) {
@@ -149,26 +149,26 @@ LAB_02004a70:
     }
     else {
       if (uVar1 == 0x4000) {
-        uVar1 = FUN_02005b7c();
+        uVar1 = read_ym2612_timer_status();
         return uVar1 & 0xff;
       }
       if (uVar1 == 0x6000) {
         if ((param_1 & 0xff00) == 0x7f00) {
-          uVar1 = FUN_020043bc(param_1);
+          uVar1 = return_zero_for_unhandled_z80_vdp_access(param_1);
           return uVar1;
         }
         return 0xff;
       }
     }
   }
-  uVar1 = FUN_02004368(param_1);
+  uVar1 = read_default_m68k_bus_byte(param_1);
   return uVar1;
 }
 
 
 // 0x02004c18  get_z80_work_ram_buffer
 
-undefined * FUN_02004c18(void)
+undefined * get_z80_work_ram_buffer(void)
 
 {
   return &DAT_0b00161c;
@@ -177,7 +177,7 @@ undefined * FUN_02004c18(void)
 
 // 0x02004c24  read_z80_work_ram_byte
 
-undefined1 FUN_02004c24(int param_1)
+undefined1 read_z80_work_ram_byte(int param_1)
 
 {
   return (&DAT_0b00161c)[param_1];
@@ -189,7 +189,7 @@ undefined1 FUN_02004c24(int param_1)
 /* WARNING: Removing unreachable block (ram,0x02083074) */
 /* WARNING: Removing unreachable block (ram,0x02083070) */
 
-void FUN_02004d94(void)
+void clear_z80_work_ram(void)
 
 {
   undefined4 *puVar1;
@@ -226,7 +226,7 @@ void FUN_02004d94(void)
 
 // 0x02004dcc  reset_z80_cpu_registers_and_latches
 
-void FUN_02004dcc(int param_1)
+void reset_z80_cpu_registers_and_latches(int param_1)
 
 {
   undefined3 uVar1;
@@ -298,7 +298,7 @@ void FUN_02004dcc(int param_1)
 
 // 0x02004ef4  set_or_clear_z80_pending_interrupt_bits
 
-void FUN_02004ef4(int param_1,uint param_2,int param_3)
+void set_or_clear_z80_pending_interrupt_bits(int param_1,uint param_2,int param_3)
 
 {
   if (param_3 == 0) {
@@ -317,14 +317,14 @@ void FUN_02004ef4(int param_1,uint param_2,int param_3)
 
 // 0x020050a8  initialize_z80_state_and_dispatch_pointers
 
-void FUN_020050a8(int param_1)
+void initialize_z80_state_and_dispatch_pointers(int z80_state)
 
 {
-  FUN_02083058(param_1,0,0x4c4);
-  *(undefined ***)(param_1 + 0x494) = &switchD_0200e01c::switchdataD_020154b0;
-  *(undefined ***)(param_1 + 0x498) = &z80_dispatch;
-  *(undefined ***)(param_1 + 0x49c) = &PTR_z80_dispatch_01002e00_02015430;
-  *(undefined ***)(param_1 + 0x4a0) = &PTR_z80_dispatch_01002ea8_02015470;
+  newlib_memset(z80_state,0,0x4c4);
+  *(undefined ***)(z80_state + 0x494) = &switchD_0200e01c::switchdataD_020154b0;
+  *(undefined ***)(z80_state + 0x498) = &z80_dispatch;
+  *(undefined ***)(z80_state + 0x49c) = &PTR_z80_dispatch_01002e00_02015430;
+  *(undefined ***)(z80_state + 0x4a0) = &PTR_z80_dispatch_01002ea8_02015470;
   return;
 }
 

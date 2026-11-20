@@ -6,7 +6,7 @@
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 FUN_020747a4(undefined1 *param_1,int param_2)
+undefined4 fat_scsd_getresponse(undefined1 *param_1,int param_2)
 
 {
   uint uVar1;
@@ -49,7 +49,7 @@ LAB_020747ee:
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_02074808(int param_1)
+void fat_scsd_sendclocks(int param_1)
 
 {
   bool bVar1;
@@ -66,7 +66,7 @@ void FUN_02074808(int param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 FUN_02074818(undefined2 *param_1)
+undefined4 fat_scsd_readdata(undefined2 *param_1)
 
 {
   uint uVar1;
@@ -110,10 +110,10 @@ undefined4 FUN_02074818(undefined2 *param_1)
 
 // 0x020748ac  fat_scsd_shutdown
 
-undefined4 FUN_020748ac(void)
+undefined4 fat_scsd_shutdown(void)
 
 {
-  FUN_0207ec90(1);
+  write_supercard_mode_register(1);
   return 1;
 }
 
@@ -122,7 +122,7 @@ undefined4 FUN_020748ac(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 FUN_020748bc(byte param_1,undefined4 param_2)
+undefined4 fat_scsd_sendcommand(byte param_1,undefined4 param_2)
 
 {
   byte bVar1;
@@ -139,7 +139,7 @@ undefined4 FUN_020748bc(byte param_1,undefined4 param_2)
   local_16[2] = (byte)((uint)param_2 >> 0x10);
   local_16[4] = (byte)param_2;
   local_16[3] = (byte)((uint)param_2 >> 8);
-  local_16[5] = FUN_02074b2c(pbVar3,5);
+  local_16[5] = fat_sd_crc7(pbVar3,5);
   iVar4 = 500000;
   do {
     if ((_DAT_09800000 & 1) != 0) {
@@ -168,7 +168,7 @@ undefined4 FUN_020748bc(byte param_1,undefined4 param_2)
 
 // 0x0207492c  fat_scsd_readsectors
 
-undefined4 FUN_0207492c(int param_1,int param_2,int param_3)
+undefined4 fat_scsd_readsectors(int param_1,int param_2,int param_3)
 
 {
   int iVar1;
@@ -176,24 +176,24 @@ undefined4 FUN_0207492c(int param_1,int param_2,int param_3)
   undefined1 auStack_16 [6];
   
   if (param_2 == 1) {
-    iVar1 = FUN_020748bc(0x11,param_1 << 9);
-    if ((iVar1 != 0) && (iVar1 = FUN_02074818(param_3), iVar1 != 0)) {
+    iVar1 = fat_scsd_sendcommand(0x11,param_1 << 9);
+    if ((iVar1 != 0) && (iVar1 = fat_scsd_readdata(param_3), iVar1 != 0)) {
 LAB_02074992:
-      FUN_02074808(0x10);
+      fat_scsd_sendclocks(0x10);
       return 1;
     }
   }
   else {
-    iVar1 = FUN_020748bc(0x12,param_1 << 9);
+    iVar1 = fat_scsd_sendcommand(0x12,param_1 << 9);
     if (iVar1 != 0) {
       if (param_2 == 0) {
 LAB_02074980:
-        FUN_020748bc(0xc,0);
-        FUN_020747a4(auStack_16,6);
+        fat_scsd_sendcommand(0xc,0);
+        fat_scsd_getresponse(auStack_16,6);
         goto LAB_02074992;
       }
       iVar1 = 0;
-      while (iVar2 = FUN_02074818(param_3), iVar2 != 0) {
+      while (iVar2 = fat_scsd_readdata(param_3), iVar2 != 0) {
         iVar1 = iVar1 + 1;
         if (param_2 == iVar1) goto LAB_02074980;
         param_3 = param_3 + 0x200;
@@ -206,7 +206,7 @@ LAB_02074980:
 
 // 0x0207499c  fat_scsd_isinserted
 
-bool FUN_0207499c(void)
+bool fat_scsd_isinserted(void)
 
 {
   char cVar1;
@@ -214,8 +214,8 @@ bool FUN_0207499c(void)
   bool bVar3;
   char local_e [6];
   
-  iVar2 = FUN_020748bc(0xd,0);
-  if ((iVar2 == 0) || (cVar1 = FUN_020747a4(local_e,6), cVar1 == '\0')) {
+  iVar2 = fat_scsd_sendcommand(0xd,0);
+  if ((iVar2 == 0) || (cVar1 = fat_scsd_getresponse(local_e,6), cVar1 == '\0')) {
     bVar3 = false;
   }
   else {
@@ -229,18 +229,18 @@ bool FUN_0207499c(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_020749d8(void)
+void fat_scsd_initcard(void)
 
 {
   int iVar1;
   
   _DAT_09440000 = 0;
-  FUN_02074808(100);
-  iVar1 = FUN_020748bc(0,0);
+  fat_scsd_sendclocks(100);
+  iVar1 = fat_scsd_sendcommand(0,0);
   if (iVar1 != 0) {
-    FUN_02074808(100);
+    fat_scsd_sendclocks(100);
     DAT_020b4c78 = 0;
-    FUN_02074c84(0x2074a51,0x2074a39,1);
+    fat_sd_initcard(0x2074a51,0x2074a39,1);
   }
   return;
 }
@@ -248,50 +248,50 @@ void FUN_020749d8(void)
 
 // 0x02074a18  fat_scsd_clearstatus
 
-void FUN_02074a18(void)
+void fat_scsd_clearstatus(void)
 
 {
-  FUN_020749d8();
+  fat_scsd_initcard();
   return;
 }
 
 
 // 0x02074a24  fat_scsd_startup
 
-void FUN_02074a24(void)
+void fat_scsd_startup(void)
 
 {
-  FUN_0207ec90(3);
-  FUN_020749d8();
+  write_supercard_mode_register(3);
+  fat_scsd_initcard();
   return;
 }
 
 
 // 0x02074a38  fat_scsd_cmd_17byte_response
 
-void FUN_02074a38(undefined4 param_1,undefined4 param_2,undefined4 param_3)
+void fat_scsd_cmd_17byte_response(undefined4 param_1,undefined4 param_2,undefined4 param_3)
 
 {
-  FUN_020748bc(param_2,param_3);
-  FUN_020747a4(param_1,0x11);
+  fat_scsd_sendcommand(param_2,param_3);
+  fat_scsd_getresponse(param_1,0x11);
   return;
 }
 
 
 // 0x02074a50  fat_scsd_cmd_6byte_response
 
-void FUN_02074a50(undefined4 param_1,undefined4 param_2,undefined4 param_3)
+void fat_scsd_cmd_6byte_response(undefined4 param_1,undefined4 param_2,undefined4 param_3)
 
 {
-  FUN_020748bc(param_2,param_3);
-  FUN_020747a4(param_1,6);
+  fat_scsd_sendcommand(param_2,param_3);
+  fat_scsd_getresponse(param_1,6);
   return;
 }
 
 
 // 0x02074a68  fat_scsd_writesectors
 
-undefined4 FUN_02074a68(int param_1,int param_2,int param_3)
+undefined4 fat_scsd_writesectors(int param_1,int param_2,int param_3)
 
 {
   char cVar1;
@@ -308,19 +308,19 @@ undefined4 FUN_02074a68(int param_1,int param_2,int param_3)
     if (bVar3) {
       return 1;
     }
-    FUN_02074b88(param_3,0x200,auStack_36);
-    FUN_020748bc(0x18,param_1);
-    cVar1 = FUN_020747a4(auStack_2e,6);
-    if ((cVar1 == '\0') || (iVar2 = thunk_FUN_0207cdc0(param_3,auStack_36), iVar2 == 0)) break;
-    FUN_02074808(0x10);
+    fat_sd_crc16(param_3,0x200,auStack_36);
+    fat_scsd_sendcommand(0x18,param_1);
+    cVar1 = fat_scsd_getresponse(auStack_2e,6);
+    if ((cVar1 == '\0') || (iVar2 = arm_thumb_veneer_for_scsd_write_sector_data_and_crc(param_3,auStack_36), iVar2 == 0)) break;
+    fat_scsd_sendclocks(0x10);
     local_2b = 0;
-    FUN_020748bc(0xd,DAT_020b4c78);
-    FUN_020747a4(auStack_2e,6);
+    fat_scsd_sendcommand(0xd,DAT_020b4c78);
+    fat_scsd_getresponse(auStack_2e,6);
     iVar2 = 2999;
     while ((local_2b & 0x1f) != 9) {
-      FUN_020748bc(0xd,DAT_020b4c78);
+      fat_scsd_sendcommand(0xd,DAT_020b4c78);
       iVar2 = iVar2 + -1;
-      FUN_020747a4(auStack_2e,6);
+      fat_scsd_getresponse(auStack_2e,6);
       if (iVar2 == 0) {
         return 0;
       }
@@ -337,7 +337,7 @@ undefined4 FUN_02074a68(int param_1,int param_2,int param_3)
 /* WARNING: Removing unreachable block (ram,0x0207ce54) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 FUN_0207cdc0(ushort *param_1,ushort *param_2)
+undefined4 scsd_write_sector_data_and_crc(ushort *param_1,ushort *param_2)
 
 {
   byte *pbVar1;
@@ -384,7 +384,7 @@ LAB_0207ce18:
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_0207ec90(undefined2 param_1)
+void write_supercard_mode_register(undefined2 param_1)
 
 {
   _DAT_09fffffe = param_1;

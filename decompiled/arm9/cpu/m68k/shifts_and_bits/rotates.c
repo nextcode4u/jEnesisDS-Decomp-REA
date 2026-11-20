@@ -4,7 +4,7 @@
 
 // 0x0202b0f4  m68k_rol_word
 
-void m68k_dispatch_0202b0f4(void)
+void m68k_rol_word_0202b0f4(void)
 
 {
   ushort uVar1;
@@ -27,7 +27,7 @@ void m68k_dispatch_0202b0f4(void)
 
 // 0x0202b138  m68k_ror_word
 
-void m68k_dispatch_0202b138(void)
+void m68k_ror_word_0202b138(void)
 
 {
   ushort uVar1;
@@ -55,7 +55,7 @@ void m68k_dispatch_0202b138(void)
 
 // 0x0202b174  m68k_roxl_word
 
-void m68k_dispatch_0202b174(void)
+void m68k_roxl_word_0202b174(void)
 
 {
   ushort *puVar1;
@@ -77,7 +77,7 @@ void m68k_dispatch_0202b174(void)
 
 // 0x0202b1bc  m68k_roxr_word
 
-void m68k_dispatch_0202b1bc(void)
+void m68k_roxr_word_0202b1bc(void)
 
 {
   ushort *puVar1;
@@ -106,7 +106,7 @@ void m68k_dispatch_0202b1bc(void)
 
 // 0x0202b330  m68k_rol_word
 
-void m68k_dispatch_0202b330(void)
+void m68k_rol_word_0202b330(void)
 
 {
   ushort uVar1;
@@ -134,7 +134,7 @@ void m68k_dispatch_0202b330(void)
 
 // 0x0202b380  m68k_ror_word
 
-void m68k_dispatch_0202b380(void)
+void m68k_ror_word_0202b380(void)
 
 {
   ushort uVar1;
@@ -167,7 +167,7 @@ void m68k_dispatch_0202b380(void)
 
 // 0x0202b3c8  m68k_roxl_word
 
-void m68k_dispatch_0202b3c8(void)
+void m68k_roxl_word_0202b3c8(void)
 
 {
   uint uVar1;
@@ -194,7 +194,7 @@ void m68k_dispatch_0202b3c8(void)
 
 // 0x0202b41c  m68k_roxr_word
 
-void m68k_dispatch_0202b41c(void)
+void m68k_roxr_word_0202b41c(void)
 
 {
   uint uVar1;
@@ -228,7 +228,7 @@ void m68k_dispatch_0202b41c(void)
 
 // 0x0202b59c  m68k_rol_word
 
-void m68k_dispatch_0202b59c(void)
+void m68k_rol_word_0202b59c(void)
 
 {
   ushort uVar1;
@@ -256,7 +256,7 @@ void m68k_dispatch_0202b59c(void)
 
 // 0x0202b5ec  m68k_ror_word
 
-void m68k_dispatch_0202b5ec(void)
+void m68k_ror_word_0202b5ec(void)
 
 {
   ushort uVar1;
@@ -289,7 +289,7 @@ void m68k_dispatch_0202b5ec(void)
 
 // 0x0202b634  m68k_roxl_word
 
-void m68k_dispatch_0202b634(void)
+void m68k_roxl_word_0202b634(void)
 
 {
   uint uVar1;
@@ -316,7 +316,7 @@ void m68k_dispatch_0202b634(void)
 
 // 0x0202b688  m68k_roxr_word
 
-void m68k_dispatch_0202b688(void)
+void m68k_roxr_word_0202b688(void)
 
 {
   uint uVar1;
@@ -350,7 +350,7 @@ void m68k_dispatch_0202b688(void)
 
 // 0x0202b7f8  m68k_rol_word
 
-void m68k_dispatch_0202b7f8(void)
+void m68k_rol_word_0202b7f8(void)
 
 {
   ushort uVar1;
@@ -375,7 +375,7 @@ void m68k_dispatch_0202b7f8(void)
 
 // 0x0202b844  m68k_ror_word
 
-void m68k_dispatch_0202b844(void)
+void m68k_ror_word_0202b844(void)
 
 {
   ushort uVar1;
@@ -405,7 +405,7 @@ void m68k_dispatch_0202b844(void)
 
 // 0x0202b888  m68k_roxl_word
 
-void m68k_dispatch_0202b888(void)
+void m68k_roxl_word_0202b888(void)
 
 {
   ushort *puVar1;
@@ -429,7 +429,7 @@ void m68k_dispatch_0202b888(void)
 
 // 0x0202b8d8  m68k_roxr_word
 
-void m68k_dispatch_0202b8d8(void)
+void m68k_roxr_word_0202b8d8(void)
 
 {
   ushort *puVar1;
@@ -460,7 +460,7 @@ void m68k_dispatch_0202b8d8(void)
 
 // 0x0202bad4  m68k_rol_word
 
-void m68k_dispatch_0202bad4(void)
+void m68k_rol_word_0202bad4(void)
 
 {
   uint uVar1;
@@ -499,7 +499,7 @@ void m68k_dispatch_0202bad4(void)
 
 // 0x0202bb44  m68k_ror_word
 
-void m68k_dispatch_0202bb44(void)
+void m68k_ror_word_0202bb44(void)
 
 {
   uint uVar1;
@@ -543,7 +543,7 @@ void m68k_dispatch_0202bb44(void)
 
 // 0x0202bbac  m68k_roxl_word
 
-void m68k_dispatch_0202bbac(void)
+void m68k_roxl_word_0202bbac(void)
 
 {
   uint uVar1;
@@ -582,7 +582,7 @@ void m68k_dispatch_0202bbac(void)
 
 // 0x0202bc20  m68k_roxr_word
 
-void m68k_dispatch_0202bc20(void)
+void m68k_roxr_word_0202bc20(void)
 
 {
   uint uVar1;
@@ -627,7 +627,7 @@ void m68k_dispatch_0202bc20(void)
 
 // 0x0202bd60  m68k_rol_word
 
-void m68k_dispatch_0202bd60(void)
+void m68k_rol_word_0202bd60(void)
 
 {
   ushort uVar1;
@@ -646,7 +646,7 @@ void m68k_dispatch_0202bd60(void)
 
 // 0x0202bd98  m68k_ror_word
 
-void m68k_dispatch_0202bd98(void)
+void m68k_ror_word_0202bd98(void)
 
 {
   ushort uVar1;
@@ -670,7 +670,7 @@ void m68k_dispatch_0202bd98(void)
 
 // 0x0202bdc8  m68k_roxl_word
 
-void m68k_dispatch_0202bdc8(void)
+void m68k_roxl_word_0202bdc8(void)
 
 {
   uint unaff_r7;
@@ -689,7 +689,7 @@ void m68k_dispatch_0202bdc8(void)
 
 // 0x0202be04  m68k_roxr_word
 
-void m68k_dispatch_0202be04(void)
+void m68k_roxr_word_0202be04(void)
 
 {
   ushort uVar1;
@@ -714,7 +714,7 @@ void m68k_dispatch_0202be04(void)
 
 // 0x0202bf1c  m68k_rol_word
 
-void m68k_dispatch_0202bf1c(void)
+void m68k_rol_word_0202bf1c(void)
 
 {
   ushort uVar1;
@@ -735,7 +735,7 @@ void m68k_dispatch_0202bf1c(void)
 
 // 0x0202bf58  m68k_ror_word
 
-void m68k_dispatch_0202bf58(void)
+void m68k_ror_word_0202bf58(void)
 
 {
   ushort uVar1;
@@ -761,7 +761,7 @@ void m68k_dispatch_0202bf58(void)
 
 // 0x0202bf8c  m68k_roxl_word
 
-void m68k_dispatch_0202bf8c(void)
+void m68k_roxl_word_0202bf8c(void)
 
 {
   ushort *puVar1;
@@ -781,7 +781,7 @@ void m68k_dispatch_0202bf8c(void)
 
 // 0x0202bfcc  m68k_roxr_word
 
-void m68k_dispatch_0202bfcc(void)
+void m68k_roxr_word_0202bfcc(void)
 
 {
   ushort *puVar1;
@@ -808,7 +808,7 @@ void m68k_dispatch_0202bfcc(void)
 
 // 0x02031828  m68k_rol_byte
 
-void m68k_dispatch_02031828(void)
+void m68k_rol_byte_02031828(void)
 
 {
   byte bVar1;
@@ -836,7 +836,7 @@ void m68k_dispatch_02031828(void)
 
 // 0x02031890  m68k_rol_byte
 
-void m68k_dispatch_02031890(void)
+void m68k_rol_byte_02031890(void)
 
 {
   byte bVar1;
@@ -871,7 +871,7 @@ void m68k_dispatch_02031890(void)
 
 // 0x0203191c  m68k_rol_word
 
-void m68k_dispatch_0203191c(void)
+void m68k_rol_word_0203191c(void)
 
 {
   int iVar1;
@@ -898,7 +898,7 @@ void m68k_dispatch_0203191c(void)
 
 // 0x02031968  m68k_rol_word
 
-void m68k_dispatch_02031968(void)
+void m68k_rol_word_02031968(void)
 
 {
   int iVar1;
@@ -934,7 +934,7 @@ void m68k_dispatch_02031968(void)
 
 // 0x020319f8  m68k_rol_long
 
-void m68k_dispatch_020319f8(void)
+void m68k_rol_long_020319f8(void)
 
 {
   uint uVar1;
@@ -959,7 +959,7 @@ void m68k_dispatch_020319f8(void)
 
 // 0x02031a3c  m68k_rol_long
 
-void m68k_dispatch_02031a3c(void)
+void m68k_rol_long_02031a3c(void)
 
 {
   byte bVar1;
@@ -994,7 +994,7 @@ void m68k_dispatch_02031a3c(void)
 
 // 0x02031ac4  m68k_ror_byte
 
-void m68k_dispatch_02031ac4(void)
+void m68k_ror_byte_02031ac4(void)
 
 {
   byte bVar1;
@@ -1022,7 +1022,7 @@ void m68k_dispatch_02031ac4(void)
 
 // 0x02031b24  m68k_ror_byte
 
-void m68k_dispatch_02031b24(void)
+void m68k_ror_byte_02031b24(void)
 
 {
   byte bVar1;
@@ -1057,7 +1057,7 @@ void m68k_dispatch_02031b24(void)
 
 // 0x02031ba8  m68k_ror_word
 
-void m68k_dispatch_02031ba8(void)
+void m68k_ror_word_02031ba8(void)
 
 {
   int iVar1;
@@ -1084,7 +1084,7 @@ void m68k_dispatch_02031ba8(void)
 
 // 0x02031bf4  m68k_ror_word
 
-void m68k_dispatch_02031bf4(void)
+void m68k_ror_word_02031bf4(void)
 
 {
   int iVar1;
@@ -1120,7 +1120,7 @@ void m68k_dispatch_02031bf4(void)
 
 // 0x02031c7c  m68k_ror_long
 
-void m68k_dispatch_02031c7c(void)
+void m68k_ror_long_02031c7c(void)
 
 {
   uint uVar1;
@@ -1145,7 +1145,7 @@ void m68k_dispatch_02031c7c(void)
 
 // 0x02031cb8  m68k_ror_long
 
-void m68k_dispatch_02031cb8(void)
+void m68k_ror_long_02031cb8(void)
 
 {
   byte bVar1;
@@ -1180,7 +1180,7 @@ void m68k_dispatch_02031cb8(void)
 
 // 0x02031d34  m68k_roxl_byte
 
-void m68k_dispatch_02031d34(void)
+void m68k_roxl_byte_02031d34(void)
 
 {
   uint uVar1;
@@ -1212,7 +1212,7 @@ void m68k_dispatch_02031d34(void)
 
 /* WARNING: Removing unreachable block (ram,0x02031de4) */
 
-void m68k_dispatch_02031d84(void)
+void m68k_roxl_byte_02031d84(void)
 
 {
   byte bVar1;
@@ -1246,7 +1246,7 @@ void m68k_dispatch_02031d84(void)
 
 // 0x02031e00  m68k_roxl_word
 
-void m68k_dispatch_02031e00(void)
+void m68k_roxl_word_02031e00(void)
 
 {
   int iVar1;
@@ -1280,7 +1280,7 @@ void m68k_dispatch_02031e00(void)
 
 /* WARNING: Removing unreachable block (ram,0x02031eb8) */
 
-void m68k_dispatch_02031e54(void)
+void m68k_roxl_word_02031e54(void)
 
 {
   int iVar1;
@@ -1316,7 +1316,7 @@ void m68k_dispatch_02031e54(void)
 
 // 0x02031ed4  m68k_roxl_long
 
-void m68k_dispatch_02031ed4(void)
+void m68k_roxl_long_02031ed4(void)
 
 {
   uint uVar1;
@@ -1350,7 +1350,7 @@ void m68k_dispatch_02031ed4(void)
 
 // 0x02031f30  m68k_roxl_long
 
-void m68k_dispatch_02031f30(void)
+void m68k_roxl_long_02031f30(void)
 
 {
   byte bVar1;
@@ -1388,7 +1388,7 @@ void m68k_dispatch_02031f30(void)
 
 // 0x02031fc0  m68k_roxr_byte
 
-void m68k_dispatch_02031fc0(void)
+void m68k_roxr_byte(void)
 
 {
   uint uVar1;
@@ -1420,7 +1420,7 @@ void m68k_dispatch_02031fc0(void)
 
 /* WARNING: Removing unreachable block (ram,0x02032070) */
 
-void m68k_dispatch_02032010(void)
+void m68k_roxr_long_02032010(void)
 
 {
   byte bVar1;
@@ -1454,7 +1454,7 @@ void m68k_dispatch_02032010(void)
 
 // 0x0203208c  m68k_roxr_word
 
-void m68k_dispatch_0203208c(void)
+void m68k_roxr_word_0203208c(void)
 
 {
   int iVar1;
@@ -1488,7 +1488,7 @@ void m68k_dispatch_0203208c(void)
 
 /* WARNING: Removing unreachable block (ram,0x02032144) */
 
-void m68k_dispatch_020320e0(void)
+void m68k_roxr_word_020320e0(void)
 
 {
   int iVar1;
@@ -1524,7 +1524,7 @@ void m68k_dispatch_020320e0(void)
 
 // 0x02032160  m68k_roxr_long
 
-void m68k_dispatch_02032160(void)
+void m68k_roxr_long_02032160(void)
 
 {
   uint uVar1;
@@ -1558,7 +1558,7 @@ void m68k_dispatch_02032160(void)
 
 // 0x020321bc  m68k_roxr_long
 
-void m68k_dispatch_020321bc(void)
+void m68k_roxr_long_020321bc(void)
 
 {
   byte bVar1;

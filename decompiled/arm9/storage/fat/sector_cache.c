@@ -4,7 +4,7 @@
 
 // 0x0207ce80  fat_fat_cache_getsector
 
-int FUN_0207ce80(int *param_1,int param_2)
+int fat_fat_cache_getsector(int *param_1,int param_2)
 
 {
   char cVar1;
@@ -78,7 +78,7 @@ LAB_0207ceb2:
 
 // 0x0207cf44  fat_fat_cache_flush
 
-undefined4 FUN_0207cf44(int *param_1)
+undefined4 fat_fat_cache_flush(int *param_1)
 
 {
   char cVar1;
@@ -111,7 +111,7 @@ undefined4 FUN_0207cf44(int *param_1)
 
 // 0x0207cf90  fat_fat_cache_invalidate
 
-void FUN_0207cf90(int param_1)
+void fat_fat_cache_invalidate(int param_1)
 
 {
   int iVar1;
@@ -137,14 +137,14 @@ void FUN_0207cf90(int param_1)
 
 // 0x0207cfbc  fat_fat_cache_erasewritepartialsector
 
-undefined4 FUN_0207cfbc(int param_1,undefined4 param_2,undefined4 param_3,int param_4,int param_5)
+undefined4 fat_fat_cache_erasewritepartialsector(int param_1,undefined4 param_2,undefined4 param_3,int param_4,int param_5)
 
 {
   int iVar1;
   
-  if (((uint)(param_5 + param_4) < 0x201) && (iVar1 = FUN_0207ce80(param_1,param_3), iVar1 != -1)) {
-    thunk_FUN_02083058(iVar1 * 0x200 + *(int *)(param_1 + 0xc),0,0x200);
-    thunk_FUN_02082ec0(iVar1 * 0x200 + *(int *)(param_1 + 0xc) + param_4,param_2,param_5);
+  if (((uint)(param_5 + param_4) < 0x201) && (iVar1 = fat_fat_cache_getsector(param_1,param_3), iVar1 != -1)) {
+    arm_thumb_veneer_for_newlib_memset(iVar1 * 0x200 + *(int *)(param_1 + 0xc),0,0x200);
+    arm_thumb_veneer_for_newlib_memcpy(iVar1 * 0x200 + *(int *)(param_1 + 0xc) + param_4,param_2,param_5);
     *(undefined1 *)(iVar1 * 0xc + *(int *)(param_1 + 8) + 8) = 1;
     return 1;
   }
@@ -154,14 +154,14 @@ undefined4 FUN_0207cfbc(int param_1,undefined4 param_2,undefined4 param_3,int pa
 
 // 0x0207d020  fat_fat_cache_writepartialsector
 
-undefined4 FUN_0207d020(int param_1,undefined4 param_2,undefined4 param_3,int param_4,int param_5)
+undefined4 fat_fat_cache_writepartialsector(int param_1,undefined4 param_2,undefined4 param_3,int param_4,int param_5)
 
 {
   undefined4 uVar1;
   int iVar2;
   
-  if (((uint)(param_4 + param_5) < 0x201) && (iVar2 = FUN_0207ce80(param_1,param_3), iVar2 != -1)) {
-    thunk_FUN_02082ec0(iVar2 * 0x200 + *(int *)(param_1 + 0xc) + param_4,param_2,param_5);
+  if (((uint)(param_4 + param_5) < 0x201) && (iVar2 = fat_fat_cache_getsector(param_1,param_3), iVar2 != -1)) {
+    arm_thumb_veneer_for_newlib_memcpy(iVar2 * 0x200 + *(int *)(param_1 + 0xc) + param_4,param_2,param_5);
     uVar1 = 1;
     *(undefined1 *)(iVar2 * 0xc + *(int *)(param_1 + 8) + 8) = 1;
   }
@@ -174,14 +174,14 @@ undefined4 FUN_0207d020(int param_1,undefined4 param_2,undefined4 param_3,int pa
 
 // 0x0207d06c  fat_fat_cache_readpartialsector
 
-undefined4 FUN_0207d06c(int param_1,undefined4 param_2,undefined4 param_3,int param_4,int param_5)
+undefined4 fat_fat_cache_readpartialsector(int param_1,undefined4 param_2,undefined4 param_3,int param_4,int param_5)
 
 {
   undefined4 uVar1;
   int iVar2;
   
-  if (((uint)(param_4 + param_5) < 0x201) && (iVar2 = FUN_0207ce80(param_1,param_3), iVar2 != -1)) {
-    thunk_FUN_02082ec0(param_2,iVar2 * 0x200 + *(int *)(param_1 + 0xc) + param_4,param_5);
+  if (((uint)(param_4 + param_5) < 0x201) && (iVar2 = fat_fat_cache_getsector(param_1,param_3), iVar2 != -1)) {
+    arm_thumb_veneer_for_newlib_memcpy(param_2,iVar2 * 0x200 + *(int *)(param_1 + 0xc) + param_4,param_5);
     uVar1 = 1;
   }
   else {
@@ -193,20 +193,20 @@ undefined4 FUN_0207d06c(int param_1,undefined4 param_2,undefined4 param_3,int pa
 
 // 0x0207d0a8  fat_fat_cache_destructor
 
-void FUN_0207d0a8(int param_1)
+void fat_fat_cache_destructor(int param_1)
 
 {
-  FUN_0207cf44();
-  thunk_FUN_020826fc(*(undefined4 *)(param_1 + 0xc));
-  thunk_FUN_020826fc(*(undefined4 *)(param_1 + 8));
-  thunk_FUN_020826fc(param_1);
+  fat_fat_cache_flush();
+  arm_thumb_veneer_for_newlib_free_global_reent_wrapper(*(undefined4 *)(param_1 + 0xc));
+  arm_thumb_veneer_for_newlib_free_global_reent_wrapper(*(undefined4 *)(param_1 + 8));
+  arm_thumb_veneer_for_newlib_free_global_reent_wrapper(param_1);
   return;
 }
 
 
 // 0x0207d0c4  fat_fat_cache_constructor
 
-undefined4 * FUN_0207d0c4(uint param_1,undefined4 param_2)
+undefined4 * fat_fat_cache_constructor(uint param_1,undefined4 param_2)
 
 {
   undefined4 *puVar1;
@@ -218,13 +218,13 @@ undefined4 * FUN_0207d0c4(uint param_1,undefined4 param_2)
   if (param_1 < 2) {
     param_1 = 2;
   }
-  puVar1 = (undefined4 *)thunk_FUN_02082724(0x10);
+  puVar1 = (undefined4 *)arm_thumb_veneer_for_newlib_malloc_global_reent_wrapper(0x10);
   if (puVar1 != (undefined4 *)0x0) {
     *puVar1 = param_2;
     puVar1[1] = param_1;
-    puVar2 = (undefined4 *)thunk_FUN_02082724(param_1 * 0xc);
+    puVar2 = (undefined4 *)arm_thumb_veneer_for_newlib_malloc_global_reent_wrapper(param_1 * 0xc);
     if (puVar2 == (undefined4 *)0x0) {
-      thunk_FUN_020826fc(puVar1);
+      arm_thumb_veneer_for_newlib_free_global_reent_wrapper(puVar1);
       return (undefined4 *)0x0;
     }
     if (param_1 != 0) {
@@ -239,13 +239,13 @@ undefined4 * FUN_0207d0c4(uint param_1,undefined4 param_2)
       } while (param_1 != uVar5);
     }
     puVar1[2] = puVar2;
-    iVar4 = thunk_FUN_02082724(param_1 << 9);
+    iVar4 = arm_thumb_veneer_for_newlib_malloc_global_reent_wrapper(param_1 << 9);
     puVar1[3] = iVar4;
     if (iVar4 != 0) {
       return puVar1;
     }
-    thunk_FUN_020826fc(puVar1[2]);
-    thunk_FUN_020826fc(puVar1);
+    arm_thumb_veneer_for_newlib_free_global_reent_wrapper(puVar1[2]);
+    arm_thumb_veneer_for_newlib_free_global_reent_wrapper(puVar1);
   }
   return (undefined4 *)0x0;
 }

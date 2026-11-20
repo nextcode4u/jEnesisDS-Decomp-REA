@@ -4,7 +4,7 @@
 
 // 0x0200157c  swap_adjacent_bytes_in_backing_buffer
 
-uint FUN_0200157c(undefined1 *param_1,uint param_2)
+uint swap_adjacent_bytes_in_backing_buffer(undefined1 *param_1,uint param_2)
 
 {
   undefined1 uVar1;
@@ -31,7 +31,7 @@ uint FUN_0200157c(undefined1 *param_1,uint param_2)
 
 // 0x0200163c  flush_cartridge_save_ram
 
-void FUN_0200163c(undefined4 param_1,undefined4 param_2,int param_3)
+void flush_cartridge_save_ram(undefined4 param_1,undefined4 param_2,int param_3)
 
 {
   int iVar1;
@@ -51,12 +51,12 @@ void FUN_0200163c(undefined4 param_1,undefined4 param_2,int param_3)
   if (bVar5) {
     puVar4 = puVar2 + param_3;
   }
-  iVar1 = FUN_02081588(DAT_02098fc8 + 0x100,&DAT_0208f070);
+  iVar1 = newlib_fopen(DAT_02098fc8 + 0x100,&DAT_0208f070);
   if (iVar1 != 0) {
-    FUN_0200157c(puVar4,uVar3);
-    FUN_020822e0(puVar4,1,uVar3,iVar1);
-    FUN_0200157c(puVar4,uVar3);
-    FUN_02081020(iVar1);
+    swap_adjacent_bytes_in_backing_buffer(puVar4,uVar3);
+    newlib_fwrite(puVar4,1,uVar3,iVar1);
+    swap_adjacent_bytes_in_backing_buffer(puVar4,uVar3);
+    newlib_fclose(iVar1);
   }
   *(undefined1 *)(DAT_02098fc8 + 0x263) = 0;
   return;
@@ -65,7 +65,7 @@ void FUN_0200163c(undefined4 param_1,undefined4 param_2,int param_3)
 
 // 0x02001948  configure_cartridge_save_ram
 
-undefined4 FUN_02001948(undefined4 param_1,uint param_2,uint param_3)
+undefined4 configure_cartridge_save_ram(undefined4 param_1,uint param_2,uint param_3)
 
 {
   int iVar1;
@@ -74,10 +74,10 @@ undefined4 FUN_02001948(undefined4 param_1,uint param_2,uint param_3)
   uint uVar4;
   int iVar5;
   
-  iVar1 = FUN_02083a6c();
+  iVar1 = newlib_strlen();
   iVar2 = DAT_02098fc8;
   if (*(uint *)(DAT_02098fc8 + 0x250) < 0x306800) {
-    FUN_02083058(&DAT_023bb4f0,0,0x10000);
+    newlib_memset(&DAT_023bb4f0,0,0x10000);
     iVar2 = DAT_02098fc8;
     uVar4 = *(uint *)(DAT_02098fc8 + 0x24c);
     *(undefined4 *)(DAT_02098fc8 + 0x25c) = 0;
@@ -85,33 +85,33 @@ undefined4 FUN_02001948(undefined4 param_1,uint param_2,uint param_3)
     *(undefined1 *)(iVar2 + 0x264) = 1;
     if (uVar4 < param_3) {
       *(undefined4 *)(iVar2 + 0x25c) = 1;
-      FUN_02082ec0(&DAT_023bb4f0,&DAT_020b4cec + uVar4,param_2);
+      newlib_memcpy(&DAT_023bb4f0,&DAT_020b4cec + uVar4,param_2);
       iVar2 = DAT_02098fc8;
     }
-    FUN_02083dbc(iVar2 + 0x100,param_1,0x100);
+    newlib_strncpy(iVar2 + 0x100,param_1,0x100);
     iVar5 = DAT_02098fc8 + 0x100;
     iVar1 = iVar5 + iVar1;
     *(undefined1 *)(iVar1 + -1) = 0x6d;
     *(undefined1 *)(iVar1 + -4) = 0x2e;
     *(undefined1 *)(iVar1 + -2) = 0x72;
     *(undefined1 *)(iVar1 + -3) = 0x73;
-    iVar2 = FUN_02081588(iVar5,&DAT_0208f074);
+    iVar2 = newlib_fopen(iVar5,&DAT_0208f074);
     if (iVar2 != 0) {
-      FUN_02081ff0(iVar2,0);
-      uVar4 = FUN_0208212c(iVar2);
-      FUN_02081ff0(iVar2,0,0);
+      newlib_fseek(iVar2,0);
+      uVar4 = newlib_ftell(iVar2);
+      newlib_fseek(iVar2,0,0);
       if (param_2 < uVar4) {
         uVar4 = param_2;
       }
-      FUN_02081788(&DAT_020b4cec + *(int *)(DAT_02098fc8 + 0x24c),1,uVar4,iVar2);
-      FUN_0200157c(&DAT_020b4cec + *(int *)(DAT_02098fc8 + 0x24c),uVar4);
-      FUN_02081020(iVar2);
+      newlib_fread(&DAT_020b4cec + *(int *)(DAT_02098fc8 + 0x24c),1,uVar4,iVar2);
+      swap_adjacent_bytes_in_backing_buffer(&DAT_020b4cec + *(int *)(DAT_02098fc8 + 0x24c),uVar4);
+      newlib_fclose(iVar2);
       return 0;
     }
-    uVar3 = FUN_02081588(iVar5,&DAT_0208f070,2);
-    FUN_020822e0(&DAT_023bb4f0,1,param_2,uVar3);
-    FUN_02081020(uVar3);
-    FUN_02083058(&DAT_020b4cec + *(int *)(DAT_02098fc8 + 0x24c),0,param_2);
+    uVar3 = newlib_fopen(iVar5,&DAT_0208f070,2);
+    newlib_fwrite(&DAT_023bb4f0,1,param_2,uVar3);
+    newlib_fclose(uVar3);
+    newlib_memset(&DAT_020b4cec + *(int *)(DAT_02098fc8 + 0x24c),0,param_2);
   }
   else {
     *(undefined4 *)(DAT_02098fc8 + 0x24c) = 0;

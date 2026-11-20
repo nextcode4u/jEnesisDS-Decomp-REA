@@ -4,7 +4,7 @@
 
 // 0x020074b8  map_genesis_pattern_to_ds_tile
 
-uint FUN_020074b8(int param_1,int param_2)
+uint map_genesis_pattern_to_ds_tile(int param_1,int param_2)
 
 {
   ushort uVar1;
@@ -51,7 +51,7 @@ uint FUN_020074b8(int param_1,int param_2)
 
 // 0x020075ac  read_background_tile_cache_refresh_flag
 
-undefined4 FUN_020075ac(int param_1)
+undefined4 read_background_tile_cache_refresh_flag(int param_1)
 
 {
   return (&DAT_0209c3d4)[param_1];
@@ -60,7 +60,7 @@ undefined4 FUN_020075ac(int param_1)
 
 // 0x020075bc  mark_background_tile_cache_for_refresh
 
-void FUN_020075bc(int param_1)
+void mark_background_tile_cache_for_refresh(int param_1)
 
 {
   (&DAT_0209c3d4)[param_1] = 1;
@@ -70,7 +70,7 @@ void FUN_020075bc(int param_1)
 
 // 0x020075d0  reset_background_tile_cache_at_capacity
 
-void FUN_020075d0(int param_1)
+void reset_background_tile_cache_at_capacity(int param_1)
 
 {
   undefined2 *puVar1;
@@ -94,19 +94,19 @@ void FUN_020075d0(int param_1)
 
 // 0x02007630  rebuild_background_tilemap_from_vdp_words
 
-void FUN_02007630(undefined2 *param_1,uint param_2,int param_3)
+void rebuild_background_tilemap_from_vdp_words(undefined2 *param_1,uint param_2,int param_3)
 
 {
   uint uVar1;
   uint uVar2;
   
   (&DAT_0209c3cc)[param_3] = 0x3fe;
-  FUN_020075d0(param_3);
+  reset_background_tile_cache_at_capacity(param_3);
   if (param_2 != 0) {
     uVar1 = 0;
     do {
       uVar2 = uVar1 + 2;
-      (*DAT_023dc69c)(param_3,uVar1,*param_1);
+      (*write_ds_background_tilemap_word)(param_3,uVar1,*param_1);
       uVar1 = uVar2;
       param_1 = param_1 + 1;
     } while (uVar2 < param_2);
@@ -120,7 +120,7 @@ void FUN_02007630(undefined2 *param_1,uint param_2,int param_3)
 
 // 0x020076d0  update_cached_ds_pattern_from_vdp_word
 
-void FUN_020076d0(uint param_1,undefined2 param_2)
+void update_cached_ds_pattern_from_vdp_word(uint param_1,undefined2 param_2)
 
 {
   uint uVar1;

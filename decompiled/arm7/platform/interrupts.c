@@ -6,7 +6,7 @@
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 thunk_FUN_038015d0(void)
+undefined4 arm_veneer_for_initialize_interrupt_controller(void)
 
 {
   undefined4 *puVar1;
@@ -30,7 +30,7 @@ undefined4 thunk_FUN_038015d0(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 thunk_FUN_03801564(uint param_1,undefined4 param_2)
+undefined4 arm_veneer_for_install_interrupt_callback(uint param_1,undefined4 param_2)
 
 {
   int iVar1;
@@ -65,7 +65,7 @@ undefined4 thunk_FUN_03801564(uint param_1,undefined4 param_2)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 thunk_FUN_038016d8(uint param_1)
+undefined4 arm_veneer_for_enable_interrupt_sources(uint param_1)
 
 {
   undefined4 in_lr;
@@ -89,7 +89,7 @@ undefined4 thunk_FUN_038016d8(uint param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 FUN_03801564(uint param_1,undefined4 param_2)
+undefined4 install_interrupt_callback(uint param_1,undefined4 param_2)
 
 {
   int iVar1;
@@ -124,7 +124,7 @@ undefined4 FUN_03801564(uint param_1,undefined4 param_2)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 FUN_038015d0(void)
+undefined4 initialize_interrupt_controller(void)
 
 {
   undefined4 *puVar1;
@@ -148,7 +148,7 @@ undefined4 FUN_038015d0(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 FUN_03801620(uint param_1)
+undefined4 disable_interrupt_sources(uint param_1)
 
 {
   uint *puVar1;
@@ -183,7 +183,7 @@ undefined4 FUN_03801620(uint param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 FUN_038016a4(undefined4 param_1)
+undefined4 replace_irq_dispatcher(undefined4 param_1)
 
 {
   undefined4 in_lr;
@@ -200,7 +200,7 @@ undefined4 FUN_038016a4(undefined4 param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 FUN_038016d8(uint param_1)
+undefined4 enable_interrupt_sources(uint param_1)
 
 {
   undefined4 in_lr;

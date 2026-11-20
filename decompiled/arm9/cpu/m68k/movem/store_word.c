@@ -4,7 +4,7 @@
 
 // 0x0202e934  m68k_movem_word
 
-int m68k_dispatch_0202e934(void)
+int m68k_movem_word_0202e934(void)
 
 {
   ushort uVar1;
@@ -134,7 +134,7 @@ int m68k_dispatch_0202e934(void)
 
 // 0x0202ea7c  m68k_movem_word
 
-int m68k_dispatch_0202ea7c(void)
+int m68k_movem_word_0202ea7c(void)
 
 {
   ushort uVar1;
@@ -276,7 +276,7 @@ int m68k_dispatch_0202ea7c(void)
     if ((uVar1 & 0xff) != 0) {
       uVar11 = (uVar1 & 1) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,*unaff_r6);
+        write_m68k_bus_word(uVar3,*unaff_r6);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -284,7 +284,7 @@ int m68k_dispatch_0202ea7c(void)
       }
       uVar11 = (uVar6 & 2) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,unaff_r6[2]);
+        write_m68k_bus_word(uVar3,unaff_r6[2]);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -292,7 +292,7 @@ int m68k_dispatch_0202ea7c(void)
       }
       uVar11 = (uVar6 & 4) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,unaff_r6[4]);
+        write_m68k_bus_word(uVar3,unaff_r6[4]);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -300,7 +300,7 @@ int m68k_dispatch_0202ea7c(void)
       }
       uVar11 = (uVar6 & 8) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,unaff_r6[6]);
+        write_m68k_bus_word(uVar3,unaff_r6[6]);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -308,7 +308,7 @@ int m68k_dispatch_0202ea7c(void)
       }
       uVar11 = (uVar6 & 0x10) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,unaff_r6[8]);
+        write_m68k_bus_word(uVar3,unaff_r6[8]);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -316,7 +316,7 @@ int m68k_dispatch_0202ea7c(void)
       }
       uVar11 = (uVar6 & 0x20) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,unaff_r6[10]);
+        write_m68k_bus_word(uVar3,unaff_r6[10]);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -324,7 +324,7 @@ int m68k_dispatch_0202ea7c(void)
       }
       uVar11 = (uVar6 & 0x40) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,unaff_r6[0xc]);
+        write_m68k_bus_word(uVar3,unaff_r6[0xc]);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -332,7 +332,7 @@ int m68k_dispatch_0202ea7c(void)
       }
       uVar11 = (uVar6 & 0x80) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,unaff_r6[0xe]);
+        write_m68k_bus_word(uVar3,unaff_r6[0xe]);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -341,7 +341,7 @@ int m68k_dispatch_0202ea7c(void)
     }
     uVar11 = (uVar6 & 0x100) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x10]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x10]);
     }
     if (!(bool)uVar11) {
       uVar3 = uVar3 + 2;
@@ -349,7 +349,7 @@ int m68k_dispatch_0202ea7c(void)
     }
     uVar11 = (uVar6 & 0x200) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x12]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x12]);
     }
     if (!(bool)uVar11) {
       uVar3 = uVar3 + 2;
@@ -357,7 +357,7 @@ int m68k_dispatch_0202ea7c(void)
     }
     uVar11 = (uVar6 & 0x400) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x14]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x14]);
     }
     if (!(bool)uVar11) {
       uVar3 = uVar3 + 2;
@@ -365,7 +365,7 @@ int m68k_dispatch_0202ea7c(void)
     }
     uVar11 = (uVar6 & 0x800) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x16]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x16]);
     }
     if (!(bool)uVar11) {
       uVar3 = uVar3 + 2;
@@ -373,7 +373,7 @@ int m68k_dispatch_0202ea7c(void)
     }
     uVar11 = (uVar6 & 0x1000) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x18]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x18]);
     }
     if (!(bool)uVar11) {
       uVar3 = uVar3 + 2;
@@ -381,7 +381,7 @@ int m68k_dispatch_0202ea7c(void)
     }
     uVar11 = (uVar6 & 0x2000) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x1a]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x1a]);
     }
     if (!(bool)uVar11) {
       uVar3 = uVar3 + 2;
@@ -389,7 +389,7 @@ int m68k_dispatch_0202ea7c(void)
     }
     uVar11 = (uVar6 & 0x4000) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x1c]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x1c]);
     }
     if (!(bool)uVar11) {
       uVar3 = uVar3 + 2;
@@ -397,7 +397,7 @@ int m68k_dispatch_0202ea7c(void)
     }
     uVar11 = (uVar6 & 0x8000) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x1e]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x1e]);
     }
     if (!(bool)uVar11) {
       uVar6 = uVar6 + 0x10000;
@@ -418,7 +418,7 @@ int m68k_dispatch_0202ea7c(void)
 
 // 0x0202ea94  m68k_movem_word
 
-int m68k_dispatch_0202ea94(void)
+int m68k_movem_word_0202ea94(void)
 
 {
   undefined2 uVar1;
@@ -560,7 +560,7 @@ int m68k_dispatch_0202ea94(void)
     if ((uVar2 & 0xff) != 0) {
       uVar11 = (uVar2 & 1) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,*unaff_r6);
+        write_m68k_bus_word(uVar3,*unaff_r6);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -568,7 +568,7 @@ int m68k_dispatch_0202ea94(void)
       }
       uVar11 = (uVar6 & 2) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,unaff_r6[2]);
+        write_m68k_bus_word(uVar3,unaff_r6[2]);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -576,7 +576,7 @@ int m68k_dispatch_0202ea94(void)
       }
       uVar11 = (uVar6 & 4) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,unaff_r6[4]);
+        write_m68k_bus_word(uVar3,unaff_r6[4]);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -584,7 +584,7 @@ int m68k_dispatch_0202ea94(void)
       }
       uVar11 = (uVar6 & 8) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,unaff_r6[6]);
+        write_m68k_bus_word(uVar3,unaff_r6[6]);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -592,7 +592,7 @@ int m68k_dispatch_0202ea94(void)
       }
       uVar11 = (uVar6 & 0x10) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,unaff_r6[8]);
+        write_m68k_bus_word(uVar3,unaff_r6[8]);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -600,7 +600,7 @@ int m68k_dispatch_0202ea94(void)
       }
       uVar11 = (uVar6 & 0x20) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,unaff_r6[10]);
+        write_m68k_bus_word(uVar3,unaff_r6[10]);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -608,7 +608,7 @@ int m68k_dispatch_0202ea94(void)
       }
       uVar11 = (uVar6 & 0x40) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,unaff_r6[0xc]);
+        write_m68k_bus_word(uVar3,unaff_r6[0xc]);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -616,7 +616,7 @@ int m68k_dispatch_0202ea94(void)
       }
       uVar11 = (uVar6 & 0x80) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,unaff_r6[0xe]);
+        write_m68k_bus_word(uVar3,unaff_r6[0xe]);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -625,7 +625,7 @@ int m68k_dispatch_0202ea94(void)
     }
     uVar11 = (uVar6 & 0x100) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x10]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x10]);
     }
     if (!(bool)uVar11) {
       uVar3 = uVar3 + 2;
@@ -633,7 +633,7 @@ int m68k_dispatch_0202ea94(void)
     }
     uVar11 = (uVar6 & 0x200) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x12]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x12]);
     }
     if (!(bool)uVar11) {
       uVar3 = uVar3 + 2;
@@ -641,7 +641,7 @@ int m68k_dispatch_0202ea94(void)
     }
     uVar11 = (uVar6 & 0x400) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x14]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x14]);
     }
     if (!(bool)uVar11) {
       uVar3 = uVar3 + 2;
@@ -649,7 +649,7 @@ int m68k_dispatch_0202ea94(void)
     }
     uVar11 = (uVar6 & 0x800) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x16]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x16]);
     }
     if (!(bool)uVar11) {
       uVar3 = uVar3 + 2;
@@ -657,7 +657,7 @@ int m68k_dispatch_0202ea94(void)
     }
     uVar11 = (uVar6 & 0x1000) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x18]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x18]);
     }
     if (!(bool)uVar11) {
       uVar3 = uVar3 + 2;
@@ -665,7 +665,7 @@ int m68k_dispatch_0202ea94(void)
     }
     uVar11 = (uVar6 & 0x2000) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x1a]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x1a]);
     }
     if (!(bool)uVar11) {
       uVar3 = uVar3 + 2;
@@ -673,7 +673,7 @@ int m68k_dispatch_0202ea94(void)
     }
     uVar11 = (uVar6 & 0x4000) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x1c]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x1c]);
     }
     if (!(bool)uVar11) {
       uVar3 = uVar3 + 2;
@@ -681,7 +681,7 @@ int m68k_dispatch_0202ea94(void)
     }
     uVar11 = (uVar6 & 0x8000) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x1e]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x1e]);
     }
     if (!(bool)uVar11) {
       uVar6 = uVar6 + 0x10000;
@@ -702,7 +702,7 @@ int m68k_dispatch_0202ea94(void)
 
 // 0x0202eab4  m68k_movem_word
 
-int m68k_dispatch_0202eab4(void)
+int m68k_movem_word_0202eab4(void)
 
 {
   undefined2 uVar1;
@@ -857,7 +857,7 @@ int m68k_dispatch_0202eab4(void)
     if ((uVar2 & 0xff) != 0) {
       uVar12 = (uVar2 & 1) == 0;
       if (!(bool)uVar12) {
-        FUN_01004160(uVar4,*unaff_r6);
+        write_m68k_bus_word(uVar4,*unaff_r6);
       }
       if (!(bool)uVar12) {
         uVar4 = uVar4 + 2;
@@ -865,7 +865,7 @@ int m68k_dispatch_0202eab4(void)
       }
       uVar12 = (uVar8 & 2) == 0;
       if (!(bool)uVar12) {
-        FUN_01004160(uVar4,unaff_r6[2]);
+        write_m68k_bus_word(uVar4,unaff_r6[2]);
       }
       if (!(bool)uVar12) {
         uVar4 = uVar4 + 2;
@@ -873,7 +873,7 @@ int m68k_dispatch_0202eab4(void)
       }
       uVar12 = (uVar8 & 4) == 0;
       if (!(bool)uVar12) {
-        FUN_01004160(uVar4,unaff_r6[4]);
+        write_m68k_bus_word(uVar4,unaff_r6[4]);
       }
       if (!(bool)uVar12) {
         uVar4 = uVar4 + 2;
@@ -881,7 +881,7 @@ int m68k_dispatch_0202eab4(void)
       }
       uVar12 = (uVar8 & 8) == 0;
       if (!(bool)uVar12) {
-        FUN_01004160(uVar4,unaff_r6[6]);
+        write_m68k_bus_word(uVar4,unaff_r6[6]);
       }
       if (!(bool)uVar12) {
         uVar4 = uVar4 + 2;
@@ -889,7 +889,7 @@ int m68k_dispatch_0202eab4(void)
       }
       uVar12 = (uVar8 & 0x10) == 0;
       if (!(bool)uVar12) {
-        FUN_01004160(uVar4,unaff_r6[8]);
+        write_m68k_bus_word(uVar4,unaff_r6[8]);
       }
       if (!(bool)uVar12) {
         uVar4 = uVar4 + 2;
@@ -897,7 +897,7 @@ int m68k_dispatch_0202eab4(void)
       }
       uVar12 = (uVar8 & 0x20) == 0;
       if (!(bool)uVar12) {
-        FUN_01004160(uVar4,unaff_r6[10]);
+        write_m68k_bus_word(uVar4,unaff_r6[10]);
       }
       if (!(bool)uVar12) {
         uVar4 = uVar4 + 2;
@@ -905,7 +905,7 @@ int m68k_dispatch_0202eab4(void)
       }
       uVar12 = (uVar8 & 0x40) == 0;
       if (!(bool)uVar12) {
-        FUN_01004160(uVar4,unaff_r6[0xc]);
+        write_m68k_bus_word(uVar4,unaff_r6[0xc]);
       }
       if (!(bool)uVar12) {
         uVar4 = uVar4 + 2;
@@ -913,7 +913,7 @@ int m68k_dispatch_0202eab4(void)
       }
       uVar12 = (uVar8 & 0x80) == 0;
       if (!(bool)uVar12) {
-        FUN_01004160(uVar4,unaff_r6[0xe]);
+        write_m68k_bus_word(uVar4,unaff_r6[0xe]);
       }
       if (!(bool)uVar12) {
         uVar4 = uVar4 + 2;
@@ -922,7 +922,7 @@ int m68k_dispatch_0202eab4(void)
     }
     uVar12 = (uVar8 & 0x100) == 0;
     if (!(bool)uVar12) {
-      FUN_01004160(uVar4,unaff_r6[0x10]);
+      write_m68k_bus_word(uVar4,unaff_r6[0x10]);
     }
     if (!(bool)uVar12) {
       uVar4 = uVar4 + 2;
@@ -930,7 +930,7 @@ int m68k_dispatch_0202eab4(void)
     }
     uVar12 = (uVar8 & 0x200) == 0;
     if (!(bool)uVar12) {
-      FUN_01004160(uVar4,unaff_r6[0x12]);
+      write_m68k_bus_word(uVar4,unaff_r6[0x12]);
     }
     if (!(bool)uVar12) {
       uVar4 = uVar4 + 2;
@@ -938,7 +938,7 @@ int m68k_dispatch_0202eab4(void)
     }
     uVar12 = (uVar8 & 0x400) == 0;
     if (!(bool)uVar12) {
-      FUN_01004160(uVar4,unaff_r6[0x14]);
+      write_m68k_bus_word(uVar4,unaff_r6[0x14]);
     }
     if (!(bool)uVar12) {
       uVar4 = uVar4 + 2;
@@ -946,7 +946,7 @@ int m68k_dispatch_0202eab4(void)
     }
     uVar12 = (uVar8 & 0x800) == 0;
     if (!(bool)uVar12) {
-      FUN_01004160(uVar4,unaff_r6[0x16]);
+      write_m68k_bus_word(uVar4,unaff_r6[0x16]);
     }
     if (!(bool)uVar12) {
       uVar4 = uVar4 + 2;
@@ -954,7 +954,7 @@ int m68k_dispatch_0202eab4(void)
     }
     uVar12 = (uVar8 & 0x1000) == 0;
     if (!(bool)uVar12) {
-      FUN_01004160(uVar4,unaff_r6[0x18]);
+      write_m68k_bus_word(uVar4,unaff_r6[0x18]);
     }
     if (!(bool)uVar12) {
       uVar4 = uVar4 + 2;
@@ -962,7 +962,7 @@ int m68k_dispatch_0202eab4(void)
     }
     uVar12 = (uVar8 & 0x2000) == 0;
     if (!(bool)uVar12) {
-      FUN_01004160(uVar4,unaff_r6[0x1a]);
+      write_m68k_bus_word(uVar4,unaff_r6[0x1a]);
     }
     if (!(bool)uVar12) {
       uVar4 = uVar4 + 2;
@@ -970,7 +970,7 @@ int m68k_dispatch_0202eab4(void)
     }
     uVar12 = (uVar8 & 0x4000) == 0;
     if (!(bool)uVar12) {
-      FUN_01004160(uVar4,unaff_r6[0x1c]);
+      write_m68k_bus_word(uVar4,unaff_r6[0x1c]);
     }
     if (!(bool)uVar12) {
       uVar4 = uVar4 + 2;
@@ -978,7 +978,7 @@ int m68k_dispatch_0202eab4(void)
     }
     uVar12 = (uVar8 & 0x8000) == 0;
     if (!(bool)uVar12) {
-      FUN_01004160(uVar4,unaff_r6[0x1e]);
+      write_m68k_bus_word(uVar4,unaff_r6[0x1e]);
     }
     if (!(bool)uVar12) {
       uVar8 = uVar8 + 0x10000;
@@ -999,7 +999,7 @@ int m68k_dispatch_0202eab4(void)
 
 // 0x0202eafc  m68k_movem_word
 
-int m68k_dispatch_0202eafc(void)
+int m68k_movem_word_0202eafc(void)
 
 {
   ushort uVar1;
@@ -1140,7 +1140,7 @@ int m68k_dispatch_0202eafc(void)
     if ((uVar1 & 0xff) != 0) {
       uVar11 = (uVar1 & 1) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,*unaff_r6);
+        write_m68k_bus_word(uVar3,*unaff_r6);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -1148,7 +1148,7 @@ int m68k_dispatch_0202eafc(void)
       }
       uVar11 = (uVar6 & 2) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,unaff_r6[2]);
+        write_m68k_bus_word(uVar3,unaff_r6[2]);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -1156,7 +1156,7 @@ int m68k_dispatch_0202eafc(void)
       }
       uVar11 = (uVar6 & 4) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,unaff_r6[4]);
+        write_m68k_bus_word(uVar3,unaff_r6[4]);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -1164,7 +1164,7 @@ int m68k_dispatch_0202eafc(void)
       }
       uVar11 = (uVar6 & 8) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,unaff_r6[6]);
+        write_m68k_bus_word(uVar3,unaff_r6[6]);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -1172,7 +1172,7 @@ int m68k_dispatch_0202eafc(void)
       }
       uVar11 = (uVar6 & 0x10) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,unaff_r6[8]);
+        write_m68k_bus_word(uVar3,unaff_r6[8]);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -1180,7 +1180,7 @@ int m68k_dispatch_0202eafc(void)
       }
       uVar11 = (uVar6 & 0x20) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,unaff_r6[10]);
+        write_m68k_bus_word(uVar3,unaff_r6[10]);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -1188,7 +1188,7 @@ int m68k_dispatch_0202eafc(void)
       }
       uVar11 = (uVar6 & 0x40) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,unaff_r6[0xc]);
+        write_m68k_bus_word(uVar3,unaff_r6[0xc]);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -1196,7 +1196,7 @@ int m68k_dispatch_0202eafc(void)
       }
       uVar11 = (uVar6 & 0x80) == 0;
       if (!(bool)uVar11) {
-        FUN_01004160(uVar3,unaff_r6[0xe]);
+        write_m68k_bus_word(uVar3,unaff_r6[0xe]);
       }
       if (!(bool)uVar11) {
         uVar3 = uVar3 + 2;
@@ -1205,7 +1205,7 @@ int m68k_dispatch_0202eafc(void)
     }
     uVar11 = (uVar6 & 0x100) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x10]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x10]);
     }
     if (!(bool)uVar11) {
       uVar3 = uVar3 + 2;
@@ -1213,7 +1213,7 @@ int m68k_dispatch_0202eafc(void)
     }
     uVar11 = (uVar6 & 0x200) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x12]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x12]);
     }
     if (!(bool)uVar11) {
       uVar3 = uVar3 + 2;
@@ -1221,7 +1221,7 @@ int m68k_dispatch_0202eafc(void)
     }
     uVar11 = (uVar6 & 0x400) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x14]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x14]);
     }
     if (!(bool)uVar11) {
       uVar3 = uVar3 + 2;
@@ -1229,7 +1229,7 @@ int m68k_dispatch_0202eafc(void)
     }
     uVar11 = (uVar6 & 0x800) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x16]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x16]);
     }
     if (!(bool)uVar11) {
       uVar3 = uVar3 + 2;
@@ -1237,7 +1237,7 @@ int m68k_dispatch_0202eafc(void)
     }
     uVar11 = (uVar6 & 0x1000) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x18]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x18]);
     }
     if (!(bool)uVar11) {
       uVar3 = uVar3 + 2;
@@ -1245,7 +1245,7 @@ int m68k_dispatch_0202eafc(void)
     }
     uVar11 = (uVar6 & 0x2000) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x1a]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x1a]);
     }
     if (!(bool)uVar11) {
       uVar3 = uVar3 + 2;
@@ -1253,7 +1253,7 @@ int m68k_dispatch_0202eafc(void)
     }
     uVar11 = (uVar6 & 0x4000) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x1c]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x1c]);
     }
     if (!(bool)uVar11) {
       uVar3 = uVar3 + 2;
@@ -1261,7 +1261,7 @@ int m68k_dispatch_0202eafc(void)
     }
     uVar11 = (uVar6 & 0x8000) == 0;
     if (!(bool)uVar11) {
-      FUN_01004160(uVar3,unaff_r6[0x1e]);
+      write_m68k_bus_word(uVar3,unaff_r6[0x1e]);
     }
     if (!(bool)uVar11) {
       uVar6 = uVar6 + 0x10000;
@@ -1282,7 +1282,7 @@ int m68k_dispatch_0202eafc(void)
 
 // 0x0202eb10  m68k_movem_word
 
-int m68k_dispatch_0202eb10(void)
+int m68k_movem_word_0202eb10(void)
 
 {
   ushort uVar1;
@@ -1422,7 +1422,7 @@ int m68k_dispatch_0202eb10(void)
     if ((uVar1 & 0xff) != 0) {
       uVar10 = (uVar1 & 1) == 0;
       if (!(bool)uVar10) {
-        FUN_01004160(iVar3,*unaff_r6);
+        write_m68k_bus_word(iVar3,*unaff_r6);
       }
       if (!(bool)uVar10) {
         iVar3 = iVar3 + 2;
@@ -1430,7 +1430,7 @@ int m68k_dispatch_0202eb10(void)
       }
       uVar10 = (uVar6 & 2) == 0;
       if (!(bool)uVar10) {
-        FUN_01004160(iVar3,unaff_r6[2]);
+        write_m68k_bus_word(iVar3,unaff_r6[2]);
       }
       if (!(bool)uVar10) {
         iVar3 = iVar3 + 2;
@@ -1438,7 +1438,7 @@ int m68k_dispatch_0202eb10(void)
       }
       uVar10 = (uVar6 & 4) == 0;
       if (!(bool)uVar10) {
-        FUN_01004160(iVar3,unaff_r6[4]);
+        write_m68k_bus_word(iVar3,unaff_r6[4]);
       }
       if (!(bool)uVar10) {
         iVar3 = iVar3 + 2;
@@ -1446,7 +1446,7 @@ int m68k_dispatch_0202eb10(void)
       }
       uVar10 = (uVar6 & 8) == 0;
       if (!(bool)uVar10) {
-        FUN_01004160(iVar3,unaff_r6[6]);
+        write_m68k_bus_word(iVar3,unaff_r6[6]);
       }
       if (!(bool)uVar10) {
         iVar3 = iVar3 + 2;
@@ -1454,7 +1454,7 @@ int m68k_dispatch_0202eb10(void)
       }
       uVar10 = (uVar6 & 0x10) == 0;
       if (!(bool)uVar10) {
-        FUN_01004160(iVar3,unaff_r6[8]);
+        write_m68k_bus_word(iVar3,unaff_r6[8]);
       }
       if (!(bool)uVar10) {
         iVar3 = iVar3 + 2;
@@ -1462,7 +1462,7 @@ int m68k_dispatch_0202eb10(void)
       }
       uVar10 = (uVar6 & 0x20) == 0;
       if (!(bool)uVar10) {
-        FUN_01004160(iVar3,unaff_r6[10]);
+        write_m68k_bus_word(iVar3,unaff_r6[10]);
       }
       if (!(bool)uVar10) {
         iVar3 = iVar3 + 2;
@@ -1470,7 +1470,7 @@ int m68k_dispatch_0202eb10(void)
       }
       uVar10 = (uVar6 & 0x40) == 0;
       if (!(bool)uVar10) {
-        FUN_01004160(iVar3,unaff_r6[0xc]);
+        write_m68k_bus_word(iVar3,unaff_r6[0xc]);
       }
       if (!(bool)uVar10) {
         iVar3 = iVar3 + 2;
@@ -1478,7 +1478,7 @@ int m68k_dispatch_0202eb10(void)
       }
       uVar10 = (uVar6 & 0x80) == 0;
       if (!(bool)uVar10) {
-        FUN_01004160(iVar3,unaff_r6[0xe]);
+        write_m68k_bus_word(iVar3,unaff_r6[0xe]);
       }
       if (!(bool)uVar10) {
         iVar3 = iVar3 + 2;
@@ -1487,7 +1487,7 @@ int m68k_dispatch_0202eb10(void)
     }
     uVar10 = (uVar6 & 0x100) == 0;
     if (!(bool)uVar10) {
-      FUN_01004160(iVar3,unaff_r6[0x10]);
+      write_m68k_bus_word(iVar3,unaff_r6[0x10]);
     }
     if (!(bool)uVar10) {
       iVar3 = iVar3 + 2;
@@ -1495,7 +1495,7 @@ int m68k_dispatch_0202eb10(void)
     }
     uVar10 = (uVar6 & 0x200) == 0;
     if (!(bool)uVar10) {
-      FUN_01004160(iVar3,unaff_r6[0x12]);
+      write_m68k_bus_word(iVar3,unaff_r6[0x12]);
     }
     if (!(bool)uVar10) {
       iVar3 = iVar3 + 2;
@@ -1503,7 +1503,7 @@ int m68k_dispatch_0202eb10(void)
     }
     uVar10 = (uVar6 & 0x400) == 0;
     if (!(bool)uVar10) {
-      FUN_01004160(iVar3,unaff_r6[0x14]);
+      write_m68k_bus_word(iVar3,unaff_r6[0x14]);
     }
     if (!(bool)uVar10) {
       iVar3 = iVar3 + 2;
@@ -1511,7 +1511,7 @@ int m68k_dispatch_0202eb10(void)
     }
     uVar10 = (uVar6 & 0x800) == 0;
     if (!(bool)uVar10) {
-      FUN_01004160(iVar3,unaff_r6[0x16]);
+      write_m68k_bus_word(iVar3,unaff_r6[0x16]);
     }
     if (!(bool)uVar10) {
       iVar3 = iVar3 + 2;
@@ -1519,7 +1519,7 @@ int m68k_dispatch_0202eb10(void)
     }
     uVar10 = (uVar6 & 0x1000) == 0;
     if (!(bool)uVar10) {
-      FUN_01004160(iVar3,unaff_r6[0x18]);
+      write_m68k_bus_word(iVar3,unaff_r6[0x18]);
     }
     if (!(bool)uVar10) {
       iVar3 = iVar3 + 2;
@@ -1527,7 +1527,7 @@ int m68k_dispatch_0202eb10(void)
     }
     uVar10 = (uVar6 & 0x2000) == 0;
     if (!(bool)uVar10) {
-      FUN_01004160(iVar3,unaff_r6[0x1a]);
+      write_m68k_bus_word(iVar3,unaff_r6[0x1a]);
     }
     if (!(bool)uVar10) {
       iVar3 = iVar3 + 2;
@@ -1535,7 +1535,7 @@ int m68k_dispatch_0202eb10(void)
     }
     uVar10 = (uVar6 & 0x4000) == 0;
     if (!(bool)uVar10) {
-      FUN_01004160(iVar3,unaff_r6[0x1c]);
+      write_m68k_bus_word(iVar3,unaff_r6[0x1c]);
     }
     if (!(bool)uVar10) {
       iVar3 = iVar3 + 2;
@@ -1543,7 +1543,7 @@ int m68k_dispatch_0202eb10(void)
     }
     uVar10 = (uVar6 & 0x8000) == 0;
     if (!(bool)uVar10) {
-      FUN_01004160(iVar3,unaff_r6[0x1e]);
+      write_m68k_bus_word(iVar3,unaff_r6[0x1e]);
     }
     if (!(bool)uVar10) {
       uVar6 = uVar6 + 0x10000;

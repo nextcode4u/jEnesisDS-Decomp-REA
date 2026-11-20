@@ -1,0 +1,76 @@
+scope	original	name	evidence
+processor	DAT_03806dcc	psg_latched_register	The PSG latch command selects a register. Noise control resets the 16-bit shift register and sets its period.
+processor	DAT_03806dd8	psg_registers	The PSG latch command selects a register. Noise control resets the 16-bit shift register and sets its period.
+processor	DAT_03806dd0	psg_noise_shift_register	The PSG latch command selects a register. Noise control resets the 16-bit shift register and sets its period.
+processor	DAT_03806dd4	psg_noise_period	The PSG latch command selects a register. Noise control resets the 16-bit shift register and sets its period.
+processor	DAT_03806df0	psg_noise_control	The PSG latch command selects a register. Noise control resets the 16-bit shift register and sets its period.
+processor	DAT_03806df4	psg_noise_attenuation	The PSG latch command selects a register. Noise control resets the 16-bit shift register and sets its period.
+processor	DAT_03806ddc	psg_tone_1_attenuation	Explicit aliases into the PSG register bank are indexed as tone periods and attenuation during sampling.
+processor	DAT_03806de0	psg_tone_2_period	Explicit aliases into the PSG register bank are indexed as tone periods and attenuation during sampling.
+processor	DAT_03806de4	psg_tone_2_attenuation	Explicit aliases into the PSG register bank are indexed as tone periods and attenuation during sampling.
+processor	DAT_03806de8	psg_tone_3_period	Explicit aliases into the PSG register bank are indexed as tone periods and attenuation during sampling.
+processor	DAT_03806dec	psg_tone_3_attenuation	Explicit aliases into the PSG register bank are indexed as tone periods and attenuation during sampling.
+processor	DAT_03806dbc	psg_ticks_per_sample_q12	The PSG renderer accumulates a fixed-point clock step and subtracts whole ticks from channel counters.
+processor	DAT_03806dc0	psg_fractional_ticks	The PSG renderer accumulates a fixed-point clock step and subtracts whole ticks from channel counters.
+processor	DAT_03806dc4	psg_elapsed_ticks	The PSG renderer accumulates a fixed-point clock step and subtracts whole ticks from channel counters.
+processor	DAT_03806df8	psg_tone_1_counter	The PSG renderer accumulates a fixed-point clock step and subtracts whole ticks from channel counters.
+processor	DAT_03806dfc	psg_tone_2_counter	The PSG renderer accumulates a fixed-point clock step and subtracts whole ticks from channel counters.
+processor	DAT_03806e00	psg_tone_3_counter	The PSG renderer accumulates a fixed-point clock step and subtracts whole ticks from channel counters.
+processor	DAT_03806e04	psg_noise_counter	The PSG renderer accumulates a fixed-point clock step and subtracts whole ticks from channel counters.
+processor	DAT_03806e08	psg_tone_1_polarity	The PSG renderer flips tone polarity at each counter crossing and adds four channel levels to the output sample.
+processor	DAT_03806e0c	psg_tone_2_polarity	The PSG renderer flips tone polarity at each counter crossing and adds four channel levels to the output sample.
+processor	DAT_03806e10	psg_tone_3_polarity	The PSG renderer flips tone polarity at each counter crossing and adds four channel levels to the output sample.
+processor	DAT_03806e18	psg_tone_1_output	The PSG renderer flips tone polarity at each counter crossing and adds four channel levels to the output sample.
+processor	DAT_03806e1c	psg_tone_2_output	The PSG renderer flips tone polarity at each counter crossing and adds four channel levels to the output sample.
+processor	DAT_03806e20	psg_tone_3_output	The PSG renderer flips tone polarity at each counter crossing and adds four channel levels to the output sample.
+processor	DAT_03806e24	psg_noise_output	The PSG renderer flips tone polarity at each counter crossing and adds four channel levels to the output sample.
+processor	DAT_03806d4c	psg_attenuation_table	The PSG renderer flips tone polarity at each counter crossing and adds four channel levels to the output sample.
+processor	DAT_0380bb04	ipc_received_command	FIFO receive decodes the high command byte and 24-bit payload and invokes the installed callback.
+processor	DAT_0380bb08	ipc_received_payload	FIFO receive decodes the high command byte and 24-bit payload and invokes the installed callback.
+processor	DAT_0380be00	ipc_receive_callback	FIFO receive decodes the high command byte and 24-bit payload and invokes the installed callback.
+processor	_DAT_04000180	ds_ipc_sync	FIFO receive decodes the high command byte and 24-bit payload and invokes the installed callback.
+processor	_DAT_04000184	ds_ipc_fifo_control	FIFO receive decodes the high command byte and 24-bit payload and invokes the installed callback.
+processor	_DAT_04000188	ds_ipc_fifo_send	FIFO receive decodes the high command byte and 24-bit payload and invokes the installed callback.
+processor	_DAT_04100000	ds_ipc_fifo_receive	FIFO receive decodes the high command byte and 24-bit payload and invokes the installed callback.
+0x037f8504	param_1	write_bytes	Walks a buffer of PSG latch and data writes.
+0x037f8504	param_2	byte_count	Walks a buffer of PSG latch and data writes.
+0x037f8504	bVar1	write_byte	Walks a buffer of PSG latch and data writes.
+0x037f8504	uVar2	write_value	Walks a buffer of PSG latch and data writes.
+0x037f8504	iVar3	byte_index	Walks a buffer of PSG latch and data writes.
+0x037f86f4	param_1	pcm_buffer	Produces one signed 16-bit PCM sample per iteration using the PSG clock and noise feedback.
+0x037f86f4	param_2	sample_count	Produces one signed 16-bit PCM sample per iteration using the PSG clock and noise feedback.
+0x037f86f4	iVar1	polarity_or_pcm_offset	Produces one signed 16-bit PCM sample per iteration using the PSG clock and noise feedback.
+0x037f86f4	uVar2	shifted_noise_bits	Produces one signed 16-bit PCM sample per iteration using the PSG clock and noise feedback.
+0x037f86f4	iVar3	ticks_per_sample_q12	Produces one signed 16-bit PCM sample per iteration using the PSG clock and noise feedback.
+0x037f86f4	iVar4	noise_period	Produces one signed 16-bit PCM sample per iteration using the PSG clock and noise feedback.
+0x037f86f4	uVar5	noise_feedback_bits	Produces one signed 16-bit PCM sample per iteration using the PSG clock and noise feedback.
+0x037f86f4	iVar6	sample_index	Produces one signed 16-bit PCM sample per iteration using the PSG clock and noise feedback.
+0x037f8a88	param_1	operator_state	Iterates envelope ticks and derives the increment from a packed rate word. Attack reduces attenuation and decay tests the sustain level.
+0x037f8a88	param_2	envelope_tick	Iterates envelope ticks and derives the increment from a packed rate word. Attack reduces attenuation and decay tests the sustain level.
+0x037f8a88	param_3	end_tick	Iterates envelope ticks and derives the increment from a packed rate word. Attack reduces attenuation and decay tests the sustain level.
+0x037f8a88	uVar1	rate_shift	Iterates envelope ticks and derives the increment from a packed rate word. Attack reduces attenuation and decay tests the sustain level.
+0x037f8a88	uVar2	tick_mask	Iterates envelope ticks and derives the increment from a packed rate word. Attack reduces attenuation and decay tests the sustain level.
+0x037f8a88	uVar4	tick_remainder	Iterates envelope ticks and derives the increment from a packed rate word. Attack reduces attenuation and decay tests the sustain level.
+0x037f8a88	uVar3	stored_attenuation	Iterates envelope ticks and derives the increment from a packed rate word. Attack reduces attenuation and decay tests the sustain level.
+0x037f8a88	iVar5	sustain_level	Iterates envelope ticks and derives the increment from a packed rate word. Attack reduces attenuation and decay tests the sustain level.
+0x037f8a88	uVar6	envelope_attenuation	Iterates envelope ticks and derives the increment from a packed rate word. Attack reduces attenuation and decay tests the sustain level.
+0x037f8e1c	param_1	register_with_bank	Decodes the bank and channel bits and reaches the addressed operator state. The data value is masked by register group.
+0x037f8e1c	param_2	register_value	Decodes the bank and channel bits and reaches the addressed operator state. The data value is masked by register group.
+0x037f8e1c	puVar9	operator_state	Decodes the bank and channel bits and reaches the addressed operator state. The data value is masked by register group.
+0x037f9394	param_1	write_pairs	Walks byte pairs of register number and value and tags each address with bank 1.
+0x037f9394	param_2	byte_count	Walks byte pairs of register number and value and tags each address with bank 1.
+0x037f9394	pbVar1	write_cursor	Walks byte pairs of register number and value and tags each address with bank 1.
+0x037f9394	pbVar2	next_write	Walks byte pairs of register number and value and tags each address with bank 1.
+0x037f9afc	param_1	write_pairs	Walks byte pairs of register number and value, handling bank 0 control registers.
+0x037f9afc	param_2	byte_count	Walks byte pairs of register number and value, handling bank 0 control registers.
+0x037f9afc	pbVar4	write_cursor	Walks byte pairs of register number and value, handling bank 0 control registers.
+0x037f9afc	bVar2	register_address	Walks byte pairs of register number and value, handling bank 0 control registers.
+0x037f9afc	bVar3	register_value_byte	Walks byte pairs of register number and value, handling bank 0 control registers.
+0x03800dd0	param_1	fm_render_state	Combines the algorithm and four operator level comparisons into a dispatch table index.
+0x03800dd0	uVar1	algorithm_and_operator_mask	Combines the algorithm and four operator level comparisons into a dispatch table index.
+0x037fc218	param_1	command_id	Message ID selects the command branch. Some branches obtain data through the payload pointer.
+0x037fc218	param_2	payload	Message ID selects the command branch. Some branches obtain data through the payload pointer.
+0x037fc504	param_1	callback	Stores the function pointer used by the FIFO receive IRQ.
+0x037fc514	param_1	command_id	Packs the command in the high byte and the payload in the low 24 bits.
+0x037fc514	param_2	payload	Packs the command in the high byte and the payload in the low 24 bits.
+processor	_DAT_027ff028	shared_audio_descriptor	ARM9 publishes this pointer at the same shared address ARM7 reads before processing audio buffers.

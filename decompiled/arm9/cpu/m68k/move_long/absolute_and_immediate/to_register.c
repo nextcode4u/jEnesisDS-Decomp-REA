@@ -4,7 +4,7 @@
 
 // 0x02019f58  m68k_move_long
 
-void m68k_dispatch_02019f58(void)
+void m68k_move_long_02019f58(void)
 
 {
   undefined4 uVar1;
@@ -13,7 +13,7 @@ void m68k_dispatch_02019f58(void)
   short *unaff_r10;
   uint unaff_r11;
   
-  uVar1 = FUN_010040fc((int)*unaff_r10);
+  uVar1 = read_m68k_bus_long((int)*unaff_r10);
   *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = uVar1;
                     /* WARNING: Could not recover jumptable at 0x02019f80. Too many branches */
                     /* WARNING: Treating indirect jump as call */
@@ -24,7 +24,7 @@ void m68k_dispatch_02019f58(void)
 
 // 0x0201a484  m68k_move_long
 
-void m68k_dispatch_0201a484(void)
+void m68k_move_long_0201a484(void)
 
 {
   undefined4 uVar1;
@@ -33,7 +33,7 @@ void m68k_dispatch_0201a484(void)
   undefined2 *unaff_r10;
   uint unaff_r11;
   
-  uVar1 = FUN_010040fc(CONCAT22(*unaff_r10,unaff_r10[1]));
+  uVar1 = read_m68k_bus_long(CONCAT22(*unaff_r10,unaff_r10[1]));
   *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = uVar1;
                     /* WARNING: Could not recover jumptable at 0x0201a4b4. Too many branches */
                     /* WARNING: Treating indirect jump as call */
@@ -44,7 +44,7 @@ void m68k_dispatch_0201a484(void)
 
 // 0x0201bd68  m68k_move_long
 
-void m68k_dispatch_0201bd68(void)
+void m68k_move_long_0201bd68(void)
 
 {
   int unaff_r6;

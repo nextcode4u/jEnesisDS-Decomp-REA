@@ -4,7 +4,7 @@
 
 // 0x020249f0  m68k_mulu_word
 
-void m68k_dispatch_020249f0(void)
+void m68k_mulu_word_020249f0(void)
 
 {
   uint uVar1;
@@ -25,7 +25,7 @@ void m68k_dispatch_020249f0(void)
 
 // 0x02024a28  m68k_mulu_word
 
-void m68k_dispatch_02024a28(void)
+void m68k_mulu_word_02024a28(void)
 
 {
   uint uVar1;
@@ -35,7 +35,7 @@ void m68k_dispatch_02024a28(void)
   ushort *unaff_r10;
   uint unaff_r11;
   
-  iVar2 = FUN_010040c4(*(undefined4 *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4));
+  iVar2 = read_m68k_bus_word(*(undefined4 *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4));
   uVar1 = (unaff_r11 & 0xe00) >> 7;
   *(uint *)(unaff_r6 + uVar1) = iVar2 * (uint)*(ushort *)(unaff_r6 + uVar1);
                     /* WARNING: Could not recover jumptable at 0x02024a60. Too many branches */
@@ -47,7 +47,7 @@ void m68k_dispatch_02024a28(void)
 
 // 0x02024a64  m68k_mulu_word
 
-void m68k_dispatch_02024a64(void)
+void m68k_mulu_word_02024a64(void)
 
 {
   uint uVar1;
@@ -60,7 +60,7 @@ void m68k_dispatch_02024a64(void)
   
   piVar3 = (int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4);
   *piVar3 = *piVar3 + 2;
-  iVar2 = FUN_010040c4();
+  iVar2 = read_m68k_bus_word();
   uVar1 = (unaff_r11 & 0xe00) >> 7;
   *(uint *)(unaff_r6 + uVar1) = iVar2 * (uint)*(ushort *)(unaff_r6 + uVar1);
                     /* WARNING: Could not recover jumptable at 0x02024aa8. Too many branches */
@@ -72,7 +72,7 @@ void m68k_dispatch_02024a64(void)
 
 // 0x02024aac  m68k_mulu_word
 
-void m68k_dispatch_02024aac(void)
+void m68k_mulu_word_02024aac(void)
 
 {
   uint uVar1;
@@ -85,7 +85,7 @@ void m68k_dispatch_02024aac(void)
   
   piVar3 = (int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4);
   *piVar3 = *piVar3 + -2;
-  iVar2 = FUN_010040c4();
+  iVar2 = read_m68k_bus_word();
   uVar1 = (unaff_r11 & 0xe00) >> 7;
   *(uint *)(unaff_r6 + uVar1) = iVar2 * (uint)*(ushort *)(unaff_r6 + uVar1);
                     /* WARNING: Could not recover jumptable at 0x02024af0. Too many branches */
@@ -97,7 +97,7 @@ void m68k_dispatch_02024aac(void)
 
 // 0x02024af4  m68k_mulu_word
 
-void m68k_dispatch_02024af4(void)
+void m68k_mulu_word_02024af4(void)
 
 {
   uint uVar1;
@@ -107,7 +107,7 @@ void m68k_dispatch_02024af4(void)
   short *unaff_r10;
   uint unaff_r11;
   
-  iVar2 = FUN_010040c4(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)*unaff_r10);
+  iVar2 = read_m68k_bus_word(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)*unaff_r10);
   uVar1 = (unaff_r11 & 0xe00) >> 7;
   *(uint *)(unaff_r6 + uVar1) = iVar2 * (uint)*(ushort *)(unaff_r6 + uVar1);
                     /* WARNING: Could not recover jumptable at 0x02024b34. Too many branches */
@@ -119,7 +119,7 @@ void m68k_dispatch_02024af4(void)
 
 // 0x02024b38  m68k_mulu_word
 
-void m68k_dispatch_02024b38(void)
+void m68k_mulu_word_02024b38(void)
 
 {
   uint uVar1;
@@ -142,7 +142,7 @@ void m68k_dispatch_02024b38(void)
   else {
     iVar3 = *(int *)(iVar3 + uVar1);
   }
-  iVar3 = FUN_010040c4(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)(char)uVar2 + iVar3);
+  iVar3 = read_m68k_bus_word(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)(char)uVar2 + iVar3);
   uVar1 = (unaff_r11 & 0xe00) >> 7;
   *(uint *)(unaff_r6 + uVar1) = iVar3 * (uint)*(ushort *)(unaff_r6 + uVar1);
                     /* WARNING: Could not recover jumptable at 0x02024b9c. Too many branches */
@@ -154,7 +154,7 @@ void m68k_dispatch_02024b38(void)
 
 // 0x02024ba0  m68k_mulu_word
 
-void m68k_dispatch_02024ba0(void)
+void m68k_mulu_word_02024ba0(void)
 
 {
   uint uVar1;
@@ -164,7 +164,7 @@ void m68k_dispatch_02024ba0(void)
   short *unaff_r10;
   uint unaff_r11;
   
-  iVar2 = FUN_010040c4((int)*unaff_r10);
+  iVar2 = read_m68k_bus_word((int)*unaff_r10);
   uVar1 = (unaff_r11 & 0xe00) >> 7;
   *(uint *)(unaff_r6 + uVar1) = iVar2 * (uint)*(ushort *)(unaff_r6 + uVar1);
                     /* WARNING: Could not recover jumptable at 0x02024bd0. Too many branches */
@@ -176,7 +176,7 @@ void m68k_dispatch_02024ba0(void)
 
 // 0x02024bd4  m68k_mulu_word
 
-void m68k_dispatch_02024bd4(void)
+void m68k_mulu_word_02024bd4(void)
 
 {
   uint uVar1;
@@ -186,7 +186,7 @@ void m68k_dispatch_02024bd4(void)
   undefined2 *unaff_r10;
   uint unaff_r11;
   
-  iVar2 = FUN_010040c4(CONCAT22(*unaff_r10,unaff_r10[1]));
+  iVar2 = read_m68k_bus_word(CONCAT22(*unaff_r10,unaff_r10[1]));
   uVar1 = (unaff_r11 & 0xe00) >> 7;
   *(uint *)(unaff_r6 + uVar1) = iVar2 * (uint)*(ushort *)(unaff_r6 + uVar1);
                     /* WARNING: Could not recover jumptable at 0x02024c0c. Too many branches */
@@ -198,7 +198,7 @@ void m68k_dispatch_02024bd4(void)
 
 // 0x02024c10  m68k_mulu_word
 
-void m68k_dispatch_02024c10(void)
+void m68k_mulu_word_02024c10(void)
 
 {
   uint uVar1;
@@ -208,7 +208,7 @@ void m68k_dispatch_02024c10(void)
   short *unaff_r10;
   uint unaff_r11;
   
-  iVar2 = FUN_010040c4(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
+  iVar2 = read_m68k_bus_word(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
                        (int)*unaff_r10);
   uVar1 = (unaff_r11 & 0xe00) >> 7;
   *(uint *)(unaff_r6 + uVar1) = iVar2 * (uint)*(ushort *)(unaff_r6 + uVar1);
@@ -221,7 +221,7 @@ void m68k_dispatch_02024c10(void)
 
 // 0x02024c58  m68k_mulu_word
 
-void m68k_dispatch_02024c58(void)
+void m68k_mulu_word_02024c58(void)
 
 {
   uint uVar1;
@@ -244,7 +244,7 @@ void m68k_dispatch_02024c58(void)
   else {
     iVar3 = *(int *)(iVar3 + uVar1);
   }
-  iVar3 = FUN_010040c4(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
+  iVar3 = read_m68k_bus_word(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
                        (int)(char)uVar2 + iVar3);
   uVar1 = (unaff_r11 & 0xe00) >> 7;
   *(uint *)(unaff_r6 + uVar1) = iVar3 * (uint)*(ushort *)(unaff_r6 + uVar1);
@@ -257,7 +257,7 @@ void m68k_dispatch_02024c58(void)
 
 // 0x02024cc8  m68k_mulu_word
 
-void m68k_dispatch_02024cc8(void)
+void m68k_mulu_word_02024cc8(void)
 
 {
   uint uVar1;
@@ -277,7 +277,7 @@ void m68k_dispatch_02024cc8(void)
 
 // 0x02024cf8  m68k_muls_word
 
-void m68k_dispatch_02024cf8(void)
+void m68k_muls_word_02024cf8(void)
 
 {
   uint uVar1;
@@ -298,7 +298,7 @@ void m68k_dispatch_02024cf8(void)
 
 // 0x02024d30  m68k_muls_word
 
-void m68k_dispatch_02024d30(void)
+void m68k_muls_word_02024d30(void)
 
 {
   uint uVar1;
@@ -308,7 +308,7 @@ void m68k_dispatch_02024d30(void)
   ushort *unaff_r10;
   uint unaff_r11;
   
-  sVar2 = FUN_010040c4(*(undefined4 *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4));
+  sVar2 = read_m68k_bus_word(*(undefined4 *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4));
   uVar1 = (unaff_r11 & 0xe00) >> 7;
   *(int *)(unaff_r6 + uVar1) = (int)sVar2 * (int)*(short *)(unaff_r6 + uVar1);
                     /* WARNING: Could not recover jumptable at 0x02024d70. Too many branches */
@@ -320,7 +320,7 @@ void m68k_dispatch_02024d30(void)
 
 // 0x02024d74  m68k_muls_word
 
-void m68k_dispatch_02024d74(void)
+void m68k_muls_word_02024d74(void)
 
 {
   uint uVar1;
@@ -333,7 +333,7 @@ void m68k_dispatch_02024d74(void)
   
   piVar3 = (int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4);
   *piVar3 = *piVar3 + 2;
-  sVar2 = FUN_010040c4();
+  sVar2 = read_m68k_bus_word();
   uVar1 = (unaff_r11 & 0xe00) >> 7;
   *(int *)(unaff_r6 + uVar1) = (int)sVar2 * (int)*(short *)(unaff_r6 + uVar1);
                     /* WARNING: Could not recover jumptable at 0x02024dc0. Too many branches */
@@ -345,7 +345,7 @@ void m68k_dispatch_02024d74(void)
 
 // 0x02024dc4  m68k_muls_word
 
-void m68k_dispatch_02024dc4(void)
+void m68k_muls_word_02024dc4(void)
 
 {
   uint uVar1;
@@ -358,7 +358,7 @@ void m68k_dispatch_02024dc4(void)
   
   piVar3 = (int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4);
   *piVar3 = *piVar3 + -2;
-  sVar2 = FUN_010040c4();
+  sVar2 = read_m68k_bus_word();
   uVar1 = (unaff_r11 & 0xe00) >> 7;
   *(int *)(unaff_r6 + uVar1) = (int)sVar2 * (int)*(short *)(unaff_r6 + uVar1);
                     /* WARNING: Could not recover jumptable at 0x02024e10. Too many branches */
@@ -370,7 +370,7 @@ void m68k_dispatch_02024dc4(void)
 
 // 0x02024e14  m68k_muls_word
 
-void m68k_dispatch_02024e14(void)
+void m68k_muls_word_02024e14(void)
 
 {
   uint uVar1;
@@ -380,7 +380,7 @@ void m68k_dispatch_02024e14(void)
   short *unaff_r10;
   uint unaff_r11;
   
-  sVar2 = FUN_010040c4(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)*unaff_r10);
+  sVar2 = read_m68k_bus_word(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)*unaff_r10);
   uVar1 = (unaff_r11 & 0xe00) >> 7;
   *(int *)(unaff_r6 + uVar1) = (int)sVar2 * (int)*(short *)(unaff_r6 + uVar1);
                     /* WARNING: Could not recover jumptable at 0x02024e5c. Too many branches */
@@ -392,7 +392,7 @@ void m68k_dispatch_02024e14(void)
 
 // 0x02024e60  m68k_muls_word
 
-void m68k_dispatch_02024e60(void)
+void m68k_muls_word_02024e60(void)
 
 {
   uint uVar1;
@@ -416,7 +416,7 @@ void m68k_dispatch_02024e60(void)
   else {
     iVar4 = *(int *)(iVar4 + uVar1);
   }
-  sVar3 = FUN_010040c4(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)(char)uVar2 + iVar4);
+  sVar3 = read_m68k_bus_word(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)(char)uVar2 + iVar4);
   uVar1 = (unaff_r11 & 0xe00) >> 7;
   *(int *)(unaff_r6 + uVar1) = (int)sVar3 * (int)*(short *)(unaff_r6 + uVar1);
                     /* WARNING: Could not recover jumptable at 0x02024ecc. Too many branches */
@@ -428,7 +428,7 @@ void m68k_dispatch_02024e60(void)
 
 // 0x02024ed0  m68k_muls_word
 
-void m68k_dispatch_02024ed0(void)
+void m68k_muls_word_02024ed0(void)
 
 {
   uint uVar1;
@@ -438,7 +438,7 @@ void m68k_dispatch_02024ed0(void)
   short *unaff_r10;
   uint unaff_r11;
   
-  sVar2 = FUN_010040c4((int)*unaff_r10);
+  sVar2 = read_m68k_bus_word((int)*unaff_r10);
   uVar1 = (unaff_r11 & 0xe00) >> 7;
   *(int *)(unaff_r6 + uVar1) = (int)sVar2 * (int)*(short *)(unaff_r6 + uVar1);
                     /* WARNING: Could not recover jumptable at 0x02024f08. Too many branches */
@@ -450,7 +450,7 @@ void m68k_dispatch_02024ed0(void)
 
 // 0x02024f0c  m68k_muls_word
 
-void m68k_dispatch_02024f0c(void)
+void m68k_muls_word_02024f0c(void)
 
 {
   uint uVar1;
@@ -460,7 +460,7 @@ void m68k_dispatch_02024f0c(void)
   undefined2 *unaff_r10;
   uint unaff_r11;
   
-  sVar2 = FUN_010040c4(CONCAT22(*unaff_r10,unaff_r10[1]));
+  sVar2 = read_m68k_bus_word(CONCAT22(*unaff_r10,unaff_r10[1]));
   uVar1 = (unaff_r11 & 0xe00) >> 7;
   *(int *)(unaff_r6 + uVar1) = (int)sVar2 * (int)*(short *)(unaff_r6 + uVar1);
                     /* WARNING: Could not recover jumptable at 0x02024f4c. Too many branches */
@@ -472,7 +472,7 @@ void m68k_dispatch_02024f0c(void)
 
 // 0x02024f50  m68k_muls_word
 
-void m68k_dispatch_02024f50(void)
+void m68k_muls_word_02024f50(void)
 
 {
   uint uVar1;
@@ -482,7 +482,7 @@ void m68k_dispatch_02024f50(void)
   short *unaff_r10;
   uint unaff_r11;
   
-  sVar2 = FUN_010040c4(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
+  sVar2 = read_m68k_bus_word(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
                        (int)*unaff_r10);
   uVar1 = (unaff_r11 & 0xe00) >> 7;
   *(int *)(unaff_r6 + uVar1) = (int)sVar2 * (int)*(short *)(unaff_r6 + uVar1);
@@ -495,7 +495,7 @@ void m68k_dispatch_02024f50(void)
 
 // 0x02024fa0  m68k_muls_word
 
-void m68k_dispatch_02024fa0(void)
+void m68k_muls_word_02024fa0(void)
 
 {
   uint uVar1;
@@ -519,7 +519,7 @@ void m68k_dispatch_02024fa0(void)
   else {
     iVar4 = *(int *)(iVar4 + uVar1);
   }
-  sVar3 = FUN_010040c4(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
+  sVar3 = read_m68k_bus_word(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
                        (int)(char)uVar2 + iVar4);
   uVar1 = (unaff_r11 & 0xe00) >> 7;
   *(int *)(unaff_r6 + uVar1) = (int)sVar3 * (int)*(short *)(unaff_r6 + uVar1);
@@ -532,7 +532,7 @@ void m68k_dispatch_02024fa0(void)
 
 // 0x02025018  m68k_muls_word
 
-void m68k_dispatch_02025018(void)
+void m68k_muls_word_02025018(void)
 
 {
   uint uVar1;
@@ -557,7 +557,7 @@ void m68k_dispatch_02025018(void)
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-int m68k_dispatch_02025048(void)
+int m68k_divu_word_02025048(void)
 
 {
   ushort uVar1;
@@ -656,7 +656,7 @@ int m68k_dispatch_02025048(void)
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-int m68k_dispatch_020250f4(void)
+int m68k_divu_word_020250f4(void)
 
 {
   ushort uVar1;
@@ -672,7 +672,7 @@ int m68k_dispatch_020250f4(void)
   ushort *unaff_r10;
   uint unaff_r11;
   
-  iVar3 = FUN_010040c4(*(undefined4 *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4));
+  iVar3 = read_m68k_bus_word(*(undefined4 *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4));
   if (iVar3 == 0) {
     uVar6 = *(uint *)(unaff_r6 + 0x50);
     iVar3 = *(int *)(unaff_r6 + 0x54);
@@ -755,7 +755,7 @@ int m68k_dispatch_020250f4(void)
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-int m68k_dispatch_020251a4(void)
+int m68k_divu_word_020251a4(void)
 
 {
   ushort uVar1;
@@ -774,7 +774,7 @@ int m68k_dispatch_020251a4(void)
   
   piVar4 = (int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4);
   *piVar4 = *piVar4 + 2;
-  iVar3 = FUN_010040c4();
+  iVar3 = read_m68k_bus_word();
   if (iVar3 == 0) {
     uVar7 = *(uint *)(unaff_r6 + 0x50);
     iVar3 = *(int *)(unaff_r6 + 0x54);
@@ -857,7 +857,7 @@ int m68k_dispatch_020251a4(void)
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-int m68k_dispatch_02025260(void)
+int m68k_divu_word_02025260(void)
 
 {
   ushort uVar1;
@@ -876,7 +876,7 @@ int m68k_dispatch_02025260(void)
   
   piVar4 = (int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4);
   *piVar4 = *piVar4 + -2;
-  iVar3 = FUN_010040c4();
+  iVar3 = read_m68k_bus_word();
   if (iVar3 == 0) {
     uVar7 = *(uint *)(unaff_r6 + 0x50);
     iVar3 = *(int *)(unaff_r6 + 0x54);
@@ -959,7 +959,7 @@ int m68k_dispatch_02025260(void)
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-int m68k_dispatch_0202531c(void)
+int m68k_divu_word_0202531c(void)
 
 {
   ushort uVar1;
@@ -977,7 +977,7 @@ int m68k_dispatch_0202531c(void)
   uint unaff_r11;
   
   puVar7 = (ushort *)(unaff_r10 + 1);
-  iVar3 = FUN_010040c4(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)*unaff_r10);
+  iVar3 = read_m68k_bus_word(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)*unaff_r10);
   if (iVar3 == 0) {
     uVar6 = *(uint *)(unaff_r6 + 0x50);
     iVar3 = *(int *)(unaff_r6 + 0x54);
@@ -1060,7 +1060,7 @@ int m68k_dispatch_0202531c(void)
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-int m68k_dispatch_020253d4(void)
+int m68k_divu_word_020253d4(void)
 
 {
   undefined2 uVar1;
@@ -1090,7 +1090,7 @@ int m68k_dispatch_020253d4(void)
   else {
     iVar3 = *(int *)(iVar3 + uVar6);
   }
-  iVar3 = FUN_010040c4(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)(char)uVar2 + iVar3);
+  iVar3 = read_m68k_bus_word(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)(char)uVar2 + iVar3);
   if (iVar3 == 0) {
     uVar6 = *(uint *)(unaff_r6 + 0x50);
     iVar3 = *(int *)(unaff_r6 + 0x54);
@@ -1173,7 +1173,7 @@ int m68k_dispatch_020253d4(void)
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-int m68k_dispatch_020254b0(void)
+int m68k_divu_word_020254b0(void)
 
 {
   ushort uVar1;
@@ -1191,7 +1191,7 @@ int m68k_dispatch_020254b0(void)
   uint unaff_r11;
   
   puVar7 = (ushort *)(unaff_r10 + 1);
-  iVar3 = FUN_010040c4((int)*unaff_r10);
+  iVar3 = read_m68k_bus_word((int)*unaff_r10);
   if (iVar3 == 0) {
     uVar6 = *(uint *)(unaff_r6 + 0x50);
     iVar3 = *(int *)(unaff_r6 + 0x54);
@@ -1274,7 +1274,7 @@ int m68k_dispatch_020254b0(void)
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-int m68k_dispatch_02025558(void)
+int m68k_divu_word_02025558(void)
 
 {
   ushort uVar1;
@@ -1292,7 +1292,7 @@ int m68k_dispatch_02025558(void)
   uint unaff_r11;
   
   puVar7 = unaff_r10 + 2;
-  iVar3 = FUN_010040c4(CONCAT22(*unaff_r10,unaff_r10[1]));
+  iVar3 = read_m68k_bus_word(CONCAT22(*unaff_r10,unaff_r10[1]));
   if (iVar3 == 0) {
     uVar6 = *(uint *)(unaff_r6 + 0x50);
     iVar3 = *(int *)(unaff_r6 + 0x54);
@@ -1375,7 +1375,7 @@ int m68k_dispatch_02025558(void)
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-int m68k_dispatch_02025608(void)
+int m68k_divu_word_02025608(void)
 
 {
   ushort uVar1;
@@ -1393,7 +1393,7 @@ int m68k_dispatch_02025608(void)
   uint unaff_r11;
   
   puVar7 = (ushort *)(unaff_r10 + 1);
-  iVar3 = FUN_010040c4(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
+  iVar3 = read_m68k_bus_word(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
                        (int)*unaff_r10);
   if (iVar3 == 0) {
     uVar6 = *(uint *)(unaff_r6 + 0x50);
@@ -1477,7 +1477,7 @@ int m68k_dispatch_02025608(void)
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-int m68k_dispatch_020256c4(void)
+int m68k_divu_word_020256c4(void)
 
 {
   undefined2 uVar1;
@@ -1507,7 +1507,7 @@ int m68k_dispatch_020256c4(void)
   else {
     iVar3 = *(int *)(iVar3 + uVar6);
   }
-  iVar3 = FUN_010040c4(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
+  iVar3 = read_m68k_bus_word(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
                        (int)(char)uVar2 + iVar3);
   if (iVar3 == 0) {
     uVar6 = *(uint *)(unaff_r6 + 0x50);
@@ -1591,7 +1591,7 @@ int m68k_dispatch_020256c4(void)
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-int m68k_dispatch_020257a8(void)
+int m68k_divu_word_020257a8(void)
 
 {
   ushort uVar1;
@@ -1692,7 +1692,7 @@ int m68k_dispatch_020257a8(void)
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-int m68k_dispatch_02025850(void)
+int m68k_divs_word_02025850(void)
 
 {
   ushort uVar1;
@@ -1807,7 +1807,7 @@ int m68k_dispatch_02025850(void)
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-int m68k_dispatch_02025934(void)
+int m68k_divs_word_02025934(void)
 
 {
   ushort uVar1;
@@ -1825,7 +1825,7 @@ int m68k_dispatch_02025934(void)
   ushort *unaff_r10;
   uint unaff_r11;
   
-  sVar3 = FUN_010040c4(*(undefined4 *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4));
+  sVar3 = read_m68k_bus_word(*(undefined4 *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4));
   iVar4 = (int)sVar3;
   if (iVar4 == 0) {
     uVar6 = *(uint *)(unaff_r6 + 0x50);
@@ -1924,7 +1924,7 @@ int m68k_dispatch_02025934(void)
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-int m68k_dispatch_02025a24(void)
+int m68k_divs_word_02025a24(void)
 
 {
   ushort uVar1;
@@ -1945,7 +1945,7 @@ int m68k_dispatch_02025a24(void)
   
   piVar6 = (int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4);
   *piVar6 = *piVar6 + 2;
-  sVar3 = FUN_010040c4();
+  sVar3 = read_m68k_bus_word();
   iVar4 = (int)sVar3;
   if (iVar4 == 0) {
     uVar7 = *(uint *)(unaff_r6 + 0x50);
@@ -2044,7 +2044,7 @@ int m68k_dispatch_02025a24(void)
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-int m68k_dispatch_02025b20(void)
+int m68k_divs_word_02025b20(void)
 
 {
   ushort uVar1;
@@ -2065,7 +2065,7 @@ int m68k_dispatch_02025b20(void)
   
   piVar6 = (int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4);
   *piVar6 = *piVar6 + -2;
-  sVar3 = FUN_010040c4();
+  sVar3 = read_m68k_bus_word();
   iVar4 = (int)sVar3;
   if (iVar4 == 0) {
     uVar7 = *(uint *)(unaff_r6 + 0x50);
@@ -2164,7 +2164,7 @@ int m68k_dispatch_02025b20(void)
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-int m68k_dispatch_02025c1c(void)
+int m68k_divs_word_02025c1c(void)
 
 {
   ushort uVar1;
@@ -2184,7 +2184,7 @@ int m68k_dispatch_02025c1c(void)
   uint unaff_r11;
   
   puVar9 = (ushort *)(unaff_r10 + 1);
-  sVar3 = FUN_010040c4(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)*unaff_r10);
+  sVar3 = read_m68k_bus_word(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)*unaff_r10);
   iVar4 = (int)sVar3;
   if (iVar4 == 0) {
     uVar6 = *(uint *)(unaff_r6 + 0x50);
@@ -2283,7 +2283,7 @@ int m68k_dispatch_02025c1c(void)
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-int m68k_dispatch_02025d14(void)
+int m68k_divs_word_02025d14(void)
 
 {
   undefined2 uVar1;
@@ -2315,7 +2315,7 @@ int m68k_dispatch_02025d14(void)
   else {
     iVar4 = *(int *)(iVar4 + uVar6);
   }
-  sVar3 = FUN_010040c4(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)(char)uVar2 + iVar4);
+  sVar3 = read_m68k_bus_word(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)(char)uVar2 + iVar4);
   iVar4 = (int)sVar3;
   if (iVar4 == 0) {
     uVar6 = *(uint *)(unaff_r6 + 0x50);
@@ -2414,7 +2414,7 @@ int m68k_dispatch_02025d14(void)
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-int m68k_dispatch_02025e30(void)
+int m68k_divs_word_02025e30(void)
 
 {
   ushort uVar1;
@@ -2434,7 +2434,7 @@ int m68k_dispatch_02025e30(void)
   uint unaff_r11;
   
   puVar9 = (ushort *)(unaff_r10 + 1);
-  sVar3 = FUN_010040c4((int)*unaff_r10);
+  sVar3 = read_m68k_bus_word((int)*unaff_r10);
   iVar4 = (int)sVar3;
   if (iVar4 == 0) {
     uVar6 = *(uint *)(unaff_r6 + 0x50);
@@ -2533,7 +2533,7 @@ int m68k_dispatch_02025e30(void)
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-int m68k_dispatch_02025f18(void)
+int m68k_divs_word_02025f18(void)
 
 {
   ushort uVar1;
@@ -2553,7 +2553,7 @@ int m68k_dispatch_02025f18(void)
   uint unaff_r11;
   
   puVar9 = unaff_r10 + 2;
-  sVar3 = FUN_010040c4(CONCAT22(*unaff_r10,unaff_r10[1]));
+  sVar3 = read_m68k_bus_word(CONCAT22(*unaff_r10,unaff_r10[1]));
   iVar4 = (int)sVar3;
   if (iVar4 == 0) {
     uVar6 = *(uint *)(unaff_r6 + 0x50);
@@ -2652,7 +2652,7 @@ int m68k_dispatch_02025f18(void)
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-int m68k_dispatch_02026008(void)
+int m68k_divs_word_02026008(void)
 
 {
   ushort uVar1;
@@ -2672,7 +2672,7 @@ int m68k_dispatch_02026008(void)
   uint unaff_r11;
   
   puVar9 = (ushort *)(unaff_r10 + 1);
-  sVar3 = FUN_010040c4(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
+  sVar3 = read_m68k_bus_word(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
                        (int)*unaff_r10);
   iVar4 = (int)sVar3;
   if (iVar4 == 0) {
@@ -2772,7 +2772,7 @@ int m68k_dispatch_02026008(void)
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-int m68k_dispatch_02026104(void)
+int m68k_divs_word_02026104(void)
 
 {
   undefined2 uVar1;
@@ -2804,7 +2804,7 @@ int m68k_dispatch_02026104(void)
   else {
     iVar4 = *(int *)(iVar4 + uVar6);
   }
-  sVar3 = FUN_010040c4(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
+  sVar3 = read_m68k_bus_word(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
                        (int)(char)uVar2 + iVar4);
   iVar4 = (int)sVar3;
   if (iVar4 == 0) {
@@ -2904,7 +2904,7 @@ int m68k_dispatch_02026104(void)
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-int m68k_dispatch_02026228(void)
+int m68k_divs_word_02026228(void)
 
 {
   ushort uVar1;

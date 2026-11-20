@@ -4,7 +4,7 @@
 
 // 0x02003af0  initialize_cartridge_and_work_ram_mapping
 
-void FUN_02003af0(void)
+void initialize_cartridge_and_work_ram_mapping(void)
 
 {
   DAT_023cb628 = 0x3fffff;
@@ -17,7 +17,7 @@ void FUN_02003af0(void)
 
 // 0x02003ca4  get_cartridge_rom_buffer
 
-undefined * FUN_02003ca4(void)
+undefined * get_cartridge_rom_buffer(void)
 
 {
   return &DAT_020b4cec;
@@ -26,7 +26,7 @@ undefined * FUN_02003ca4(void)
 
 // 0x02003cb0  get_genesis_work_ram_buffer
 
-undefined * FUN_02003cb0(void)
+undefined * get_genesis_work_ram_buffer(void)
 
 {
   return &DAT_023cb634;
@@ -35,7 +35,7 @@ undefined * FUN_02003cb0(void)
 
 // 0x02003cc8  get_vdp_dma_backing_pointer
 
-undefined * FUN_02003cc8(uint param_1)
+undefined * get_vdp_dma_backing_pointer(uint param_1)
 
 {
   undefined *puVar1;
@@ -55,7 +55,7 @@ undefined * FUN_02003cc8(uint param_1)
 
 // 0x02003f30  select_m68k_byte_read_handler
 
-code * FUN_02003f30(uint param_1)
+code * select_m68k_byte_read_handler(uint param_1)
 
 {
   code *pcVar1;
@@ -76,19 +76,19 @@ code * FUN_02003f30(uint param_1)
     }
     break;
   default:
-    return FUN_02004378;
+    return default_m68k_byte_read_entry;
   case 10:
-    pcVar1 = FUN_02004a1c;
+    pcVar1 = read_z80_window_from_m68k;
     if ((param_1 & 0xf) != 0) {
-      pcVar1 = FUN_02004adc;
+      pcVar1 = read_m68k_io_or_mapper_byte;
       if ((param_1 & 0xf) != 1) {
-        pcVar1 = FUN_02004378;
+        pcVar1 = default_m68k_byte_read_entry;
       }
     }
     break;
   case 0xc:
   case 0xd:
-    return FUN_02004aa8;
+    return read_vdp_byte_from_m68k;
   case 0xe:
   case 0xf:
     return (code *)&LAB_02003df8;
@@ -99,7 +99,7 @@ code * FUN_02003f30(uint param_1)
 
 // 0x0200402c  select_m68k_word_read_handler
 
-code * FUN_0200402c(uint param_1)
+code * select_m68k_word_read_handler(uint param_1)
 
 {
   code *pcVar1;
@@ -120,13 +120,13 @@ code * FUN_0200402c(uint param_1)
     }
     break;
   default:
-    return FUN_020043a4;
+    return default_m68k_word_read_entry;
   case 10:
     pcVar1 = (code *)&LAB_0200497c;
     if ((param_1 & 0xf) != 0) {
       pcVar1 = (code *)&UNK_02004908;
       if ((param_1 & 0xf) != 1) {
-        pcVar1 = FUN_020043a4;
+        pcVar1 = default_m68k_word_read_entry;
       }
     }
     break;
@@ -143,7 +143,7 @@ code * FUN_0200402c(uint param_1)
 
 // 0x0200412c  refresh_m68k_cartridge_read_pages
 
-void FUN_0200412c(void)
+void refresh_m68k_cartridge_read_pages(void)
 
 {
   undefined4 uVar1;
@@ -152,12 +152,12 @@ void FUN_0200412c(void)
   undefined4 *puVar4;
   
   iVar2 = 0;
-  puVar3 = &DAT_0b000a1c;
-  puVar4 = &DAT_0b00061c;
+  puVar3 = &m68k_word_read_handlers;
+  puVar4 = &m68k_byte_read_handlers;
   do {
-    uVar1 = FUN_02003f30(iVar2);
+    uVar1 = select_m68k_byte_read_handler(iVar2);
     *puVar4 = uVar1;
-    uVar1 = FUN_0200402c(iVar2);
+    uVar1 = select_m68k_word_read_handler(iVar2);
     iVar2 = iVar2 + 1;
     *puVar3 = uVar1;
     puVar3 = puVar3 + 1;
@@ -169,7 +169,7 @@ void FUN_0200412c(void)
 
 // 0x0200416c  select_m68k_byte_write_handler
 
-undefined * FUN_0200416c(uint param_1)
+undefined * select_m68k_byte_write_handler(uint param_1)
 
 {
   undefined1 *puVar1;
@@ -207,7 +207,7 @@ undefined * FUN_0200416c(uint param_1)
 
 // 0x02004230  select_m68k_word_write_handler
 
-undefined * FUN_02004230(uint param_1)
+undefined * select_m68k_word_write_handler(uint param_1)
 
 {
   undefined1 *puVar1;
@@ -245,7 +245,7 @@ undefined * FUN_02004230(uint param_1)
 
 // 0x020042f0  initialize_m68k_bus_dispatch_tables
 
-void FUN_020042f0(void)
+void initialize_m68k_bus_dispatch_tables(void)
 
 {
   undefined4 uVar1;
@@ -255,15 +255,15 @@ void FUN_020042f0(void)
   iVar2 = 0;
   iVar3 = 0;
   do {
-    uVar1 = FUN_02003f30(iVar2);
-    *(undefined4 *)((int)&DAT_0b00061c + iVar3) = uVar1;
-    uVar1 = FUN_0200402c(iVar2);
-    *(undefined4 *)((int)&DAT_0b000a1c + iVar3) = uVar1;
-    uVar1 = FUN_0200416c(iVar2);
-    *(undefined4 *)((int)&DAT_0b000e1c + iVar3) = uVar1;
-    uVar1 = FUN_02004230(iVar2);
+    uVar1 = select_m68k_byte_read_handler(iVar2);
+    *(undefined4 *)((int)&m68k_byte_read_handlers + iVar3) = uVar1;
+    uVar1 = select_m68k_word_read_handler(iVar2);
+    *(undefined4 *)((int)&m68k_word_read_handlers + iVar3) = uVar1;
+    uVar1 = select_m68k_byte_write_handler(iVar2);
+    *(undefined4 *)((int)&m68k_byte_write_handlers + iVar3) = uVar1;
+    uVar1 = select_m68k_word_write_handler(iVar2);
     iVar2 = iVar2 + 1;
-    *(undefined4 *)((int)&DAT_0b00121c + iVar3) = uVar1;
+    *(undefined4 *)((int)&m68k_word_write_handlers + iVar3) = uVar1;
     iVar3 = iVar3 + 4;
   } while (iVar2 != 0x100);
   return;
@@ -272,7 +272,7 @@ void FUN_020042f0(void)
 
 // 0x02004368  read_default_m68k_bus_byte
 
-undefined4 FUN_02004368(uint param_1)
+undefined4 read_default_m68k_bus_byte(uint param_1)
 
 {
   undefined4 uVar1;
@@ -289,17 +289,17 @@ undefined4 FUN_02004368(uint param_1)
 
 // 0x02004378  default_m68k_byte_read_entry
 
-void FUN_02004378(void)
+void default_m68k_byte_read_entry(void)
 
 {
-  FUN_02004368();
+  read_default_m68k_bus_byte();
   return;
 }
 
 
 // 0x0200438c  read_default_m68k_bus_word
 
-undefined4 FUN_0200438c(int param_1)
+undefined4 read_default_m68k_bus_word(int param_1)
 
 {
   undefined4 uVar1;
@@ -314,24 +314,24 @@ undefined4 FUN_0200438c(int param_1)
 
 // 0x020043a4  default_m68k_word_read_entry
 
-void FUN_020043a4(void)
+void default_m68k_word_read_entry(void)
 
 {
-  FUN_0200438c(1);
+  read_default_m68k_bus_word(1);
   return;
 }
 
 
 // 0x02004aa8  read_vdp_byte_from_m68k
 
-void FUN_02004aa8(uint param_1)
+void read_vdp_byte_from_m68k(uint param_1)
 
 {
   if ((param_1 & 0xe700e0) == 0xc00000) {
-    FUN_020094b4(param_1 & 0x1f);
+    read_vdp_byte_port(param_1 & 0x1f);
   }
   else {
-    FUN_020043bc();
+    return_zero_for_unhandled_z80_vdp_access();
   }
   return;
 }
@@ -339,17 +339,17 @@ void FUN_02004aa8(uint param_1)
 
 // 0x02004adc  read_m68k_io_or_mapper_byte
 
-uint FUN_02004adc(uint param_1)
+uint read_m68k_io_or_mapper_byte(uint param_1)
 
 {
   uint uVar1;
   
   if (param_1 < 0xa10020) {
-    uVar1 = FUN_020003f4(param_1 & 0xff);
+    uVar1 = read_genesis_io_register_byte(param_1 & 0xff);
     uVar1 = uVar1 & 0xff;
   }
   else if (param_1 == 0xa11100) {
-    uVar1 = FUN_020043cc();
+    uVar1 = read_z80_bus_request_status();
   }
   else if (param_1 == 0xa130f1) {
     uVar1 = DAT_0208f34a & 1;
@@ -358,7 +358,7 @@ uint FUN_02004adc(uint param_1)
     uVar1 = (uint)(byte)(&DAT_02099014)[((param_1 & 0xf) >> 1) * 4];
   }
   else {
-    uVar1 = FUN_02004368();
+    uVar1 = read_default_m68k_bus_byte();
   }
   return uVar1;
 }
@@ -366,13 +366,13 @@ uint FUN_02004adc(uint param_1)
 
 // 0x02004bf0  reset_bus_tables_work_ram_and_z80_bus_lines
 
-void FUN_02004bf0(void)
+void reset_bus_tables_work_ram_and_z80_bus_lines(void)
 
 {
   DAT_0209900e = 0;
-  FUN_020042f0();
-  FUN_02083058(&DAT_023cb634,0,0x10000);
-  DAT_02099008 = 0;
+  initialize_m68k_bus_dispatch_tables();
+  newlib_memset(&DAT_023cb634,0,0x10000);
+  z80_cartridge_bank_base = 0;
   DAT_0208f34a = 1;
   DAT_02099010 = 0;
   DAT_02099001 = 0;

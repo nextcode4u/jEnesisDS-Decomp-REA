@@ -4,7 +4,7 @@
 
 // 0x037f93d8  read_ym2612_dac_enable
 
-undefined4 FUN_037f93d8(void)
+undefined4 read_ym2612_dac_enable(void)
 
 {
   return DAT_03807818;
@@ -13,12 +13,12 @@ undefined4 FUN_037f93d8(void)
 
 // 0x037fbc10  reset_dac_sample_cursor
 
-void FUN_037fbc10(undefined4 param_1)
+void reset_dac_sample_cursor(undefined4 param_1)
 
 {
   DAT_0380b878 = 0;
   DAT_0380b87c = 0;
-  DAT_0380b880 = FUN_038018d8(DAT_0380b8a0 << 0x10,param_1);
+  DAT_0380b880 = compiler_udivsi3(DAT_0380b8a0 << 0x10,param_1);
   DAT_0380b8a0 = 0;
   return;
 }
@@ -26,7 +26,7 @@ void FUN_037fbc10(undefined4 param_1)
 
 // 0x037fbc68  render_unsigned_dac_to_pcm16
 
-void FUN_037fbc68(int param_1,int param_2)
+void render_unsigned_dac_to_pcm16(int param_1,int param_2)
 
 {
   int iVar1;
@@ -60,7 +60,7 @@ void FUN_037fbc68(int param_1,int param_2)
 
 // 0x037fbda8  service_dac_buffer
 
-void FUN_037fbda8(int param_1)
+void service_dac_buffer(int param_1)
 
 {
   bool bVar1;
@@ -68,7 +68,7 @@ void FUN_037fbda8(int param_1)
   int iVar3;
   undefined2 *puVar4;
   
-  if ((DAT_0380b8a0 == 0) || (iVar2 = FUN_037f93d8(), iVar2 == 0)) {
+  if ((DAT_0380b8a0 == 0) || (iVar2 = read_ym2612_dac_enable(), iVar2 == 0)) {
     bVar1 = false;
   }
   else {
@@ -77,12 +77,12 @@ void FUN_037fbda8(int param_1)
   if (0xfff < param_1) {
     param_1 = 0x1000;
   }
-  FUN_037fbc10(param_1);
+  reset_dac_sample_cursor(param_1);
   iVar2 = param_1 * 2;
   if (DAT_0380bdd4 < DAT_0380bdd0 + param_1) {
     iVar2 = (int)DAT_0380bdd4 - (int)DAT_0380bdd0 >> 1;
     if (bVar1) {
-      FUN_037fbc68(DAT_0380bdd0,iVar2);
+      render_unsigned_dac_to_pcm16(DAT_0380bdd0,iVar2);
       param_1 = param_1 - iVar2;
       DAT_0380bdd0 = DAT_0380bdcc;
       iVar2 = param_1 * 2;
@@ -102,7 +102,7 @@ void FUN_037fbda8(int param_1)
     }
   }
   if (bVar1) {
-    FUN_037fbc68(DAT_0380bdd0,param_1);
+    render_unsigned_dac_to_pcm16(DAT_0380bdd0,param_1);
   }
   else {
     puVar4 = DAT_0380bdd0;

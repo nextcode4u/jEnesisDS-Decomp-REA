@@ -6,7 +6,7 @@
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-uint FUN_02000310(void)
+uint read_m68k_program_counter(void)
 
 {
   return _DAT_0b0000f0 - _DAT_0b000100 | _DAT_0b000148;
@@ -15,7 +15,7 @@ uint FUN_02000310(void)
 
 // 0x020004e0  queue_m68k_interrupt_level
 
-void FUN_020004e0(int param_1)
+void queue_m68k_interrupt_level(int param_1)
 
 {
   int iVar1;
@@ -36,14 +36,14 @@ void FUN_020004e0(int param_1)
 
 // 0x020004f0  calculate_m68k_cycles_per_frame_line
 
-void FUN_020004f0(void)
+void calculate_m68k_cycles_per_frame_line(void)
 
 {
   undefined4 uVar1;
   
   if (DAT_0b000008 != 0) {
-    uVar1 = FUN_02005144(&DAT_0b0000ac);
-    FUN_02080380(uVar1,DAT_0b000008 * DAT_0b000000);
+    uVar1 = get_m68k_cycle_counter_field(&DAT_0b0000ac);
+    compiler_udivsi3(uVar1,DAT_0b000008 * DAT_0b000000);
     return;
   }
   return;
@@ -54,7 +54,7 @@ void FUN_020004f0(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 FUN_0200052c(void)
+undefined4 read_m68k_cycle_counter(void)
 
 {
   return _DAT_0b000140;
@@ -65,7 +65,7 @@ undefined4 FUN_0200052c(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_02000538(int param_1)
+void update_vdp_timing_and_run_m68k_scanline(int param_1)
 
 {
   int iVar1;
@@ -78,7 +78,7 @@ void FUN_02000538(int param_1)
   bool bVar8;
   bool bVar9;
   
-  FUN_0200b284();
+  update_vdp_line_cycles_and_queue_m68k_interrupts();
   iVar2 = DAT_0b000110;
   iVar4 = DAT_0b0000f4;
   puVar3 = _DAT_0b0000f0;
@@ -141,7 +141,7 @@ void FUN_02000538(int param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_02000568(int param_1)
+void update_vdp_timing_and_run_m68k_configured(int param_1)
 
 {
   int iVar1;
@@ -154,7 +154,7 @@ void FUN_02000568(int param_1)
   bool bVar8;
   bool bVar9;
   
-  FUN_0200b284();
+  update_vdp_line_cycles_and_queue_m68k_interrupts();
   iVar2 = DAT_0b000110;
   iVar4 = DAT_0b0000f4;
   puVar3 = _DAT_0b0000f0;
@@ -215,7 +215,7 @@ void FUN_02000568(int param_1)
 
 // 0x02005144  get_m68k_cycle_counter_field
 
-undefined4 FUN_02005144(int param_1)
+undefined4 get_m68k_cycle_counter_field(int param_1)
 
 {
   return *(undefined4 *)(param_1 + 0x94);

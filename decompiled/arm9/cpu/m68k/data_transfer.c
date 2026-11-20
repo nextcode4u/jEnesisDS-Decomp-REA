@@ -4,7 +4,7 @@
 
 // 0x01003d0c  m68k_moveq
 
-void m68k_dispatch_01003d0c(void)
+void m68k_moveq(void)
 
 {
   int unaff_r6;
@@ -22,7 +22,7 @@ void m68k_dispatch_01003d0c(void)
 
 // 0x01003ddc  m68k_movea_long
 
-void m68k_dispatch_01003ddc(void)
+void m68k_movea_long_01003ddc(void)
 
 {
   undefined4 uVar1;
@@ -31,7 +31,7 @@ void m68k_dispatch_01003ddc(void)
   ushort *unaff_r10;
   uint unaff_r11;
   
-  uVar1 = FUN_010040fc(*(undefined4 *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4));
+  uVar1 = read_m68k_bus_long(*(undefined4 *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4));
   *(undefined4 *)(unaff_r6 + 0x20 + ((unaff_r11 & 0xe00) >> 7)) = uVar1;
                     /* WARNING: Could not recover jumptable at 0x01003e00. Too many branches */
                     /* WARNING: Treating indirect jump as call */
@@ -42,7 +42,7 @@ void m68k_dispatch_01003ddc(void)
 
 // 0x01003e04  m68k_movea_long
 
-void m68k_dispatch_01003e04(void)
+void m68k_movea_long_01003e04(void)
 
 {
   undefined4 uVar1;
@@ -53,7 +53,7 @@ void m68k_dispatch_01003e04(void)
   
   *(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) =
        *(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + 4;
-  uVar1 = FUN_010040fc();
+  uVar1 = read_m68k_bus_long();
   *(undefined4 *)(unaff_r6 + 0x20 + ((unaff_r11 & 0xe00) >> 7)) = uVar1;
                     /* WARNING: Could not recover jumptable at 0x01003e30. Too many branches */
                     /* WARNING: Treating indirect jump as call */
@@ -64,7 +64,7 @@ void m68k_dispatch_01003e04(void)
 
 // 0x01003e34  m68k_lea_long
 
-void m68k_dispatch_01003e34(void)
+void m68k_lea_long_01003e34(void)
 
 {
   int unaff_r6;
@@ -82,7 +82,7 @@ void m68k_dispatch_01003e34(void)
 
 // 0x01003e50  m68k_lea_long
 
-void m68k_dispatch_01003e50(void)
+void m68k_lea_long_01003e50(void)
 
 {
   int unaff_r6;
@@ -104,7 +104,7 @@ void m68k_dispatch_01003e50(void)
 /* WARNING: Removing unreachable block (ram,0x02016cdc) */
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 
-int m68k_dispatch_01004030(void)
+int m68k_move_01004030(void)
 
 {
   ushort uVar1;
@@ -177,7 +177,7 @@ int m68k_dispatch_01004030(void)
 /* WARNING: Removing unreachable block (ram,0x02016cdc) */
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 
-int m68k_dispatch_01004058(void)
+int m68k_move_01004058(void)
 
 {
   ushort uVar1;
@@ -246,7 +246,7 @@ int m68k_dispatch_01004058(void)
 
 // 0x0201c280  m68k_movea_word
 
-void m68k_dispatch_0201c280(void)
+void m68k_movea_word_0201c280(void)
 
 {
   int unaff_r6;
@@ -265,7 +265,7 @@ void m68k_dispatch_0201c280(void)
 
 // 0x0201c2a4  m68k_movea_long
 
-void m68k_dispatch_0201c2a4(void)
+void m68k_movea_long_0201c2a4(void)
 
 {
   int unaff_r6;
@@ -284,7 +284,7 @@ void m68k_dispatch_0201c2a4(void)
 
 // 0x0201c2c4  m68k_movea_word
 
-void m68k_dispatch_0201c2c4(void)
+void m68k_movea_word_0201c2c4(void)
 
 {
   int unaff_r6;
@@ -303,7 +303,7 @@ void m68k_dispatch_0201c2c4(void)
 
 // 0x0201c2ec  m68k_movea_long
 
-void m68k_dispatch_0201c2ec(void)
+void m68k_movea_long_0201c2ec(void)
 
 {
   int unaff_r6;
@@ -322,7 +322,7 @@ void m68k_dispatch_0201c2ec(void)
 
 // 0x0201c310  m68k_movea_word
 
-void m68k_dispatch_0201c310(void)
+void m68k_movea_word_0201c310(void)
 
 {
   short sVar1;
@@ -331,7 +331,7 @@ void m68k_dispatch_0201c310(void)
   ushort *unaff_r10;
   uint unaff_r11;
   
-  sVar1 = FUN_010040c4(*(undefined4 *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4));
+  sVar1 = read_m68k_bus_word(*(undefined4 *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4));
   *(int *)(unaff_r6 + 0x20 + ((unaff_r11 & 0xe00) >> 7)) = (int)sVar1;
                     /* WARNING: Could not recover jumptable at 0x0201c33c. Too many branches */
                     /* WARNING: Treating indirect jump as call */
@@ -342,7 +342,7 @@ void m68k_dispatch_0201c310(void)
 
 // 0x0201c340  m68k_movea_word
 
-void m68k_dispatch_0201c340(void)
+void m68k_movea_word_0201c340(void)
 
 {
   short sVar1;
@@ -354,7 +354,7 @@ void m68k_dispatch_0201c340(void)
   
   piVar2 = (int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4);
   *piVar2 = *piVar2 + 2;
-  sVar1 = FUN_010040c4();
+  sVar1 = read_m68k_bus_word();
   *(int *)(unaff_r6 + 0x20 + ((unaff_r11 & 0xe00) >> 7)) = (int)sVar1;
                     /* WARNING: Could not recover jumptable at 0x0201c378. Too many branches */
                     /* WARNING: Treating indirect jump as call */
@@ -365,7 +365,7 @@ void m68k_dispatch_0201c340(void)
 
 // 0x0201c37c  m68k_movea_word
 
-void m68k_dispatch_0201c37c(void)
+void m68k_movea_word_0201c37c(void)
 
 {
   short sVar1;
@@ -377,7 +377,7 @@ void m68k_dispatch_0201c37c(void)
   
   piVar2 = (int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4);
   *piVar2 = *piVar2 + -2;
-  sVar1 = FUN_010040c4();
+  sVar1 = read_m68k_bus_word();
   *(int *)(unaff_r6 + 0x20 + ((unaff_r11 & 0xe00) >> 7)) = (int)sVar1;
                     /* WARNING: Could not recover jumptable at 0x0201c3b4. Too many branches */
                     /* WARNING: Treating indirect jump as call */
@@ -388,7 +388,7 @@ void m68k_dispatch_0201c37c(void)
 
 // 0x0201c3b8  m68k_movea_long
 
-void m68k_dispatch_0201c3b8(void)
+void m68k_movea_long_0201c3b8(void)
 
 {
   undefined4 uVar1;
@@ -400,7 +400,7 @@ void m68k_dispatch_0201c3b8(void)
   
   piVar2 = (int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4);
   *piVar2 = *piVar2 + -4;
-  uVar1 = FUN_010040fc();
+  uVar1 = read_m68k_bus_long();
   *(undefined4 *)(unaff_r6 + 0x20 + ((unaff_r11 & 0xe00) >> 7)) = uVar1;
                     /* WARNING: Could not recover jumptable at 0x0201c3e8. Too many branches */
                     /* WARNING: Treating indirect jump as call */
@@ -411,7 +411,7 @@ void m68k_dispatch_0201c3b8(void)
 
 // 0x0201c3ec  m68k_movea_word
 
-void m68k_dispatch_0201c3ec(void)
+void m68k_movea_word_0201c3ec(void)
 
 {
   short sVar1;
@@ -420,7 +420,7 @@ void m68k_dispatch_0201c3ec(void)
   short *unaff_r10;
   uint unaff_r11;
   
-  sVar1 = FUN_010040c4(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)*unaff_r10);
+  sVar1 = read_m68k_bus_word(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)*unaff_r10);
   *(int *)(unaff_r6 + 0x20 + ((unaff_r11 & 0xe00) >> 7)) = (int)sVar1;
                     /* WARNING: Could not recover jumptable at 0x0201c420. Too many branches */
                     /* WARNING: Treating indirect jump as call */
@@ -431,7 +431,7 @@ void m68k_dispatch_0201c3ec(void)
 
 // 0x0201c424  m68k_movea_long
 
-void m68k_dispatch_0201c424(void)
+void m68k_movea_long_0201c424(void)
 
 {
   undefined4 uVar1;
@@ -440,7 +440,7 @@ void m68k_dispatch_0201c424(void)
   short *unaff_r10;
   uint unaff_r11;
   
-  uVar1 = FUN_010040fc(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)*unaff_r10);
+  uVar1 = read_m68k_bus_long(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)*unaff_r10);
   *(undefined4 *)(unaff_r6 + 0x20 + ((unaff_r11 & 0xe00) >> 7)) = uVar1;
                     /* WARNING: Could not recover jumptable at 0x0201c450. Too many branches */
                     /* WARNING: Treating indirect jump as call */
@@ -451,7 +451,7 @@ void m68k_dispatch_0201c424(void)
 
 // 0x0201c454  m68k_movea_word
 
-void m68k_dispatch_0201c454(void)
+void m68k_movea_word_0201c454(void)
 
 {
   uint uVar1;
@@ -475,7 +475,7 @@ void m68k_dispatch_0201c454(void)
   else {
     iVar4 = *(int *)(iVar4 + uVar1);
   }
-  sVar3 = FUN_010040c4(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)(char)uVar2 + iVar4);
+  sVar3 = read_m68k_bus_word(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)(char)uVar2 + iVar4);
   *(int *)(unaff_r6 + 0x20 + ((unaff_r11 & 0xe00) >> 7)) = (int)sVar3;
                     /* WARNING: Could not recover jumptable at 0x0201c4ac. Too many branches */
                     /* WARNING: Treating indirect jump as call */
@@ -486,7 +486,7 @@ void m68k_dispatch_0201c454(void)
 
 // 0x0201c4b0  m68k_movea_long
 
-void m68k_dispatch_0201c4b0(void)
+void m68k_movea_long_0201c4b0(void)
 
 {
   uint uVar1;
@@ -510,7 +510,7 @@ void m68k_dispatch_0201c4b0(void)
   else {
     iVar4 = *(int *)(iVar4 + uVar1);
   }
-  uVar3 = FUN_010040fc(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)(char)uVar2 + iVar4);
+  uVar3 = read_m68k_bus_long(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)(char)uVar2 + iVar4);
   *(undefined4 *)(unaff_r6 + 0x20 + ((unaff_r11 & 0xe00) >> 7)) = uVar3;
                     /* WARNING: Could not recover jumptable at 0x0201c500. Too many branches */
                     /* WARNING: Treating indirect jump as call */
@@ -521,7 +521,7 @@ void m68k_dispatch_0201c4b0(void)
 
 // 0x0201c504  m68k_movea_word
 
-void m68k_dispatch_0201c504(void)
+void m68k_movea_word_0201c504(void)
 
 {
   short sVar1;
@@ -530,7 +530,7 @@ void m68k_dispatch_0201c504(void)
   short *unaff_r10;
   uint unaff_r11;
   
-  sVar1 = FUN_010040c4((int)*unaff_r10);
+  sVar1 = read_m68k_bus_word((int)*unaff_r10);
   *(int *)(unaff_r6 + 0x20 + ((unaff_r11 & 0xe00) >> 7)) = (int)sVar1;
                     /* WARNING: Could not recover jumptable at 0x0201c528. Too many branches */
                     /* WARNING: Treating indirect jump as call */
@@ -541,7 +541,7 @@ void m68k_dispatch_0201c504(void)
 
 // 0x0201c52c  m68k_movea_long
 
-void m68k_dispatch_0201c52c(void)
+void m68k_movea_long_0201c52c(void)
 
 {
   undefined4 uVar1;
@@ -550,7 +550,7 @@ void m68k_dispatch_0201c52c(void)
   short *unaff_r10;
   uint unaff_r11;
   
-  uVar1 = FUN_010040fc((int)*unaff_r10);
+  uVar1 = read_m68k_bus_long((int)*unaff_r10);
   *(undefined4 *)(unaff_r6 + 0x20 + ((unaff_r11 & 0xe00) >> 7)) = uVar1;
                     /* WARNING: Could not recover jumptable at 0x0201c548. Too many branches */
                     /* WARNING: Treating indirect jump as call */
@@ -561,7 +561,7 @@ void m68k_dispatch_0201c52c(void)
 
 // 0x0201c54c  m68k_movea_word
 
-void m68k_dispatch_0201c54c(void)
+void m68k_movea_word_0201c54c(void)
 
 {
   short sVar1;
@@ -570,7 +570,7 @@ void m68k_dispatch_0201c54c(void)
   undefined2 *unaff_r10;
   uint unaff_r11;
   
-  sVar1 = FUN_010040c4(CONCAT22(*unaff_r10,unaff_r10[1]));
+  sVar1 = read_m68k_bus_word(CONCAT22(*unaff_r10,unaff_r10[1]));
   *(int *)(unaff_r6 + 0x20 + ((unaff_r11 & 0xe00) >> 7)) = (int)sVar1;
                     /* WARNING: Could not recover jumptable at 0x0201c578. Too many branches */
                     /* WARNING: Treating indirect jump as call */
@@ -581,7 +581,7 @@ void m68k_dispatch_0201c54c(void)
 
 // 0x0201c57c  m68k_movea_long
 
-void m68k_dispatch_0201c57c(void)
+void m68k_movea_long_0201c57c(void)
 
 {
   undefined4 uVar1;
@@ -590,7 +590,7 @@ void m68k_dispatch_0201c57c(void)
   undefined2 *unaff_r10;
   uint unaff_r11;
   
-  uVar1 = FUN_010040fc(CONCAT22(*unaff_r10,unaff_r10[1]));
+  uVar1 = read_m68k_bus_long(CONCAT22(*unaff_r10,unaff_r10[1]));
   *(undefined4 *)(unaff_r6 + 0x20 + ((unaff_r11 & 0xe00) >> 7)) = uVar1;
                     /* WARNING: Could not recover jumptable at 0x0201c5a0. Too many branches */
                     /* WARNING: Treating indirect jump as call */
@@ -601,7 +601,7 @@ void m68k_dispatch_0201c57c(void)
 
 // 0x0201c5a4  m68k_movea_word
 
-void m68k_dispatch_0201c5a4(void)
+void m68k_movea_word_0201c5a4(void)
 
 {
   short sVar1;
@@ -610,7 +610,7 @@ void m68k_dispatch_0201c5a4(void)
   short *unaff_r10;
   uint unaff_r11;
   
-  sVar1 = FUN_010040c4(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
+  sVar1 = read_m68k_bus_word(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
                        (int)*unaff_r10);
   *(int *)(unaff_r6 + 0x20 + ((unaff_r11 & 0xe00) >> 7)) = (int)sVar1;
                     /* WARNING: Could not recover jumptable at 0x0201c5dc. Too many branches */
@@ -622,7 +622,7 @@ void m68k_dispatch_0201c5a4(void)
 
 // 0x0201c5e0  m68k_movea_long
 
-void m68k_dispatch_0201c5e0(void)
+void m68k_movea_long_0201c5e0(void)
 
 {
   undefined4 uVar1;
@@ -631,7 +631,7 @@ void m68k_dispatch_0201c5e0(void)
   short *unaff_r10;
   uint unaff_r11;
   
-  uVar1 = FUN_010040fc(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
+  uVar1 = read_m68k_bus_long(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
                        (int)*unaff_r10);
   *(undefined4 *)(unaff_r6 + 0x20 + ((unaff_r11 & 0xe00) >> 7)) = uVar1;
                     /* WARNING: Could not recover jumptable at 0x0201c610. Too many branches */
@@ -643,7 +643,7 @@ void m68k_dispatch_0201c5e0(void)
 
 // 0x0201c614  m68k_movea_word
 
-void m68k_dispatch_0201c614(void)
+void m68k_movea_word_0201c614(void)
 
 {
   uint uVar1;
@@ -667,7 +667,7 @@ void m68k_dispatch_0201c614(void)
   else {
     iVar4 = *(int *)(iVar4 + uVar1);
   }
-  sVar3 = FUN_010040c4(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
+  sVar3 = read_m68k_bus_word(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
                        (int)(char)uVar2 + iVar4);
   *(int *)(unaff_r6 + 0x20 + ((unaff_r11 & 0xe00) >> 7)) = (int)sVar3;
                     /* WARNING: Could not recover jumptable at 0x0201c674. Too many branches */
@@ -679,7 +679,7 @@ void m68k_dispatch_0201c614(void)
 
 // 0x0201c678  m68k_movea_long
 
-void m68k_dispatch_0201c678(void)
+void m68k_movea_long_0201c678(void)
 
 {
   uint uVar1;
@@ -703,7 +703,7 @@ void m68k_dispatch_0201c678(void)
   else {
     iVar4 = *(int *)(iVar4 + uVar1);
   }
-  uVar3 = FUN_010040fc(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
+  uVar3 = read_m68k_bus_long(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
                        (int)(char)uVar2 + iVar4);
   *(undefined4 *)(unaff_r6 + 0x20 + ((unaff_r11 & 0xe00) >> 7)) = uVar3;
                     /* WARNING: Could not recover jumptable at 0x0201c6d0. Too many branches */
@@ -715,7 +715,7 @@ void m68k_dispatch_0201c678(void)
 
 // 0x0201c6d4  m68k_movea_word
 
-void m68k_dispatch_0201c6d4(void)
+void m68k_movea_word_0201c6d4(void)
 
 {
   int unaff_r6;
@@ -733,7 +733,7 @@ void m68k_dispatch_0201c6d4(void)
 
 // 0x0201c6f0  m68k_movea_long
 
-void m68k_dispatch_0201c6f0(void)
+void m68k_movea_long_0201c6f0(void)
 
 {
   int unaff_r6;
@@ -751,7 +751,7 @@ void m68k_dispatch_0201c6f0(void)
 
 // 0x0201c714  m68k_lea_long
 
-void m68k_dispatch_0201c714(void)
+void m68k_lea_long_0201c714(void)
 
 {
   int unaff_r6;
@@ -770,7 +770,7 @@ void m68k_dispatch_0201c714(void)
 
 // 0x0201c738  m68k_lea_long
 
-void m68k_dispatch_0201c738(void)
+void m68k_lea_long_0201c738(void)
 
 {
   int unaff_r6;
@@ -789,7 +789,7 @@ void m68k_dispatch_0201c738(void)
 
 // 0x0201c764  m68k_lea_long
 
-void m68k_dispatch_0201c764(void)
+void m68k_lea_long_0201c764(void)
 
 {
   uint uVar1;
@@ -823,7 +823,7 @@ void m68k_dispatch_0201c764(void)
 
 // 0x0201c7b4  m68k_lea_long
 
-void m68k_dispatch_0201c7b4(void)
+void m68k_lea_long_0201c7b4(void)
 
 {
   int unaff_r6;
@@ -842,7 +842,7 @@ void m68k_dispatch_0201c7b4(void)
 
 // 0x0201c7e4  m68k_lea_long
 
-void m68k_dispatch_0201c7e4(void)
+void m68k_lea_long_0201c7e4(void)
 
 {
   uint uVar1;
@@ -877,7 +877,7 @@ void m68k_dispatch_0201c7e4(void)
 
 // 0x0201c83c  m68k_pea_long
 
-void m68k_dispatch_0201c83c(void)
+void m68k_pea_long_0201c83c(void)
 
 {
   undefined4 uVar1;
@@ -904,7 +904,7 @@ void m68k_dispatch_0201c83c(void)
 
 // 0x0201c874  m68k_pea_long
 
-void m68k_dispatch_0201c874(void)
+void m68k_pea_long_0201c874(void)
 
 {
   int iVar1;
@@ -931,7 +931,7 @@ void m68k_dispatch_0201c874(void)
 
 // 0x0201c8b4  m68k_pea_long
 
-void m68k_dispatch_0201c8b4(void)
+void m68k_pea_long_0201c8b4(void)
 
 {
   ushort uVar1;
@@ -971,7 +971,7 @@ void m68k_dispatch_0201c8b4(void)
 
 // 0x0201c918  m68k_pea_long
 
-void m68k_dispatch_0201c918(void)
+void m68k_pea_long_0201c918(void)
 
 {
   short sVar1;
@@ -997,7 +997,7 @@ void m68k_dispatch_0201c918(void)
 
 // 0x0201c948  m68k_pea_long
 
-void m68k_dispatch_0201c948(void)
+void m68k_pea_long_0201c948(void)
 
 {
   undefined2 uVar1;
@@ -1025,7 +1025,7 @@ void m68k_dispatch_0201c948(void)
 
 // 0x0201c980  m68k_pea_long
 
-void m68k_dispatch_0201c980(void)
+void m68k_pea_long_0201c980(void)
 
 {
   int iVar1;
@@ -1052,7 +1052,7 @@ void m68k_dispatch_0201c980(void)
 
 // 0x0201c9c4  m68k_pea_long
 
-void m68k_dispatch_0201c9c4(void)
+void m68k_pea_long_0201c9c4(void)
 
 {
   ushort uVar1;
@@ -1092,7 +1092,7 @@ void m68k_dispatch_0201c9c4(void)
 
 // 0x0202fe48  m68k_movep_word
 
-void m68k_dispatch_0202fe48(void)
+void m68k_movep_word_0202fe48(void)
 
 {
   short sVar1;
@@ -1104,8 +1104,8 @@ void m68k_dispatch_0202fe48(void)
   uint unaff_r11;
   
   iVar3 = *(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)*unaff_r10;
-  sVar1 = FUN_0100408c(iVar3);
-  uVar2 = FUN_0100408c(iVar3 + 2);
+  sVar1 = read_m68k_bus_byte(iVar3);
+  uVar2 = read_m68k_bus_byte(iVar3 + 2);
   *(ushort *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = uVar2 & 0xff | sVar1 << 8;
                     /* WARNING: Could not recover jumptable at 0x0202fe8c. Too many branches */
                     /* WARNING: Treating indirect jump as call */
@@ -1116,7 +1116,7 @@ void m68k_dispatch_0202fe48(void)
 
 // 0x0202fe90  m68k_movep_long
 
-void m68k_dispatch_0202fe90(void)
+void m68k_movep_long_0202fe90(void)
 
 {
   int iVar1;
@@ -1130,10 +1130,10 @@ void m68k_dispatch_0202fe90(void)
   uint unaff_r11;
   
   iVar5 = *(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)*unaff_r10;
-  iVar1 = FUN_0100408c(iVar5);
-  uVar2 = FUN_0100408c(iVar5 + 2);
-  uVar3 = FUN_0100408c(iVar5 + 4);
-  uVar4 = FUN_0100408c(iVar5 + 6);
+  iVar1 = read_m68k_bus_byte(iVar5);
+  uVar2 = read_m68k_bus_byte(iVar5 + 2);
+  uVar3 = read_m68k_bus_byte(iVar5 + 4);
+  uVar4 = read_m68k_bus_byte(iVar5 + 6);
   *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) =
        iVar1 << 0x18 | (uVar2 & 0xff) << 0x10 | (uVar3 & 0xff) << 8 | uVar4 & 0xff;
                     /* WARNING: Could not recover jumptable at 0x0202fef0. Too many branches */
@@ -1145,7 +1145,7 @@ void m68k_dispatch_0202fe90(void)
 
 // 0x0202fef4  m68k_movep_word
 
-void m68k_dispatch_0202fef4(void)
+void m68k_movep_word_0202fef4(void)
 
 {
   ushort uVar1;
@@ -1157,8 +1157,8 @@ void m68k_dispatch_0202fef4(void)
   
   uVar1 = *(ushort *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
   iVar2 = *(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)*unaff_r10;
-  FUN_01004144(iVar2,uVar1 >> 8);
-  FUN_01004144(iVar2 + 2,uVar1 & 0xff);
+  write_m68k_bus_byte(iVar2,uVar1 >> 8);
+  write_m68k_bus_byte(iVar2 + 2,uVar1 & 0xff);
                     /* WARNING: Could not recover jumptable at 0x0202ff34. Too many branches */
                     /* WARNING: Treating indirect jump as call */
   (**(code **)(unaff_r9 + (uint)(ushort)unaff_r10[1] * 4))();
@@ -1168,7 +1168,7 @@ void m68k_dispatch_0202fef4(void)
 
 // 0x0202ff38  m68k_movep_long
 
-void m68k_dispatch_0202ff38(void)
+void m68k_movep_long_0202ff38(void)
 
 {
   uint uVar1;
@@ -1180,10 +1180,10 @@ void m68k_dispatch_0202ff38(void)
   
   uVar1 = *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
   iVar2 = *(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)*unaff_r10;
-  FUN_01004144(iVar2,uVar1 >> 0x18);
-  FUN_01004144(iVar2 + 2,uVar1 >> 0x10 & 0xff);
-  FUN_01004144(iVar2 + 4,uVar1 >> 8 & 0xff);
-  FUN_01004144(iVar2 + 6,uVar1 & 0xff);
+  write_m68k_bus_byte(iVar2,uVar1 >> 0x18);
+  write_m68k_bus_byte(iVar2 + 2,uVar1 >> 0x10 & 0xff);
+  write_m68k_bus_byte(iVar2 + 4,uVar1 >> 8 & 0xff);
+  write_m68k_bus_byte(iVar2 + 6,uVar1 & 0xff);
                     /* WARNING: Could not recover jumptable at 0x0202ff94. Too many branches */
                     /* WARNING: Treating indirect jump as call */
   (**(code **)(unaff_r9 + (uint)(ushort)unaff_r10[1] * 4))();
@@ -1193,7 +1193,7 @@ void m68k_dispatch_0202ff38(void)
 
 // 0x0202ff98  m68k_exg_long
 
-void m68k_dispatch_0202ff98(void)
+void m68k_exg_long_0202ff98(void)
 
 {
   undefined4 uVar1;
@@ -1215,7 +1215,7 @@ void m68k_dispatch_0202ff98(void)
 
 // 0x0202ffbc  m68k_exg_long
 
-void m68k_dispatch_0202ffbc(void)
+void m68k_exg_long_0202ffbc(void)
 
 {
   undefined4 uVar1;
@@ -1239,7 +1239,7 @@ void m68k_dispatch_0202ffbc(void)
 
 // 0x0202ffe4  m68k_exg_long
 
-void m68k_dispatch_0202ffe4(void)
+void m68k_exg_long_0202ffe4(void)
 
 {
   undefined4 uVar1;
@@ -1261,7 +1261,7 @@ void m68k_dispatch_0202ffe4(void)
 
 // 0x02030f7c  m68k_swap
 
-void m68k_dispatch_02030f7c(void)
+void m68k_swap(void)
 
 {
   uint uVar1;

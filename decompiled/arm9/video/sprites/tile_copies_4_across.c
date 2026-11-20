@@ -4,7 +4,7 @@
 
 // 0x01004410  copy_sprite_tiles_4x1
 
-void FUN_01004410(uint *param_1,uint *param_2)
+void copy_sprite_tiles_4x1(uint *param_1,uint *param_2)
 
 {
   uint uVar1;
@@ -81,7 +81,7 @@ void FUN_01004410(uint *param_1,uint *param_2)
 
 // 0x01004750  copy_sprite_tiles_4x2
 
-void FUN_01004750(uint *param_1,uint *param_2)
+void copy_sprite_tiles_4x2(uint *param_1,uint *param_2)
 
 {
   uint uVar1;
@@ -218,7 +218,7 @@ void FUN_01004750(uint *param_1,uint *param_2)
 
 // 0x01004ce0  copy_sprite_tiles_4x3
 
-void FUN_01004ce0(uint *param_1,uint *param_2)
+void copy_sprite_tiles_4x3(uint *param_1,uint *param_2)
 
 {
   uint uVar1;
@@ -447,7 +447,7 @@ void FUN_01004ce0(uint *param_1,uint *param_2)
 
 // 0x01005410  copy_sprite_tiles_4x4
 
-void FUN_01005410(uint *param_1,uint *param_2)
+void copy_sprite_tiles_4x4(uint *param_1,uint *param_2)
 
 {
   uint uVar1;

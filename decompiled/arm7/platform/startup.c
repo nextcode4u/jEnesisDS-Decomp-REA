@@ -6,13 +6,13 @@
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void arm7_entry(undefined4 param_1,undefined4 param_2,undefined4 param_3)
+void start_arm7_audio_processor(undefined4 param_1,undefined4 param_2,undefined4 param_3)
 
 {
   _DAT_04000208 = 0x4000000;
-  FUN_037f805c(&DAT_03806d94,0x5138);
-  thunk_FUN_03801b40();
-  thunk_FUN_03801b40(0,0,param_3,arm7_main);
+  clear_aligned_words_to_zero(&DAT_03806d94,0x5138);
+  call_via_r3_interworking_veneer();
+  call_via_r3_interworking_veneer(0,0,param_3,run_arm7_audio_service);
   (*(code *)&LAB_08000000)();
   return;
 }
@@ -20,7 +20,7 @@ void arm7_entry(undefined4 param_1,undefined4 param_2,undefined4 param_3)
 
 // 0x037f805c  clear_aligned_words_to_zero
 
-void FUN_037f805c(undefined4 *param_1,int param_2)
+void clear_aligned_words_to_zero(undefined4 *param_1,int param_2)
 
 {
   uint uVar1;
@@ -40,7 +40,7 @@ void FUN_037f805c(undefined4 *param_1,int param_2)
 
 // 0x037f80d0  arm7_empty_runtime_initializer
 
-void FUN_037f80d0(void)
+void arm7_empty_runtime_initializer(void)
 
 {
   return;
@@ -49,7 +49,7 @@ void FUN_037f80d0(void)
 
 // 0x037f80f0  call_via_r3_interworking_veneer
 
-void thunk_FUN_03801b40(void)
+void call_via_r3_interworking_veneer(void)
 
 {
   code *UNRECOVERED_JUMPTABLE;
@@ -65,7 +65,7 @@ void thunk_FUN_03801b40(void)
 
 /* WARNING: Removing unreachable block (ram,0x037f816c) */
 
-void FUN_037f814c(void)
+void run_once_initialization_guard(void)
 
 {
   if (DAT_03806d94 == '\0') {
@@ -80,13 +80,13 @@ void FUN_037f814c(void)
 /* WARNING: Removing unreachable block (ram,0x0380253c) */
 /* WARNING: Removing unreachable block (ram,0x03802544) */
 
-void arm7_startup_call_1(void)
+void run_arm7_c_runtime_initializers(void)
 
 {
   int iVar1;
   undefined4 *puVar2;
   
-  FUN_037f80d0();
+  arm7_empty_runtime_initializer();
   iVar1 = 0;
   puVar2 = &DAT_03806d34;
   do {

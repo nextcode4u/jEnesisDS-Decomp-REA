@@ -4,7 +4,7 @@
 
 // 0x037f8144  thumb_veneer_for_compiler_divsi3
 
-uint thunk_FUN_038019ec(uint param_1,uint param_2)
+uint arm_thumb_veneer_for_compiler_divsi3(uint param_1,uint param_2)
 
 {
   uint uVar1;
@@ -17,7 +17,7 @@ uint thunk_FUN_038019ec(uint param_1,uint param_2)
   
   uVar6 = param_1 ^ param_2;
   if (param_2 == 0) {
-    FUN_03801b30();
+    arm7_divide_by_zero_return_stub();
     return 0;
   }
   uVar4 = param_2;
@@ -119,7 +119,7 @@ uint thunk_FUN_038019ec(uint param_1,uint param_2)
 
 // 0x037f8148  arm_entry_for_compiler_divsi3
 
-uint thunk_FUN_038019ec(uint param_1,uint param_2)
+uint arm_thumb_veneer_for_compiler_divsi3(uint param_1,uint param_2)
 
 {
   uint uVar1;
@@ -132,7 +132,7 @@ uint thunk_FUN_038019ec(uint param_1,uint param_2)
   
   uVar6 = param_1 ^ param_2;
   if (param_2 == 0) {
-    FUN_03801b30();
+    arm7_divide_by_zero_return_stub();
     return 0;
   }
   uVar4 = param_2;
@@ -238,7 +238,7 @@ uint thunk_FUN_038019ec(uint param_1,uint param_2)
 /* WARNING: Removing unreachable block (ram,0x037f81c8) */
 /* WARNING: Removing unreachable block (ram,0x037f81c4) */
 
-void FUN_037f8190(void)
+void call_optional_arm7_registration_hooks(void)
 
 {
   return;
@@ -247,7 +247,7 @@ void FUN_037f8190(void)
 
 // 0x038018d8  compiler_udivsi3
 
-uint FUN_038018d8(uint param_1,uint param_2)
+uint compiler_udivsi3(uint param_1,uint param_2)
 
 {
   uint uVar1;
@@ -259,7 +259,7 @@ uint FUN_038018d8(uint param_1,uint param_2)
     return param_1;
   }
   if (param_2 == 0) {
-    FUN_03801b30();
+    arm7_divide_by_zero_return_stub();
     return 0;
   }
   if (param_1 <= param_2) {
@@ -334,17 +334,17 @@ uint FUN_038018d8(uint param_1,uint param_2)
 
 // 0x038019d4  compiler_aeabi_uidivmod
 
-void FUN_038019d4(void)
+void compiler_aeabi_uidivmod(void)
 
 {
-  FUN_038018d8();
+  compiler_udivsi3();
   return;
 }
 
 
 // 0x038019ec  compiler_divsi3
 
-uint FUN_038019ec(uint param_1,uint param_2)
+uint compiler_divsi3(uint param_1,uint param_2)
 
 {
   uint uVar1;
@@ -357,7 +357,7 @@ uint FUN_038019ec(uint param_1,uint param_2)
   
   uVar6 = param_1 ^ param_2;
   if (param_2 == 0) {
-    FUN_03801b30();
+    arm7_divide_by_zero_return_stub();
     return 0;
   }
   uVar4 = param_2;
@@ -459,17 +459,17 @@ uint FUN_038019ec(uint param_1,uint param_2)
 
 // 0x03801b18  compiler_aeabi_idivmod
 
-void FUN_03801b18(void)
+void compiler_aeabi_idivmod(void)
 
 {
-  FUN_038019ec();
+  compiler_divsi3();
   return;
 }
 
 
 // 0x03801b30  arm7_divide_by_zero_return_stub
 
-void FUN_03801b30(void)
+void arm7_divide_by_zero_return_stub(void)
 
 {
   return;
@@ -478,7 +478,7 @@ void FUN_03801b30(void)
 
 // 0x03801b40  thumb_call_via_r3
 
-void FUN_03801b40(void)
+void thumb_call_via_r3(void)
 
 {
   code *UNRECOVERED_JUMPTABLE;
@@ -492,7 +492,7 @@ void FUN_03801b40(void)
 
 // 0x03801b7c  compiler_adddf3
 
-ulonglong FUN_03801b7c(uint param_1,uint param_2,uint param_3,uint param_4)
+ulonglong compiler_adddf3(uint param_1,uint param_2,uint param_3,uint param_4)
 
 {
   int iVar1;
@@ -735,7 +735,7 @@ LAB_03801d50:
 
 /* WARNING: Removing unreachable block (ram,0x03801cd0) */
 
-ulonglong FUN_03801eb0(uint param_1)
+ulonglong compiler_floatsidf(uint param_1)
 
 {
   uint uVar1;
@@ -825,7 +825,7 @@ LAB_03801d50:
 
 // 0x03801f8c  compiler_muldf3
 
-ulonglong FUN_03801f8c(undefined4 param_1,uint param_2,uint param_3,uint param_4)
+ulonglong compiler_muldf3(undefined4 param_1,uint param_2,uint param_3,uint param_4)
 
 {
   longlong lVar1;
@@ -859,7 +859,7 @@ ulonglong FUN_03801f8c(undefined4 param_1,uint param_2,uint param_3,uint param_4
     bVar11 = unaff_r5 == 0x7ff;
   }
   if (bVar11) {
-    uVar14 = FUN_03802184();
+    uVar14 = compiler_muldf3_special_operands();
   }
   uVar4 = (uint)(uVar14 >> 0x20);
   iVar7 = uVar6 + unaff_r5;
@@ -972,7 +972,7 @@ ulonglong FUN_03801f8c(undefined4 param_1,uint param_2,uint param_3,uint param_4
 
 // 0x03802184  compiler_muldf3_special_operands
 
-ulonglong FUN_03802184(int param_1,uint param_2,int param_3,uint param_4)
+ulonglong compiler_muldf3_special_operands(int param_1,uint param_2,int param_3,uint param_4)
 
 {
   bool bVar1;
@@ -1028,7 +1028,7 @@ ulonglong FUN_03802184(int param_1,uint param_2,int param_3,uint param_4)
 
 // 0x0380221c  compiler_divdf3
 
-ulonglong FUN_0380221c(undefined4 param_1,uint param_2,uint param_3,uint param_4)
+ulonglong compiler_divdf3(undefined4 param_1,uint param_2,uint param_3,uint param_4)
 
 {
   uint uVar1;
@@ -1064,7 +1064,7 @@ ulonglong FUN_0380221c(undefined4 param_1,uint param_2,uint param_3,uint param_4
     bVar13 = unaff_r5 == 0x7ff;
   }
   if (bVar13) {
-    uVar16 = FUN_038023b8();
+    uVar16 = compiler_divdf3_special_operands();
   }
   uVar8 = (uint)((ulonglong)uVar16 >> 0x20);
   uVar2 = (uint)uVar16;
@@ -1224,7 +1224,7 @@ LAB_0380235c:
 
 // 0x038023b8  compiler_divdf3_special_operands
 
-ulonglong FUN_038023b8(int param_1,uint param_2,int param_3,uint param_4)
+ulonglong compiler_divdf3_special_operands(int param_1,uint param_2,int param_3,uint param_4)
 
 {
   int iVar1;
@@ -1283,7 +1283,7 @@ LAB_038021a0:
 
 // 0x03802428  compiler_fixdfsi
 
-uint FUN_03802428(uint param_1,uint param_2)
+uint compiler_fixdfsi(uint param_1,uint param_2)
 
 {
   uint uVar1;
@@ -1318,7 +1318,7 @@ uint FUN_03802428(uint param_1,uint param_2)
 
 // 0x03802484  compiler_fixunsdfsi
 
-uint FUN_03802484(uint param_1,uint param_2)
+uint compiler_fixunsdfsi(uint param_1,uint param_2)
 
 {
   int iVar1;
@@ -1346,7 +1346,7 @@ uint FUN_03802484(uint param_1,uint param_2)
 
 // 0x038025ac  newlib_memcpy
 
-void FUN_038025ac(undefined4 *param_1,undefined4 *param_2,uint param_3)
+void newlib_memcpy(undefined4 *param_1,undefined4 *param_2,uint param_3)
 
 {
   uint uVar1;
@@ -1381,7 +1381,7 @@ void FUN_038025ac(undefined4 *param_1,undefined4 *param_2,uint param_3)
 
 // 0x03802648  newlib_memset
 
-void FUN_03802648(undefined4 *param_1,undefined1 param_2,uint param_3)
+void newlib_memset(undefined4 *param_1,undefined1 param_2,uint param_3)
 
 {
   uint uVar1;

@@ -4,7 +4,7 @@
 
 // 0x0202d1f0  m68k_nbcd_byte
 
-void m68k_dispatch_0202d1f0(void)
+void m68k_nbcd_byte_0202d1f0(void)
 
 {
   char cVar1;
@@ -35,7 +35,7 @@ void m68k_dispatch_0202d1f0(void)
 
 // 0x0202d2ac  m68k_nbcd_byte
 
-void m68k_dispatch_0202d2ac(void)
+void m68k_nbcd_byte_0202d2ac(void)
 
 {
   char cVar1;
@@ -69,7 +69,7 @@ void m68k_dispatch_0202d2ac(void)
 
 // 0x0202d31c  m68k_nbcd_byte
 
-void m68k_dispatch_0202d31c(void)
+void m68k_nbcd_byte_0202d31c(void)
 
 {
   char cVar1;
@@ -115,7 +115,7 @@ void m68k_dispatch_0202d31c(void)
 
 // 0x0202d3a0  m68k_nbcd_byte
 
-void m68k_dispatch_0202d3a0(void)
+void m68k_nbcd_byte_0202d3a0(void)
 
 {
   char cVar1;
@@ -160,7 +160,7 @@ void m68k_dispatch_0202d3a0(void)
 
 // 0x0202d424  m68k_nbcd_byte
 
-void m68k_dispatch_0202d424(void)
+void m68k_nbcd_byte_0202d424(void)
 
 {
   char cVar1;
@@ -196,7 +196,7 @@ void m68k_dispatch_0202d424(void)
 
 // 0x0202d49c  m68k_nbcd_byte
 
-void m68k_dispatch_0202d49c(void)
+void m68k_nbcd_byte_0202d49c(void)
 
 {
   uint uVar1;
@@ -247,7 +247,7 @@ void m68k_dispatch_0202d49c(void)
 
 // 0x0202d538  m68k_nbcd_byte
 
-void m68k_dispatch_0202d538(void)
+void m68k_nbcd_byte_0202d538(void)
 
 {
   char cVar1;
@@ -279,7 +279,7 @@ void m68k_dispatch_0202d538(void)
 
 // 0x0202d59c  m68k_nbcd_byte
 
-void m68k_dispatch_0202d59c(void)
+void m68k_nbcd_byte_0202d59c(void)
 
 {
   char cVar1;
@@ -311,7 +311,7 @@ void m68k_dispatch_0202d59c(void)
 
 // 0x02030c54  m68k_ext_word
 
-void m68k_dispatch_02030c54(void)
+void m68k_ext_word(void)
 
 {
   int iVar1;
@@ -331,7 +331,7 @@ void m68k_dispatch_02030c54(void)
 
 // 0x02030c80  m68k_ext_long
 
-void m68k_dispatch_02030c80(void)
+void m68k_ext_long(void)
 
 {
   int iVar1;
@@ -351,7 +351,7 @@ void m68k_dispatch_02030c80(void)
 
 // 0x02030cac  m68k_abcd_byte
 
-void m68k_dispatch_02030cac(void)
+void m68k_abcd_byte_02030cac(void)
 
 {
   uint uVar1;
@@ -386,7 +386,7 @@ void m68k_dispatch_02030cac(void)
 
 // 0x02030d28  m68k_abcd_byte
 
-void m68k_dispatch_02030d28(void)
+void m68k_abcd_byte_02030d28(void)
 
 {
   uint uVar1;
@@ -453,7 +453,7 @@ void m68k_dispatch_02030d28(void)
 
 // 0x02030e08  m68k_sbcd_byte
 
-void m68k_dispatch_02030e08(void)
+void m68k_sbcd_byte(void)
 
 {
   ushort uVar1;
@@ -488,7 +488,7 @@ void m68k_dispatch_02030e08(void)
 
 // 0x02030e90  m68k_sbcd
 
-void m68k_dispatch_02030e90(void)
+void m68k_sbcd(void)
 
 {
   ushort uVar1;

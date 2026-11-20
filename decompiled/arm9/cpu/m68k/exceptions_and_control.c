@@ -4,7 +4,7 @@
 
 // 0x01003b20  m68k_rts
 
-int m68k_dispatch_01003b20(void)
+int m68k_rts(void)
 
 {
   ushort uVar1;
@@ -57,7 +57,7 @@ int m68k_dispatch_01003b20(void)
 /* WARNING: Removing unreachable block (ram,0x02016cd4) */
 /* WARNING: Removing unreachable block (ram,0x02016cdc) */
 
-int m68k_dispatch_01003b80(void)
+int m68k_rte(void)
 
 {
   ushort uVar1;
@@ -156,7 +156,7 @@ int m68k_dispatch_01003b80(void)
 
 // 0x01003d00  m68k_nop
 
-void m68k_dispatch_01003d00(void)
+void m68k_nop(void)
 
 {
   int unaff_r9;
@@ -171,7 +171,7 @@ void m68k_dispatch_01003d00(void)
 
 // 0x01003e74  m68k_jsr
 
-int m68k_dispatch_01003e74(void)
+int m68k_jsr_01003e74(void)
 
 {
   uint uVar1;
@@ -218,7 +218,7 @@ int m68k_dispatch_01003e74(void)
 
 // 0x01003ee8  m68k_jsr
 
-int m68k_dispatch_01003ee8(void)
+int m68k_jsr_01003ee8(void)
 
 {
   ushort uVar1;
@@ -271,7 +271,7 @@ int m68k_dispatch_01003ee8(void)
 /* WARNING: Removing unreachable block (ram,0x02016cdc) */
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 
-int m68k_dispatch_0202d604(void)
+int m68k_chk_word_0202d604(void)
 
 {
   ushort uVar1;
@@ -358,7 +358,7 @@ LAB_01003084:
 /* WARNING: Removing unreachable block (ram,0x02016cdc) */
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 
-int m68k_dispatch_0202d658(void)
+int m68k_chk_word_0202d658(void)
 
 {
   ushort uVar1;
@@ -375,7 +375,7 @@ int m68k_dispatch_0202d658(void)
   ushort *unaff_r10;
   uint unaff_r11;
   
-  iVar3 = FUN_010040c4(*(undefined4 *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4));
+  iVar3 = read_m68k_bus_word(*(undefined4 *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4));
   iVar4 = (int)*(short *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
   uVar7 = unaff_r7 & 0xfffffff8;
   if (iVar4 == 0) {
@@ -446,7 +446,7 @@ LAB_01003084:
 /* WARNING: Removing unreachable block (ram,0x02016cdc) */
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 
-int m68k_dispatch_0202d6b0(void)
+int m68k_chk_word_0202d6b0(void)
 
 {
   ushort uVar1;
@@ -466,7 +466,7 @@ int m68k_dispatch_0202d6b0(void)
   
   piVar4 = (int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4);
   *piVar4 = *piVar4 + 2;
-  iVar3 = FUN_010040c4();
+  iVar3 = read_m68k_bus_word();
   iVar5 = (int)*(short *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
   uVar8 = unaff_r7 & 0xfffffff8;
   if (iVar5 == 0) {
@@ -537,7 +537,7 @@ LAB_01003084:
 /* WARNING: Removing unreachable block (ram,0x02016cdc) */
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 
-int m68k_dispatch_0202d714(void)
+int m68k_chk_word_0202d714(void)
 
 {
   ushort uVar1;
@@ -557,7 +557,7 @@ int m68k_dispatch_0202d714(void)
   
   piVar4 = (int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4);
   *piVar4 = *piVar4 + -2;
-  iVar3 = FUN_010040c4();
+  iVar3 = read_m68k_bus_word();
   iVar5 = (int)*(short *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
   uVar8 = unaff_r7 & 0xfffffff8;
   if (iVar5 == 0) {
@@ -628,7 +628,7 @@ LAB_01003084:
 /* WARNING: Removing unreachable block (ram,0x02016cdc) */
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 
-int m68k_dispatch_0202d778(void)
+int m68k_chk_word_0202d778(void)
 
 {
   ushort uVar1;
@@ -647,7 +647,7 @@ int m68k_dispatch_0202d778(void)
   uint unaff_r11;
   
   puVar8 = (ushort *)(unaff_r10 + 1);
-  iVar3 = FUN_010040c4(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)*unaff_r10);
+  iVar3 = read_m68k_bus_word(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)*unaff_r10);
   iVar4 = (int)*(short *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
   uVar7 = unaff_r7 & 0xfffffff8;
   if (iVar4 == 0) {
@@ -718,7 +718,7 @@ LAB_01003084:
 /* WARNING: Removing unreachable block (ram,0x02016cdc) */
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 
-int m68k_dispatch_0202d7d8(void)
+int m68k_chk_word_0202d7d8(void)
 
 {
   undefined2 uVar1;
@@ -749,7 +749,7 @@ int m68k_dispatch_0202d7d8(void)
   else {
     iVar3 = *(int *)(iVar3 + uVar7);
   }
-  iVar3 = FUN_010040c4(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)(char)uVar2 + iVar3);
+  iVar3 = read_m68k_bus_word(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)(char)uVar2 + iVar3);
   iVar4 = (int)*(short *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
   uVar7 = unaff_r7 & 0xfffffff8;
   if (iVar4 == 0) {
@@ -820,7 +820,7 @@ LAB_01003084:
 /* WARNING: Removing unreachable block (ram,0x02016cdc) */
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 
-int m68k_dispatch_0202d85c(void)
+int m68k_chk_word_0202d85c(void)
 
 {
   ushort uVar1;
@@ -839,7 +839,7 @@ int m68k_dispatch_0202d85c(void)
   uint unaff_r11;
   
   puVar8 = (ushort *)(unaff_r10 + 1);
-  iVar3 = FUN_010040c4((int)*unaff_r10);
+  iVar3 = read_m68k_bus_word((int)*unaff_r10);
   iVar4 = (int)*(short *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
   uVar7 = unaff_r7 & 0xfffffff8;
   if (iVar4 == 0) {
@@ -910,7 +910,7 @@ LAB_01003084:
 /* WARNING: Removing unreachable block (ram,0x02016cdc) */
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 
-int m68k_dispatch_0202d8ac(void)
+int m68k_chk_word_0202d8ac(void)
 
 {
   ushort uVar1;
@@ -929,7 +929,7 @@ int m68k_dispatch_0202d8ac(void)
   uint unaff_r11;
   
   puVar8 = unaff_r10 + 2;
-  iVar3 = FUN_010040c4(CONCAT22(*unaff_r10,unaff_r10[1]));
+  iVar3 = read_m68k_bus_word(CONCAT22(*unaff_r10,unaff_r10[1]));
   iVar4 = (int)*(short *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
   uVar7 = unaff_r7 & 0xfffffff8;
   if (iVar4 == 0) {
@@ -1000,7 +1000,7 @@ LAB_01003084:
 /* WARNING: Removing unreachable block (ram,0x02016cdc) */
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 
-int m68k_dispatch_0202d904(void)
+int m68k_chk_word_0202d904(void)
 
 {
   ushort uVar1;
@@ -1019,7 +1019,7 @@ int m68k_dispatch_0202d904(void)
   uint unaff_r11;
   
   puVar8 = (ushort *)(unaff_r10 + 1);
-  iVar3 = FUN_010040c4(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
+  iVar3 = read_m68k_bus_word(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
                        (int)*unaff_r10);
   iVar4 = (int)*(short *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
   uVar7 = unaff_r7 & 0xfffffff8;
@@ -1091,7 +1091,7 @@ LAB_01003084:
 /* WARNING: Removing unreachable block (ram,0x02016cdc) */
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 
-int m68k_dispatch_0202d968(void)
+int m68k_chk_word_0202d968(void)
 
 {
   undefined2 uVar1;
@@ -1122,7 +1122,7 @@ int m68k_dispatch_0202d968(void)
   else {
     iVar3 = *(int *)(iVar3 + uVar7);
   }
-  iVar3 = FUN_010040c4(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
+  iVar3 = read_m68k_bus_word(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
                        (int)(char)uVar2 + iVar3);
   iVar4 = (int)*(short *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
   uVar7 = unaff_r7 & 0xfffffff8;
@@ -1194,7 +1194,7 @@ LAB_01003084:
 /* WARNING: Removing unreachable block (ram,0x02016cdc) */
 /* WARNING: Removing unreachable block (ram,0x02016ce0) */
 
-int m68k_dispatch_0202d9f4(void)
+int m68k_chk_word_0202d9f4(void)
 
 {
   ushort uVar1;
@@ -1279,7 +1279,7 @@ LAB_01003084:
 
 // 0x0202e3d4  m68k_jmp
 
-int m68k_dispatch_0202e3d4(void)
+int m68k_jmp_0202e3d4(void)
 
 {
   uint uVar1;
@@ -1318,7 +1318,7 @@ int m68k_dispatch_0202e3d4(void)
 
 // 0x0202e420  m68k_jmp
 
-int m68k_dispatch_0202e420(void)
+int m68k_jmp_0202e420(void)
 
 {
   uint uVar1;
@@ -1358,7 +1358,7 @@ int m68k_dispatch_0202e420(void)
 
 // 0x0202e474  m68k_jmp
 
-int m68k_dispatch_0202e474(void)
+int m68k_jmp_0202e474(void)
 
 {
   ushort uVar1;
@@ -1411,7 +1411,7 @@ int m68k_dispatch_0202e474(void)
 
 // 0x0202e4ec  m68k_jmp
 
-int m68k_dispatch_0202e4ec(void)
+int m68k_jmp_0202e4ec(void)
 
 {
   uint uVar1;
@@ -1450,7 +1450,7 @@ int m68k_dispatch_0202e4ec(void)
 
 // 0x0202e530  m68k_jmp
 
-int m68k_dispatch_0202e530(void)
+int m68k_jmp_0202e530(void)
 
 {
   ushort uVar1;
@@ -1491,7 +1491,7 @@ int m68k_dispatch_0202e530(void)
 
 // 0x0202e57c  m68k_jmp
 
-int m68k_dispatch_0202e57c(void)
+int m68k_jmp_0202e57c(void)
 
 {
   uint uVar1;
@@ -1531,7 +1531,7 @@ int m68k_dispatch_0202e57c(void)
 
 // 0x0202e5d4  m68k_jmp
 
-int m68k_dispatch_0202e5d4(void)
+int m68k_jmp_0202e5d4(void)
 
 {
   ushort uVar1;
@@ -1584,7 +1584,7 @@ int m68k_dispatch_0202e5d4(void)
 
 // 0x0202e654  m68k_jsr
 
-int m68k_dispatch_0202e654(void)
+int m68k_jsr_0202e654(void)
 
 {
   uint uVar1;
@@ -1632,7 +1632,7 @@ int m68k_dispatch_0202e654(void)
 
 // 0x0202e6d0  m68k_jsr
 
-int m68k_dispatch_0202e6d0(void)
+int m68k_jsr_0202e6d0(void)
 
 {
   uint uVar1;
@@ -1680,7 +1680,7 @@ int m68k_dispatch_0202e6d0(void)
 
 // 0x0202e754  m68k_jsr
 
-int m68k_dispatch_0202e754(void)
+int m68k_jsr_0202e754(void)
 
 {
   ushort uVar1;
@@ -1741,7 +1741,7 @@ int m68k_dispatch_0202e754(void)
 
 // 0x0202e7fc  m68k_jsr
 
-int m68k_dispatch_0202e7fc(void)
+int m68k_jsr_0202e7fc(void)
 
 {
   uint uVar1;
@@ -1789,7 +1789,7 @@ int m68k_dispatch_0202e7fc(void)
 
 // 0x0202e884  m68k_jsr
 
-int m68k_dispatch_0202e884(void)
+int m68k_jsr_0202e884(void)
 
 {
   ushort uVar1;
@@ -1850,7 +1850,7 @@ int m68k_dispatch_0202e884(void)
 
 // 0x0203000c  m68k_link_word
 
-void m68k_dispatch_0203000c(void)
+void m68k_link_word(void)
 
 {
   short sVar1;
@@ -1882,7 +1882,7 @@ void m68k_dispatch_0203000c(void)
 
 // 0x02030054  m68k_unlk
 
-void m68k_dispatch_02030054(void)
+void m68k_unlk(void)
 
 {
   uint *puVar1;
@@ -1908,7 +1908,7 @@ void m68k_dispatch_02030054(void)
 
 // 0x020327c0  m68k_rtr
 
-int m68k_dispatch_020327c0(void)
+int m68k_rtr(void)
 
 {
   ushort uVar1;
@@ -1953,7 +1953,7 @@ int m68k_dispatch_020327c0(void)
 
 // 0x02032944  m68k_reset
 
-int m68k_dispatch_02032944(void)
+int m68k_reset(void)
 
 {
   int unaff_r6;
@@ -1977,7 +1977,7 @@ int m68k_dispatch_02032944(void)
 
 // 0x02032954  m68k_stop
 
-int m68k_dispatch_02032954(void)
+int m68k_stop(void)
 
 {
   ushort uVar1;
@@ -2061,7 +2061,7 @@ int m68k_dispatch_02032954(void)
 
 // 0x020329f0  m68k_trap
 
-int m68k_dispatch_020329f0(void)
+int m68k_trap(void)
 
 {
   ushort uVar1;
@@ -2131,7 +2131,7 @@ int m68k_dispatch_020329f0(void)
 /* WARNING: Removing unreachable block (ram,0x02016cd4) */
 /* WARNING: Removing unreachable block (ram,0x02016cdc) */
 
-int m68k_dispatch_02032a00(void)
+int m68k_trapv(void)
 
 {
   ushort uVar1;

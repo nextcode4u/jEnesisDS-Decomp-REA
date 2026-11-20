@@ -4,7 +4,7 @@
 
 // 0x02004d14  read_z80_mapped_byte
 
-byte FUN_02004d14(uint param_1)
+byte read_z80_mapped_byte(uint param_1)
 
 {
   switch((int)param_1 >> 0xd & 7) {
@@ -16,21 +16,21 @@ byte FUN_02004d14(uint param_1)
   case 3:
     return 0;
   default:
-    return (&DAT_020b4cec)[(param_1 & 0x7fff | DAT_02099008 & 0x3fffff) ^ 1];
+    return (&DAT_020b4cec)[(param_1 & 0x7fff | z80_cartridge_bank_base & 0x3fffff) ^ 1];
   }
 }
 
 
 // 0x02004d68  read_z80_mapped_little_endian_word
 
-uint FUN_02004d68(int param_1)
+uint read_z80_mapped_little_endian_word(int param_1)
 
 {
   uint uVar1;
   int iVar2;
   
-  uVar1 = FUN_02004d14();
-  iVar2 = FUN_02004d14(param_1 + 1);
+  uVar1 = read_z80_mapped_byte();
+  iVar2 = read_z80_mapped_byte(param_1 + 1);
   return uVar1 & 0xff | iVar2 << 8;
 }
 

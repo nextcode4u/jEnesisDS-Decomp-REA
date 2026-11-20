@@ -4,7 +4,7 @@
 
 // 0x02017ec4  m68k_move_word
 
-void m68k_dispatch_02017ec4(void)
+void m68k_move_word_02017ec4(void)
 
 {
   undefined2 uVar1;
@@ -16,7 +16,7 @@ void m68k_dispatch_02017ec4(void)
   
   piVar2 = (int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4);
   *piVar2 = *piVar2 + 2;
-  uVar1 = FUN_010040c4();
+  uVar1 = read_m68k_bus_word();
   *(undefined2 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = uVar1;
                     /* WARNING: Could not recover jumptable at 0x02017f08. Too many branches */
                     /* WARNING: Treating indirect jump as call */

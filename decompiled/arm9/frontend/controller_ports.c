@@ -4,122 +4,122 @@
 
 // 0x020037b4  reset_genesis_controller_port
 
-void FUN_020037b4(undefined4 *param_1)
+void reset_genesis_controller_port(undefined4 *port_state)
 
 {
-  *(undefined1 *)((int)param_1 + 0x2b) = 1;
-  *(undefined1 *)((int)param_1 + 0x19) = 0x7f;
-  *(undefined1 *)((int)param_1 + 0x1b) = 0xff;
-  *(undefined1 *)((int)param_1 + 0x1e) = 0;
-  param_1[2] = 0;
-  *param_1 = 0;
-  param_1[3] = 0;
-  *(undefined1 *)((int)param_1 + 0x1a) = 0;
-  *(undefined1 *)(param_1 + 7) = 0;
-  *(undefined1 *)((int)param_1 + 0x1d) = 0;
-  *(undefined1 *)((int)param_1 + 0x1f) = 0;
-  *(undefined1 *)(param_1 + 8) = 1;
-  *(undefined1 *)((int)param_1 + 0x21) = 1;
-  *(undefined1 *)((int)param_1 + 0x22) = 1;
-  *(undefined1 *)((int)param_1 + 0x23) = 1;
-  *(undefined1 *)(param_1 + 9) = 1;
-  *(undefined1 *)((int)param_1 + 0x25) = 1;
-  *(undefined1 *)((int)param_1 + 0x26) = 1;
-  *(undefined1 *)((int)param_1 + 0x27) = 1;
-  *(undefined1 *)(param_1 + 10) = 1;
-  *(undefined1 *)((int)param_1 + 0x29) = 1;
-  *(undefined1 *)((int)param_1 + 0x2a) = 1;
+  *(undefined1 *)((int)port_state + 0x2b) = 1;
+  *(undefined1 *)((int)port_state + 0x19) = 0x7f;
+  *(undefined1 *)((int)port_state + 0x1b) = 0xff;
+  *(undefined1 *)((int)port_state + 0x1e) = 0;
+  port_state[2] = 0;
+  *port_state = 0;
+  port_state[3] = 0;
+  *(undefined1 *)((int)port_state + 0x1a) = 0;
+  *(undefined1 *)(port_state + 7) = 0;
+  *(undefined1 *)((int)port_state + 0x1d) = 0;
+  *(undefined1 *)((int)port_state + 0x1f) = 0;
+  *(undefined1 *)(port_state + 8) = 1;
+  *(undefined1 *)((int)port_state + 0x21) = 1;
+  *(undefined1 *)((int)port_state + 0x22) = 1;
+  *(undefined1 *)((int)port_state + 0x23) = 1;
+  *(undefined1 *)(port_state + 9) = 1;
+  *(undefined1 *)((int)port_state + 0x25) = 1;
+  *(undefined1 *)((int)port_state + 0x26) = 1;
+  *(undefined1 *)((int)port_state + 0x27) = 1;
+  *(undefined1 *)(port_state + 10) = 1;
+  *(undefined1 *)((int)port_state + 0x29) = 1;
+  *(undefined1 *)((int)port_state + 0x2a) = 1;
   return;
 }
 
 
 // 0x02003828  read_genesis_controller_port_pins
 
-uint FUN_02003828(int param_1)
+uint read_genesis_controller_port_pins(int port_state)
 
 {
-  byte bVar1;
-  byte bVar2;
-  byte bVar3;
-  byte bVar4;
-  byte bVar5;
-  byte bVar6;
+  byte pin_4_in;
+  byte pin_2_in;
+  byte pin_3_in;
+  byte pin_5_in;
+  byte pin_0_in;
+  byte pin_1_in;
   
-  if (*(char *)(param_1 + 0x1e) != '\0') {
-    if (*(char *)(param_1 + 0x18) != '\0') {
-      if (*(int *)(param_1 + 0xc) == 3) {
-        bVar1 = *(byte *)(param_1 + 0x21);
-        bVar2 = *(byte *)(param_1 + 0x27);
-        bVar3 = *(byte *)(param_1 + 0x2b);
-        bVar4 = *(byte *)(param_1 + 0x22);
-        bVar5 = *(byte *)(param_1 + 0x28);
-        bVar6 = *(byte *)(param_1 + 0x29);
+  if (*(char *)(port_state + 0x1e) != '\0') {
+    if (*(char *)(port_state + 0x18) != '\0') {
+      if (*(int *)(port_state + 0xc) == 3) {
+        pin_4_in = *(byte *)(port_state + 0x21);
+        pin_2_in = *(byte *)(port_state + 0x27);
+        pin_3_in = *(byte *)(port_state + 0x2b);
+        pin_5_in = *(byte *)(port_state + 0x22);
+        pin_0_in = *(byte *)(port_state + 0x28);
+        pin_1_in = *(byte *)(port_state + 0x29);
       }
       else {
-        bVar1 = *(byte *)(param_1 + 0x21);
-        bVar2 = *(byte *)(param_1 + 0x25);
-        bVar3 = *(byte *)(param_1 + 0x26);
-        bVar4 = *(byte *)(param_1 + 0x22);
-        bVar5 = *(byte *)(param_1 + 0x23);
-        bVar6 = *(byte *)(param_1 + 0x24);
+        pin_4_in = *(byte *)(port_state + 0x21);
+        pin_2_in = *(byte *)(port_state + 0x25);
+        pin_3_in = *(byte *)(port_state + 0x26);
+        pin_5_in = *(byte *)(port_state + 0x22);
+        pin_0_in = *(byte *)(port_state + 0x23);
+        pin_1_in = *(byte *)(port_state + 0x24);
       }
-      DAT_02098ffc = (uint)(*(byte *)(param_1 + 0x1a) & *(byte *)(param_1 + 0x19)) |
-                     ((uint)bVar1 << 4 | (uint)bVar4 << 5 | (uint)bVar6 << 1 |
-                     (uint)bVar2 << 2 | (uint)bVar3 << 3 | (uint)bVar5) &
-                     ~(uint)*(byte *)(param_1 + 0x1a);
-      return DAT_02098ffc;
+      controller_port_read_latch = (uint)(*(byte *)(port_state + 0x1a) & *(byte *)(port_state + 0x19)) |
+                     ((uint)pin_4_in << 4 | (uint)pin_5_in << 5 | (uint)pin_1_in << 1 |
+                     (uint)pin_2_in << 2 | (uint)pin_3_in << 3 | (uint)pin_0_in) &
+                     ~(uint)*(byte *)(port_state + 0x1a);
+      return controller_port_read_latch;
     }
-    return (uint)(*(byte *)(param_1 + 0x1a) & *(byte *)(param_1 + 0x19)) |
-           ((uint)*(byte *)(param_1 + 0x21) << 4 | (uint)*(byte *)(param_1 + 0x22) << 5 |
-            (uint)*(byte *)(param_1 + 0x24) << 1 |
-           (uint)*(byte *)(param_1 + 0x25) << 2 | (uint)*(byte *)(param_1 + 0x26) << 3 |
-           (uint)*(byte *)(param_1 + 0x23)) & ~(uint)*(byte *)(param_1 + 0x1a);
+    return (uint)(*(byte *)(port_state + 0x1a) & *(byte *)(port_state + 0x19)) |
+           ((uint)*(byte *)(port_state + 0x21) << 4 | (uint)*(byte *)(port_state + 0x22) << 5 |
+            (uint)*(byte *)(port_state + 0x24) << 1 |
+           (uint)*(byte *)(port_state + 0x25) << 2 | (uint)*(byte *)(port_state + 0x26) << 3 |
+           (uint)*(byte *)(port_state + 0x23)) & ~(uint)*(byte *)(port_state + 0x1a);
   }
-  if (*(char *)(param_1 + 0x18) != '\0') {
-    if (*(int *)(param_1 + 0xc) == 3) {
-      DAT_02098ffc = ((uint)(*(byte *)(param_1 + 0x1a) & *(byte *)(param_1 + 0x19)) |
-                     ((uint)*(byte *)(param_1 + 0x20) << 4 | (uint)*(byte *)(param_1 + 0x2a) << 5) &
-                     ~(uint)*(byte *)(param_1 + 0x1a)) & 0xf0;
+  if (*(char *)(port_state + 0x18) != '\0') {
+    if (*(int *)(port_state + 0xc) == 3) {
+      controller_port_read_latch = ((uint)(*(byte *)(port_state + 0x1a) & *(byte *)(port_state + 0x19)) |
+                     ((uint)*(byte *)(port_state + 0x20) << 4 | (uint)*(byte *)(port_state + 0x2a) << 5) &
+                     ~(uint)*(byte *)(port_state + 0x1a)) & 0xf0;
     }
-    else if (*(int *)(param_1 + 0xc) == 4) {
-      DAT_02098ffc = ((uint)(*(byte *)(param_1 + 0x1a) & *(byte *)(param_1 + 0x19)) |
-                     ((uint)*(byte *)(param_1 + 0x20) << 4 | (uint)*(byte *)(param_1 + 0x2a) << 5) &
-                     ~(uint)*(byte *)(param_1 + 0x1a)) & 0xf0 | 0xf;
+    else if (*(int *)(port_state + 0xc) == 4) {
+      controller_port_read_latch = ((uint)(*(byte *)(port_state + 0x1a) & *(byte *)(port_state + 0x19)) |
+                     ((uint)*(byte *)(port_state + 0x20) << 4 | (uint)*(byte *)(port_state + 0x2a) << 5) &
+                     ~(uint)*(byte *)(port_state + 0x1a)) & 0xf0 | 0xf;
     }
     else {
-      DAT_02098ffc = (uint)(*(byte *)(param_1 + 0x1a) & *(byte *)(param_1 + 0x19)) |
-                     ((uint)*(byte *)(param_1 + 0x20) << 4 | (uint)*(byte *)(param_1 + 0x2a) << 5 |
-                      (uint)*(byte *)(param_1 + 0x23) | (uint)*(byte *)(param_1 + 0x24) << 1) &
-                     ~(uint)*(byte *)(param_1 + 0x1a) & 0xff;
+      controller_port_read_latch = (uint)(*(byte *)(port_state + 0x1a) & *(byte *)(port_state + 0x19)) |
+                     ((uint)*(byte *)(port_state + 0x20) << 4 | (uint)*(byte *)(port_state + 0x2a) << 5 |
+                      (uint)*(byte *)(port_state + 0x23) | (uint)*(byte *)(port_state + 0x24) << 1) &
+                     ~(uint)*(byte *)(port_state + 0x1a) & 0xff;
     }
-    return DAT_02098ffc;
+    return controller_port_read_latch;
   }
-  return (uint)(*(byte *)(param_1 + 0x1a) & *(byte *)(param_1 + 0x19)) |
-         ((uint)*(byte *)(param_1 + 0x20) << 4 | (uint)*(byte *)(param_1 + 0x2a) << 5 |
-          (uint)*(byte *)(param_1 + 0x23) | (uint)*(byte *)(param_1 + 0x24) << 1) &
-         ~(uint)*(byte *)(param_1 + 0x1a) & 0xff;
+  return (uint)(*(byte *)(port_state + 0x1a) & *(byte *)(port_state + 0x19)) |
+         ((uint)*(byte *)(port_state + 0x20) << 4 | (uint)*(byte *)(port_state + 0x2a) << 5 |
+          (uint)*(byte *)(port_state + 0x23) | (uint)*(byte *)(port_state + 0x24) << 1) &
+         ~(uint)*(byte *)(port_state + 0x1a) & 0xff;
 }
 
 
 // 0x02003a50  set_controller_six_button_mode
 
-void FUN_02003a50(int param_1,undefined1 param_2)
+void set_controller_six_button_mode(int port_state,undefined1 six_button_enabled)
 
 {
-  *(undefined1 *)(param_1 + 0x18) = param_2;
+  *(undefined1 *)(port_state + 0x18) = six_button_enabled;
   return;
 }
 
 
 // 0x02003ad4  allocate_genesis_controller_port
 
-undefined4 FUN_02003ad4(void)
+undefined4 allocate_genesis_controller_port(void)
 
 {
-  undefined4 uVar1;
+  undefined4 port_state;
   
-  uVar1 = FUN_02082724(0x2c);
-  FUN_020037b4();
-  return uVar1;
+  port_state = newlib_malloc_global_reent_wrapper(0x2c);
+  reset_genesis_controller_port();
+  return port_state;
 }
 

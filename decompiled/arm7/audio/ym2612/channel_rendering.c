@@ -4,119 +4,119 @@
 
 // 0x037f8a88  step_fm_operator_envelope
 
-int FUN_037f8a88(int param_1,uint param_2,uint param_3)
+int step_fm_operator_envelope(int operator_state,uint envelope_tick,uint end_tick)
 
 {
-  uint uVar1;
-  uint uVar2;
-  undefined2 uVar3;
-  uint uVar4;
-  int iVar5;
-  uint uVar6;
+  uint rate_shift;
+  uint tick_mask;
+  undefined2 stored_attenuation;
+  uint tick_remainder;
+  int sustain_level;
+  uint envelope_attenuation;
   
-  uVar6 = (uint)*(short *)(param_1 + 0x1a);
+  envelope_attenuation = (uint)*(short *)(operator_state + 0x1a);
 joined_r0x037f8a9c:
-  if (param_3 <= param_2) goto LAB_037f8b94;
-  param_2 = param_2 + 1;
-  switch(*(undefined1 *)(param_1 + 0x17)) {
+  if (end_tick <= envelope_tick) goto LAB_037f8b94;
+  envelope_tick = envelope_tick + 1;
+  switch(*(undefined1 *)(operator_state + 0x17)) {
   case 1:
-    uVar1 = *(uint *)(param_1 + 0x2c) >> 0x18;
-    uVar2 = (1 << uVar1) - 1;
-    for (; uVar4 = param_2 & uVar2, param_2 < param_3 && uVar4 != 0; param_2 = param_2 + 1) {
+    rate_shift = *(uint *)(operator_state + 0x2c) >> 0x18;
+    tick_mask = (1 << rate_shift) - 1;
+    for (; tick_remainder = envelope_tick & tick_mask, envelope_tick < end_tick && tick_remainder != 0; envelope_tick = envelope_tick + 1) {
     }
-    if (uVar4 == 0) {
-      if (param_2 < param_3 && (int)uVar6 < 0x3ff) {
-        uVar4 = 0;
+    if (tick_remainder == 0) {
+      if (envelope_tick < end_tick && (int)envelope_attenuation < 0x3ff) {
+        tick_remainder = 0;
         do {
-          if (uVar4 == 0) {
-            uVar6 = uVar6 + ((1 << (*(uint *)(param_1 + 0x2c) >> (param_2 >> uVar1 & 7) * 3 & 7)) >>
+          if (tick_remainder == 0) {
+            envelope_attenuation = envelope_attenuation + ((1 << (*(uint *)(operator_state + 0x2c) >> (envelope_tick >> rate_shift & 7) * 3 & 7)) >>
                             1);
           }
-          param_2 = param_2 + 1;
-          uVar4 = param_2 & uVar2;
-        } while (param_2 < param_3 && (int)uVar6 < 0x3ff);
+          envelope_tick = envelope_tick + 1;
+          tick_remainder = envelope_tick & tick_mask;
+        } while (envelope_tick < end_tick && (int)envelope_attenuation < 0x3ff);
       }
-      if ((int)uVar6 < 0x3ff) {
+      if ((int)envelope_attenuation < 0x3ff) {
 LAB_037f8b94:
-        uVar3 = (undefined2)uVar6;
+        stored_attenuation = (undefined2)envelope_attenuation;
       }
       else {
-        uVar6 = 0x3ff;
-        uVar3 = 0x3ff;
-        *(undefined1 *)(param_1 + 0x17) = 0;
+        envelope_attenuation = 0x3ff;
+        stored_attenuation = 0x3ff;
+        *(undefined1 *)(operator_state + 0x17) = 0;
       }
 LAB_037f8ba0:
-      *(undefined2 *)(param_1 + 0x1a) = uVar3;
-      return *(ushort *)(param_1 + 0x18) + uVar6;
+      *(undefined2 *)(operator_state + 0x1a) = stored_attenuation;
+      return *(ushort *)(operator_state + 0x18) + envelope_attenuation;
     }
     break;
   case 2:
-    uVar1 = *(uint *)(param_1 + 0x28) >> 0x18;
-    uVar2 = (1 << uVar1) - 1;
-    for (; uVar4 = param_2 & uVar2, param_2 < param_3 && uVar4 != 0; param_2 = param_2 + 1) {
+    rate_shift = *(uint *)(operator_state + 0x28) >> 0x18;
+    tick_mask = (1 << rate_shift) - 1;
+    for (; tick_remainder = envelope_tick & tick_mask, envelope_tick < end_tick && tick_remainder != 0; envelope_tick = envelope_tick + 1) {
     }
-    if (uVar4 == 0) {
-      if ((int)uVar6 < 0x3ff && param_2 < param_3) {
-        uVar4 = 0;
+    if (tick_remainder == 0) {
+      if ((int)envelope_attenuation < 0x3ff && envelope_tick < end_tick) {
+        tick_remainder = 0;
         do {
-          if (uVar4 == 0) {
-            uVar6 = uVar6 + ((1 << (*(uint *)(param_1 + 0x28) >> (param_2 >> uVar1 & 7) * 3 & 7)) >>
+          if (tick_remainder == 0) {
+            envelope_attenuation = envelope_attenuation + ((1 << (*(uint *)(operator_state + 0x28) >> (envelope_tick >> rate_shift & 7) * 3 & 7)) >>
                             1);
           }
-          param_2 = param_2 + 1;
-          uVar4 = param_2 & uVar2;
-        } while ((int)uVar6 < 0x3ff && param_2 < param_3);
+          envelope_tick = envelope_tick + 1;
+          tick_remainder = envelope_tick & tick_mask;
+        } while ((int)envelope_attenuation < 0x3ff && envelope_tick < end_tick);
       }
-      if (0x3fe < (int)uVar6) {
-        uVar6 = 0x3ff;
-        uVar3 = 0x3ff;
+      if (0x3fe < (int)envelope_attenuation) {
+        envelope_attenuation = 0x3ff;
+        stored_attenuation = 0x3ff;
         goto LAB_037f8ba0;
       }
     }
     break;
   case 3:
-    uVar1 = *(uint *)(param_1 + 0x24) >> 0x18;
-    uVar2 = (1 << uVar1) - 1;
-    for (; uVar4 = param_2 & uVar2, param_2 < param_3 && uVar4 != 0; param_2 = param_2 + 1) {
+    rate_shift = *(uint *)(operator_state + 0x24) >> 0x18;
+    tick_mask = (1 << rate_shift) - 1;
+    for (; tick_remainder = envelope_tick & tick_mask, envelope_tick < end_tick && tick_remainder != 0; envelope_tick = envelope_tick + 1) {
     }
-    if (uVar4 == 0) {
-      iVar5 = *(int *)(param_1 + 0x1c);
-      if (param_2 < param_3 && (int)uVar6 < iVar5) {
-        uVar4 = 0;
+    if (tick_remainder == 0) {
+      sustain_level = *(int *)(operator_state + 0x1c);
+      if (envelope_tick < end_tick && (int)envelope_attenuation < sustain_level) {
+        tick_remainder = 0;
         do {
-          if (uVar4 == 0) {
-            uVar6 = uVar6 + ((1 << (*(uint *)(param_1 + 0x24) >> (param_2 >> uVar1 & 7) * 3 & 7)) >>
+          if (tick_remainder == 0) {
+            envelope_attenuation = envelope_attenuation + ((1 << (*(uint *)(operator_state + 0x24) >> (envelope_tick >> rate_shift & 7) * 3 & 7)) >>
                             1);
           }
-          param_2 = param_2 + 1;
-          uVar4 = param_2 & uVar2;
-        } while (param_2 < param_3 && (int)uVar6 < iVar5);
+          envelope_tick = envelope_tick + 1;
+          tick_remainder = envelope_tick & tick_mask;
+        } while (envelope_tick < end_tick && (int)envelope_attenuation < sustain_level);
       }
-      if (iVar5 <= (int)uVar6) {
-        *(undefined1 *)(param_1 + 0x17) = 2;
+      if (sustain_level <= (int)envelope_attenuation) {
+        *(undefined1 *)(operator_state + 0x17) = 2;
       }
     }
     break;
   case 4:
-    uVar1 = *(uint *)(param_1 + 0x20) >> 0x18;
-    uVar2 = (1 << uVar1) - 1;
-    for (; uVar4 = param_2 & uVar2, param_2 < param_3 && uVar4 != 0; param_2 = param_2 + 1) {
+    rate_shift = *(uint *)(operator_state + 0x20) >> 0x18;
+    tick_mask = (1 << rate_shift) - 1;
+    for (; tick_remainder = envelope_tick & tick_mask, envelope_tick < end_tick && tick_remainder != 0; envelope_tick = envelope_tick + 1) {
     }
-    if (uVar4 != 0) break;
-    if (param_2 < param_3 && 0 < (int)uVar6) {
-      uVar4 = 0;
+    if (tick_remainder != 0) break;
+    if (envelope_tick < end_tick && 0 < (int)envelope_attenuation) {
+      tick_remainder = 0;
       do {
-        if (uVar4 == 0) {
-          uVar6 = uVar6 + ((int)(((1 << (*(uint *)(param_1 + 0x20) >> (param_2 >> uVar1 & 7) * 3 & 7
-                                        )) >> 1) * ~uVar6) >> 4);
+        if (tick_remainder == 0) {
+          envelope_attenuation = envelope_attenuation + ((int)(((1 << (*(uint *)(operator_state + 0x20) >> (envelope_tick >> rate_shift & 7) * 3 & 7
+                                        )) >> 1) * ~envelope_attenuation) >> 4);
         }
-        param_2 = param_2 + 1;
-        uVar4 = param_2 & uVar2;
-      } while (param_2 < param_3 && 0 < (int)uVar6);
+        envelope_tick = envelope_tick + 1;
+        tick_remainder = envelope_tick & tick_mask;
+      } while (envelope_tick < end_tick && 0 < (int)envelope_attenuation);
     }
-    if ((int)uVar6 < 1) {
-      uVar6 = 0;
-      *(undefined1 *)(param_1 + 0x17) = 3;
+    if ((int)envelope_attenuation < 1) {
+      envelope_attenuation = 0;
+      *(undefined1 *)(operator_state + 0x17) = 3;
     }
     goto joined_r0x037f8a9c;
   }
@@ -128,7 +128,7 @@ LAB_037f8ba0:
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_037f95fc(int param_1,int param_2,int param_3)
+void prepare_and_render_fm_channel(int param_1,int param_2,int param_3)
 
 {
   int iVar1;
@@ -208,28 +208,28 @@ void FUN_037f95fc(int param_1,int param_2,int param_3)
     cVar2 = *(char *)(param_3 + 0x77);
   }
   else {
-    DAT_03806e38 = FUN_037f8a88(param_3,DAT_038072f8);
+    DAT_03806e38 = step_fm_operator_envelope(param_3,DAT_038072f8);
     cVar2 = *(char *)(DAT_03806e74 + 0x77);
   }
   if (cVar2 == '\0') {
     cVar2 = *(char *)(DAT_03806e74 + 0x47);
   }
   else {
-    DAT_03806e3a = FUN_037f8a88(DAT_03806e74 + 0x60,DAT_03806e6c);
+    DAT_03806e3a = step_fm_operator_envelope(DAT_03806e74 + 0x60,DAT_03806e6c);
     cVar2 = *(char *)(DAT_03806e74 + 0x47);
   }
   if (cVar2 == '\0') {
     cVar2 = *(char *)(DAT_03806e74 + 0xa7);
   }
   else {
-    DAT_03806e3c = FUN_037f8a88(DAT_03806e74 + 0x30,DAT_03806e6c);
+    DAT_03806e3c = step_fm_operator_envelope(DAT_03806e74 + 0x30,DAT_03806e6c);
     cVar2 = *(char *)(DAT_03806e74 + 0xa7);
   }
   if (cVar2 != '\0') {
-    DAT_03806e3e = FUN_037f8a88(DAT_03806e74 + 0x90,DAT_03806e6c);
+    DAT_03806e3e = step_fm_operator_envelope(DAT_03806e74 + 0x90,DAT_03806e6c);
   }
   if ((DAT_03806e80 & 4) == 0) {
-    FUN_03800dd0(&DAT_0380b820,param_1,param_2);
+    dispatch_fm_algorithm_and_operator_mask(&DAT_0380b820,param_1,param_2);
   }
   else if (0 < param_2) {
     iVar3 = 0;
@@ -251,7 +251,7 @@ void FUN_037f95fc(int param_1,int param_2,int param_3)
 
 // 0x037f9d9c  render_six_fm_channels
 
-undefined4 FUN_037f9d9c(int param_1,int param_2)
+undefined4 render_six_fm_channels(int param_1,int param_2)
 
 {
   undefined4 uVar1;
@@ -1126,13 +1126,13 @@ joined_r0x037f9df4:
       iVar5 = iVar5 + -1;
       iVar10 = DAT_03807304;
     } while (iVar5 != 0);
-    FUN_037f95fc(param_1,param_2,&DAT_03807308);
-    FUN_037f95fc(param_1 + DAT_03806e8c * 2,param_2,&DAT_038073e0);
-    FUN_037f95fc(param_1 + DAT_03806e90 * 2,param_2,&DAT_038074b8);
-    FUN_037f95fc(param_1 + DAT_03806e94 * 2,param_2,&DAT_03807590);
-    FUN_037f95fc(param_1 + DAT_03806e98 * 2,param_2,&DAT_03807668);
+    prepare_and_render_fm_channel(param_1,param_2,&DAT_03807308);
+    prepare_and_render_fm_channel(param_1 + DAT_03806e8c * 2,param_2,&DAT_038073e0);
+    prepare_and_render_fm_channel(param_1 + DAT_03806e90 * 2,param_2,&DAT_038074b8);
+    prepare_and_render_fm_channel(param_1 + DAT_03806e94 * 2,param_2,&DAT_03807590);
+    prepare_and_render_fm_channel(param_1 + DAT_03806e98 * 2,param_2,&DAT_03807668);
     if (DAT_03807818 == 0) {
-      FUN_037f95fc(param_1 + DAT_03806e9c * 2,param_2,&DAT_03807740);
+      prepare_and_render_fm_channel(param_1 + DAT_03806e9c * 2,param_2,&DAT_03807740);
     }
     else {
       puVar2 = (undefined2 *)(param_1 + DAT_03806e9c * 2);
@@ -1151,28 +1151,28 @@ joined_r0x037f9df4:
 
 // 0x03800dd0  dispatch_fm_algorithm_and_operator_mask
 
-void FUN_03800dd0(int param_1)
+void dispatch_fm_algorithm_and_operator_mask(int fm_render_state)
 
 {
-  uint uVar1;
+  uint algorithm_and_operator_mask;
   
-  *(undefined1 **)(param_1 + 0x48) = &stack0xffffffdc;
-  uVar1 = (*(uint *)(param_1 + 0x40) & 7) << 4;
-  if (*(int *)(param_1 + 0x20) < 0x3400) {
-    uVar1 = uVar1 | 8;
+  *(undefined1 **)(fm_render_state + 0x48) = &stack0xffffffdc;
+  algorithm_and_operator_mask = (*(uint *)(fm_render_state + 0x40) & 7) << 4;
+  if (*(int *)(fm_render_state + 0x20) < 0x3400) {
+    algorithm_and_operator_mask = algorithm_and_operator_mask | 8;
   }
-  if (*(int *)(param_1 + 0x28) < 0x3400) {
-    uVar1 = uVar1 | 4;
+  if (*(int *)(fm_render_state + 0x28) < 0x3400) {
+    algorithm_and_operator_mask = algorithm_and_operator_mask | 4;
   }
-  if (*(int *)(param_1 + 0x24) < 0x3400) {
-    uVar1 = uVar1 | 2;
+  if (*(int *)(fm_render_state + 0x24) < 0x3400) {
+    algorithm_and_operator_mask = algorithm_and_operator_mask | 2;
   }
-  if (*(int *)(param_1 + 0x2c) < 0x3400) {
-    uVar1 = uVar1 | 1;
+  if (*(int *)(fm_render_state + 0x2c) < 0x3400) {
+    algorithm_and_operator_mask = algorithm_and_operator_mask | 1;
   }
                     /* WARNING: Could not recover jumptable at 0x03800e30. Too many branches */
                     /* WARNING: Treating indirect jump as call */
-  (*(code *)arm7_dispatch[uVar1])(param_1 + 0x20);
+  (*(code *)arm7_dispatch[algorithm_and_operator_mask])(fm_render_state + 0x20);
   return;
 }
 

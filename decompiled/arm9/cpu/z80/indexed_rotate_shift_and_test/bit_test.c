@@ -6,7 +6,7 @@
 
 /* WARNING: Removing unreachable block (ram,0x02013430) */
 
-undefined8 z80_dispatch_02013410(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_test_bit_0_indexed_memory(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -33,7 +33,7 @@ undefined8 z80_dispatch_02013410(int param_1,undefined4 param_2,int param_3,int 
   int in_stack_000000a4;
   
   if (0x1fff < param_1) {
-    param_1 = FUN_01002cd0();
+    param_1 = dispatch_z80_mapped_read_by_address_page();
   }
   iVar4 = in_stack_00000028;
   uVar2 = unaff_r5 & 0xffffff29 | 0x10;
@@ -176,7 +176,7 @@ undefined8 z80_dispatch_02013410(int param_1,undefined4 param_2,int param_3,int 
 
 /* WARNING: Removing unreachable block (ram,0x02013464) */
 
-undefined8 z80_dispatch_02013444(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_test_bit_1_indexed_memory(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -203,7 +203,7 @@ undefined8 z80_dispatch_02013444(int param_1,undefined4 param_2,int param_3,int 
   int in_stack_000000a4;
   
   if (0x1fff < param_1) {
-    param_1 = FUN_01002cd0();
+    param_1 = dispatch_z80_mapped_read_by_address_page();
   }
   iVar4 = in_stack_00000028;
   uVar2 = unaff_r5 & 0xffffff29 | 0x10;
@@ -346,7 +346,7 @@ undefined8 z80_dispatch_02013444(int param_1,undefined4 param_2,int param_3,int 
 
 /* WARNING: Removing unreachable block (ram,0x02013498) */
 
-undefined8 z80_dispatch_02013478(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_test_bit_2_indexed_memory(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -373,7 +373,7 @@ undefined8 z80_dispatch_02013478(int param_1,undefined4 param_2,int param_3,int 
   int in_stack_000000a4;
   
   if (0x1fff < param_1) {
-    param_1 = FUN_01002cd0();
+    param_1 = dispatch_z80_mapped_read_by_address_page();
   }
   iVar4 = in_stack_00000028;
   uVar2 = unaff_r5 & 0xffffff29 | 0x10;
@@ -516,7 +516,7 @@ undefined8 z80_dispatch_02013478(int param_1,undefined4 param_2,int param_3,int 
 
 /* WARNING: Removing unreachable block (ram,0x020134cc) */
 
-undefined8 z80_dispatch_020134ac(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_test_bit_3_indexed_memory(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -543,7 +543,7 @@ undefined8 z80_dispatch_020134ac(int param_1,undefined4 param_2,int param_3,int 
   int in_stack_000000a4;
   
   if (0x1fff < param_1) {
-    param_1 = FUN_01002cd0();
+    param_1 = dispatch_z80_mapped_read_by_address_page();
   }
   iVar4 = in_stack_00000028;
   uVar2 = unaff_r5 & 0xffffff29 | 0x10;
@@ -686,7 +686,7 @@ undefined8 z80_dispatch_020134ac(int param_1,undefined4 param_2,int param_3,int 
 
 /* WARNING: Removing unreachable block (ram,0x02013500) */
 
-undefined8 z80_dispatch_020134e0(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_test_bit_4_indexed_memory(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -713,7 +713,7 @@ undefined8 z80_dispatch_020134e0(int param_1,undefined4 param_2,int param_3,int 
   int in_stack_000000a4;
   
   if (0x1fff < param_1) {
-    param_1 = FUN_01002cd0();
+    param_1 = dispatch_z80_mapped_read_by_address_page();
   }
   iVar4 = in_stack_00000028;
   uVar2 = unaff_r5 & 0xffffff29 | 0x10;
@@ -856,7 +856,7 @@ undefined8 z80_dispatch_020134e0(int param_1,undefined4 param_2,int param_3,int 
 
 /* WARNING: Removing unreachable block (ram,0x02013534) */
 
-undefined8 z80_dispatch_02013514(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_test_bit_5_indexed_memory(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -883,7 +883,7 @@ undefined8 z80_dispatch_02013514(int param_1,undefined4 param_2,int param_3,int 
   int in_stack_000000a4;
   
   if (0x1fff < param_1) {
-    param_1 = FUN_01002cd0();
+    param_1 = dispatch_z80_mapped_read_by_address_page();
   }
   iVar4 = in_stack_00000028;
   uVar2 = unaff_r5 & 0xffffff29 | 0x10;
@@ -1026,7 +1026,7 @@ undefined8 z80_dispatch_02013514(int param_1,undefined4 param_2,int param_3,int 
 
 /* WARNING: Removing unreachable block (ram,0x02013568) */
 
-undefined8 z80_dispatch_02013548(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_test_bit_6_indexed_memory(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1053,7 +1053,7 @@ undefined8 z80_dispatch_02013548(int param_1,undefined4 param_2,int param_3,int 
   int in_stack_000000a4;
   
   if (0x1fff < param_1) {
-    param_1 = FUN_01002cd0();
+    param_1 = dispatch_z80_mapped_read_by_address_page();
   }
   iVar4 = in_stack_00000028;
   uVar2 = unaff_r5 & 0xffffff29 | 0x10;
@@ -1194,7 +1194,7 @@ undefined8 z80_dispatch_02013548(int param_1,undefined4 param_2,int param_3,int 
 
 // 0x0201357c  z80_ix_iy_cb_test_bit_7_indexed_memory
 
-undefined8 z80_dispatch_0201357c(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_test_bit_7_indexed_memory(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   byte bVar1;
@@ -1222,7 +1222,7 @@ undefined8 z80_dispatch_0201357c(int param_1,undefined4 param_2,int param_3,int 
   int in_stack_000000a4;
   
   if (0x1fff < param_1) {
-    param_1 = FUN_01002cd0();
+    param_1 = dispatch_z80_mapped_read_by_address_page();
   }
   iVar5 = in_stack_00000028;
   uVar3 = unaff_r5 & 0xffffff29 | 0x10;

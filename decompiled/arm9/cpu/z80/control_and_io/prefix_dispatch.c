@@ -4,7 +4,7 @@
 
 // 0x010021e0  z80_dispatch_cb
 
-void z80_dispatch_010021e0(undefined4 param_1,undefined4 param_2,int param_3)
+void z80_dispatch_cb(undefined4 param_1,undefined4 param_2,int param_3)
 
 {
   byte *unaff_r11;
@@ -18,7 +18,7 @@ void z80_dispatch_010021e0(undefined4 param_1,undefined4 param_2,int param_3)
 
 // 0x01002590  z80_dispatch_dd
 
-void z80_dispatch_01002590(undefined4 param_1,undefined4 param_2,int param_3)
+void z80_dispatch_dd(undefined4 param_1,undefined4 param_2,int param_3)
 
 {
   byte *unaff_r11;
@@ -33,7 +33,7 @@ void z80_dispatch_01002590(undefined4 param_1,undefined4 param_2,int param_3)
 
 // 0x01002890  z80_dispatch_ed
 
-void z80_dispatch_01002890(undefined4 param_1,undefined4 param_2,int param_3)
+void z80_dispatch_ed(undefined4 param_1,undefined4 param_2,int param_3)
 
 {
   byte *unaff_r11;
@@ -47,7 +47,7 @@ void z80_dispatch_01002890(undefined4 param_1,undefined4 param_2,int param_3)
 
 // 0x01002b70  z80_dispatch_fd
 
-void z80_dispatch_01002b70(undefined4 param_1,undefined4 param_2,int param_3)
+void z80_dispatch_fd(undefined4 param_1,undefined4 param_2,int param_3)
 
 {
   byte *unaff_r11;
@@ -62,7 +62,7 @@ void z80_dispatch_01002b70(undefined4 param_1,undefined4 param_2,int param_3)
 
 // 0x01002d6c  z80_alternate_decode
 
-void z80_dispatch_01002d6c(uint param_1,undefined4 param_2,undefined4 param_3,int param_4)
+void z80_alternate_decode_01002d6c(uint param_1,undefined4 param_2,undefined4 param_3,int param_4)
 
 {
   int in_lr;
@@ -78,7 +78,7 @@ void z80_dispatch_01002d6c(uint param_1,undefined4 param_2,undefined4 param_3,in
 
 // 0x01002d7c  z80_alternate_decode
 
-void z80_dispatch_01002d7c(undefined4 param_1,undefined4 param_2)
+void z80_alternate_decode_01002d7c(undefined4 param_1,undefined4 param_2)
 
 {
   int in_lr;
@@ -94,7 +94,7 @@ void z80_dispatch_01002d7c(undefined4 param_1,undefined4 param_2)
 
 // 0x01002d8c  z80_alternate_decode
 
-void z80_dispatch_01002d8c(undefined4 param_1,undefined4 param_2)
+void z80_alternate_decode_01002d8c(undefined4 param_1,undefined4 param_2)
 
 {
   int in_lr;
@@ -109,7 +109,7 @@ void z80_dispatch_01002d8c(undefined4 param_1,undefined4 param_2)
 
 // 0x01002d98  z80_alternate_decode
 
-uint z80_dispatch_01002d98(uint param_1)
+uint z80_alternate_decode_01002d98(uint param_1)
 
 {
   if ((int)param_1 < 0x7f00) {
@@ -124,7 +124,7 @@ uint z80_dispatch_01002d98(uint param_1)
 
 // 0x01002dc0  z80_alternate_decode
 
-void z80_dispatch_01002dc0(uint param_1)
+void z80_alternate_decode_01002dc0(uint param_1)
 
 {
   uint uVar1;
@@ -142,14 +142,14 @@ void z80_dispatch_01002dc0(uint param_1)
     ;
     return;
   }
-  switchD_02004d20::default();
+  read_z80_banked_cartridge_byte();
   return;
 }
 
 
 // 0x01002e00  z80_alternate_decode
 
-void z80_dispatch_01002e00(uint param_1,undefined4 param_2,undefined4 param_3,int param_4)
+void z80_alternate_decode_01002e00(uint param_1,undefined4 param_2,undefined4 param_3,int param_4)
 
 {
   int in_lr;
@@ -166,7 +166,7 @@ void z80_dispatch_01002e00(uint param_1,undefined4 param_2,undefined4 param_3,in
 
 // 0x01002e14  z80_alternate_decode
 
-void z80_dispatch_01002e14(void)
+void z80_alternate_decode_01002e14(void)
 
 {
   int in_lr;
@@ -183,7 +183,7 @@ void z80_dispatch_01002e14(void)
 
 // 0x01002e28  z80_alternate_decode
 
-void z80_dispatch_01002e28(void)
+void z80_alternate_decode_01002e28(void)
 
 {
   int in_lr;
@@ -199,7 +199,7 @@ void z80_dispatch_01002e28(void)
 
 // 0x01002e38  z80_alternate_decode
 
-void z80_dispatch_01002e38(uint param_1)
+void z80_alternate_decode_01002e38(uint param_1)
 
 {
   int in_lr;
@@ -221,7 +221,7 @@ void z80_dispatch_01002e38(uint param_1)
 
 // 0x01002e60  z80_alternate_decode
 
-void z80_dispatch_01002e60(uint param_1)
+void z80_alternate_decode_01002e60(uint param_1)
 
 {
   uint uVar1;
@@ -240,14 +240,14 @@ void z80_dispatch_01002e60(uint param_1)
     ;
     return;
   }
-  switchD_02004d20::default();
+  read_z80_banked_cartridge_byte();
   return;
 }
 
 
 // 0x01002ea8  z80_alternate_decode
 
-void z80_dispatch_01002ea8(uint param_1,undefined4 param_2,undefined4 param_3,int param_4)
+void z80_alternate_decode_01002ea8(uint param_1,undefined4 param_2,undefined4 param_3,int param_4)
 
 {
   int in_lr;
@@ -263,7 +263,7 @@ void z80_dispatch_01002ea8(uint param_1,undefined4 param_2,undefined4 param_3,in
 
 // 0x01002ec4  z80_alternate_decode
 
-void z80_dispatch_01002ec4(undefined4 param_1,undefined4 param_2)
+void z80_alternate_decode_01002ec4(undefined4 param_1,undefined4 param_2)
 
 {
   int in_lr;
@@ -281,7 +281,7 @@ void z80_dispatch_01002ec4(undefined4 param_1,undefined4 param_2)
 
 // 0x01002ed8  z80_alternate_decode
 
-void z80_dispatch_01002ed8(undefined4 param_1,undefined4 param_2)
+void z80_alternate_decode_01002ed8(undefined4 param_1,undefined4 param_2)
 
 {
   int in_lr;
@@ -296,7 +296,7 @@ void z80_dispatch_01002ed8(undefined4 param_1,undefined4 param_2)
 
 // 0x01002ee8  z80_alternate_decode
 
-uint z80_dispatch_01002ee8(uint param_1)
+uint z80_alternate_decode_01002ee8(uint param_1)
 
 {
   if ((int)param_1 < 0x7f00) {
@@ -311,7 +311,7 @@ uint z80_dispatch_01002ee8(uint param_1)
 
 // 0x01002f14  z80_alternate_decode
 
-void z80_dispatch_01002f14(uint param_1)
+void z80_alternate_decode_01002f14(uint param_1)
 
 {
   int in_lr;
@@ -328,7 +328,7 @@ void z80_dispatch_01002f14(uint param_1)
               );
     return;
   }
-  FUN_02004d68();
+  read_z80_mapped_little_endian_word();
   return;
 }
 

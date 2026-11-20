@@ -4,11 +4,11 @@
 
 // 0x02073274  set_m3_mode_and_probe_ata_registers
 
-void FUN_02073274(void)
+void set_m3_mode_and_probe_ata_registers(void)
 
 {
-  FUN_0207ebf4(0x400003);
-  FUN_0207eba0(&DAT_0208ed0c);
+  fat_m3_changemode(0x400003);
+  fat_cf_startup(&DAT_0208ed0c);
   return;
 }
 
@@ -18,7 +18,7 @@ void FUN_02073274(void)
 /* WARNING: Removing unreachable block (ram,0x020732d4) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 FUN_02073290(short param_1,undefined4 param_2)
+undefined4 fat_m3sd_sendcommand(short param_1,undefined4 param_2)
 
 {
   int iVar1;
@@ -44,7 +44,7 @@ undefined4 FUN_02073290(short param_1,undefined4 param_2)
 /* WARNING: Removing unreachable block (ram,0x0207332e) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined2 FUN_020732f0(void)
+undefined2 fat_m3sd_getbyte(void)
 
 {
   int iVar1;
@@ -61,7 +61,7 @@ undefined2 FUN_020732f0(void)
 
 // 0x02073344  fat_m3sd_getresponse
 
-undefined4 FUN_02073344(byte *param_1,int param_2)
+undefined4 fat_m3sd_getresponse(byte *param_1,int param_2)
 
 {
   int iVar1;
@@ -73,7 +73,7 @@ undefined4 FUN_02073344(byte *param_1,int param_2)
   
   iVar5 = 0;
   do {
-    iVar1 = FUN_020732f0();
+    iVar1 = fat_m3sd_getbyte();
     if (iVar1 != 0xff) break;
     iVar5 = iVar5 + 1;
   } while (iVar5 != 0x100);
@@ -87,12 +87,12 @@ LAB_020733e4:
         iVar5 = 0;
         do {
           param_1[iVar5] = (byte)iVar1;
-          iVar1 = FUN_020732f0();
+          iVar1 = fat_m3sd_getbyte();
           iVar5 = iVar5 + 1;
         } while (param_2 != iVar5);
       }
-      FUN_020732f0();
-      FUN_020732f0();
+      fat_m3sd_getbyte();
+      fat_m3sd_getbyte();
       if ((*param_1 & 0x80) == 0) {
         uVar4 = 0;
         uVar3 = 8;
@@ -130,11 +130,11 @@ LAB_020733b6:
 
 // 0x0207340c  fat_m3sd_cmd_17byte_response
 
-void FUN_0207340c(undefined4 param_1,undefined4 param_2,undefined4 param_3)
+void fat_m3sd_cmd_17byte_response(undefined4 param_1,undefined4 param_2,undefined4 param_3)
 
 {
-  FUN_02073290(param_2,param_3);
-  FUN_02073344(param_1,0x11);
+  fat_m3sd_sendcommand(param_2,param_3);
+  fat_m3sd_getresponse(param_1,0x11);
   return;
 }
 
@@ -143,7 +143,7 @@ void FUN_0207340c(undefined4 param_1,undefined4 param_2,undefined4 param_3)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 FUN_02073424(undefined2 *param_1)
+undefined4 fat_m3sd_readdata(undefined2 *param_1)
 
 {
   undefined2 uVar1;
@@ -185,7 +185,7 @@ undefined4 FUN_02073424(undefined2 *param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_020734b4(void)
+void fat_m3sd_clkout(void)
 
 {
   _DAT_08800000 = 0xc;
@@ -197,7 +197,7 @@ void FUN_020734b4(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_020734c4(void)
+void fat_m3sd_clkin(void)
 
 {
   _DAT_08800000 = 8;
@@ -207,7 +207,7 @@ void FUN_020734c4(void)
 
 // 0x020734d4  fat_m3sd_isinserted
 
-bool FUN_020734d4(void)
+bool fat_m3sd_isinserted(void)
 
 {
   char cVar1;
@@ -215,8 +215,8 @@ bool FUN_020734d4(void)
   bool bVar3;
   char local_e [6];
   
-  iVar2 = FUN_02073290(0xd,0);
-  if ((iVar2 == 0) || (cVar1 = FUN_02073344(local_e,6), cVar1 == '\0')) {
+  iVar2 = fat_m3sd_sendcommand(0xd,0);
+  if ((iVar2 == 0) || (cVar1 = fat_m3sd_getresponse(local_e,6), cVar1 == '\0')) {
     bVar3 = false;
   }
   else {
@@ -230,7 +230,7 @@ bool FUN_020734d4(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-bool FUN_02073510(int param_1,int param_2,int param_3)
+bool fat_m3sd_readsectors(int param_1,int param_2,int param_3)
 
 {
   int iVar1;
@@ -238,23 +238,23 @@ bool FUN_02073510(int param_1,int param_2,int param_3)
   undefined1 auStack_1e [6];
   
   if (param_2 == 1) {
-    iVar1 = FUN_02073290(0x11,param_1 << 9);
+    iVar1 = fat_m3sd_sendcommand(0x11,param_1 << 9);
     if (iVar1 != 0) {
-      iVar1 = FUN_02073424(param_3);
+      iVar1 = fat_m3sd_readdata(param_3);
       return iVar1 != 0;
     }
   }
   else {
-    iVar1 = FUN_02073290(0x12,param_1 << 9);
+    iVar1 = fat_m3sd_sendcommand(0x12,param_1 << 9);
     if (iVar1 != 0) {
       if (param_2 == 0) {
 LAB_02073584:
-        FUN_02073290(0xc,0);
-        FUN_02073344(auStack_1e,6);
+        fat_m3sd_sendcommand(0xc,0);
+        fat_m3sd_getresponse(auStack_1e,6);
         return true;
       }
       iVar1 = 0;
-      while (iVar2 = FUN_02073424(param_3), iVar2 != 0) {
+      while (iVar2 = fat_m3sd_readdata(param_3), iVar2 != 0) {
         iVar1 = iVar1 + 1;
         _DAT_09800000 = 8;
         if (param_2 == iVar1) goto LAB_02073584;
@@ -270,7 +270,7 @@ LAB_02073584:
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_020735b0(void)
+void fat_m3sd_initcard(void)
 
 {
   int iVar1;
@@ -289,16 +289,16 @@ void FUN_020735b0(void)
     bVar3 = iVar2 != 0;
     iVar2 = iVar2 + -1;
   } while (bVar3);
-  iVar2 = FUN_02073290(0,0);
+  iVar2 = fat_m3sd_sendcommand(0,0);
   if (iVar2 != 0) {
     iVar2 = 99;
     do {
-      FUN_020732f0();
+      fat_m3sd_getbyte();
       bVar3 = iVar2 != 0;
       iVar2 = iVar2 + -1;
     } while (bVar3);
     DAT_020b4c6c = 0;
-    FUN_02074c84(&LAB_020733f4_1,0x207340d,1);
+    fat_sd_initcard(&LAB_020733f4_1,0x207340d,1);
   }
   return;
 }
@@ -306,21 +306,21 @@ void FUN_020735b0(void)
 
 // 0x02073638  fat_m3sd_clearstatus
 
-void FUN_02073638(void)
+void fat_m3sd_clearstatus(void)
 
 {
-  FUN_020735b0();
+  fat_m3sd_initcard();
   return;
 }
 
 
 // 0x02073644  fat_m3sd_startup
 
-void FUN_02073644(void)
+void fat_m3sd_startup(void)
 
 {
-  FUN_0207ebf4(0x400003);
-  FUN_020735b0();
+  fat_m3_changemode(0x400003);
+  fat_m3sd_initcard();
   return;
 }
 
@@ -329,7 +329,7 @@ void FUN_02073644(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 FUN_0207365c(int param_1,int param_2,byte *param_3)
+undefined4 fat_m3sd_writesectors(int param_1,int param_2,byte *param_3)
 
 {
   byte bVar1;
@@ -343,65 +343,65 @@ undefined4 FUN_0207365c(int param_1,int param_2,byte *param_3)
   byte local_2b;
   
   local_3c = param_1 << 9;
-  FUN_02074b88(param_3,0x200,local_36);
+  fat_sd_crc16(param_3,0x200,local_36);
   while( true ) {
     bVar5 = param_2 == 0;
     param_2 = param_2 + -1;
     if (bVar5) {
       return 1;
     }
-    FUN_02073290(0x18,local_3c);
-    cVar2 = FUN_02073344(abStack_2e,6);
+    fat_m3sd_sendcommand(0x18,local_3c);
+    cVar2 = fat_m3sd_getresponse(abStack_2e,6);
     if (cVar2 == '\0') break;
     _DAT_08800000 = 4;
     _DAT_09800000 = 0;
     do {
-      FUN_020734c4();
+      fat_m3sd_clkin();
     } while ((_DAT_09000000 & 0x100) == 0);
     _DAT_09000000 = 0;
-    FUN_020734b4();
+    fat_m3sd_clkout();
     iVar4 = 0;
     pbVar3 = param_3;
     do {
       bVar1 = *pbVar3;
       iVar4 = iVar4 + 1;
       _DAT_09000000 = (ushort)(bVar1 >> 4);
-      FUN_020734b4();
+      fat_m3sd_clkout();
       _DAT_09000000 = (ushort)bVar1;
       pbVar3 = pbVar3 + 1;
-      FUN_020734b4();
+      fat_m3sd_clkout();
     } while (iVar4 != 0x200);
     pbVar3 = local_36;
     do {
       bVar1 = *pbVar3;
       pbVar3 = pbVar3 + 1;
       _DAT_09000000 = (ushort)(bVar1 >> 4);
-      FUN_020734b4();
+      fat_m3sd_clkout();
       _DAT_09000000 = (ushort)bVar1;
-      FUN_020734b4();
+      fat_m3sd_clkout();
     } while (abStack_2e != pbVar3);
     iVar4 = 0;
     do {
       _DAT_09000000 = 0xff;
       iVar4 = iVar4 + 1;
-      FUN_020734b4();
+      fat_m3sd_clkout();
     } while (iVar4 != 0x20);
     do {
-      FUN_020734c4();
+      fat_m3sd_clkin();
     } while ((_DAT_09000000 & 0x100) == 0);
     if (param_2 != 0) {
       local_3c = local_3c + 0x200;
       param_3 = param_3 + 0x200;
-      FUN_02074b88(param_3,0x200,local_36);
+      fat_sd_crc16(param_3,0x200,local_36);
     }
     local_2b = 0;
-    FUN_02073290(0xd,DAT_020b4c6c);
-    FUN_02073344(abStack_2e,6);
+    fat_m3sd_sendcommand(0xd,DAT_020b4c6c);
+    fat_m3sd_getresponse(abStack_2e,6);
     iVar4 = 2999;
     while ((local_2b & 0x1f) != 9) {
-      FUN_02073290(0xd,DAT_020b4c6c);
+      fat_m3sd_sendcommand(0xd,DAT_020b4c6c);
       iVar4 = iVar4 + -1;
-      FUN_02073344(abStack_2e,6);
+      fat_m3sd_getresponse(abStack_2e,6);
       if (iVar4 == 0) {
         return 0;
       }
@@ -413,7 +413,7 @@ undefined4 FUN_0207365c(int param_1,int param_2,byte *param_3)
 
 // 0x0207ebf0  fat_m3_readhalfword
 
-undefined2 FUN_0207ebf0(undefined2 *param_1)
+undefined2 fat_m3_readhalfword(undefined2 *param_1)
 
 {
   return *param_1;
@@ -422,27 +422,27 @@ undefined2 FUN_0207ebf0(undefined2 *param_1)
 
 // 0x0207ebf4  fat_m3_changemode
 
-void FUN_0207ebf4(uint param_1)
+void fat_m3_changemode(uint param_1)
 
 {
-  FUN_0207ebf0(0x8e00002);
-  FUN_0207ebf0(0x800000e);
-  FUN_0207ebf0(0x8801ffc);
-  FUN_0207ebf0(0x800104a);
-  FUN_0207ebf0(0x8800612);
-  FUN_0207ebf0(0x8000000);
-  FUN_0207ebf0(0x8801b66);
-  FUN_0207ebf0(param_1 * 2 + 0x8000000);
-  FUN_0207ebf0(0x800080e);
-  FUN_0207ebf0(0x8000000);
+  fat_m3_readhalfword(0x8e00002);
+  fat_m3_readhalfword(0x800000e);
+  fat_m3_readhalfword(0x8801ffc);
+  fat_m3_readhalfword(0x800104a);
+  fat_m3_readhalfword(0x8800612);
+  fat_m3_readhalfword(0x8000000);
+  fat_m3_readhalfword(0x8801b66);
+  fat_m3_readhalfword(param_1 * 2 + 0x8000000);
+  fat_m3_readhalfword(0x800080e);
+  fat_m3_readhalfword(0x8000000);
   if ((param_1 & 0xf) == 4) {
-    FUN_0207ebf0(0x80001e4);
-    FUN_0207ebf0(0x80001e4);
-    FUN_0207ebf0(0x8000188);
-    FUN_0207ebf0(0x8000188);
+    fat_m3_readhalfword(0x80001e4);
+    fat_m3_readhalfword(0x80001e4);
+    fat_m3_readhalfword(0x8000188);
+    fat_m3_readhalfword(0x8000188);
   }
   else {
-    FUN_0207ebf0(&DAT_09000000);
+    fat_m3_readhalfword(&DAT_09000000);
   }
   return;
 }

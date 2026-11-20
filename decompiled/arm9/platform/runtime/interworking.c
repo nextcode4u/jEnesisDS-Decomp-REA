@@ -4,7 +4,7 @@
 
 // 0x02085950  thumb_veneer_for_newlib_strlen
 
-int thunk_FUN_02083a6c(uint *param_1)
+int arm_thumb_veneer_for_newlib_strlen(uint *param_1)
 
 {
   char cVar1;
@@ -30,7 +30,7 @@ int thunk_FUN_02083a6c(uint *param_1)
 
 // 0x02085954  arm_entry_for_newlib_strlen
 
-int thunk_FUN_02083a6c(uint *param_1)
+int arm_thumb_veneer_for_newlib_strlen(uint *param_1)
 
 {
   char cVar1;
@@ -56,7 +56,7 @@ int thunk_FUN_02083a6c(uint *param_1)
 
 // 0x02085958  thumb_veneer_for_newlib_strchr
 
-uint * thunk_FUN_020836d4(uint *param_1,uint param_2)
+uint * arm_thumb_veneer_for_newlib_strchr(uint *param_1,uint param_2)
 
 {
   byte bVar1;
@@ -100,7 +100,7 @@ uint * thunk_FUN_020836d4(uint *param_1,uint param_2)
 
 // 0x0208595c  arm_entry_for_newlib_strchr
 
-uint * thunk_FUN_020836d4(uint *param_1,uint param_2)
+uint * arm_thumb_veneer_for_newlib_strchr(uint *param_1,uint param_2)
 
 {
   byte bVar1;
@@ -144,7 +144,7 @@ uint * thunk_FUN_020836d4(uint *param_1,uint param_2)
 
 // 0x02085960  thumb_veneer_for_newlib_strncmp
 
-int thunk_FUN_02083c80(uint *param_1,uint *param_2,uint param_3)
+int arm_thumb_veneer_for_newlib_strncmp(uint *param_1,uint *param_2,uint param_3)
 
 {
   uint uVar1;
@@ -210,7 +210,7 @@ LAB_02083db4:
 
 // 0x02085964  arm_entry_for_newlib_strncmp
 
-int thunk_FUN_02083c80(uint *param_1,uint *param_2,uint param_3)
+int arm_thumb_veneer_for_newlib_strncmp(uint *param_1,uint *param_2,uint param_3)
 
 {
   uint uVar1;
@@ -276,7 +276,7 @@ LAB_02083db4:
 
 // 0x02085970  thumb_veneer_for_newlib_memset
 
-void thunk_FUN_02083058(undefined4 *param_1,undefined1 param_2,uint param_3)
+void arm_thumb_veneer_for_newlib_memset(undefined4 *param_1,undefined1 param_2,uint param_3)
 
 {
   uint uVar1;
@@ -318,7 +318,7 @@ LAB_020830d0:
 
 // 0x02085974  arm_entry_for_newlib_memset
 
-void thunk_FUN_02083058(undefined4 *param_1,undefined1 param_2,uint param_3)
+void arm_thumb_veneer_for_newlib_memset(undefined4 *param_1,undefined1 param_2,uint param_3)
 
 {
   uint uVar1;
@@ -360,7 +360,7 @@ LAB_020830d0:
 
 // 0x02085980  thumb_veneer_for_compiler_udivsi3
 
-uint thunk_FUN_02080380(uint param_1,uint param_2)
+uint arm_thumb_veneer_for_compiler_udivsi3(uint param_1,uint param_2)
 
 {
   uint uVar1;
@@ -372,7 +372,7 @@ uint thunk_FUN_02080380(uint param_1,uint param_2)
     return param_1;
   }
   if (param_2 == 0) {
-    FUN_020805d8();
+    arm9_divide_by_zero_return_stub();
     return 0;
   }
   if (param_1 <= param_2) {
@@ -447,7 +447,7 @@ uint thunk_FUN_02080380(uint param_1,uint param_2)
 
 // 0x02085984  arm_entry_for_compiler_udivsi3
 
-uint thunk_FUN_02080380(uint param_1,uint param_2)
+uint arm_thumb_veneer_for_compiler_udivsi3(uint param_1,uint param_2)
 
 {
   uint uVar1;
@@ -459,7 +459,7 @@ uint thunk_FUN_02080380(uint param_1,uint param_2)
     return param_1;
   }
   if (param_2 == 0) {
-    FUN_020805d8();
+    arm9_divide_by_zero_return_stub();
     return 0;
   }
   if (param_1 <= param_2) {
@@ -534,7 +534,7 @@ uint thunk_FUN_02080380(uint param_1,uint param_2)
 
 // 0x02085988  thumb_veneer_for_newlib_memcpy
 
-void thunk_FUN_02082ec0(undefined4 *param_1,undefined4 *param_2,uint param_3)
+void arm_thumb_veneer_for_newlib_memcpy(undefined4 *param_1,undefined4 *param_2,uint param_3)
 
 {
   uint uVar1;
@@ -569,7 +569,7 @@ void thunk_FUN_02082ec0(undefined4 *param_1,undefined4 *param_2,uint param_3)
 
 // 0x0208598c  arm_entry_for_newlib_memcpy
 
-void thunk_FUN_02082ec0(undefined4 *param_1,undefined4 *param_2,uint param_3)
+void arm_thumb_veneer_for_newlib_memcpy(undefined4 *param_1,undefined4 *param_2,uint param_3)
 
 {
   uint uVar1;
@@ -604,7 +604,7 @@ void thunk_FUN_02082ec0(undefined4 *param_1,undefined4 *param_2,uint param_3)
 
 // 0x02085998  thumb_veneer_for_newlib_strncpy
 
-uint * thunk_FUN_02083dbc(uint *param_1,uint *param_2,uint param_3)
+uint * arm_thumb_veneer_for_newlib_strncpy(uint *param_1,uint *param_2,uint param_3)
 
 {
   char cVar1;
@@ -665,7 +665,7 @@ uint * thunk_FUN_02083dbc(uint *param_1,uint *param_2,uint param_3)
 
 // 0x0208599c  arm_entry_for_newlib_strncpy
 
-uint * thunk_FUN_02083dbc(uint *param_1,uint *param_2,uint param_3)
+uint * arm_thumb_veneer_for_newlib_strncpy(uint *param_1,uint *param_2,uint param_3)
 
 {
   char cVar1;
@@ -726,18 +726,18 @@ uint * thunk_FUN_02083dbc(uint *param_1,uint *param_2,uint param_3)
 
 // 0x020859a0  thumb_veneer_for_newlib_strrchr
 
-int thunk_FUN_02083f68(int param_1,int param_2)
+int arm_thumb_veneer_for_newlib_strrchr(int param_1,int param_2)
 
 {
   int iVar1;
   int iVar2;
   
   if (param_2 == 0) {
-    iVar1 = FUN_020836d4();
+    iVar1 = newlib_strchr();
   }
   else {
     iVar1 = 0;
-    while (iVar2 = FUN_020836d4(param_1,param_2), iVar2 != 0) {
+    while (iVar2 = newlib_strchr(param_1,param_2), iVar2 != 0) {
       param_1 = iVar2 + 1;
       iVar1 = iVar2;
     }
@@ -748,18 +748,18 @@ int thunk_FUN_02083f68(int param_1,int param_2)
 
 // 0x020859a4  arm_entry_for_newlib_strrchr
 
-int thunk_FUN_02083f68(int param_1,int param_2)
+int arm_thumb_veneer_for_newlib_strrchr(int param_1,int param_2)
 
 {
   int iVar1;
   int iVar2;
   
   if (param_2 == 0) {
-    iVar1 = FUN_020836d4();
+    iVar1 = newlib_strchr();
   }
   else {
     iVar1 = 0;
-    while (iVar2 = FUN_020836d4(param_1,param_2), iVar2 != 0) {
+    while (iVar2 = newlib_strchr(param_1,param_2), iVar2 != 0) {
       param_1 = iVar2 + 1;
       iVar1 = iVar2;
     }
@@ -770,27 +770,27 @@ int thunk_FUN_02083f68(int param_1,int param_2)
 
 // 0x020859a8  thumb_veneer_for_compiler_aeabi_uidivmod
 
-void thunk_FUN_0208047c(void)
+void arm_thumb_veneer_for_compiler_aeabi_uidivmod(void)
 
 {
-  FUN_02080380();
+  compiler_udivsi3();
   return;
 }
 
 
 // 0x020859ac  arm_entry_for_compiler_aeabi_uidivmod
 
-void thunk_FUN_0208047c(void)
+void arm_thumb_veneer_for_compiler_aeabi_uidivmod(void)
 
 {
-  FUN_02080380();
+  compiler_udivsi3();
   return;
 }
 
 
 // 0x020859b8  thumb_veneer_for_newlib_strcasecmp
 
-int thunk_FUN_02083638(byte *param_1,byte *param_2)
+int arm_thumb_veneer_for_newlib_strcasecmp(byte *param_1,byte *param_2)
 
 {
   uint uVar1;
@@ -833,7 +833,7 @@ LAB_02083694:
 
 // 0x020859bc  arm_entry_for_newlib_strcasecmp
 
-int thunk_FUN_02083638(byte *param_1,byte *param_2)
+int arm_thumb_veneer_for_newlib_strcasecmp(byte *param_1,byte *param_2)
 
 {
   uint uVar1;
@@ -876,7 +876,7 @@ LAB_02083694:
 
 // 0x020859c0  thumb_veneer_for_newlib_strncasecmp
 
-int thunk_FUN_02083afc(byte *param_1,byte *param_2,int param_3)
+int arm_thumb_veneer_for_newlib_strncasecmp(byte *param_1,byte *param_2,int param_3)
 
 {
   int iVar1;
@@ -922,7 +922,7 @@ LAB_02083b74:
 
 // 0x020859c4  arm_entry_for_newlib_strncasecmp
 
-int thunk_FUN_02083afc(byte *param_1,byte *param_2,int param_3)
+int arm_thumb_veneer_for_newlib_strncasecmp(byte *param_1,byte *param_2,int param_3)
 
 {
   int iVar1;
@@ -968,7 +968,7 @@ LAB_02083b74:
 
 // 0x020859c8  thumb_veneer_for_newlib_strpbrk
 
-char * thunk_FUN_02083f18(char *param_1,char *param_2)
+char * arm_thumb_veneer_for_newlib_strpbrk(char *param_1,char *param_2)
 
 {
   char cVar1;
@@ -999,7 +999,7 @@ char * thunk_FUN_02083f18(char *param_1,char *param_2)
 
 // 0x020859cc  arm_entry_for_newlib_strpbrk
 
-char * thunk_FUN_02083f18(char *param_1,char *param_2)
+char * arm_thumb_veneer_for_newlib_strpbrk(char *param_1,char *param_2)
 
 {
   char cVar1;
@@ -1030,7 +1030,7 @@ char * thunk_FUN_02083f18(char *param_1,char *param_2)
 
 // 0x020859d0  thumb_veneer_for_newlib_memmove
 
-undefined4 * thunk_FUN_02082f5c(undefined4 *param_1,undefined4 *param_2,uint param_3)
+undefined4 * arm_thumb_veneer_for_newlib_memmove(undefined4 *param_1,undefined4 *param_2,uint param_3)
 
 {
   undefined1 *puVar1;
@@ -1082,7 +1082,7 @@ undefined4 * thunk_FUN_02082f5c(undefined4 *param_1,undefined4 *param_2,uint par
 
 // 0x020859d4  arm_entry_for_newlib_memmove
 
-undefined4 * thunk_FUN_02082f5c(undefined4 *param_1,undefined4 *param_2,uint param_3)
+undefined4 * arm_thumb_veneer_for_newlib_memmove(undefined4 *param_1,undefined4 *param_2,uint param_3)
 
 {
   undefined1 *puVar1;
@@ -1134,7 +1134,7 @@ undefined4 * thunk_FUN_02082f5c(undefined4 *param_1,undefined4 *param_2,uint par
 
 // 0x020859e0  thumb_veneer_for_compiler_divsi3
 
-uint thunk_FUN_02080494(uint param_1,uint param_2)
+uint arm_thumb_veneer_for_compiler_divsi3(uint param_1,uint param_2)
 
 {
   uint uVar1;
@@ -1147,7 +1147,7 @@ uint thunk_FUN_02080494(uint param_1,uint param_2)
   
   uVar6 = param_1 ^ param_2;
   if (param_2 == 0) {
-    FUN_020805d8();
+    arm9_divide_by_zero_return_stub();
     return 0;
   }
   uVar4 = param_2;
@@ -1249,7 +1249,7 @@ uint thunk_FUN_02080494(uint param_1,uint param_2)
 
 // 0x020859e4  arm_entry_for_compiler_divsi3
 
-uint thunk_FUN_02080494(uint param_1,uint param_2)
+uint arm_thumb_veneer_for_compiler_divsi3(uint param_1,uint param_2)
 
 {
   uint uVar1;
@@ -1262,7 +1262,7 @@ uint thunk_FUN_02080494(uint param_1,uint param_2)
   
   uVar6 = param_1 ^ param_2;
   if (param_2 == 0) {
-    FUN_020805d8();
+    arm9_divide_by_zero_return_stub();
     return 0;
   }
   uVar4 = param_2;
@@ -1364,20 +1364,20 @@ uint thunk_FUN_02080494(uint param_1,uint param_2)
 
 // 0x020859e8  thumb_veneer_for_compiler_aeabi_idivmod
 
-void thunk_FUN_020805c0(void)
+void arm_thumb_veneer_for_compiler_aeabi_idivmod(void)
 
 {
-  FUN_02080494();
+  compiler_divsi3();
   return;
 }
 
 
 // 0x020859ec  arm_entry_for_compiler_aeabi_idivmod
 
-void thunk_FUN_020805c0(void)
+void arm_thumb_veneer_for_compiler_aeabi_idivmod(void)
 
 {
-  FUN_02080494();
+  compiler_divsi3();
   return;
 }
 

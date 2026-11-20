@@ -4,7 +4,7 @@
 
 // 0x02001180  wait_six_vblanks_per_unit
 
-void FUN_02001180(int param_1)
+void wait_six_vblanks_per_unit(int param_1)
 
 {
   int iVar1;
@@ -13,7 +13,7 @@ void FUN_02001180(int param_1)
     iVar1 = 0;
     do {
       iVar1 = iVar1 + 1;
-      thunk_FUN_0208031c();
+      arm_veneer_for_nds_swiwaitforvblank();
     } while (iVar1 != param_1 * 6);
   }
   return;
@@ -22,7 +22,7 @@ void FUN_02001180(int param_1)
 
 // 0x02074e40  default_dldi_operation_returns_false
 
-undefined4 FUN_02074e40(void)
+undefined4 default_dldi_operation_returns_false(void)
 
 {
   return 0;
@@ -31,7 +31,7 @@ undefined4 FUN_02074e40(void)
 
 // 0x0207fb7c  read_newly_pressed_ds_keys
 
-ushort FUN_0207fb7c(void)
+ushort read_newly_pressed_ds_keys(void)
 
 {
   return DAT_020b4ca0 & ~DAT_020b4ca2;
@@ -42,7 +42,7 @@ ushort FUN_0207fb7c(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 FUN_0207fc98(undefined1 param_1,undefined1 param_2,undefined1 param_3,undefined1 param_4)
+undefined4 nds_vramsetmainbanks(undefined1 param_1,undefined1 param_2,undefined1 param_3,undefined1 param_4)
 
 {
   undefined4 uVar1;
@@ -55,7 +55,7 @@ undefined4 FUN_0207fc98(undefined1 param_1,undefined1 param_2,undefined1 param_3
 
 // 0x0207fd44  nds_vramsetbanke
 
-void FUN_0207fd44(byte param_1)
+void nds_vramsetbanke(byte param_1)
 
 {
   DAT_04000244 = param_1 | 0x80;
@@ -65,7 +65,7 @@ void FUN_0207fd44(byte param_1)
 
 // 0x0207fda8  load_slot1_card_command_registers
 
-void FUN_0207fda8(int param_1)
+void load_slot1_card_command_registers(int param_1)
 
 {
   undefined1 *puVar1;
@@ -88,12 +88,12 @@ void FUN_0207fda8(int param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_0207fdcc(uint param_1,undefined4 *param_2,int param_3,undefined4 param_4)
+void read_slot1_card_transfer_words(uint param_1,undefined4 *param_2,int param_3,undefined4 param_4)
 
 {
   undefined4 *puVar1;
   
-  FUN_0207fda8(param_4);
+  load_slot1_card_command_registers(param_4);
   puVar1 = param_2 + param_3;
   _DAT_040001a4 = param_1;
   do {
@@ -112,10 +112,10 @@ void FUN_0207fdcc(uint param_1,undefined4 *param_2,int param_3,undefined4 param_
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_0207fe0c(undefined4 param_1,undefined4 param_2,int param_3,undefined4 param_4)
+void start_slot1_card_transfer_with_dma(undefined4 param_1,undefined4 param_2,int param_3,undefined4 param_4)
 
 {
-  FUN_0207fda8();
+  load_slot1_card_command_registers();
   param_3 = param_3 * 0xc;
   *(undefined1 **)(param_3 + 0x40000b0) = &DAT_04100010;
   *(undefined4 *)(param_3 + 0x40000b4) = param_2;
@@ -129,7 +129,7 @@ void FUN_0207fe0c(undefined4 param_1,undefined4 param_2,int param_3,undefined4 p
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_02080098(uint param_1,undefined4 param_2)
+void install_arm9_interrupt_handler(uint param_1,undefined4 param_2)
 
 {
   int iVar1;
@@ -163,7 +163,7 @@ void FUN_02080098(uint param_1,undefined4 param_2)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_02080100(void)
+void initialize_arm9_interrupt_table(void)
 
 {
   undefined4 *puVar1;
@@ -186,7 +186,7 @@ void FUN_02080100(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_0208014c(uint param_1)
+void remove_arm9_interrupt_handler(uint param_1)
 
 {
   uint *puVar1;
@@ -220,7 +220,7 @@ void FUN_0208014c(uint param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_020801cc(undefined4 param_1)
+void install_custom_arm9_interrupt_dispatcher(undefined4 param_1)
 
 {
   _DAT_04000214 = 0xffffffff;
@@ -235,7 +235,7 @@ void FUN_020801cc(undefined4 param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_020801fc(uint param_1)
+void enable_arm9_interrupt_sources(uint param_1)
 
 {
   if ((param_1 & 1) != 0) {
@@ -257,7 +257,7 @@ void FUN_020801fc(uint param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_0208024c(uint param_1)
+void disable_arm9_interrupt_sources(uint param_1)
 
 {
   if ((int)(param_1 << 0x1f) < 0) {
@@ -276,7 +276,7 @@ void FUN_0208024c(uint param_1)
 
 // 0x020802c4  clean_and_invalidate_arm9_data_cache_range
 
-void FUN_020802c4(uint param_1,int param_2)
+void clean_and_invalidate_arm9_data_cache_range(uint param_1,int param_2)
 
 {
   uint uVar1;
@@ -292,7 +292,7 @@ void FUN_020802c4(uint param_1,int param_2)
 
 // 0x0208031c  nds_swiwaitforvblank
 
-void FUN_0208031c(void)
+void nds_swiwaitforvblank(void)
 
 {
   software_interrupt(5);
@@ -302,7 +302,7 @@ void FUN_0208031c(void)
 
 // 0x0208033e  nds_swicopy
 
-void FUN_0208033e(void)
+void nds_swicopy(void)
 
 {
   software_interrupt(0xb);
@@ -312,7 +312,7 @@ void FUN_0208033e(void)
 
 // 0x020858a4  arm_veneer_for_nds_swiwaitforvblank
 
-void thunk_FUN_0208031c(void)
+void arm_veneer_for_nds_swiwaitforvblank(void)
 
 {
   software_interrupt(5);
@@ -322,7 +322,7 @@ void thunk_FUN_0208031c(void)
 
 // 0x0208591c  arm_veneer_for_nds_swicopy
 
-void thunk_FUN_0208033e(void)
+void arm_veneer_for_nds_swicopy(void)
 
 {
   software_interrupt(0xb);
@@ -335,7 +335,7 @@ void thunk_FUN_0208033e(void)
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
 undefined4
-thunk_FUN_0207fc98(undefined1 param_1,undefined1 param_2,undefined1 param_3,undefined1 param_4)
+arm_veneer_for_nds_vramsetmainbanks(undefined1 param_1,undefined1 param_2,undefined1 param_3,undefined1 param_4)
 
 {
   undefined4 uVar1;
@@ -348,7 +348,7 @@ thunk_FUN_0207fc98(undefined1 param_1,undefined1 param_2,undefined1 param_3,unde
 
 // 0x02085934  arm_veneer_for_nds_vramsetbanke
 
-void thunk_FUN_0207fd44(byte param_1)
+void arm_veneer_for_nds_vramsetbanke(byte param_1)
 
 {
   DAT_04000244 = param_1 | 0x80;

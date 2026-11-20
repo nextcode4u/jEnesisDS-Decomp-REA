@@ -4,7 +4,7 @@
 
 // 0x02005b7c  read_ym2612_timer_status
 
-byte FUN_02005b7c(void)
+byte read_ym2612_timer_status(void)
 
 {
   return *(byte *)(DAT_0b00002c + 0x480) & 3;
@@ -15,88 +15,88 @@ byte FUN_02005b7c(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_02005ba0(uint param_1,uint param_2)
+void queue_ym2612_register_or_dac_write(uint port_address,uint write_value)
 
 {
   int iVar1;
   uint *puVar2;
   byte bVar3;
-  undefined1 uVar4;
+  undefined1 write_byte;
   int iVar5;
   uint uVar6;
   uint uVar7;
   
-  iVar5 = DAT_02099068;
-  iVar1 = DAT_02099064;
-  uVar6 = DAT_02099054;
+  iVar5 = ym2612_bank_1_register;
+  iVar1 = ym2612_bank_0_register;
+  uVar6 = ym2612_bank_1_queue_bytes;
   do {
-  } while ((_DAT_04000180 & 0xf) == 0);
-  uVar4 = (undefined1)param_2;
-  switch(param_1 & 3) {
+  } while ((ds_ipc_sync & 0xf) == 0);
+  write_byte = (undefined1)write_value;
+  switch(port_address & 3) {
   case 0:
-    DAT_02099060 = 0;
-    DAT_02099064 = param_2;
+    ym2612_selected_bank = 0;
+    ym2612_bank_0_register = write_value;
     return;
   case 1:
     break;
   case 2:
-    DAT_02099060 = 1;
-    DAT_02099068 = param_2;
+    ym2612_selected_bank = 1;
+    ym2612_bank_1_register = write_value;
     return;
   case 3:
-    if (DAT_02099060 == 0) {
+    if (ym2612_selected_bank == 0) {
       return;
     }
-    if (((&DAT_0209927c)[DAT_02099068] != '\0') && ((byte)(&DAT_0209917c)[DAT_02099068] == param_2))
+    if (((&DAT_0209927c)[ym2612_bank_1_register] != '\0') && ((byte)(&ym2612_bank_1_mirror)[ym2612_bank_1_register] == write_value))
     {
       return;
     }
-    (&DAT_0209917c)[DAT_02099068] = uVar4;
+    (&ym2612_bank_1_mirror)[ym2612_bank_1_register] = write_byte;
     if (0x1fd < uVar6) {
       return;
     }
-    DAT_02099054 = uVar6 + 2;
-    *(char *)(uVar6 + DAT_023db760) = (char)iVar5;
-    *(undefined1 *)(uVar6 + 1 + DAT_023db760) = uVar4;
+    ym2612_bank_1_queue_bytes = uVar6 + 2;
+    *(char *)(uVar6 + ym2612_bank_1_write_buffer) = (char)iVar5;
+    *(undefined1 *)(uVar6 + 1 + ym2612_bank_1_write_buffer) = write_byte;
   default:
     return;
   }
-  if (DAT_02099064 == 0x2a) {
-    if (0x3ff < DAT_02099048) {
+  if (ym2612_bank_0_register == 0x2a) {
+    if (0x3ff < dac_queue_bytes) {
       return;
     }
-    DAT_0209904c = param_2 & 0x7f | DAT_0209904c;
-    *(undefined1 *)(DAT_02099048 + DAT_023db774) = uVar4;
-    DAT_02099048 = DAT_02099048 + 1;
+    DAT_0209904c = write_value & 0x7f | DAT_0209904c;
+    *(undefined1 *)(dac_queue_bytes + dac_write_buffer) = write_byte;
+    dac_queue_bytes = dac_queue_bytes + 1;
     return;
   }
-  if (DAT_02099060 == 0) {
-    if (((&DAT_0209927c)[DAT_02099064] != '\0') && ((byte)(&DAT_0209907c)[DAT_02099064] == param_2))
+  if (ym2612_selected_bank == 0) {
+    if (((&DAT_0209927c)[ym2612_bank_0_register] != '\0') && ((byte)(&ym2612_bank_0_mirror)[ym2612_bank_0_register] == write_value))
     {
       return;
     }
-    (&DAT_0209907c)[DAT_02099064] = uVar4;
+    (&ym2612_bank_0_mirror)[ym2612_bank_0_register] = write_byte;
     iVar5 = DAT_0b00002c;
     switch(iVar1) {
     case 0x24:
-      uVar6 = DAT_023db784 & 3 | param_2 << 2;
+      uVar6 = DAT_023db784 & 3 | write_value << 2;
       if (DAT_023db784 == uVar6) {
         return;
       }
       break;
     case 0x25:
-      uVar6 = DAT_023db784 & 0x3fc | param_2 & 3;
+      uVar6 = DAT_023db784 & 0x3fc | write_value & 3;
       if (DAT_023db784 == uVar6) {
         return;
       }
       break;
     case 0x26:
-      if (DAT_023db790 == param_2) {
+      if (DAT_023db790 == write_value) {
         return;
       }
-      iVar1 = (uint)(ushort)(&DAT_023dbf98)[param_2] << 5;
+      iVar1 = (uint)(ushort)(&DAT_023dbf98)[write_value] << 5;
       DAT_023db788 = iVar1;
-      DAT_023db790 = param_2;
+      DAT_023db790 = write_value;
       *(undefined1 *)(DAT_0b00002c + 0x48f) = 0;
       *(char *)(iVar5 + 0x48d) = (char)((uint)iVar1 >> 8);
       *(char *)(iVar5 + 0x48e) = (char)((uint)iVar1 >> 0x10);
@@ -108,8 +108,8 @@ void FUN_02005ba0(uint param_1,uint param_2)
       *(undefined1 *)(iVar1 + 0x493) = DAT_023db788._3_1_;
       return;
     case 0x27:
-      DAT_023db778 = param_2;
-      if ((param_2 & 0x20) != 0) {
+      DAT_023db778 = write_value;
+      if ((write_value & 0x20) != 0) {
         DAT_023db794 = DAT_023db794 & 0xfffffffd;
         puVar2 = (uint *)(DAT_0b00002c + 0x480);
         uVar6 = *puVar2 & 0xfffffffd;
@@ -119,7 +119,7 @@ void FUN_02005ba0(uint param_1,uint param_2)
         *(char *)(iVar5 + 0x482) = (char)(uVar6 >> 0x10);
       }
       iVar5 = DAT_0b00002c;
-      if ((param_2 & 0x10) != 0) {
+      if ((write_value & 0x10) != 0) {
         DAT_023db794 = DAT_023db794 & 0xfffffffe;
         puVar2 = (uint *)(DAT_0b00002c + 0x480);
         uVar6 = *puVar2 & 0xfffffffe;
@@ -136,18 +136,18 @@ void FUN_02005ba0(uint param_1,uint param_2)
       *(byte *)(iVar5 + 0x480) = bVar3 & 3;
       iVar5 = DAT_0b00002c;
       uVar6 = *(uint *)(DAT_0b00002c + 0x480);
-      uVar7 = uVar6 | param_2 << 8;
+      uVar7 = uVar6 | write_value << 8;
       *(char *)(DAT_0b00002c + 0x483) = (char)(uVar7 >> 0x18);
       *(char *)(iVar5 + 0x481) = (char)(uVar7 >> 8);
       *(char *)(iVar5 + 0x482) = (char)(uVar7 >> 0x10);
       *(char *)(iVar5 + 0x480) = (char)uVar6;
     default:
-      if (0x1fd < DAT_02099050) {
+      if (0x1fd < ym2612_bank_0_queue_bytes) {
         return;
       }
-      *(char *)(DAT_02099050 + DAT_023db644) = (char)iVar1;
-      *(undefined1 *)(DAT_02099050 + 1 + DAT_023db644) = uVar4;
-      DAT_02099050 = DAT_02099050 + 2;
+      *(char *)(ym2612_bank_0_queue_bytes + DAT_023db644) = (char)iVar1;
+      *(undefined1 *)(ym2612_bank_0_queue_bytes + 1 + DAT_023db644) = write_byte;
+      ym2612_bank_0_queue_bytes = ym2612_bank_0_queue_bytes + 2;
       return;
     }
     iVar1 = (uint)(ushort)(&DAT_023db798)[uVar6] << 1;
@@ -172,33 +172,33 @@ void FUN_02005ba0(uint param_1,uint param_2)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-bool FUN_020061a8(void)
+bool submit_arm7_dac_sample_buffer(void)
 
 {
   ushort uVar1;
   bool bVar2;
   
   do {
-  } while ((_DAT_04000180 & 0xf) == 0);
+  } while ((ds_ipc_sync & 0xf) == 0);
   if (DAT_0209904c == 0) {
-    *(undefined4 *)(_DAT_027ff028 + 4) = 0;
+    *(undefined4 *)(shared_audio_descriptor + 4) = 0;
   }
   else {
-    *(undefined4 *)(_DAT_027ff028 + 4) = DAT_02099048;
+    *(undefined4 *)(shared_audio_descriptor + 4) = dac_queue_bytes;
   }
   DAT_0209904c = 0;
-  DAT_02099048 = 0;
-  FUN_020802c4(_DAT_027ff028,0x104);
-  bVar2 = (_DAT_04000184 & 2) != 0;
-  uVar1 = _DAT_04000184;
+  dac_queue_bytes = 0;
+  clean_and_invalidate_arm9_data_cache_range(shared_audio_descriptor,0x104);
+  bVar2 = (ds_ipc_fifo_control & 2) != 0;
+  uVar1 = ds_ipc_fifo_control;
   if (bVar2) {
     uVar1 = 0x8408;
   }
   if (!bVar2) {
-    _DAT_04000188 = 0x10000000;
-    uVar1 = _DAT_04000184;
+    ds_ipc_fifo_send = 0x10000000;
+    uVar1 = ds_ipc_fifo_control;
   }
-  _DAT_04000184 = uVar1;
+  ds_ipc_fifo_control = uVar1;
   return !bVar2;
 }
 
@@ -207,24 +207,24 @@ bool FUN_020061a8(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_02006228(void)
+void submit_fm_and_psg_write_buffers_to_arm7(void)
 
 {
   int iVar1;
   int iVar2;
   
-  iVar1 = _DAT_027ff028;
+  iVar1 = shared_audio_descriptor;
   do {
-  } while ((_DAT_04000180 & 0xf) == 0);
-  *(undefined4 *)(_DAT_027ff028 + 0x14) = DAT_02099050;
-  iVar2 = _DAT_027ff028;
-  *(undefined4 *)(iVar1 + 0x24) = DAT_02099054;
-  *(undefined4 *)(iVar1 + 0x34) = DAT_02099058;
-  DAT_02099050 = 0;
-  DAT_02099054 = 0;
-  DAT_02099058 = 0;
-  FUN_020802c4(iVar2,0x104);
-  FUN_0200c55c(0xb,0);
+  } while ((ds_ipc_sync & 0xf) == 0);
+  *(undefined4 *)(shared_audio_descriptor + 0x14) = ym2612_bank_0_queue_bytes;
+  iVar2 = shared_audio_descriptor;
+  *(undefined4 *)(iVar1 + 0x24) = ym2612_bank_1_queue_bytes;
+  *(undefined4 *)(iVar1 + 0x34) = psg_queue_bytes;
+  ym2612_bank_0_queue_bytes = 0;
+  ym2612_bank_1_queue_bytes = 0;
+  psg_queue_bytes = 0;
+  clean_and_invalidate_arm9_data_cache_range(iVar2,0x104);
+  send_arm9_fifo_command_and_payload(0xb,0);
   DAT_0209905c = DAT_0209905c + 1;
   return;
 }
@@ -234,41 +234,41 @@ void FUN_02006228(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-bool FUN_020062c4(void)
+bool request_arm7_audio_stop(void)
 
 {
   ushort uVar1;
   bool bVar2;
   
-  bVar2 = (_DAT_04000184 & 2) != 0;
-  uVar1 = _DAT_04000184;
+  bVar2 = (ds_ipc_fifo_control & 2) != 0;
+  uVar1 = ds_ipc_fifo_control;
   if (bVar2) {
     uVar1 = 0x8408;
   }
   if (!bVar2) {
-    _DAT_04000188 = 0x6000000;
-    uVar1 = _DAT_04000184;
+    ds_ipc_fifo_send = 0x6000000;
+    uVar1 = ds_ipc_fifo_control;
   }
-  _DAT_04000184 = uVar1;
+  ds_ipc_fifo_control = uVar1;
   return !bVar2;
 }
 
 
 // 0x020062d0  reset_fm_and_clear_queued_sound_writes
 
-void FUN_020062d0(void)
+void reset_fm_and_clear_queued_sound_writes(void)
 
 {
   undefined1 *puVar1;
   undefined1 *puVar2;
   undefined1 *puVar3;
   
-  FUN_0200c55c(2,0);
-  DAT_02099048 = 0;
-  puVar3 = &DAT_0209917c;
-  DAT_02099054 = 0;
+  send_arm9_fifo_command_and_payload(2,0);
+  dac_queue_bytes = 0;
+  puVar3 = &ym2612_bank_1_mirror;
+  ym2612_bank_1_queue_bytes = 0;
   DAT_023db788 = 0;
-  DAT_02099050 = 0;
+  ym2612_bank_0_queue_bytes = 0;
   DAT_02099230 = 0xc0;
   DAT_023db778 = 0;
   DAT_023db784 = 0;
@@ -279,7 +279,7 @@ void FUN_020062d0(void)
   DAT_02099131 = 0xc0;
   DAT_02099231 = 0xc0;
   DAT_02099130 = 0xc0;
-  puVar1 = &DAT_0209907c;
+  puVar1 = &ym2612_bank_0_mirror;
   do {
     puVar2 = puVar1;
     puVar2[0xb2] = 0;
@@ -303,7 +303,7 @@ void FUN_020062d0(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-bool FUN_020062f0(int param_1)
+bool set_arm7_audio_muted(int param_1)
 
 {
   ushort uVar1;
@@ -314,17 +314,17 @@ bool FUN_020062f0(int param_1)
   if (param_1 == 0) {
     iVar2 = 0xf;
   }
-  bVar3 = (_DAT_04000184 & 2) != 0;
-  uVar1 = _DAT_04000184;
+  bVar3 = (ds_ipc_fifo_control & 2) != 0;
+  uVar1 = ds_ipc_fifo_control;
   if (bVar3) {
     uVar1 = 0x8408;
   }
   iVar2 = iVar2 << 0x18;
   if (bVar3) {
-    _DAT_04000184 = uVar1;
-    iVar2 = _DAT_04000188;
+    ds_ipc_fifo_control = uVar1;
+    iVar2 = ds_ipc_fifo_send;
   }
-  _DAT_04000188 = iVar2;
+  ds_ipc_fifo_send = iVar2;
   return !bVar3;
 }
 
@@ -334,22 +334,22 @@ bool FUN_020062f0(int param_1)
 /* WARNING: Removing unreachable block (ram,0x020063a0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-uint FUN_02006308(int param_1)
+uint clear_audio_queues_and_reset_or_stop_arm7_audio(int param_1)
 
 {
   ushort uVar1;
   uint uVar2;
   bool bVar3;
   
-  DAT_02099048 = 0;
-  DAT_02099054 = 0;
-  DAT_02099050 = 0;
+  dac_queue_bytes = 0;
+  ym2612_bank_1_queue_bytes = 0;
+  ym2612_bank_0_queue_bytes = 0;
   DAT_0209939c = 0;
-  DAT_02099058 = 0;
-  DAT_02099064 = 0;
+  psg_queue_bytes = 0;
+  ym2612_bank_0_register = 0;
   DAT_023db794 = 0;
-  DAT_02099068 = 0;
-  DAT_02099060 = 0;
+  ym2612_bank_1_register = 0;
+  ym2612_selected_bank = 0;
   DAT_0209906c = 0;
   DAT_023db778 = 0;
   DAT_023db784 = 0;
@@ -357,19 +357,19 @@ uint FUN_02006308(int param_1)
   DAT_023db790 = 0;
   DAT_023db788 = 0;
   if (param_1 == 0) {
-    bVar3 = (_DAT_04000184 & 2) != 0;
-    uVar1 = _DAT_04000184;
+    bVar3 = (ds_ipc_fifo_control & 2) != 0;
+    uVar1 = ds_ipc_fifo_control;
     if (bVar3) {
       uVar1 = 0x8408;
     }
     if (!bVar3) {
-      _DAT_04000188 = 0x6000000;
-      uVar1 = _DAT_04000184;
+      ds_ipc_fifo_send = 0x6000000;
+      uVar1 = ds_ipc_fifo_control;
     }
-    _DAT_04000184 = uVar1;
+    ds_ipc_fifo_control = uVar1;
     return (uint)!bVar3;
   }
-  uVar2 = FUN_0200c55c(1,0);
+  uVar2 = send_arm9_fifo_command_and_payload(1,0);
   do {
   } while (DAT_0209906c == 0);
   return uVar2;
@@ -380,22 +380,22 @@ uint FUN_02006308(int param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-bool FUN_020063dc(void)
+bool request_arm7_audio_start(void)
 
 {
   ushort uVar1;
   bool bVar2;
   
-  bVar2 = (_DAT_04000184 & 2) != 0;
-  uVar1 = _DAT_04000184;
+  bVar2 = (ds_ipc_fifo_control & 2) != 0;
+  uVar1 = ds_ipc_fifo_control;
   if (bVar2) {
     uVar1 = 0x8408;
   }
   if (!bVar2) {
-    _DAT_04000188 = &DAT_05000000;
-    uVar1 = _DAT_04000184;
+    ds_ipc_fifo_send = &DAT_05000000;
+    uVar1 = ds_ipc_fifo_control;
   }
-  _DAT_04000184 = uVar1;
+  ds_ipc_fifo_control = uVar1;
   return !bVar2;
 }
 
@@ -404,7 +404,7 @@ bool FUN_020063dc(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-bool FUN_020063e8(void)
+bool restart_arm7_audio_and_replay_fm_registers(void)
 
 {
   undefined1 *puVar1;
@@ -412,36 +412,36 @@ bool FUN_020063e8(void)
   uint uVar3;
   bool bVar4;
   
-  thunk_FUN_020801fc(1);
-  FUN_020062c4();
-  thunk_FUN_0208031c();
-  thunk_FUN_0208031c();
-  FUN_02006308(1);
-  thunk_FUN_0208031c();
-  thunk_FUN_0208031c();
-  thunk_FUN_0208024c(1);
+  arm_veneer_for_enable_arm9_interrupt_sources(1);
+  request_arm7_audio_stop();
+  arm_veneer_for_nds_swiwaitforvblank();
+  arm_veneer_for_nds_swiwaitforvblank();
+  clear_audio_queues_and_reset_or_stop_arm7_audio(1);
+  arm_veneer_for_nds_swiwaitforvblank();
+  arm_veneer_for_nds_swiwaitforvblank();
+  arm_veneer_for_disable_arm9_interrupt_sources(1);
   uVar3 = 0;
   do {
-    FUN_02005ba0(0,uVar3 & 0xff);
-    FUN_02005ba0(1,(&DAT_0209907c)[uVar3]);
-    FUN_02005ba0(2,uVar3 & 0xff);
-    puVar1 = &DAT_0209917c + uVar3;
+    queue_ym2612_register_or_dac_write(0,uVar3 & 0xff);
+    queue_ym2612_register_or_dac_write(1,(&ym2612_bank_0_mirror)[uVar3]);
+    queue_ym2612_register_or_dac_write(2,uVar3 & 0xff);
+    puVar1 = &ym2612_bank_1_mirror + uVar3;
     uVar3 = uVar3 + 1;
-    FUN_02005ba0(3,*puVar1);
+    queue_ym2612_register_or_dac_write(3,*puVar1);
   } while (uVar3 != 0x100);
-  thunk_FUN_020801fc(1);
-  thunk_FUN_0208031c();
-  thunk_FUN_0208031c();
-  bVar4 = (_DAT_04000184 & 2) != 0;
-  uVar2 = _DAT_04000184;
+  arm_veneer_for_enable_arm9_interrupt_sources(1);
+  arm_veneer_for_nds_swiwaitforvblank();
+  arm_veneer_for_nds_swiwaitforvblank();
+  bVar4 = (ds_ipc_fifo_control & 2) != 0;
+  uVar2 = ds_ipc_fifo_control;
   if (bVar4) {
     uVar2 = 0x8408;
   }
   if (!bVar4) {
-    _DAT_04000188 = &DAT_05000000;
-    uVar2 = _DAT_04000184;
+    ds_ipc_fifo_send = &DAT_05000000;
+    uVar2 = ds_ipc_fifo_control;
   }
-  _DAT_04000184 = uVar2;
+  ds_ipc_fifo_control = uVar2;
   return !bVar4;
 }
 
@@ -450,19 +450,19 @@ bool FUN_020063e8(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_0200c4a8(void)
+void dispatch_arm9_fifo_receive_interrupt(void)
 
 {
   do {
-    if ((_DAT_04000184 & 0x100) != 0) {
+    if ((ds_ipc_fifo_control & 0x100) != 0) {
       return;
     }
     while( true ) {
-      DAT_020b4c3c = _DAT_04100000 & 0xffffff;
-      DAT_020b4c38 = _DAT_04100000 >> 0x18;
-      if (DAT_023ddeb8 == (code *)0x0) break;
-      (*DAT_023ddeb8)(DAT_020b4c38,&DAT_020b4c3c);
-      if ((_DAT_04000184 & 0x100) != 0) {
+      ipc_received_payload = ds_ipc_fifo_receive & 0xffffff;
+      ipc_received_command = ds_ipc_fifo_receive >> 0x18;
+      if (ipc_receive_callback == (code *)0x0) break;
+      (*ipc_receive_callback)(ipc_received_command,&ipc_received_payload);
+      if ((ds_ipc_fifo_control & 0x100) != 0) {
         return;
       }
     }
@@ -472,10 +472,10 @@ void FUN_0200c4a8(void)
 
 // 0x0200c520  set_arm9_fifo_receive_callback
 
-void FUN_0200c520(undefined4 param_1)
+void set_arm9_fifo_receive_callback(undefined4 callback)
 
 {
-  DAT_023ddeb8 = param_1;
+  ipc_receive_callback = callback;
   return;
 }
 
@@ -484,25 +484,25 @@ void FUN_0200c520(undefined4 param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-bool FUN_0200c55c(int param_1,uint param_2)
+bool send_arm9_fifo_command_and_payload(int command_id,uint payload)
 
 {
   ushort uVar1;
-  uint uVar2;
-  bool bVar3;
+  uint fifo_word;
+  bool send_fifo_full;
   
-  bVar3 = (_DAT_04000184 & 2) != 0;
-  uVar1 = _DAT_04000184;
-  if (bVar3) {
+  send_fifo_full = (ds_ipc_fifo_control & 2) != 0;
+  uVar1 = ds_ipc_fifo_control;
+  if (send_fifo_full) {
     uVar1 = 0x8408;
   }
-  uVar2 = param_2 & 0xffffff | param_1 << 0x18;
-  if (bVar3) {
-    _DAT_04000184 = uVar1;
-    uVar2 = _DAT_04000188;
+  fifo_word = payload & 0xffffff | command_id << 0x18;
+  if (send_fifo_full) {
+    ds_ipc_fifo_control = uVar1;
+    fifo_word = ds_ipc_fifo_send;
   }
-  _DAT_04000188 = uVar2;
-  return !bVar3;
+  ds_ipc_fifo_send = fifo_word;
+  return !send_fifo_full;
 }
 
 
@@ -510,12 +510,12 @@ bool FUN_0200c55c(int param_1,uint param_2)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_0200c59c(void)
+void initialize_arm9_fifo_receive_interrupt(void)
 
 {
-  thunk_FUN_02080098(0x40000,FUN_0200c4a8);
-  thunk_FUN_020801fc(0x40000);
-  _DAT_04000184 = 0x8408;
+  arm_veneer_for_install_arm9_interrupt_handler(0x40000,dispatch_arm9_fifo_receive_interrupt);
+  arm_veneer_for_enable_arm9_interrupt_sources(0x40000);
+  ds_ipc_fifo_control = 0x8408;
   return;
 }
 

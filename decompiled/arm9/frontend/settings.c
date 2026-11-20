@@ -4,20 +4,20 @@
 
 // 0x02000d10  configure_frame_timing_callbacks
 
-void FUN_02000d10(void)
+void configure_frame_timing_callbacks(void)
 
 {
   uint uVar1;
   
   DAT_0b00003c = &DAT_02006a58;
-  FUN_020075bc(0);
-  FUN_020075bc(1);
-  FUN_02009570();
-  FUN_02006a44();
+  mark_background_tile_cache_for_refresh(0);
+  mark_background_tile_cache_for_refresh(1);
+  select_vdp_scanline_render_callback();
+  invalidate_viewport_mode_cache();
   uVar1 = DAT_023cb610 >> 0xc & 3;
   if (uVar1 == 1) {
-    DAT_0b000040 = FUN_02000568;
-    DAT_0b000038 = FUN_02000a2c;
+    DAT_0b000040 = update_vdp_timing_and_run_m68k_configured;
+    DAT_0b000038 = run_frame_h_int_on;
     return;
   }
   if (uVar1 != 0) {
@@ -27,14 +27,14 @@ void FUN_02000d10(void)
     return;
   }
   DAT_0b000040 = (code *)&DAT_02000558;
-  DAT_0b000038 = FUN_02000868;
+  DAT_0b000038 = run_frame_h_int_off;
   return;
 }
 
 
 // 0x020020c4  advance_configuration_value
 
-void FUN_020020c4(int param_1)
+void advance_configuration_value(int param_1)
 
 {
   uint uVar1;
@@ -56,7 +56,7 @@ void FUN_020020c4(int param_1)
 
 // 0x020023ec  draw_on_off_option_text
 
-void FUN_020023ec(undefined4 *param_1,int param_2)
+void draw_on_off_option_text(undefined4 *param_1,int param_2)
 
 {
   char cVar1;
@@ -69,19 +69,19 @@ void FUN_020023ec(undefined4 *param_1,int param_2)
   param_2 = param_2 + 8;
   switch(param_1[1]) {
   case 0:
-    FUN_0200da3c(*param_1,param_2,1);
+    write_text_at_tile_position(*param_1,param_2,1);
     pcVar3 = "on   ";
     pcVar4 = "off  ";
     uVar5 = param_1[2] & DAT_023cb610;
     break;
   case 1:
-    FUN_0200da3c(*param_1,param_2,1);
+    write_text_at_tile_position(*param_1,param_2,1);
     pcVar3 = "HW   ";
     pcVar4 = "SW   ";
     uVar5 = param_1[2] & DAT_023cb610;
     break;
   case 2:
-    FUN_0200da3c(*param_1,param_2,1);
+    write_text_at_tile_position(*param_1,param_2,1);
     uVar5 = DAT_023cb610 >> (param_1[2] & 0xff) & 3;
     if (uVar5 == 0) {
       pcVar3 = "off  ";
@@ -94,7 +94,7 @@ void FUN_020023ec(undefined4 *param_1,int param_2)
     }
     goto code_r0x0200da3c;
   case 3:
-    FUN_0200da3c(*param_1,param_2,1);
+    write_text_at_tile_position(*param_1,param_2,1);
     uVar5 = DAT_023cb610 >> (param_1[2] & 0xff) & 3;
     if (uVar5 == 0) {
       pcVar3 = "USA";
@@ -137,7 +137,7 @@ code_r0x0200da3c:
 
 // 0x02002c68  run_configuration_menu
 
-undefined4 FUN_02002c68(int param_1)
+undefined4 run_configuration_menu(int param_1)
 
 {
   int iVar1;
@@ -147,61 +147,61 @@ undefined4 FUN_02002c68(int param_1)
   undefined *puVar5;
   
   iVar1 = DAT_023cb610;
-  FUN_0200d8c4();
-  thunk_FUN_02006bb0();
-  FUN_0200da3c("Configuration",5,1);
-  FUN_0200da3c("______________________________",6,1);
+  clear_text_overlay_tilemap();
+  arm_tail_branch_to_load_subscreen_palette_tiles_and_map();
+  write_text_at_tile_position("Configuration",5,1);
+  write_text_at_tile_position("______________________________",6,1);
   if (param_1 == 0) {
-    FUN_0200da3c("[A]:     Change Option",0x15,1);
-    FUN_0200da3c("[SELECT]:Continue",0x16,1);
+    write_text_at_tile_position("[A]:     Change Option",0x15,1);
+    write_text_at_tile_position("[SELECT]:Continue",0x16,1);
   }
   else {
-    FUN_0200da3c("[A]:     Change Option",0x15,1);
-    FUN_0200da3c("[SELECT]:Continue Game",0x16,1);
+    write_text_at_tile_position("[A]:     Change Option",0x15,1);
+    write_text_at_tile_position("[SELECT]:Continue Game",0x16,1);
   }
   DAT_02098fd0 = 0;
   while( true ) {
-    thunk_FUN_0207fb90();
+    arm_veneer_for_sample_ds_keys_and_update_repeat_state();
     puVar5 = &DAT_02085a10;
     iVar3 = 0;
     do {
       iVar4 = iVar3 + 1;
-      FUN_020023ec(puVar5,iVar3);
+      draw_on_off_option_text(puVar5,iVar3);
       puVar5 = puVar5 + 0xc;
       iVar3 = iVar4;
     } while (iVar4 != 10);
-    FUN_02006784(DAT_02098fe8 + 8);
-    uVar2 = thunk_FUN_0207fb70();
+    draw_rom_browser_row_highlight(DAT_02098fe8 + 8);
+    uVar2 = arm_veneer_for_read_latched_ds_key_state();
     if (((uVar2 & 0x40) == 0) || ((DAT_02098fd0 & 0x40) != 0)) {
       if (((uVar2 & 0x80) != 0) && (((DAT_02098fd0 & 0x80) == 0 && (DAT_02098fe8 < 9)))) {
-        FUN_02002b2c();
+        move_settings_highlight_down();
       }
     }
     else if (DAT_02098fe8 != 0) {
-      FUN_02002b5c();
+      move_settings_highlight_up();
     }
     if (((uVar2 & 1) != 0) && ((DAT_02098fd0 & 1) == 0)) {
-      FUN_020020c4(&DAT_02085a10 + DAT_02098fe8 * 0xc);
+      advance_configuration_value(&DAT_02085a10 + DAT_02098fe8 * 0xc);
     }
     DAT_02098fd0 = uVar2;
     if ((uVar2 & 4) != 0) break;
-    thunk_FUN_0208031c();
-    thunk_FUN_0208031c();
+    arm_veneer_for_nds_swiwaitforvblank();
+    arm_veneer_for_nds_swiwaitforvblank();
   }
-  thunk_FUN_0208031c();
-  thunk_FUN_0208031c();
-  thunk_FUN_0208031c();
-  FUN_02006b90(DAT_02098fe8 + 8);
-  thunk_FUN_0208031c();
+  arm_veneer_for_nds_swiwaitforvblank();
+  arm_veneer_for_nds_swiwaitforvblank();
+  arm_veneer_for_nds_swiwaitforvblank();
+  restore_overlay_tilemap_row(DAT_02098fe8 + 8);
+  arm_veneer_for_nds_swiwaitforvblank();
   if (iVar1 != DAT_023cb610) {
-    FUN_02000d10();
+    configure_frame_timing_callbacks();
   }
-  thunk_FUN_0208031c();
+  arm_veneer_for_nds_swiwaitforvblank();
   DAT_02098fd0 = 0;
   if (param_1 != 0) {
-    FUN_0200d8c4();
-    thunk_FUN_02006bb0();
-    FUN_020027d0();
+    clear_text_overlay_tilemap();
+    arm_tail_branch_to_load_subscreen_palette_tiles_and_map();
+    draw_current_rom_information();
   }
   return 1;
 }

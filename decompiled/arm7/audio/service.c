@@ -6,42 +6,42 @@
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void arm7_main(void)
+void run_arm7_audio_service(void)
 
 {
-  thunk_FUN_03801200();
+  arm_veneer_for_initialize_rtc_control();
   _DAT_04000304 = _DAT_04000304 | 1;
   _DAT_04000500 = 0x807f;
-  _DAT_027ff028 = 0;
-  thunk_FUN_038015d0();
+  shared_audio_descriptor = 0;
+  arm_veneer_for_initialize_interrupt_controller();
   _DAT_04000004 = _DAT_04000004 & 0x7f | 0x5000;
-  thunk_FUN_03801564(4,&LAB_037f831c);
-  thunk_FUN_038016d8(4);
-  FUN_037fbf5c();
-  FUN_037fc0cc();
-  FUN_037fc14c(1);
-  thunk_FUN_03801564(1,0);
-  thunk_FUN_038016d8(1);
-  _DAT_04000180 = 0x100;
+  arm_veneer_for_install_interrupt_callback(4,&LAB_037f831c);
+  arm_veneer_for_enable_interrupt_sources(4);
+  initialize_audio_buffers_and_clocks();
+  initialize_sound_message_handler();
+  reset_audio_buffers_and_chips(1);
+  arm_veneer_for_install_interrupt_callback(1,0);
+  arm_veneer_for_enable_interrupt_sources(1);
+  ds_ipc_sync = 0x100;
   while (DAT_0380bdf4 == 0) {
     if (DAT_0380bdf8 != 0) {
-      FUN_037fc14c();
+      reset_audio_buffers_and_chips();
     }
-    thunk_FUN_0380178c();
+    arm_veneer_for_bios_wait_for_vblank();
   }
   if (DAT_0380bdf4 != 0) goto LAB_037f82f4;
 LAB_037f82d4:
   if (DAT_0380bdf8 != 0) goto LAB_037f8308;
   do {
-    thunk_FUN_0380178c();
+    arm_veneer_for_bios_wait_for_vblank();
     while( true ) {
       if (DAT_0380bdf4 == 0) goto LAB_037f82d4;
 LAB_037f82f4:
-      FUN_037fbeb8();
+      update_audio_from_hardware_timers();
       if (DAT_0380bdf8 == 0) break;
 LAB_037f8308:
-      FUN_037fc14c();
-      thunk_FUN_0380178c();
+      reset_audio_buffers_and_chips();
+      arm_veneer_for_bios_wait_for_vblank();
     }
   } while( true );
 }
@@ -51,7 +51,7 @@ LAB_037f8308:
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_037fb9fc(void)
+void configure_ds_audio_channels_and_timers(void)
 
 {
   undefined2 uVar1;
@@ -63,13 +63,13 @@ void FUN_037fb9fc(void)
   local_2c = &DAT_0380b884;
   iVar4 = 0;
   do {
-    uVar1 = FUN_038019ec(0xff000000,DAT_0380bde8);
+    uVar1 = compiler_divsi3(0xff000000,DAT_0380bde8);
     uVar3 = *local_2c;
     *(undefined2 *)(iVar4 * 0x10 + 0x4000408) = uVar1;
     *(undefined4 *)(iVar4 * 0x10 + 0x4000404) = uVar3;
     *(int *)(iVar4 * 0x10 + 0x400040c) = DAT_0380bdd8 >> 1;
     *(undefined4 *)(&DAT_04000400 + iVar4 * 0x10) = 0xa83f007f;
-    uVar1 = FUN_038019ec(0xff000000,DAT_0380bde8);
+    uVar1 = compiler_divsi3(0xff000000,DAT_0380bde8);
     iVar2 = iVar4 + 6;
     *(undefined2 *)(iVar2 * 0x10 + 0x4000408) = uVar1;
     *(undefined4 *)(iVar2 * 0x10 + 0x4000404) = uVar3;
@@ -78,7 +78,7 @@ void FUN_037fb9fc(void)
     *(undefined4 *)(&DAT_04000400 + iVar2 * 0x10) = 0xa83f007f;
     local_2c = local_2c + 1;
   } while (iVar4 != 6);
-  iVar4 = FUN_038019ec(0xff000000,DAT_0380bde8);
+  iVar4 = compiler_divsi3(0xff000000,DAT_0380bde8);
   _DAT_040004c8 = (short)iVar4;
   _DAT_040004c4 = DAT_0380b89c;
   _DAT_040004cc = DAT_0380bdd8 >> 1;
@@ -111,7 +111,7 @@ void FUN_037fb9fc(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_037fbeb8(void)
+void update_audio_from_hardware_timers(void)
 
 {
   int iVar1;
@@ -135,7 +135,7 @@ void FUN_037fbeb8(void)
   }
   DAT_0380bdec = (uint)_DAT_04000104;
   DAT_0380bdf0 = (uint)_DAT_0400010c;
-  FUN_037fbda8(uVar2);
+  service_dac_buffer(uVar2);
   uVar2 = DAT_0380bdd8;
   if ((int)uVar3 <= (int)DAT_0380bdd8) {
     uVar2 = uVar3;
@@ -143,14 +143,14 @@ void FUN_037fbeb8(void)
   iVar4 = uVar2 * 2;
   iVar1 = (int)(DAT_0380bdbc - DAT_0380bdc0) >> 1;
   if (DAT_0380bdbc < (uint)(DAT_0380bdc0 + iVar4)) {
-    FUN_037f86f4(DAT_0380bdc0 + DAT_0380bdd8 * 0xc,iVar1);
-    FUN_037f9d9c(DAT_0380bdc0,iVar1);
+    render_psg_samples(DAT_0380bdc0 + DAT_0380bdd8 * 0xc,iVar1);
+    render_six_fm_channels(DAT_0380bdc0,iVar1);
     uVar2 = uVar2 - iVar1;
     DAT_0380bdc0 = DAT_0380bdb8;
     iVar4 = uVar2 * 2;
   }
-  FUN_037f86f4(DAT_0380bdc0 + DAT_0380bdd8 * 0xc,uVar2);
-  FUN_037f9d9c(DAT_0380bdc0,uVar2);
+  render_psg_samples(DAT_0380bdc0 + DAT_0380bdd8 * 0xc,uVar2);
+  render_six_fm_channels(DAT_0380bdc0,uVar2);
   DAT_0380bdc0 = DAT_0380bdc0 + iVar4;
   return;
 }
@@ -158,7 +158,7 @@ void FUN_037fbeb8(void)
 
 // 0x037fbf5c  initialize_audio_buffers_and_clocks
 
-void FUN_037fbf5c(void)
+void initialize_audio_buffers_and_clocks(void)
 
 {
   undefined2 *puVar1;
@@ -208,8 +208,8 @@ void FUN_037fbf5c(void)
   DAT_0380bdc0 = 0x6000000;
   DAT_0380bdcc = &DAT_06007000;
   DAT_0380bdc8 = DAT_0380bdbc;
-  FUN_037f8a30(0x369e99,100,DAT_0380bde8,DAT_0380bdd8);
-  FUN_037f93e8(DAT_0380bb00,DAT_0380bde8,DAT_0380bdd8);
+  initialize_psg_clock_and_state(0x369e99,100,DAT_0380bde8,DAT_0380bdd8);
+  initialize_ym2612_tables_and_channels(DAT_0380bb00,DAT_0380bde8,DAT_0380bdd8);
   DAT_0380b8a0 = 0;
   DAT_0380b870 = DAT_0380bde0 << 1;
   DAT_0380b874 = 0x42a;
@@ -219,7 +219,7 @@ void FUN_037fbf5c(void)
 
 // 0x037fc14c  reset_audio_buffers_and_chips
 
-void FUN_037fc14c(void)
+void reset_audio_buffers_and_chips(void)
 
 {
   undefined2 *puVar1;
@@ -241,15 +241,15 @@ void FUN_037fc14c(void)
     *puVar1 = 0;
     puVar1 = puVar1 + 1;
   } while (iVar2 != 0);
-  FUN_037f89bc(DAT_0380bafc,100,DAT_0380bde8);
-  FUN_037f9238();
+  reset_psg_channel_state(DAT_0380bafc,100,DAT_0380bde8);
+  reset_ym2612_registers();
   DAT_0380bdc0 = (DAT_0380bdd8 & 0xfffffffe) + 0x6000000;
   DAT_0380bdd0 = 0x6008000;
   DAT_0380b8a0 = 0;
   DAT_0380bdf8 = 0;
   DAT_0380bdec = 0;
   DAT_0380bdf0 = 0;
-  FUN_037fc514(0x11,0);
+  send_fifo_command_and_payload(0x11,0);
   return;
 }
 

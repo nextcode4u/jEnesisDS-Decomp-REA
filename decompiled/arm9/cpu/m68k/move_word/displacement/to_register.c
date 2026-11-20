@@ -4,7 +4,7 @@
 
 // 0x010030b4  m68k_move_word
 
-void m68k_dispatch_010030b4(void)
+void m68k_move_word_010030b4(void)
 
 {
   undefined2 uVar1;
@@ -13,7 +13,7 @@ void m68k_dispatch_010030b4(void)
   short *unaff_r10;
   uint unaff_r11;
   
-  uVar1 = FUN_010040c4(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)*unaff_r10);
+  uVar1 = read_m68k_bus_word(*(int *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4) + (int)*unaff_r10);
   *(undefined2 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = uVar1;
                     /* WARNING: Could not recover jumptable at 0x010030f0. Too many branches */
                     /* WARNING: Treating indirect jump as call */

@@ -4,28 +4,28 @@
 
 // 0x020737b8  probe_ata_register_map_0208ed70
 
-void FUN_020737b8(void)
+void probe_ata_register_map_0208ed70(void)
 
 {
-  FUN_0207eba0(&DAT_0208ed70);
+  fat_cf_startup(&DAT_0208ed70);
   return;
 }
 
 
 // 0x0207478c  set_supercard_mode_and_probe_ata_registers
 
-void FUN_0207478c(void)
+void set_supercard_mode_and_probe_ata_registers(void)
 
 {
-  FUN_0207ec90(3);
-  FUN_0207eba0(&DAT_0208ee04);
+  write_supercard_mode_register(3);
+  fat_cf_startup(&DAT_0208ee04);
   return;
 }
 
 
 // 0x0207e8e4  fat_cf_isinserted
 
-bool FUN_0207e8e4(void)
+bool fat_cf_isinserted(void)
 
 {
   ushort *puVar1;
@@ -38,7 +38,7 @@ bool FUN_0207e8e4(void)
 
 // 0x0207e904  fat_cf_clearstatus
 
-bool FUN_0207e904(void)
+bool fat_cf_clearstatus(void)
 
 {
   bool bVar1;
@@ -70,7 +70,7 @@ bool FUN_0207e904(void)
 
 // 0x0207e96c  fat_cf_readsectors
 
-undefined4 FUN_0207e96c(undefined4 param_1,uint param_2,undefined2 *param_3)
+undefined4 fat_cf_readsectors(undefined4 param_1,uint param_2,undefined2 *param_3)
 
 {
   ushort *puVar1;
@@ -158,7 +158,7 @@ LAB_0207e9b8:
 
 // 0x0207ea78  fat_cf_writesectors
 
-undefined4 FUN_0207ea78(undefined4 param_1,uint param_2,undefined2 *param_3)
+undefined4 fat_cf_writesectors(undefined4 param_1,uint param_2,undefined2 *param_3)
 
 {
   undefined2 *puVar1;
@@ -248,17 +248,17 @@ LAB_0207eac6:
 
 // 0x0207eb94  fat_cf_shutdown
 
-void FUN_0207eb94(void)
+void fat_cf_shutdown(void)
 
 {
-  FUN_0207e904();
+  fat_cf_clearstatus();
   return;
 }
 
 
 // 0x0207eba0  fat_cf_startup
 
-bool FUN_0207eba0(undefined4 *param_1)
+bool fat_cf_startup(undefined4 *param_1)
 
 {
   ushort uVar1;

@@ -4,7 +4,7 @@
 
 // 0x038004c0  ym2612_render_algorithm_7_mask_00
 
-undefined1 * arm7_dispatch_038004c0(void)
+undefined1 * ym2612_render_algorithm_7_mask_00(void)
 
 {
   bool bVar1;
@@ -29,7 +29,7 @@ undefined1 * arm7_dispatch_038004c0(void)
 
 // 0x03800504  ym2612_render_algorithm_7_mask_08
 
-undefined4 * arm7_dispatch_03800504(void)
+undefined4 * ym2612_render_algorithm_7_mask_08(void)
 
 {
   bool bVar1;
@@ -71,7 +71,7 @@ undefined4 * arm7_dispatch_03800504(void)
 
 // 0x0380057c  ym2612_render_algorithm_7_mask_01
 
-undefined1 * arm7_dispatch_0380057c(void)
+undefined1 * ym2612_render_algorithm_7_mask_01(void)
 
 {
   bool bVar1;
@@ -108,7 +108,7 @@ undefined1 * arm7_dispatch_0380057c(void)
 
 // 0x038005e0  ym2612_render_algorithm_7_mask_09
 
-undefined4 * arm7_dispatch_038005e0(void)
+undefined4 * ym2612_render_algorithm_7_mask_09(void)
 
 {
   bool bVar1;
@@ -160,7 +160,7 @@ undefined4 * arm7_dispatch_038005e0(void)
 
 // 0x03800678  ym2612_render_algorithm_7_mask_02
 
-undefined1 * arm7_dispatch_03800678(void)
+undefined1 * ym2612_render_algorithm_7_mask_02(void)
 
 {
   bool bVar1;
@@ -197,7 +197,7 @@ undefined1 * arm7_dispatch_03800678(void)
 
 // 0x038006dc  ym2612_render_algorithm_7_mask_0a
 
-undefined4 * arm7_dispatch_038006dc(void)
+undefined4 * ym2612_render_algorithm_7_mask_0a(void)
 
 {
   bool bVar1;
@@ -249,7 +249,7 @@ undefined4 * arm7_dispatch_038006dc(void)
 
 // 0x03800774  ym2612_render_algorithm_7_mask_03
 
-undefined1 * arm7_dispatch_03800774(void)
+undefined1 * ym2612_render_algorithm_7_mask_03(void)
 
 {
   bool bVar1;
@@ -296,7 +296,7 @@ undefined1 * arm7_dispatch_03800774(void)
 
 // 0x038007fc  ym2612_render_algorithm_7_mask_0b
 
-undefined4 * arm7_dispatch_038007fc(void)
+undefined4 * ym2612_render_algorithm_7_mask_0b(void)
 
 {
   bool bVar1;
@@ -358,7 +358,7 @@ undefined4 * arm7_dispatch_038007fc(void)
 
 // 0x038008b8  ym2612_render_algorithm_7_mask_04
 
-undefined1 * arm7_dispatch_038008b8(void)
+undefined1 * ym2612_render_algorithm_7_mask_04(void)
 
 {
   bool bVar1;
@@ -395,7 +395,7 @@ undefined1 * arm7_dispatch_038008b8(void)
 
 // 0x0380091c  ym2612_render_algorithm_7_mask_0c
 
-undefined4 * arm7_dispatch_0380091c(void)
+undefined4 * ym2612_render_algorithm_7_mask_0c(void)
 
 {
   bool bVar1;
@@ -447,7 +447,7 @@ undefined4 * arm7_dispatch_0380091c(void)
 
 // 0x038009b4  ym2612_render_algorithm_7_mask_05
 
-undefined1 * arm7_dispatch_038009b4(void)
+undefined1 * ym2612_render_algorithm_7_mask_05(void)
 
 {
   bool bVar1;
@@ -494,7 +494,7 @@ undefined1 * arm7_dispatch_038009b4(void)
 
 // 0x03800a3c  ym2612_render_algorithm_7_mask_0d
 
-undefined4 * arm7_dispatch_03800a3c(void)
+undefined4 * ym2612_render_algorithm_7_mask_0d(void)
 
 {
   bool bVar1;
@@ -556,7 +556,7 @@ undefined4 * arm7_dispatch_03800a3c(void)
 
 // 0x03800af8  ym2612_render_algorithm_7_mask_06
 
-undefined1 * arm7_dispatch_03800af8(void)
+undefined1 * ym2612_render_algorithm_7_mask_06(void)
 
 {
   bool bVar1;
@@ -603,7 +603,7 @@ undefined1 * arm7_dispatch_03800af8(void)
 
 // 0x03800b80  ym2612_render_algorithm_7_mask_0e
 
-undefined4 * arm7_dispatch_03800b80(void)
+undefined4 * ym2612_render_algorithm_7_mask_0e(void)
 
 {
   bool bVar1;
@@ -665,7 +665,7 @@ undefined4 * arm7_dispatch_03800b80(void)
 
 // 0x03800c3c  ym2612_render_algorithm_7_mask_07
 
-undefined1 * arm7_dispatch_03800c3c(void)
+undefined1 * ym2612_render_algorithm_7_mask_07(void)
 
 {
   bool bVar1;
@@ -722,7 +722,7 @@ undefined1 * arm7_dispatch_03800c3c(void)
 
 // 0x03800ce8  ym2612_render_algorithm_7_mask_0f
 
-undefined4 * arm7_dispatch_03800ce8(void)
+undefined4 * ym2612_render_algorithm_7_mask_0f(void)
 
 {
   bool bVar1;

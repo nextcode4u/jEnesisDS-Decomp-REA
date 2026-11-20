@@ -1,6 +1,6 @@
 # jEnesisDS Decomp REA
 
-This branch groups the static REA and Ghidra analysis of jEnesisDS 0.7.4 into 256 modules. It covers 2,879 ARM9 routines and 204 ARM7 routines. The files contain C-like pseudocode with inferred types and control flow. Use the listings and recovered assembly when tracing dispatch, shared tails, and hardware registers.
+This branch groups the static REA and Ghidra analysis of jEnesisDS 0.7.4 into 256 modules. It covers 2,879 ARM9 routines and 204 ARM7 routines. The files contain C-like pseudocode with descriptive routine and variable names. The routine lookup can also show the original REA identifiers. Use the listings and recovered assembly when tracing dispatch, shared tails, and hardware registers.
 
 ## Start here
 
@@ -13,7 +13,7 @@ This branch groups the static REA and Ghidra analysis of jEnesisDS 0.7.4 into 25
 You can browse the code and run routine lookups with Python 3 and the files in this branch. The reference ROM and toolchain are needed for rebuilding and checking the original ARM instructions.
 
 ```sh
-python3 scripts/find_routine.py FUN_020033a4
+python3 scripts/find_routine.py open_rom_from_browser_selection --show
 ```
 
 The result points to the ROM browser's selection handler in [cartridge.c](decompiled/arm9/storage/cartridge.c#L377).

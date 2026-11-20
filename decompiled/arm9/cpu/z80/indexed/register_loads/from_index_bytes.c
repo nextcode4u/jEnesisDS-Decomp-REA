@@ -4,7 +4,7 @@
 
 // 0x0201126c  z80_ix_iy_ld_b_from_index_high
 
-undefined8 z80_dispatch_0201126c(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_ld_b_from_index_high(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -164,7 +164,7 @@ undefined8 z80_dispatch_0201126c(undefined4 param_1,undefined4 param_2,int param
 
 // 0x02011280  z80_ix_iy_ld_b_from_index_low
 
-undefined8 z80_dispatch_02011280(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_ld_b_from_index_low(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -324,7 +324,7 @@ undefined8 z80_dispatch_02011280(undefined4 param_1,undefined4 param_2,int param
 
 // 0x020112c0  z80_ix_iy_ld_c_from_index_high
 
-undefined8 z80_dispatch_020112c0(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_ld_c_from_index_high(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -484,7 +484,7 @@ undefined8 z80_dispatch_020112c0(undefined4 param_1,undefined4 param_2,int param
 
 // 0x020112d4  z80_ix_iy_ld_c_from_index_low
 
-undefined8 z80_dispatch_020112d4(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_ld_c_from_index_low(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -644,7 +644,7 @@ undefined8 z80_dispatch_020112d4(undefined4 param_1,undefined4 param_2,int param
 
 // 0x02011314  z80_ix_iy_ld_d_from_index_high
 
-undefined8 z80_dispatch_02011314(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_ld_d_from_index_high(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -804,7 +804,7 @@ undefined8 z80_dispatch_02011314(undefined4 param_1,undefined4 param_2,int param
 
 // 0x02011328  z80_ix_iy_ld_d_from_index_low
 
-undefined8 z80_dispatch_02011328(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_ld_d_from_index_low(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -964,7 +964,7 @@ undefined8 z80_dispatch_02011328(undefined4 param_1,undefined4 param_2,int param
 
 // 0x02011368  z80_ix_iy_ld_e_from_index_high
 
-undefined8 z80_dispatch_02011368(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_ld_e_from_index_high(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1124,7 +1124,7 @@ undefined8 z80_dispatch_02011368(undefined4 param_1,undefined4 param_2,int param
 
 // 0x0201137c  z80_ix_iy_ld_e_from_index_low
 
-undefined8 z80_dispatch_0201137c(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_ld_e_from_index_low(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1284,7 +1284,7 @@ undefined8 z80_dispatch_0201137c(undefined4 param_1,undefined4 param_2,int param
 
 // 0x020116c4  z80_ix_iy_ld_a_from_index_high
 
-undefined8 z80_dispatch_020116c4(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_ld_a_from_index_high(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1444,7 +1444,7 @@ undefined8 z80_dispatch_020116c4(undefined4 param_1,undefined4 param_2,int param
 
 // 0x020116d8  z80_ix_iy_ld_a_from_index_low
 
-undefined8 z80_dispatch_020116d8(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_ld_a_from_index_low(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;

@@ -4,7 +4,7 @@
 
 // 0x020128f4  z80_ix_iy_cb_sla_indexed_memory_to_b
 
-undefined8 z80_dispatch_020128f4(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_sla_indexed_memory_to_b(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   byte bVar1;
@@ -37,7 +37,7 @@ undefined8 z80_dispatch_020128f4(int param_1,undefined4 param_2,int param_3,int 
   
   lVar11 = CONCAT44(param_1,param_1);
   if (0x1fff < param_1) {
-    lVar11 = FUN_01002cdc();
+    lVar11 = read_z80_mapped_byte_preserving_r1();
   }
   iVar3 = (int)((ulonglong)lVar11 >> 0x20);
   bVar1 = *(byte *)(param_4 + (int)lVar11);
@@ -48,7 +48,7 @@ undefined8 z80_dispatch_020128f4(int param_1,undefined4 param_2,int param_3,int 
   }
   uVar4 = (undefined1)((bVar1 & 0x7f) << 1);
   if (0x1fffffffffff < lVar11) {
-    iVar3 = FUN_01002d10();
+    iVar3 = route_z80_mapped_byte_write();
     uVar4 = extraout_r1;
   }
   iVar7 = in_stack_00000028;
@@ -187,7 +187,7 @@ undefined8 z80_dispatch_020128f4(int param_1,undefined4 param_2,int param_3,int 
 
 // 0x02012948  z80_ix_iy_cb_sla_indexed_memory_to_c
 
-undefined8 z80_dispatch_02012948(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_sla_indexed_memory_to_c(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   byte bVar1;
@@ -220,7 +220,7 @@ undefined8 z80_dispatch_02012948(int param_1,undefined4 param_2,int param_3,int 
   
   lVar11 = CONCAT44(param_1,param_1);
   if (0x1fff < param_1) {
-    lVar11 = FUN_01002cdc();
+    lVar11 = read_z80_mapped_byte_preserving_r1();
   }
   iVar3 = (int)((ulonglong)lVar11 >> 0x20);
   bVar1 = *(byte *)(param_4 + (int)lVar11);
@@ -231,7 +231,7 @@ undefined8 z80_dispatch_02012948(int param_1,undefined4 param_2,int param_3,int 
   }
   uVar4 = (undefined1)((bVar1 & 0x7f) << 1);
   if (0x1fffffffffff < lVar11) {
-    iVar3 = FUN_01002d10();
+    iVar3 = route_z80_mapped_byte_write();
     uVar4 = extraout_r1;
   }
   iVar7 = in_stack_00000028;
@@ -370,7 +370,7 @@ undefined8 z80_dispatch_02012948(int param_1,undefined4 param_2,int param_3,int 
 
 // 0x0201299c  z80_ix_iy_cb_sla_indexed_memory_to_d
 
-undefined8 z80_dispatch_0201299c(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_sla_indexed_memory_to_d(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   byte bVar1;
@@ -403,7 +403,7 @@ undefined8 z80_dispatch_0201299c(int param_1,undefined4 param_2,int param_3,int 
   
   lVar11 = CONCAT44(param_1,param_1);
   if (0x1fff < param_1) {
-    lVar11 = FUN_01002cdc();
+    lVar11 = read_z80_mapped_byte_preserving_r1();
   }
   iVar3 = (int)((ulonglong)lVar11 >> 0x20);
   bVar1 = *(byte *)(param_4 + (int)lVar11);
@@ -414,7 +414,7 @@ undefined8 z80_dispatch_0201299c(int param_1,undefined4 param_2,int param_3,int 
   }
   uVar4 = (undefined1)((bVar1 & 0x7f) << 1);
   if (0x1fffffffffff < lVar11) {
-    iVar3 = FUN_01002d10();
+    iVar3 = route_z80_mapped_byte_write();
     uVar4 = extraout_r1;
   }
   iVar7 = in_stack_00000028;
@@ -553,7 +553,7 @@ undefined8 z80_dispatch_0201299c(int param_1,undefined4 param_2,int param_3,int 
 
 // 0x020129f0  z80_ix_iy_cb_sla_indexed_memory_to_e
 
-undefined8 z80_dispatch_020129f0(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_sla_indexed_memory_to_e(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   byte bVar1;
@@ -586,7 +586,7 @@ undefined8 z80_dispatch_020129f0(int param_1,undefined4 param_2,int param_3,int 
   
   lVar11 = CONCAT44(param_1,param_1);
   if (0x1fff < param_1) {
-    lVar11 = FUN_01002cdc();
+    lVar11 = read_z80_mapped_byte_preserving_r1();
   }
   iVar3 = (int)((ulonglong)lVar11 >> 0x20);
   bVar1 = *(byte *)(param_4 + (int)lVar11);
@@ -597,7 +597,7 @@ undefined8 z80_dispatch_020129f0(int param_1,undefined4 param_2,int param_3,int 
   }
   uVar4 = (undefined1)((bVar1 & 0x7f) << 1);
   if (0x1fffffffffff < lVar11) {
-    iVar3 = FUN_01002d10();
+    iVar3 = route_z80_mapped_byte_write();
     uVar4 = extraout_r1;
   }
   iVar7 = in_stack_00000028;
@@ -736,7 +736,7 @@ undefined8 z80_dispatch_020129f0(int param_1,undefined4 param_2,int param_3,int 
 
 // 0x02012a44  z80_ix_iy_cb_sla_indexed_memory_to_h
 
-undefined8 z80_dispatch_02012a44(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_sla_indexed_memory_to_h(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   byte bVar1;
@@ -769,7 +769,7 @@ undefined8 z80_dispatch_02012a44(int param_1,undefined4 param_2,int param_3,int 
   
   lVar11 = CONCAT44(param_1,param_1);
   if (0x1fff < param_1) {
-    lVar11 = FUN_01002cdc();
+    lVar11 = read_z80_mapped_byte_preserving_r1();
   }
   iVar3 = (int)((ulonglong)lVar11 >> 0x20);
   bVar1 = *(byte *)(param_4 + (int)lVar11);
@@ -780,7 +780,7 @@ undefined8 z80_dispatch_02012a44(int param_1,undefined4 param_2,int param_3,int 
   }
   uVar4 = (undefined1)((bVar1 & 0x7f) << 1);
   if (0x1fffffffffff < lVar11) {
-    iVar3 = FUN_01002d10();
+    iVar3 = route_z80_mapped_byte_write();
     uVar4 = extraout_r1;
   }
   iVar7 = in_stack_00000028;
@@ -919,7 +919,7 @@ undefined8 z80_dispatch_02012a44(int param_1,undefined4 param_2,int param_3,int 
 
 // 0x02012aa0  z80_ix_iy_cb_sla_indexed_memory_to_l
 
-undefined8 z80_dispatch_02012aa0(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_sla_indexed_memory_to_l(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   byte bVar1;
@@ -952,7 +952,7 @@ undefined8 z80_dispatch_02012aa0(int param_1,undefined4 param_2,int param_3,int 
   
   lVar11 = CONCAT44(param_1,param_1);
   if (0x1fff < param_1) {
-    lVar11 = FUN_01002cdc();
+    lVar11 = read_z80_mapped_byte_preserving_r1();
   }
   iVar3 = (int)((ulonglong)lVar11 >> 0x20);
   bVar1 = *(byte *)(param_4 + (int)lVar11);
@@ -963,7 +963,7 @@ undefined8 z80_dispatch_02012aa0(int param_1,undefined4 param_2,int param_3,int 
   }
   uVar4 = (undefined1)((bVar1 & 0x7f) << 1);
   if (0x1fffffffffff < lVar11) {
-    iVar3 = FUN_01002d10();
+    iVar3 = route_z80_mapped_byte_write();
     uVar4 = extraout_r1;
   }
   iVar7 = in_stack_00000028;
@@ -1102,7 +1102,7 @@ undefined8 z80_dispatch_02012aa0(int param_1,undefined4 param_2,int param_3,int 
 
 // 0x02012afc  z80_ix_iy_cb_sla_indexed_memory
 
-undefined8 z80_dispatch_02012afc(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_sla_indexed_memory(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   byte bVar1;
@@ -1135,7 +1135,7 @@ undefined8 z80_dispatch_02012afc(int param_1,undefined4 param_2,int param_3,int 
   
   lVar11 = CONCAT44(param_1,param_1);
   if (0x1fff < param_1) {
-    lVar11 = FUN_01002cdc();
+    lVar11 = read_z80_mapped_byte_preserving_r1();
   }
   iVar3 = (int)((ulonglong)lVar11 >> 0x20);
   bVar1 = *(byte *)(param_4 + (int)lVar11);
@@ -1146,7 +1146,7 @@ undefined8 z80_dispatch_02012afc(int param_1,undefined4 param_2,int param_3,int 
   }
   uVar4 = (undefined1)((bVar1 & 0x7f) << 1);
   if (0x1fffffffffff < lVar11) {
-    iVar3 = FUN_01002d10();
+    iVar3 = route_z80_mapped_byte_write();
     uVar4 = extraout_r1;
   }
   iVar7 = in_stack_00000028;
@@ -1285,7 +1285,7 @@ undefined8 z80_dispatch_02012afc(int param_1,undefined4 param_2,int param_3,int 
 
 // 0x02012b50  z80_ix_iy_cb_sla_indexed_memory_to_a
 
-undefined8 z80_dispatch_02012b50(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_sla_indexed_memory_to_a(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   byte bVar1;
@@ -1318,7 +1318,7 @@ undefined8 z80_dispatch_02012b50(int param_1,undefined4 param_2,int param_3,int 
   
   lVar11 = CONCAT44(param_1,param_1);
   if (0x1fff < param_1) {
-    lVar11 = FUN_01002cdc();
+    lVar11 = read_z80_mapped_byte_preserving_r1();
   }
   iVar3 = (int)((ulonglong)lVar11 >> 0x20);
   bVar1 = *(byte *)(param_4 + (int)lVar11);
@@ -1329,7 +1329,7 @@ undefined8 z80_dispatch_02012b50(int param_1,undefined4 param_2,int param_3,int 
   }
   uVar4 = (undefined1)((bVar1 & 0x7f) << 1);
   if (0x1fffffffffff < lVar11) {
-    iVar3 = FUN_01002d10();
+    iVar3 = route_z80_mapped_byte_write();
     uVar4 = extraout_r1;
   }
   iVar7 = in_stack_00000028;
@@ -1468,7 +1468,7 @@ undefined8 z80_dispatch_02012b50(int param_1,undefined4 param_2,int param_3,int 
 
 // 0x02012e74  z80_ix_iy_cb_sll_indexed_memory_to_b
 
-undefined8 z80_dispatch_02012e74(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_sll_indexed_memory_to_b(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   byte bVar1;
@@ -1502,7 +1502,7 @@ undefined8 z80_dispatch_02012e74(int param_1,undefined4 param_2,int param_3,int 
   
   lVar12 = CONCAT44(param_1,param_1);
   if (0x1fff < param_1) {
-    lVar12 = FUN_01002cdc();
+    lVar12 = read_z80_mapped_byte_preserving_r1();
   }
   iVar3 = (int)((ulonglong)lVar12 >> 0x20);
   bVar1 = *(byte *)(param_4 + (int)lVar12);
@@ -1514,7 +1514,7 @@ undefined8 z80_dispatch_02012e74(int param_1,undefined4 param_2,int param_3,int 
   }
   uVar4 = (undefined1)(uVar7 >> 0x18);
   if (0x1fffffffffff < lVar12) {
-    iVar3 = FUN_01002d10();
+    iVar3 = route_z80_mapped_byte_write();
     uVar4 = extraout_r1;
   }
   iVar8 = in_stack_00000028;
@@ -1653,7 +1653,7 @@ undefined8 z80_dispatch_02012e74(int param_1,undefined4 param_2,int param_3,int 
 
 // 0x02012ecc  z80_ix_iy_cb_sll_indexed_memory_to_c
 
-undefined8 z80_dispatch_02012ecc(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_sll_indexed_memory_to_c(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   byte bVar1;
@@ -1687,7 +1687,7 @@ undefined8 z80_dispatch_02012ecc(int param_1,undefined4 param_2,int param_3,int 
   
   lVar12 = CONCAT44(param_1,param_1);
   if (0x1fff < param_1) {
-    lVar12 = FUN_01002cdc();
+    lVar12 = read_z80_mapped_byte_preserving_r1();
   }
   iVar3 = (int)((ulonglong)lVar12 >> 0x20);
   bVar1 = *(byte *)(param_4 + (int)lVar12);
@@ -1699,7 +1699,7 @@ undefined8 z80_dispatch_02012ecc(int param_1,undefined4 param_2,int param_3,int 
   }
   uVar4 = (undefined1)(uVar7 >> 0x18);
   if (0x1fffffffffff < lVar12) {
-    iVar3 = FUN_01002d10();
+    iVar3 = route_z80_mapped_byte_write();
     uVar4 = extraout_r1;
   }
   iVar8 = in_stack_00000028;
@@ -1838,7 +1838,7 @@ undefined8 z80_dispatch_02012ecc(int param_1,undefined4 param_2,int param_3,int 
 
 // 0x02012f24  z80_ix_iy_cb_sll_indexed_memory_to_d
 
-undefined8 z80_dispatch_02012f24(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_sll_indexed_memory_to_d(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   byte bVar1;
@@ -1872,7 +1872,7 @@ undefined8 z80_dispatch_02012f24(int param_1,undefined4 param_2,int param_3,int 
   
   lVar12 = CONCAT44(param_1,param_1);
   if (0x1fff < param_1) {
-    lVar12 = FUN_01002cdc();
+    lVar12 = read_z80_mapped_byte_preserving_r1();
   }
   iVar3 = (int)((ulonglong)lVar12 >> 0x20);
   bVar1 = *(byte *)(param_4 + (int)lVar12);
@@ -1884,7 +1884,7 @@ undefined8 z80_dispatch_02012f24(int param_1,undefined4 param_2,int param_3,int 
   }
   uVar4 = (undefined1)(uVar7 >> 0x18);
   if (0x1fffffffffff < lVar12) {
-    iVar3 = FUN_01002d10();
+    iVar3 = route_z80_mapped_byte_write();
     uVar4 = extraout_r1;
   }
   iVar8 = in_stack_00000028;
@@ -2023,7 +2023,7 @@ undefined8 z80_dispatch_02012f24(int param_1,undefined4 param_2,int param_3,int 
 
 // 0x02012f7c  z80_ix_iy_cb_sll_indexed_memory_to_e
 
-undefined8 z80_dispatch_02012f7c(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_sll_indexed_memory_to_e(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   byte bVar1;
@@ -2057,7 +2057,7 @@ undefined8 z80_dispatch_02012f7c(int param_1,undefined4 param_2,int param_3,int 
   
   lVar12 = CONCAT44(param_1,param_1);
   if (0x1fff < param_1) {
-    lVar12 = FUN_01002cdc();
+    lVar12 = read_z80_mapped_byte_preserving_r1();
   }
   iVar3 = (int)((ulonglong)lVar12 >> 0x20);
   bVar1 = *(byte *)(param_4 + (int)lVar12);
@@ -2069,7 +2069,7 @@ undefined8 z80_dispatch_02012f7c(int param_1,undefined4 param_2,int param_3,int 
   }
   uVar4 = (undefined1)(uVar7 >> 0x18);
   if (0x1fffffffffff < lVar12) {
-    iVar3 = FUN_01002d10();
+    iVar3 = route_z80_mapped_byte_write();
     uVar4 = extraout_r1;
   }
   iVar8 = in_stack_00000028;
@@ -2208,7 +2208,7 @@ undefined8 z80_dispatch_02012f7c(int param_1,undefined4 param_2,int param_3,int 
 
 // 0x02012fd4  z80_ix_iy_cb_sll_indexed_memory_to_h
 
-undefined8 z80_dispatch_02012fd4(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_sll_indexed_memory_to_h(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   byte bVar1;
@@ -2242,7 +2242,7 @@ undefined8 z80_dispatch_02012fd4(int param_1,undefined4 param_2,int param_3,int 
   
   lVar12 = CONCAT44(param_1,param_1);
   if (0x1fff < param_1) {
-    lVar12 = FUN_01002cdc();
+    lVar12 = read_z80_mapped_byte_preserving_r1();
   }
   iVar4 = (int)((ulonglong)lVar12 >> 0x20);
   bVar1 = *(byte *)(param_4 + (int)lVar12);
@@ -2254,7 +2254,7 @@ undefined8 z80_dispatch_02012fd4(int param_1,undefined4 param_2,int param_3,int 
   }
   uVar5 = (undefined1)(uVar3 >> 0x18);
   if (0x1fffffffffff < lVar12) {
-    iVar4 = FUN_01002d10();
+    iVar4 = route_z80_mapped_byte_write();
     uVar5 = extraout_r1;
   }
   iVar8 = in_stack_00000028;
@@ -2393,7 +2393,7 @@ undefined8 z80_dispatch_02012fd4(int param_1,undefined4 param_2,int param_3,int 
 
 // 0x02013034  z80_ix_iy_cb_sll_indexed_memory_to_l
 
-undefined8 z80_dispatch_02013034(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_sll_indexed_memory_to_l(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   byte bVar1;
@@ -2427,7 +2427,7 @@ undefined8 z80_dispatch_02013034(int param_1,undefined4 param_2,int param_3,int 
   
   lVar12 = CONCAT44(param_1,param_1);
   if (0x1fff < param_1) {
-    lVar12 = FUN_01002cdc();
+    lVar12 = read_z80_mapped_byte_preserving_r1();
   }
   iVar4 = (int)((ulonglong)lVar12 >> 0x20);
   bVar1 = *(byte *)(param_4 + (int)lVar12);
@@ -2439,7 +2439,7 @@ undefined8 z80_dispatch_02013034(int param_1,undefined4 param_2,int param_3,int 
   }
   uVar5 = (undefined1)(uVar3 >> 0x18);
   if (0x1fffffffffff < lVar12) {
-    iVar4 = FUN_01002d10();
+    iVar4 = route_z80_mapped_byte_write();
     uVar5 = extraout_r1;
   }
   iVar8 = in_stack_00000028;
@@ -2578,7 +2578,7 @@ undefined8 z80_dispatch_02013034(int param_1,undefined4 param_2,int param_3,int 
 
 // 0x02013094  z80_ix_iy_cb_sll_indexed_memory
 
-undefined8 z80_dispatch_02013094(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_sll_indexed_memory(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   byte bVar1;
@@ -2612,7 +2612,7 @@ undefined8 z80_dispatch_02013094(int param_1,undefined4 param_2,int param_3,int 
   
   lVar12 = CONCAT44(param_1,param_1);
   if (0x1fff < param_1) {
-    lVar12 = FUN_01002cdc();
+    lVar12 = read_z80_mapped_byte_preserving_r1();
   }
   iVar4 = (int)((ulonglong)lVar12 >> 0x20);
   bVar1 = *(byte *)(param_4 + (int)lVar12);
@@ -2624,7 +2624,7 @@ undefined8 z80_dispatch_02013094(int param_1,undefined4 param_2,int param_3,int 
   }
   uVar5 = (undefined1)(uVar3 >> 0x18);
   if (0x1fffffffffff < lVar12) {
-    iVar4 = FUN_01002d10();
+    iVar4 = route_z80_mapped_byte_write();
     uVar5 = extraout_r1;
   }
   iVar8 = in_stack_00000028;
@@ -2763,7 +2763,7 @@ undefined8 z80_dispatch_02013094(int param_1,undefined4 param_2,int param_3,int 
 
 // 0x020130ec  z80_ix_iy_cb_sll_indexed_memory_to_a
 
-undefined8 z80_dispatch_020130ec(int param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_cb_sll_indexed_memory_to_a(int param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   byte bVar1;
@@ -2797,7 +2797,7 @@ undefined8 z80_dispatch_020130ec(int param_1,undefined4 param_2,int param_3,int 
   
   lVar12 = CONCAT44(param_1,param_1);
   if (0x1fff < param_1) {
-    lVar12 = FUN_01002cdc();
+    lVar12 = read_z80_mapped_byte_preserving_r1();
   }
   iVar3 = (int)((ulonglong)lVar12 >> 0x20);
   bVar1 = *(byte *)(param_4 + (int)lVar12);
@@ -2809,7 +2809,7 @@ undefined8 z80_dispatch_020130ec(int param_1,undefined4 param_2,int param_3,int 
   }
   uVar4 = (undefined1)(uVar6 >> 0x18);
   if (0x1fffffffffff < lVar12) {
-    iVar3 = FUN_01002d10();
+    iVar3 = route_z80_mapped_byte_write();
     uVar4 = extraout_r1;
   }
   iVar8 = in_stack_00000028;

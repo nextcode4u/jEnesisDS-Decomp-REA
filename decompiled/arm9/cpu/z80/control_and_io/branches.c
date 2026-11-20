@@ -4,7 +4,7 @@
 
 // 0x010002a0  z80_djnz
 
-undefined8 z80_dispatch_010002a0(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_djnz(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   char cVar1;
@@ -183,7 +183,7 @@ undefined8 z80_dispatch_010002a0(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01000410  z80_jr
 
-undefined8 z80_dispatch_01000410(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_jr(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -345,7 +345,7 @@ undefined8 z80_dispatch_01000410(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01000550  z80_jr_nz
 
-undefined8 z80_dispatch_01000550(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_jr_nz(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -513,7 +513,7 @@ undefined8 z80_dispatch_01000550(undefined4 param_1,undefined4 param_2,int param
 
 // 0x010006a0  z80_jr_z
 
-undefined8 z80_dispatch_010006a0(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_jr_z(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -681,7 +681,7 @@ undefined8 z80_dispatch_010006a0(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01000800  z80_jr_nc
 
-undefined8 z80_dispatch_01000800(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_jr_nc(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -849,7 +849,7 @@ undefined8 z80_dispatch_01000800(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01000980  z80_jr_c
 
-undefined8 z80_dispatch_01000980(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_jr_c(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1017,7 +1017,7 @@ undefined8 z80_dispatch_01000980(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01002040  z80_jp_nz
 
-undefined8 z80_dispatch_01002040(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_jp_nz(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1192,7 +1192,7 @@ undefined8 z80_dispatch_01002040(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01002070  z80_jp_absolute
 
-undefined8 z80_dispatch_01002070(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_jp_absolute(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1354,7 +1354,7 @@ undefined8 z80_dispatch_01002070(undefined4 param_1,undefined4 param_2,int param
 
 // 0x010021b0  z80_jp_z
 
-undefined8 z80_dispatch_010021b0(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_jp_z(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1529,7 +1529,7 @@ undefined8 z80_dispatch_010021b0(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01002340  z80_jp_nc
 
-undefined8 z80_dispatch_01002340(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_jp_nc(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1704,7 +1704,7 @@ undefined8 z80_dispatch_01002340(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01002500  z80_jp_c
 
-undefined8 z80_dispatch_01002500(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_jp_c(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1879,7 +1879,7 @@ undefined8 z80_dispatch_01002500(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01002680  z80_jp_po
 
-undefined8 z80_dispatch_01002680(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_jp_po(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -2054,7 +2054,7 @@ undefined8 z80_dispatch_01002680(undefined4 param_1,undefined4 param_2,int param
 
 // 0x010027d0  z80_jp_via_hl
 
-undefined8 z80_dispatch_010027d0(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_jp_via_hl(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -2216,7 +2216,7 @@ undefined8 z80_dispatch_010027d0(undefined4 param_1,undefined4 param_2,int param
 
 // 0x010027f0  z80_jp_pe
 
-undefined8 z80_dispatch_010027f0(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_jp_pe(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -2391,7 +2391,7 @@ undefined8 z80_dispatch_010027f0(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01002960  z80_jp_p
 
-undefined8 z80_dispatch_01002960(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_jp_p(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -2566,7 +2566,7 @@ undefined8 z80_dispatch_01002960(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01002ad0  z80_jp_m
 
-undefined8 z80_dispatch_01002ad0(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_jp_m(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;

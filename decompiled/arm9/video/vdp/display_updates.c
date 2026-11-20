@@ -6,13 +6,13 @@
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_020090a0(void)
+void copy_prepared_palette_to_main_bg_and_obj(void)
 
 {
-  FUN_020802c4(&DAT_023dc730,0x80);
-  _DAT_040000d4 = &DAT_023dc730;
-  _DAT_040000d8 = &DAT_05000200;
-  _DAT_040000dc = 0x80000040;
+  clean_and_invalidate_arm9_data_cache_range(&ds_converted_vdp_palette,0x80);
+  ds_dma3_source = &ds_converted_vdp_palette;
+  ds_dma3_destination = &DAT_05000200;
+  ds_dma3_control = 0x80000040;
   return;
 }
 
@@ -21,58 +21,58 @@ void FUN_020090a0(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_02009cf0(void)
+void rebuild_display_from_vdp_state(void)
 
 {
   undefined1 *puVar1;
-  ushort uVar2;
-  uint uVar3;
-  int iVar4;
-  uint uVar5;
+  ushort ds_color;
+  uint palette_index;
+  int palette_byte_offset;
+  uint genesis_color;
   undefined4 unaff_r4;
-  uint uVar6;
+  uint backdrop_index;
   undefined4 in_lr;
   bool bVar7;
   
-  uVar6 = 0;
+  backdrop_index = 0;
   do {
-    uVar3 = uVar6 & 0xff;
-    puVar1 = &DAT_020b4c18 + uVar6;
-    uVar6 = uVar6 + 1;
-    FUN_02009614(uVar3,*puVar1);
-  } while (uVar6 != 0x18);
-  uVar3 = 0;
-  uVar6 = (uint)DAT_020b4bf7;
-  iVar4 = 0;
+    palette_index = backdrop_index & 0xff;
+    puVar1 = &vdp_registers + backdrop_index;
+    backdrop_index = backdrop_index + 1;
+    write_vdp_register_and_update_render_state(palette_index,*puVar1);
+  } while (backdrop_index != 0x18);
+  palette_index = 0;
+  backdrop_index = (uint)vdp_backdrop_color_index;
+  palette_byte_offset = 0;
   do {
-    uVar5 = (uint)*(ushort *)((int)&DAT_023dc6b0 + iVar4);
-    uVar2 = (ushort)((uVar5 & 0xe0) << 2) | (ushort)((uVar5 & 0xe00) << 3) | 0x8000 |
-            (ushort)((uVar5 & 0xe) << 1);
-    *(ushort *)((int)&DAT_023dc730 + iVar4) = uVar2;
-    if (uVar3 != 0) {
-      *(ushort *)(&DAT_05000000 + iVar4) = uVar2;
+    genesis_color = (uint)*(ushort *)((int)&vdp_cram + palette_byte_offset);
+    ds_color = (ushort)((genesis_color & 0xe0) << 2) | (ushort)((genesis_color & 0xe00) << 3) | 0x8000 |
+            (ushort)((genesis_color & 0xe) << 1);
+    *(ushort *)((int)&ds_converted_vdp_palette + palette_byte_offset) = ds_color;
+    if (palette_index != 0) {
+      *(ushort *)(&DAT_05000000 + palette_byte_offset) = ds_color;
     }
-    bVar7 = uVar6 == uVar3;
-    uVar3 = uVar3 + 1;
-    *(ushort *)(&DAT_05000200 + iVar4) = uVar2;
+    bVar7 = backdrop_index == palette_index;
+    palette_index = palette_index + 1;
+    *(ushort *)(&DAT_05000200 + palette_byte_offset) = ds_color;
     if (bVar7) {
-      _DAT_05000200 = uVar2;
+      _DAT_05000200 = ds_color;
     }
-    iVar4 = iVar4 + 2;
-  } while (uVar3 != 0x40);
+    palette_byte_offset = palette_byte_offset + 2;
+  } while (palette_index != 0x40);
   if (DAT_023ddb05 == '\0') {
-    FUN_020072a8();
-    FUN_02007630(&DAT_0209cbec + DAT_023ddea8,0x800,2);
+    select_window_tilemap_layout();
+    rebuild_background_tilemap_from_vdp_words(&vdp_vram + vdp_window_name_table_base,0x800,2);
   }
   else {
-    FUN_020072a8(1);
-    FUN_02007630(&DAT_0209cbec + DAT_023ddea8,0x1000,2);
+    select_window_tilemap_layout(1);
+    rebuild_background_tilemap_from_vdp_words(&vdp_vram + vdp_window_name_table_base,0x1000,2);
   }
-  FUN_02006f2c(DAT_023dcfa4);
-  FUN_02007630(&DAT_0209cbec + DAT_023ddea0,DAT_023dc8a0,0);
-  FUN_02007630(&DAT_0209cbec + DAT_023ddea4,DAT_023dc8a0,1);
+  select_background_tilemap_layout(DAT_023dcfa4);
+  rebuild_background_tilemap_from_vdp_words(&vdp_vram + vdp_plane_a_name_table_base,DAT_023dc8a0,0);
+  rebuild_background_tilemap_from_vdp_words(&vdp_vram + vdp_plane_b_name_table_base,DAT_023dc8a0,1);
   DAT_020993bc = 1;
-  FUN_02008984(DAT_0b003648,DAT_020993c0,&DAT_020993c0,1,unaff_r4,in_lr);
+  build_ds_sprite_attributes_from_genesis_sprite_table(DAT_0b003648,DAT_020993c0,&DAT_020993c0,1,unaff_r4,in_lr);
   DAT_020993bc = 0;
   return;
 }

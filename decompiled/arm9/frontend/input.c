@@ -4,35 +4,35 @@
 
 // 0x020003f4  read_genesis_io_register_byte
 
-uint FUN_020003f4(uint param_1)
+uint read_genesis_io_register_byte(uint io_address)
 
 {
-  byte bVar1;
-  byte bVar2;
-  byte bVar3;
-  byte bVar4;
-  byte bVar5;
-  byte bVar6;
-  int iVar7;
+  byte pin_4_in;
+  byte pin_2_in;
+  byte pin_3_in;
+  byte pin_5_in;
+  byte pin_0_in;
+  byte pin_1_in;
+  int port_state;
   
-  switch(param_1 & 0xfe) {
+  switch(io_address & 0xfe) {
   case 0:
-    return DAT_0b00001c;
+    return genesis_version_register;
   case 2:
-    iVar7 = DAT_0b000030;
+    port_state = controller_port_1_state;
     break;
   case 4:
-    iVar7 = DAT_0b000034;
+    port_state = controller_port_2_state;
     break;
   case 6:
     return 0x7f;
   case 8:
-    iVar7 = DAT_0b000030;
+    port_state = controller_port_1_state;
     goto LAB_02003a48;
   case 10:
-    iVar7 = DAT_0b000034;
+    port_state = controller_port_2_state;
 LAB_02003a48:
-    return (uint)*(byte *)(iVar7 + 0x1a);
+    return (uint)*(byte *)(port_state + 0x1a);
   default:
     return 0;
   case 0xe:
@@ -40,77 +40,77 @@ LAB_02003a48:
   case 0x1a:
     return 0xff;
   }
-  if (*(char *)(iVar7 + 0x1e) != '\0') {
-    if (*(char *)(iVar7 + 0x18) != '\0') {
-      if (*(int *)(iVar7 + 0xc) == 3) {
-        bVar1 = *(byte *)(iVar7 + 0x21);
-        bVar2 = *(byte *)(iVar7 + 0x27);
-        bVar3 = *(byte *)(iVar7 + 0x2b);
-        bVar4 = *(byte *)(iVar7 + 0x22);
-        bVar5 = *(byte *)(iVar7 + 0x28);
-        bVar6 = *(byte *)(iVar7 + 0x29);
+  if (*(char *)(port_state + 0x1e) != '\0') {
+    if (*(char *)(port_state + 0x18) != '\0') {
+      if (*(int *)(port_state + 0xc) == 3) {
+        pin_4_in = *(byte *)(port_state + 0x21);
+        pin_2_in = *(byte *)(port_state + 0x27);
+        pin_3_in = *(byte *)(port_state + 0x2b);
+        pin_5_in = *(byte *)(port_state + 0x22);
+        pin_0_in = *(byte *)(port_state + 0x28);
+        pin_1_in = *(byte *)(port_state + 0x29);
       }
       else {
-        bVar1 = *(byte *)(iVar7 + 0x21);
-        bVar2 = *(byte *)(iVar7 + 0x25);
-        bVar3 = *(byte *)(iVar7 + 0x26);
-        bVar4 = *(byte *)(iVar7 + 0x22);
-        bVar5 = *(byte *)(iVar7 + 0x23);
-        bVar6 = *(byte *)(iVar7 + 0x24);
+        pin_4_in = *(byte *)(port_state + 0x21);
+        pin_2_in = *(byte *)(port_state + 0x25);
+        pin_3_in = *(byte *)(port_state + 0x26);
+        pin_5_in = *(byte *)(port_state + 0x22);
+        pin_0_in = *(byte *)(port_state + 0x23);
+        pin_1_in = *(byte *)(port_state + 0x24);
       }
-      DAT_02098ffc = (uint)(*(byte *)(iVar7 + 0x1a) & *(byte *)(iVar7 + 0x19)) |
-                     ((uint)bVar1 << 4 | (uint)bVar4 << 5 | (uint)bVar6 << 1 |
-                     (uint)bVar2 << 2 | (uint)bVar3 << 3 | (uint)bVar5) &
-                     ~(uint)*(byte *)(iVar7 + 0x1a);
-      return DAT_02098ffc;
+      controller_port_read_latch = (uint)(*(byte *)(port_state + 0x1a) & *(byte *)(port_state + 0x19)) |
+                     ((uint)pin_4_in << 4 | (uint)pin_5_in << 5 | (uint)pin_1_in << 1 |
+                     (uint)pin_2_in << 2 | (uint)pin_3_in << 3 | (uint)pin_0_in) &
+                     ~(uint)*(byte *)(port_state + 0x1a);
+      return controller_port_read_latch;
     }
-    return (uint)(*(byte *)(iVar7 + 0x1a) & *(byte *)(iVar7 + 0x19)) |
-           ((uint)*(byte *)(iVar7 + 0x21) << 4 | (uint)*(byte *)(iVar7 + 0x22) << 5 |
-            (uint)*(byte *)(iVar7 + 0x24) << 1 |
-           (uint)*(byte *)(iVar7 + 0x25) << 2 | (uint)*(byte *)(iVar7 + 0x26) << 3 |
-           (uint)*(byte *)(iVar7 + 0x23)) & ~(uint)*(byte *)(iVar7 + 0x1a);
+    return (uint)(*(byte *)(port_state + 0x1a) & *(byte *)(port_state + 0x19)) |
+           ((uint)*(byte *)(port_state + 0x21) << 4 | (uint)*(byte *)(port_state + 0x22) << 5 |
+            (uint)*(byte *)(port_state + 0x24) << 1 |
+           (uint)*(byte *)(port_state + 0x25) << 2 | (uint)*(byte *)(port_state + 0x26) << 3 |
+           (uint)*(byte *)(port_state + 0x23)) & ~(uint)*(byte *)(port_state + 0x1a);
   }
-  if (*(char *)(iVar7 + 0x18) != '\0') {
-    if (*(int *)(iVar7 + 0xc) == 3) {
-      DAT_02098ffc = ((uint)(*(byte *)(iVar7 + 0x1a) & *(byte *)(iVar7 + 0x19)) |
-                     ((uint)*(byte *)(iVar7 + 0x20) << 4 | (uint)*(byte *)(iVar7 + 0x2a) << 5) &
-                     ~(uint)*(byte *)(iVar7 + 0x1a)) & 0xf0;
+  if (*(char *)(port_state + 0x18) != '\0') {
+    if (*(int *)(port_state + 0xc) == 3) {
+      controller_port_read_latch = ((uint)(*(byte *)(port_state + 0x1a) & *(byte *)(port_state + 0x19)) |
+                     ((uint)*(byte *)(port_state + 0x20) << 4 | (uint)*(byte *)(port_state + 0x2a) << 5) &
+                     ~(uint)*(byte *)(port_state + 0x1a)) & 0xf0;
     }
-    else if (*(int *)(iVar7 + 0xc) == 4) {
-      DAT_02098ffc = ((uint)(*(byte *)(iVar7 + 0x1a) & *(byte *)(iVar7 + 0x19)) |
-                     ((uint)*(byte *)(iVar7 + 0x20) << 4 | (uint)*(byte *)(iVar7 + 0x2a) << 5) &
-                     ~(uint)*(byte *)(iVar7 + 0x1a)) & 0xf0 | 0xf;
+    else if (*(int *)(port_state + 0xc) == 4) {
+      controller_port_read_latch = ((uint)(*(byte *)(port_state + 0x1a) & *(byte *)(port_state + 0x19)) |
+                     ((uint)*(byte *)(port_state + 0x20) << 4 | (uint)*(byte *)(port_state + 0x2a) << 5) &
+                     ~(uint)*(byte *)(port_state + 0x1a)) & 0xf0 | 0xf;
     }
     else {
-      DAT_02098ffc = (uint)(*(byte *)(iVar7 + 0x1a) & *(byte *)(iVar7 + 0x19)) |
-                     ((uint)*(byte *)(iVar7 + 0x20) << 4 | (uint)*(byte *)(iVar7 + 0x2a) << 5 |
-                      (uint)*(byte *)(iVar7 + 0x23) | (uint)*(byte *)(iVar7 + 0x24) << 1) &
-                     ~(uint)*(byte *)(iVar7 + 0x1a) & 0xff;
+      controller_port_read_latch = (uint)(*(byte *)(port_state + 0x1a) & *(byte *)(port_state + 0x19)) |
+                     ((uint)*(byte *)(port_state + 0x20) << 4 | (uint)*(byte *)(port_state + 0x2a) << 5 |
+                      (uint)*(byte *)(port_state + 0x23) | (uint)*(byte *)(port_state + 0x24) << 1) &
+                     ~(uint)*(byte *)(port_state + 0x1a) & 0xff;
     }
-    return DAT_02098ffc;
+    return controller_port_read_latch;
   }
-  return (uint)(*(byte *)(iVar7 + 0x1a) & *(byte *)(iVar7 + 0x19)) |
-         ((uint)*(byte *)(iVar7 + 0x20) << 4 | (uint)*(byte *)(iVar7 + 0x2a) << 5 |
-          (uint)*(byte *)(iVar7 + 0x23) | (uint)*(byte *)(iVar7 + 0x24) << 1) &
-         ~(uint)*(byte *)(iVar7 + 0x1a) & 0xff;
+  return (uint)(*(byte *)(port_state + 0x1a) & *(byte *)(port_state + 0x19)) |
+         ((uint)*(byte *)(port_state + 0x20) << 4 | (uint)*(byte *)(port_state + 0x2a) << 5 |
+          (uint)*(byte *)(port_state + 0x23) | (uint)*(byte *)(port_state + 0x24) << 1) &
+         ~(uint)*(byte *)(port_state + 0x1a) & 0xff;
 }
 
 
 // 0x020004c8  read_genesis_io_as_u8
 
-undefined1 FUN_020004c8(void)
+undefined1 read_genesis_io_as_u8(void)
 
 {
   undefined1 uVar1;
   
-  uVar1 = FUN_020003f4();
+  uVar1 = read_genesis_io_register_byte();
   return uVar1;
 }
 
 
 // 0x020025a8  read_gameplay_menu_and_touch_actions
 
-char FUN_020025a8(void)
+char read_gameplay_menu_and_touch_actions(void)
 
 {
   char cVar1;
@@ -122,10 +122,10 @@ char FUN_020025a8(void)
   undefined1 auStack_28 [16];
   
   bVar6 = DAT_0208f347 == '\x01';
-  thunk_FUN_0207fb90();
-  uVar2 = thunk_FUN_0207fb70();
-  thunk_FUN_0207fc70(auStack_28);
-  FUN_02082ec0(&DAT_023cb618,auStack_28,0xc);
+  arm_veneer_for_sample_ds_keys_and_update_repeat_state();
+  uVar2 = arm_veneer_for_read_latched_ds_key_state();
+  arm_veneer_for_read_shared_arm7_touch_sample(auStack_28);
+  newlib_memcpy(&DAT_023cb618,auStack_28,0xc);
   if ((DAT_023cb61e == 0) || (DAT_023cb61c == 0)) {
     DAT_02098fec = '\0';
   }
@@ -174,10 +174,10 @@ char FUN_020025a8(void)
       if (bVar6) {
         DAT_0208f347 = '\x02';
       }
-      thunk_FUN_02006bb0(uVar2);
+      arm_tail_branch_to_load_subscreen_palette_tiles_and_map(uVar2);
       return DAT_0208f347;
     }
-    thunk_FUN_02006bb0(uVar2);
+    arm_tail_branch_to_load_subscreen_palette_tiles_and_map(uVar2);
     return '\x01';
   }
   if (((uVar2 & 4) == 0) || ((DAT_02098fd0 & 4) != 0)) {
@@ -190,11 +190,11 @@ char FUN_020025a8(void)
     else {
       DAT_0208f347 = '\x06';
     }
-    thunk_FUN_0208031c();
-    thunk_FUN_0208031c();
-    thunk_FUN_0208031c();
-    thunk_FUN_0208031c();
-    thunk_FUN_02006bb0();
+    arm_veneer_for_nds_swiwaitforvblank();
+    arm_veneer_for_nds_swiwaitforvblank();
+    arm_veneer_for_nds_swiwaitforvblank();
+    arm_veneer_for_nds_swiwaitforvblank();
+    arm_tail_branch_to_load_subscreen_palette_tiles_and_map();
     cVar1 = DAT_0208f347;
   }
   DAT_02098fd0 = uVar2;
@@ -204,7 +204,7 @@ char FUN_020025a8(void)
 
 // 0x0207fb70  read_latched_ds_key_state
 
-undefined2 FUN_0207fb70(void)
+undefined2 read_latched_ds_key_state(void)
 
 {
   return DAT_020b4ca0;
@@ -215,7 +215,7 @@ undefined2 FUN_0207fb70(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_0207fb90(void)
+void sample_ds_keys_and_update_repeat_state(void)
 
 {
   ushort uVar1;
@@ -228,7 +228,7 @@ void FUN_0207fb90(void)
   DAT_020b4ca0 = uVar1;
   if (bVar2) {
     DAT_0208f392 = '<';
-    DAT_020b4ca4 = FUN_0207fb7c();
+    DAT_020b4ca4 = read_newly_pressed_ds_keys();
   }
   DAT_0208f392 = DAT_0208f392 + -1;
   if (DAT_0208f392 == '\0') {
@@ -243,7 +243,7 @@ void FUN_0207fb90(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined2 * FUN_0207fc70(undefined2 *param_1)
+undefined2 * read_shared_arm7_touch_sample(undefined2 *param_1)
 
 {
   undefined2 uVar1;

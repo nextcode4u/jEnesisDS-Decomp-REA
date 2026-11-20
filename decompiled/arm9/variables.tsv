@@ -1,0 +1,146 @@
+scope	original	name	evidence
+processor	DAT_0b00363c	vdp_access_code	VDP control words at 0x0200aaf8 latch the access code, address and command phase. Port reads use or clear the same state.
+processor	DAT_0b003638	vdp_address	VDP control words at 0x0200aaf8 latch the access code, address and command phase. Port reads use or clear the same state.
+processor	DAT_020b4bf5	vdp_control_word_pending	VDP control words at 0x0200aaf8 latch the access code, address and command phase. Port reads use or clear the same state.
+processor	DAT_020b4bf2	vdp_dma_enabled	VDP registers 1 and 15 through 23 and the transfer entry at 0x02009e3c establish these fields.
+processor	DAT_0b003630	vdp_address_increment	VDP registers 1 and 15 through 23 and the transfer entry at 0x02009e3c establish these fields.
+processor	DAT_0b003634	vdp_dma_source_address	VDP registers 1 and 15 through 23 and the transfer entry at 0x02009e3c establish these fields.
+processor	DAT_020b4bfc	vdp_dma_length_register	VDP registers 1 and 15 through 23 and the transfer entry at 0x02009e3c establish these fields.
+processor	DAT_020b4c00	vdp_dma_remaining	VDP registers 1 and 15 through 23 and the transfer entry at 0x02009e3c establish these fields.
+processor	DAT_020b4c05	vdp_dma_mode	VDP registers 1 and 15 through 23 and the transfer entry at 0x02009e3c establish these fields.
+processor	DAT_020b4bf3	vdp_dma_fill_pending	VDP registers 1 and 15 through 23 and the transfer entry at 0x02009e3c establish these fields.
+processor	DAT_020b4c18	vdp_registers	VDP registers 1 and 15 through 23 and the transfer entry at 0x02009e3c establish these fields.
+processor	DAT_020b4c06	vdp_mode_5_bit	VDP registers 1 and 15 through 23 and the transfer entry at 0x02009e3c establish these fields.
+processor	DAT_0209cbec	vdp_vram	Data-port read cases 0, 4 and 8 and write cases 1, 3 and 5 identify each VDP storage region.
+processor	DAT_0209cbed	vdp_vram_odd_byte_base	Data-port read cases 0, 4 and 8 and write cases 1, 3 and 5 identify each VDP storage region.
+processor	DAT_023dc6b0	vdp_cram	Data-port read cases 0, 4 and 8 and write cases 1, 3 and 5 identify each VDP storage region.
+processor	DAT_0b00364c	vdp_vsram	Data-port read cases 0, 4 and 8 and write cases 1, 3 and 5 identify each VDP storage region.
+processor	DAT_023ddea0	vdp_plane_a_name_table_base	VDP register cases 2 through 7 set name table, sprite table and backdrop values. Display rebuild converts CRAM into the staged DS palette.
+processor	DAT_023ddea4	vdp_plane_b_name_table_base	VDP register cases 2 through 7 set name table, sprite table and backdrop values. Display rebuild converts CRAM into the staged DS palette.
+processor	DAT_023ddea8	vdp_window_name_table_base	VDP register cases 2 through 7 set name table, sprite table and backdrop values. Display rebuild converts CRAM into the staged DS palette.
+processor	DAT_023ddeac	vdp_sprite_attribute_table_base	VDP register cases 2 through 7 set name table, sprite table and backdrop values. Display rebuild converts CRAM into the staged DS palette.
+processor	DAT_020b4bf7	vdp_backdrop_color_index	VDP register cases 2 through 7 set name table, sprite table and backdrop values. Display rebuild converts CRAM into the staged DS palette.
+processor	DAT_023dc730	ds_converted_vdp_palette	VDP register cases 2 through 7 set name table, sprite table and backdrop values. Display rebuild converts CRAM into the staged DS palette.
+processor	DAT_023dc69c	write_ds_background_tilemap_word	The layout selectors install callbacks used on individual writes and block transfers.
+processor	DAT_023dc6ac	transfer_vdp_words_to_ds_background_0	The layout selectors install callbacks used on individual writes and block transfers.
+processor	DAT_023dc6a0	transfer_vdp_words_to_ds_background_1	The layout selectors install callbacks used on individual writes and block transfers.
+processor	DAT_023dc5a8	write_ds_window_tilemap_word	The layout selectors install callbacks used on individual writes and block transfers.
+processor	DAT_023dc5b8	transfer_vdp_words_to_ds_window	The layout selectors install callbacks used on individual writes and block transfers.
+processor	DAT_020b4bec	vdp_scanline	The line scheduler updates the scanline and horizontal IRQ counter. VDP registers 0 and 10 supply the IRQ enable and reload value.
+processor	DAT_0b003620	vdp_h_interrupt_counter	The line scheduler updates the scanline and horizontal IRQ counter. VDP registers 0 and 10 supply the IRQ enable and reload value.
+processor	DAT_020b4bf8	vdp_h_interrupt_reload	The line scheduler updates the scanline and horizontal IRQ counter. VDP registers 0 and 10 supply the IRQ enable and reload value.
+processor	DAT_0b003644	vdp_h_interrupt_enabled	The line scheduler updates the scanline and horizontal IRQ counter. VDP registers 0 and 10 supply the IRQ enable and reload value.
+processor	DAT_0b00001c	genesis_version_register	The I/O read switch selects the version byte and the controller state pointers by register address.
+processor	DAT_0b000030	controller_port_1_state	The I/O read switch selects the version byte and the controller state pointers by register address.
+processor	DAT_0b000034	controller_port_2_state	The I/O read switch selects the version byte and the controller state pointers by register address.
+processor	DAT_02098ffc	controller_port_read_latch	The I/O read switch selects the version byte and the controller state pointers by register address.
+processor	DAT_0b00061c	m68k_byte_read_handlers	The 68000 page selectors install byte and word handlers. The bus helpers index them by the top byte of the 24-bit address.
+processor	DAT_0b000a1c	m68k_word_read_handlers	The 68000 page selectors install byte and word handlers. The bus helpers index them by the top byte of the 24-bit address.
+processor	DAT_0b000e1c	m68k_byte_write_handlers	The 68000 page selectors install byte and word handlers. The bus helpers index them by the top byte of the 24-bit address.
+processor	DAT_0b00121c	m68k_word_write_handlers	The 68000 page selectors install byte and word handlers. The bus helpers index them by the top byte of the 24-bit address.
+processor	_DAT_040000d4	ds_dma3_source	DS DMA3 hardware register addresses used in OAM and palette transfers.
+processor	_DAT_040000d8	ds_dma3_destination	DS DMA3 hardware register addresses used in OAM and palette transfers.
+processor	_DAT_040000dc	ds_dma3_control	DS DMA3 hardware register addresses used in OAM and palette transfers.
+0x020003f4	param_1	io_address	Switch masks the guest address and selects one port's state. The bit temporaries supply individual output lines.
+0x020003f4	iVar7	port_state	Switch masks the guest address and selects one port's state. The bit temporaries supply individual output lines.
+0x020003f4	bVar1	pin_4_in	Switch masks the guest address and selects one port's state. The bit temporaries supply individual output lines.
+0x020003f4	bVar2	pin_2_in	Switch masks the guest address and selects one port's state. The bit temporaries supply individual output lines.
+0x020003f4	bVar3	pin_3_in	Switch masks the guest address and selects one port's state. The bit temporaries supply individual output lines.
+0x020003f4	bVar4	pin_5_in	Switch masks the guest address and selects one port's state. The bit temporaries supply individual output lines.
+0x020003f4	bVar5	pin_0_in	Switch masks the guest address and selects one port's state. The bit temporaries supply individual output lines.
+0x020003f4	bVar6	pin_1_in	Switch masks the guest address and selects one port's state. The bit temporaries supply individual output lines.
+0x02003828	param_1	port_state	Combines output-latch bits with controller input levels. Temporaries describe pin positions across handshake phases.
+0x02003828	bVar1	pin_4_in	Combines output-latch bits with controller input levels. Temporaries describe pin positions across handshake phases.
+0x02003828	bVar2	pin_2_in	Combines output-latch bits with controller input levels. Temporaries describe pin positions across handshake phases.
+0x02003828	bVar3	pin_3_in	Combines output-latch bits with controller input levels. Temporaries describe pin positions across handshake phases.
+0x02003828	bVar4	pin_5_in	Combines output-latch bits with controller input levels. Temporaries describe pin positions across handshake phases.
+0x02003828	bVar5	pin_0_in	Combines output-latch bits with controller input levels. Temporaries describe pin positions across handshake phases.
+0x02003828	bVar6	pin_1_in	Combines output-latch bits with controller input levels. Temporaries describe pin positions across handshake phases.
+0x020037b4	param_1	port_state	Initializes the allocated controller state.
+0x02003a50	param_1	port_state	Stores the six-button setting in the port state.
+0x02003a50	param_2	six_button_enabled	Stores the six-button setting in the port state.
+0x02003ad4	uVar1	port_state	Allocates and returns a 44-byte controller state.
+0x020021cc	uVar2	ds_keys	DS key state is sampled, then used to set active-low controller button values and viewport movement.
+0x020021cc	iVar1	previous_viewport_x	DS key state is sampled, then used to set active-low controller button values and viewport movement.
+0x0200aaf8	param_1	control_word	The argument is both halves of the control command received one word at a time, or a register write word.
+0x0200ac7c	param_1	data_word	The data port extracts the two bytes, uses the address increment and tests for odd VRAM addresses.
+0x0200ac7c	uVar2	data_low_byte	The data port extracts the two bytes, uses the address increment and tests for odd VRAM addresses.
+0x0200ac7c	uVar3	data_high_byte	The data port extracts the two bytes, uses the address increment and tests for odd VRAM addresses.
+0x0200ac7c	uVar4	fill_next_address	The data port extracts the two bytes, uses the address increment and tests for odd VRAM addresses.
+0x0200ac7c	uVar11	fill_address	The data port extracts the two bytes, uses the address increment and tests for odd VRAM addresses.
+0x0200ac7c	uVar12	fill_step	The data port extracts the two bytes, uses the address increment and tests for odd VRAM addresses.
+0x0200ac7c	puVar8	fill_word_pointer	The data port extracts the two bytes, uses the address increment and tests for odd VRAM addresses.
+0x020092e0	uVar1	status_word	Combines masked status flags and then clears the command latch and selected bits.
+0x02009380	uVar1	data_word	Decodes VRAM, VSRAM or CRAM and advances the data-port address.
+0x02009380	uVar2	memory_code_or_offset	Decodes VRAM, VSRAM or CRAM and advances the data-port address.
+0x0200944c	param_1	port_address	Selects a port from the external address and returns its word.
+0x0200944c	uVar1	port_offset_bit	Selects a port from the external address and returns its word.
+0x0200944c	uVar2	port_word	Selects a port from the external address and returns its word.
+0x02009cf0	uVar3	palette_index	Restores 24 VDP registers and makes a 64-entry DS palette from CRAM.
+0x02009cf0	uVar6	backdrop_index	Restores 24 VDP registers and makes a 64-entry DS palette from CRAM.
+0x02009cf0	iVar4	palette_byte_offset	Restores 24 VDP registers and makes a 64-entry DS palette from CRAM.
+0x02009cf0	uVar5	genesis_color	Restores 24 VDP registers and makes a 64-entry DS palette from CRAM.
+0x02009cf0	uVar2	ds_color	Restores 24 VDP registers and makes a 64-entry DS palette from CRAM.
+0x02006f2c	param_1	layout_code	Selects between the tilemap layout cases and caches the selection.
+0x020072a8	param_1	wide_window	Selects a window map layout from the width flag and caches that flag.
+0x020083ec	param_1	scanline	Reads prepared per-line renderer state and walks the queued and hardware palette arrays.
+0x020083ec	puVar1	background_control	Reads prepared per-line renderer state and walks the queued and hardware palette arrays.
+0x020083ec	psVar3	queued_colors	Reads prepared per-line renderer state and walks the queued and hardware palette arrays.
+0x020083ec	psVar2	ds_bg_palette_cursor	Reads prepared per-line renderer state and walks the queued and hardware palette arrays.
+0x020085b4	param_1	genesis_sprite_words	Reads Genesis sprite words and writes positions into a DS sprite slot.
+0x020085b4	param_2	ds_sprite_index	Reads Genesis sprite words and writes positions into a DS sprite slot.
+0x020085b4	sVar1	viewport_relative_x	Reads Genesis sprite words and writes positions into a DS sprite slot.
+0x020085b4	uVar4	ds_sprite_x	Reads Genesis sprite words and writes positions into a DS sprite slot.
+0x020085b4	uVar2	ds_sprite_y	Reads Genesis sprite words and writes positions into a DS sprite slot.
+0x02008914	param_1	sprite_count	Flushes eight bytes per entry across the greater of this and the previous sprite counts.
+0x02008914	iVar1	attribute_bytes	Flushes eight bytes per entry across the greater of this and the previous sprite counts.
+0x0100408c	param_1	guest_address	Address is masked or divided into a 68000 bus page and a byte offset.
+0x010040c4	param_1	guest_address	Address is masked or divided into a 68000 bus page and a byte offset.
+0x010040fc	param_1	guest_address	Address is masked or divided into a 68000 bus page and a byte offset.
+0x01004144	param_1	guest_address	Address is masked or divided into a 68000 bus page and a byte offset.
+0x01004160	param_1	guest_address	Address is masked or divided into a 68000 bus page and a byte offset.
+0x01004194	param_1	guest_address	Address is masked or divided into a 68000 bus page and a byte offset.
+0x010041d0	param_1	guest_address	Address is masked or divided into a 68000 bus page and a byte offset.
+0x0100408c	unaff_r8	work_ram_base	Pinned ARM register supplies the base of Genesis work RAM.
+0x010040c4	unaff_r8	work_ram_base	Pinned ARM register supplies the base of Genesis work RAM.
+0x010040fc	unaff_r8	work_ram_base	Pinned ARM register supplies the base of Genesis work RAM.
+0x020032a8	iVar1	directory_result	Directory loop checks the callback result and files or directories by a mode bit.
+0x020032a8	uVar2	entry_kind	Directory loop checks the callback result and files or directories by a mode bit.
+0x020032a8	auStack_54	entry_stat_prefix	Directory loop checks the callback result and files or directories by a mode bit.
+0x020032a8	local_4c	entry_mode	Directory loop checks the callback result and files or directories by a mode bit.
+0x020033a4	param_1	selected_row	Indexes the browser list, opens the selected entry name and returns the ROM load result.
+0x020033a4	piVar2	entry_or_filename	Indexes the browser list, opens the selected entry name and returns the ROM load result.
+0x020033a4	uVar4	row_index	Indexes the browser list, opens the selected entry name and returns the ROM load result.
+0x020033a4	uVar3	rom_stream	Indexes the browser list, opens the selected entry name and returns the ROM load result.
+0x020033a4	uVar1	rom_loaded	Indexes the browser list, opens the selected entry name and returns the ROM load result.
+processor	_DAT_027ff028	shared_audio_descriptor	ARM9 publishes this pointer at the same shared address ARM7 reads before processing audio buffers.
+processor	_DAT_04000180	ds_ipc_sync	The send and receive paths use the DS IPC register addresses to exchange command words with ARM7.
+processor	_DAT_04000184	ds_ipc_fifo_control	The send and receive paths use the DS IPC register addresses to exchange command words with ARM7.
+processor	_DAT_04000188	ds_ipc_fifo_send	The send and receive paths use the DS IPC register addresses to exchange command words with ARM7.
+processor	_DAT_04100000	ds_ipc_fifo_receive	The send and receive paths use the DS IPC register addresses to exchange command words with ARM7.
+processor	DAT_020b4c38	ipc_received_command	The send and receive paths use the DS IPC register addresses to exchange command words with ARM7.
+processor	DAT_020b4c3c	ipc_received_payload	The send and receive paths use the DS IPC register addresses to exchange command words with ARM7.
+processor	DAT_023ddeb8	ipc_receive_callback	The send and receive paths use the DS IPC register addresses to exchange command words with ARM7.
+processor	DAT_02099050	ym2612_bank_0_queue_bytes	The YM2612 write queues append register-value pairs, the PSG appends data bytes, and the DAC buffer stores samples. The submission code publishes the corresponding byte counts.
+processor	DAT_02099054	ym2612_bank_1_queue_bytes	The YM2612 write queues append register-value pairs, the PSG appends data bytes, and the DAC buffer stores samples. The submission code publishes the corresponding byte counts.
+processor	DAT_02099058	psg_queue_bytes	The YM2612 write queues append register-value pairs, the PSG appends data bytes, and the DAC buffer stores samples. The submission code publishes the corresponding byte counts.
+processor	DAT_02099048	dac_queue_bytes	The YM2612 write queues append register-value pairs, the PSG appends data bytes, and the DAC buffer stores samples. The submission code publishes the corresponding byte counts.
+processor	DAT_023db760	ym2612_bank_1_write_buffer	The YM2612 write queues append register-value pairs, the PSG appends data bytes, and the DAC buffer stores samples. The submission code publishes the corresponding byte counts.
+processor	DAT_023db774	dac_write_buffer	The YM2612 write queues append register-value pairs, the PSG appends data bytes, and the DAC buffer stores samples. The submission code publishes the corresponding byte counts.
+processor	DAT_023db658	psg_write_buffer	The YM2612 write queues append register-value pairs, the PSG appends data bytes, and the DAC buffer stores samples. The submission code publishes the corresponding byte counts.
+processor	DAT_02099060	ym2612_selected_bank	Address writes to YM2612 port 0 or 2 set the selected register and bank. Writes to port 1 or 3 consult the corresponding register mirror.
+processor	DAT_02099064	ym2612_bank_0_register	Address writes to YM2612 port 0 or 2 set the selected register and bank. Writes to port 1 or 3 consult the corresponding register mirror.
+processor	DAT_02099068	ym2612_bank_1_register	Address writes to YM2612 port 0 or 2 set the selected register and bank. Writes to port 1 or 3 consult the corresponding register mirror.
+processor	DAT_0209907c	ym2612_bank_0_mirror	Address writes to YM2612 port 0 or 2 set the selected register and bank. Writes to port 1 or 3 consult the corresponding register mirror.
+processor	DAT_0209917c	ym2612_bank_1_mirror	Address writes to YM2612 port 0 or 2 set the selected register and bank. Writes to port 1 or 3 consult the corresponding register mirror.
+processor	DAT_02099008	z80_cartridge_bank_base	Serial writes shift the bank latch and reads combine its upper bits with the 15-bit Z80 window offset.
+0x02004458	param_1	window_offset	Combines the window offset with the latched Genesis cartridge bank.
+0x020050a8	param_1	z80_state	Clears the Z80 state structure and initializes pointers to opcode tables.
+0x02005ba0	param_1	port_address	The low port bits select the address or data port for each YM2612 bank.
+0x02005ba0	param_2	write_value	The low port bits select the address or data port for each YM2612 bank.
+0x02005ba0	uVar4	write_byte	The low port bits select the address or data port for each YM2612 bank.
+0x0200c520	param_1	callback	Stores the callback read by the ARM9 FIFO receive IRQ.
+0x0200c55c	param_1	command_id	Packs the command in the high byte and the payload in the low 24 bits.
+0x0200c55c	param_2	payload	Packs the command in the high byte and the payload in the low 24 bits.
+0x0200c55c	uVar2	fifo_word	Packs the command in the high byte and the payload in the low 24 bits.
+0x0200c55c	bVar3	send_fifo_full	Packs the command in the high byte and the payload in the low 24 bits.

@@ -4,7 +4,7 @@
 
 // 0x0201adb4  m68k_move_long
 
-void m68k_dispatch_0201adb4(void)
+void m68k_move_long_0201adb4(void)
 
 {
   undefined2 *puVar1;
@@ -16,7 +16,7 @@ void m68k_dispatch_0201adb4(void)
   short *unaff_r10;
   uint unaff_r11;
   
-  uVar2 = FUN_010040fc(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
+  uVar2 = read_m68k_bus_long(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
                        (int)*unaff_r10);
   puVar4 = (uint *)(unaff_r6 + 0x20 + ((unaff_r11 & 0xe00) >> 7));
   uVar3 = *puVar4 - 4;
@@ -28,15 +28,15 @@ void m68k_dispatch_0201adb4(void)
     return;
   }
   uVar3 = uVar3 & 0xffffff;
-  (*(code *)(&DAT_0b00121c)[uVar3 >> 0x10])(uVar3 + 2,uVar2 & 0xffff);
-  (*(code *)(&DAT_0b00121c)[uVar3 >> 0x10])(uVar3,uVar2 >> 0x10);
+  (*(code *)(&m68k_word_write_handlers)[uVar3 >> 0x10])(uVar3 + 2,uVar2 & 0xffff);
+  (*(code *)(&m68k_word_write_handlers)[uVar3 >> 0x10])(uVar3,uVar2 >> 0x10);
   return;
 }
 
 
 // 0x0201b6e0  m68k_move_long
 
-void m68k_dispatch_0201b6e0(void)
+void m68k_move_long_0201b6e0(void)
 
 {
   ushort uVar1;
@@ -62,15 +62,15 @@ void m68k_dispatch_0201b6e0(void)
   else {
     iVar5 = *(int *)(iVar5 + uVar3);
   }
-  uVar3 = FUN_010040fc(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
+  uVar3 = read_m68k_bus_long(((int)unaff_r10 - *(int *)(unaff_r6 + 0x54) | *(uint *)(unaff_r6 + 0x9c)) +
                        (int)(char)uVar1 + iVar5);
   puVar6 = (uint *)(unaff_r6 + 0x20 + ((unaff_r11 & 0xe00) >> 7));
   uVar4 = *puVar6 - 4;
   *puVar6 = uVar4;
   if ((uVar4 & 0xf00000) < 0xe00000) {
     uVar4 = uVar4 & 0xffffff;
-    (*(code *)(&DAT_0b00121c)[uVar4 >> 0x10])(uVar4 + 2,uVar3 & 0xffff);
-    (*(code *)(&DAT_0b00121c)[uVar4 >> 0x10])(uVar4,uVar3 >> 0x10);
+    (*(code *)(&m68k_word_write_handlers)[uVar4 >> 0x10])(uVar4 + 2,uVar3 & 0xffff);
+    (*(code *)(&m68k_word_write_handlers)[uVar4 >> 0x10])(uVar4,uVar3 >> 0x10);
     return;
   }
   puVar2 = (undefined2 *)(unaff_r8 + (uVar4 & 0xffff));

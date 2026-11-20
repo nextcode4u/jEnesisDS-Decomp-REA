@@ -4,7 +4,7 @@
 
 // 0x020102dc  z80_ed_store_bc_absolute
 
-undefined8 z80_dispatch_020102dc(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ed_store_bc_absolute(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   ushort uVar1;
@@ -173,7 +173,7 @@ undefined8 z80_dispatch_020102dc(undefined4 param_1,undefined4 param_2,int param
 
 // 0x02010418  z80_ed_ld_bc_from_absolute
 
-undefined8 z80_dispatch_02010418(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ed_ld_bc_from_absolute(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -200,7 +200,7 @@ undefined8 z80_dispatch_02010418(undefined4 param_1,undefined4 param_2,int param
   int in_stack_000000a4;
   
   if (0x1fff < *unaff_r11) {
-    FUN_01002cfc();
+    bridge_to_z80_mapped_word_read();
   }
   iVar4 = in_stack_00000028;
   iVar2 = unaff_r5 + -0x140000;
@@ -338,7 +338,7 @@ undefined8 z80_dispatch_02010418(undefined4 param_1,undefined4 param_2,int param
 
 // 0x02010508  z80_ed_store_de_absolute
 
-undefined8 z80_dispatch_02010508(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ed_store_de_absolute(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   ushort uVar1;
@@ -507,7 +507,7 @@ undefined8 z80_dispatch_02010508(undefined4 param_1,undefined4 param_2,int param
 
 // 0x02010604  z80_ed_ld_de_from_absolute
 
-undefined8 z80_dispatch_02010604(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ed_ld_de_from_absolute(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -534,7 +534,7 @@ undefined8 z80_dispatch_02010604(undefined4 param_1,undefined4 param_2,int param
   int in_stack_000000a4;
   
   if (0x1fff < *unaff_r11) {
-    FUN_01002cfc();
+    bridge_to_z80_mapped_word_read();
   }
   iVar4 = in_stack_00000028;
   iVar2 = unaff_r5 + -0x140000;
@@ -672,7 +672,7 @@ undefined8 z80_dispatch_02010604(undefined4 param_1,undefined4 param_2,int param
 
 // 0x0201071c  z80_ed_store_hl_absolute
 
-undefined8 z80_dispatch_0201071c(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ed_store_hl_absolute(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   ushort uVar1;
@@ -839,7 +839,7 @@ undefined8 z80_dispatch_0201071c(undefined4 param_1,undefined4 param_2,int param
 
 // 0x0201082c  z80_ed_ld_hl_from_absolute
 
-undefined8 z80_dispatch_0201082c(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ed_ld_hl_from_absolute(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -866,7 +866,7 @@ undefined8 z80_dispatch_0201082c(undefined4 param_1,undefined4 param_2,int param
   int in_stack_000000a4;
   
   if (0x1fff < *unaff_r11) {
-    FUN_01002cfc();
+    bridge_to_z80_mapped_word_read();
   }
   iVar4 = in_stack_00000028;
   iVar2 = unaff_r5 + -0x140000;
@@ -1004,7 +1004,7 @@ undefined8 z80_dispatch_0201082c(undefined4 param_1,undefined4 param_2,int param
 
 // 0x02010944  z80_ed_store_sp_absolute
 
-undefined8 z80_dispatch_02010944(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ed_store_sp_absolute(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   ushort uVar1;
@@ -1170,7 +1170,7 @@ undefined8 z80_dispatch_02010944(undefined4 param_1,undefined4 param_2,int param
 
 // 0x02010a00  z80_ed_ld_sp_from_absolute
 
-undefined8 z80_dispatch_02010a00(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ed_ld_sp_from_absolute(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   uint uVar1;
@@ -1198,7 +1198,7 @@ undefined8 z80_dispatch_02010a00(undefined4 param_1,undefined4 param_2,int param
   
   uVar1 = (uint)*unaff_r11;
   if (0x1fff < uVar1) {
-    uVar1 = FUN_01002cfc();
+    uVar1 = bridge_to_z80_mapped_word_read();
   }
   iVar5 = in_stack_00000028;
   iVar4 = param_4 + (uint)CONCAT11(*(undefined1 *)(param_4 + uVar1 + 1),

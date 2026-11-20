@@ -4,7 +4,7 @@
 
 // 0x02011c60  z80_ix_iy_pop_ix_or_iy
 
-undefined8 z80_dispatch_02011c60(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_pop_ix_or_iy(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -167,7 +167,7 @@ undefined8 z80_dispatch_02011c60(undefined4 param_1,undefined4 param_2,int param
 // 0x02011c84  z80_ix_iy_exchange_stack_ix_or_iy
 
 undefined8
-z80_dispatch_02011c84(undefined4 param_1,undefined4 param_2,undefined4 param_3,int param_4)
+z80_ix_iy_exchange_stack_ix_or_iy(undefined4 param_1,undefined4 param_2,undefined4 param_3,int param_4)
 
 {
   undefined1 uVar1;
@@ -335,7 +335,7 @@ z80_dispatch_02011c84(undefined4 param_1,undefined4 param_2,undefined4 param_3,i
 
 // 0x02011cbc  z80_ix_iy_push_ix_or_iy
 
-undefined8 z80_dispatch_02011cbc(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_push_ix_or_iy(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -497,7 +497,7 @@ undefined8 z80_dispatch_02011cbc(undefined4 param_1,undefined4 param_2,int param
 
 // 0x02011cdc  z80_ix_iy_jp_via_ix_or_iy
 
-undefined8 z80_dispatch_02011cdc(uint param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_jp_via_ix_or_iy(uint param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -658,7 +658,7 @@ undefined8 z80_dispatch_02011cdc(uint param_1,undefined4 param_2,int param_3,int
 
 // 0x02011d04  z80_ix_iy_dispatch_dd
 
-undefined8 z80_dispatch_02011d04(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_dispatch_dd(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -820,7 +820,7 @@ undefined8 z80_dispatch_02011d04(undefined4 param_1,undefined4 param_2,int param
 
 // 0x02011d18  z80_ix_iy_exchange_de_hl
 
-undefined8 z80_dispatch_02011d18(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ix_iy_exchange_de_hl(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;

@@ -6,7 +6,7 @@
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void thunk_FUN_02006908(uint param_1)
+void display_fps_count(uint param_1)
 
 {
   _DAT_06201542 = (short)(((param_1 / 100) % 10 + 0x6a) * 0x10000 >> 0x10);
@@ -21,7 +21,7 @@ void thunk_FUN_02006908(uint param_1)
 
 // 0x02006730  adjust_overlay_tile_palette_indices
 
-void FUN_02006730(void)
+void adjust_overlay_tile_palette_indices(void)
 
 {
   char *pcVar1;
@@ -57,7 +57,7 @@ void FUN_02006730(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_02006908(uint param_1)
+void set_fps_overlay_digits(uint param_1)
 
 {
   _DAT_06201542 = (short)(((param_1 / 100) % 10 + 0x6a) * 0x10000 >> 0x10);

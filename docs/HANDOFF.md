@@ -30,7 +30,7 @@ decompiled/
     platform/      Startup, IPC, interrupts, BIOS, runtime, and peripherals
 ```
 
-The 256 module files group routines by processor and subsystem. The largest 68000 word and long MOVE groups also use the destination addressing mode from a representative opcode. Z80 modules use instruction family and operand type. Routines are in ascending address order within each module. The branch keeps working names in short headers and detailed annotations in two processor indexes.
+The 256 module files group routines by processor and subsystem. The largest 68000 word and long MOVE groups also use the destination addressing mode from a representative opcode. Z80 modules use instruction family and operand type. Routines are in ascending address order within each module. Names appear in the pseudocode declarations and references. The processor indexes record their original Ghidra symbols, and each `variables.tsv` records renamed variables with evidence and scope.
 
 The latest review replaced 186 provisional labels with observed behavior or branch destinations. Open questions about callers, original symbols, and library versions are recorded below.
 
@@ -47,7 +47,7 @@ The index records the behavior supported by the available evidence. An entry can
 ## Trace a routine
 
 1. Run `python3 scripts/find_routine.py 0x0200d13c` to locate the save-state loader. The command accepts working names and Ghidra symbols as well as addresses. You can also browse the [ARM9 index](../decompiled/arm9/functions.tsv) or [ARM7 index](../decompiled/arm7/functions.tsv).
-2. Open `module` relative to that processor’s folder and go to `line`. The preceding line contains the address and working name. The `line_count` column gives the extent of the original REA body in the module.
+2. Open `module` relative to that processor’s folder and go to `line`. The preceding line contains the address and working name. The `line_count` column gives the extent of the body in the module. Use `--show --raw` to see the original identifiers.
 3. Use `ghidra_symbol` and the address to find the listing in Ghidra. For a dispatch handler, check caller entries for aliases and confirm operand behavior against the listing.
 
 | Area | Entry points |
@@ -91,7 +91,7 @@ python3 rebuild/build.py --tool-prefix /path/to/devkitARM/bin/arm-eabi-
 cmp input/jEnesisDS.nds build/jEnesisDS-0.7.4-rebuilt.nds
 ```
 
-The checker validates the address labels, index coverage, and `body_sha256` against the grouped bytes. `rea_sha256` records the complete original per-function REA export, including the provider header. The earlier named snapshot contains the per-function files and original export metadata, including provider fingerprints, code ranges, and limitations. The grouping removes the repeated provider and annotation headers while preserving the indexed pseudocode bytes. [Named snapshot and original export metadata](https://github.com/nextcode4u/jEnesisDS-Decomp-REA/tree/ab34a829297fb07158fcfd40cae203aae76f6512/decompiled)
+The checker validates the address labels and index coverage, reverses the documented identifier substitutions, and checks the result against the original `body_sha256`. It also reapplies the substitutions to check the displayed file. `rea_sha256` records the complete original per-function REA export, including the provider header. The earlier named snapshot contains the per-function files and original export metadata, including provider fingerprints, code ranges, and limitations. The grouping removes repeated provider and annotation headers. The remaining original bytes can be recovered by reversing the documented renames. [Named snapshot and original export metadata](https://github.com/nextcode4u/jEnesisDS-Decomp-REA/tree/ab34a829297fb07158fcfd40cae203aae76f6512/decompiled)
 
 The recovered ARM9 startup matches the devkitARM r20 startup object. Several runtime routines match r20’s GCC 4.1.1 libraries. Eighteen object sections match libfat-nds 20070127 after accounting for relocations. The exact libnds revision remains open. The reference ROM booted in melonDS 1.1 and ran a red-and-cyan Genesis VDP diagnostic through DLDI. [Period devkitPro build configuration](https://github.com/devkitPro/buildscripts/blob/dbc4d7d1aa052767680e73f3604f6ae1d486ac31/build-devkit.sh)
 
@@ -104,4 +104,4 @@ bash scripts/decompile.sh
 
 Keep each local Ghidra `.gpr` file beside its `.rep` directory. The build stops when the project already exists. Both scripts accept `arm9` or `arm7`. The export resumes when a matching journal exists and writes raw files beneath `build/rea-decompiled/` and logs beneath `build/rea-evidence/`. Set `REA_OUTPUT_DIR` and `REA_EVIDENCE_DIR` to override those destinations. Fresh raw exports include the address slices used for parallel REA jobs.
 
-For subsequent analysis, keep working annotations in the processor indexes and use the existing subsystem modules. Run the checker after changes to module locations or index line ranges. Capture any changes to a bootable rebuild or to the BlocksDS port on the corresponding branch.
+Record each displayed function identifier in the processor index's `symbol` column. Where several entries have the same working role, the displayed identifier includes the native address. ARM and Thumb entry pairs that shared one Ghidra symbol share one displayed identifier. Record each variable rename in the appropriate `variables.tsv`, using `processor` for a shared variable or the routine address for a local. Run the checker after editing names, moving routines, or changing line ranges. Capture any changes to a bootable rebuild or to the BlocksDS port on the corresponding branch.

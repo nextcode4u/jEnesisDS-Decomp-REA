@@ -4,7 +4,7 @@
 
 // 0x0200c5d8  initialize_lzss_match_trees
 
-void FUN_0200c5d8(void)
+void initialize_lzss_match_trees(void)
 
 {
   undefined4 *puVar1;
@@ -28,7 +28,7 @@ void FUN_0200c5d8(void)
 
 // 0x0200c610  insert_lzss_match_tree_node
 
-void FUN_0200c610(int param_1)
+void insert_lzss_match_tree_node(int param_1)
 
 {
   byte *pbVar1;
@@ -96,7 +96,7 @@ LAB_0200c658:
 
 // 0x0200c75c  remove_lzss_match_tree_node
 
-void FUN_0200c75c(int param_1)
+void remove_lzss_match_tree_node(int param_1)
 
 {
   int iVar1;

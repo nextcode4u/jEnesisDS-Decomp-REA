@@ -6,7 +6,7 @@
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void arm9_entry(void)
+void start_arm9_and_map_tcm(void)
 
 {
   uint uVar1;
@@ -44,13 +44,13 @@ void arm9_entry(void)
   coprocessor_moveto(0xf,0,2,0x36333333,in_cr5,in_cr0);
   uVar1 = coproc_movefrom_Control();
   coproc_moveto_Control(uVar1 | 0x51005);
-  uVar2 = FUN_02000180(0x1f,&DAT_020936f0,0x1000000);
-  FUN_02000180(uVar2,&DAT_02090004,&DAT_0b000000);
-  FUN_0200015c(&DAT_02098f70,0x3523e0);
-  FUN_0200015c(0xb0036ec,0);
+  uVar2 = copy_aligned_tcm_words(0x1f,&DAT_020936f0,0x1000000);
+  copy_aligned_tcm_words(uVar2,&DAT_02090004,&DAT_0b000000);
+  clear_aligned_words_to_zero(&DAT_02098f70,0x3523e0);
+  clear_aligned_words_to_zero(0xb0036ec,0);
   DAT_020b4ce0 = 0x23ff000;
-  thunk_FUN_020805e8();
-  thunk_FUN_020805e8(0,0);
+  arm_veneer_for_thumb_call_via_r3();
+  arm_veneer_for_thumb_call_via_r3(0,0);
   _LAB_027ffe78 = 0xeafffffe;
   (*(code *)&LAB_027ffe78)();
   return;
@@ -59,7 +59,7 @@ void arm9_entry(void)
 
 // 0x0200015c  clear_aligned_words_to_zero
 
-void FUN_0200015c(undefined4 *param_1,int param_2)
+void clear_aligned_words_to_zero(undefined4 *param_1,int param_2)
 
 {
   uint uVar1;
@@ -79,7 +79,7 @@ void FUN_0200015c(undefined4 *param_1,int param_2)
 
 // 0x02000180  copy_aligned_tcm_words
 
-void FUN_02000180(undefined4 param_1,undefined4 *param_2,undefined4 *param_3)
+void copy_aligned_tcm_words(undefined4 param_1,undefined4 *param_2,undefined4 *param_3)
 
 {
   undefined4 uVar1;
@@ -103,7 +103,7 @@ void FUN_02000180(undefined4 param_1,undefined4 *param_2,undefined4 *param_3)
 
 // 0x02000220  arm9_empty_runtime_initializer
 
-void FUN_02000220(void)
+void arm9_empty_runtime_initializer(void)
 
 {
   return;
@@ -114,28 +114,28 @@ void FUN_02000220(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_020011b0(void)
+void initialize_ds_display_and_overlay(void)
 
 {
   undefined2 *puVar1;
   undefined2 *puVar2;
   
-  FUN_02001118();
+  configure_menu_vblank_interrupt();
   _DAT_04000304 = _DAT_04000304 | 0x20f;
-  FUN_02006d20();
-  thunk_FUN_0208031c();
+  show_startup_graphics_and_run_scanline_transition();
+  arm_veneer_for_nds_swiwaitforvblank();
   _DAT_04000000 = 0x113f10;
-  FUN_02006f2c(0);
-  FUN_02008edc();
+  select_background_tilemap_layout(0);
+  initialize_ds_sprite_attribute_buffer();
   _DAT_04000000 = _DAT_04000000 | 0x20;
   _DAT_04001000 = 0x10300;
-  thunk_FUN_0207fc98(1,9,4,2);
-  thunk_FUN_0207fd44(2);
+  arm_veneer_for_nds_vramsetmainbanks(1,9,4,2);
+  arm_veneer_for_nds_vramsetbanke(2);
   _DAT_0400100a = 0x288;
   _DAT_04001008 = 0x1f90;
-  FUN_0200d900(&DAT_02085aa8,0x6210000,0x620f800,0x5f,0xf);
-  FUN_02006bb0();
-  FUN_02006730();
+  initialize_text_overlay_tiles(&DAT_02085aa8,0x6210000,0x620f800,0x5f,0xf);
+  load_subscreen_palette_tiles_and_map();
+  adjust_overlay_tile_palette_indices();
   puVar1 = (undefined2 *)&DAT_050005e0;
   do {
     puVar2 = puVar1 + 1;
@@ -152,13 +152,13 @@ void FUN_020011b0(void)
 /* WARNING: Removing unreachable block (ram,0x02082388) */
 /* WARNING: Removing unreachable block (ram,0x02082390) */
 
-void arm9_startup_call_1(void)
+void run_arm9_c_runtime_initializers(void)
 
 {
   int iVar1;
   undefined4 *puVar2;
   
-  FUN_02000220();
+  arm9_empty_runtime_initializer();
   iVar1 = 0;
   puVar2 = &DAT_0208f330;
   do {

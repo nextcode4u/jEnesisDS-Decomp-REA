@@ -4,7 +4,7 @@
 
 // 0x020023e0  write_popup_text_tiles
 
-void FUN_020023e0(char *param_1)
+void write_popup_text_tiles(char *param_1)
 
 {
   char cVar1;
@@ -38,7 +38,7 @@ void FUN_020023e0(char *param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined8 thunk_FUN_02006bb0(void)
+undefined8 arm_tail_branch_to_load_subscreen_palette_tiles_and_map(void)
 
 {
   undefined2 *puVar1;
@@ -51,7 +51,7 @@ undefined8 thunk_FUN_02006bb0(void)
     puVar1 = puVar2;
   } while (puVar2 != (undefined2 *)&DAT_050005e0);
   _DAT_050005fe = 0x35f;
-  thunk_FUN_0208033e(&DAT_020874a8,0x6208000,0x2700);
+  arm_veneer_for_nds_swicopy(&DAT_020874a8,0x6208000,0x2700);
   software_interrupt(0xb);
   return 0x620100002089ba8;
 }
@@ -61,7 +61,7 @@ undefined8 thunk_FUN_02006bb0(void)
 
 /* WARNING: Removing unreachable block (ram,0x0200da4c) */
 
-void FUN_0200276c(undefined4 param_1)
+void draw_loading_message(undefined4 param_1)
 
 {
   char cVar1;
@@ -70,11 +70,11 @@ void FUN_0200276c(undefined4 param_1)
   uint uVar4;
   int iVar5;
   
-  thunk_FUN_02006bb0();
-  FUN_0200d9ec(3);
-  FUN_02083dbc(&DAT_023cb4f0,param_1,0x1d);
+  arm_tail_branch_to_load_subscreen_palette_tiles_and_map();
+  clear_text_rows_from(3);
+  newlib_strncpy(&DAT_023cb4f0,param_1,0x1d);
   DAT_023cb50c = 0;
-  FUN_0200da3c("Loading:",6,1);
+  write_text_at_tile_position("Loading:",6,1);
   uVar2 = DAT_020b4c54;
   if (DAT_023cb4f0 == '\0') {
     return;
@@ -97,7 +97,7 @@ void FUN_0200276c(undefined4 param_1)
 
 // 0x020027d0  draw_current_rom_information
 
-void FUN_020027d0(void)
+void draw_current_rom_information(void)
 
 {
   char cVar1;
@@ -107,40 +107,40 @@ void FUN_020027d0(void)
   int iVar5;
   
   cVar1 = *(char *)(DAT_02098fc8 + 0x254);
-  thunk_FUN_02006bb0();
-  FUN_0200d9ec(3);
+  arm_tail_branch_to_load_subscreen_palette_tiles_and_map();
+  clear_text_rows_from(3);
   iVar2 = DAT_02098fc8;
-  iVar3 = FUN_02083f68(DAT_02098fc8,0x2f);
+  iVar3 = newlib_strrchr(DAT_02098fc8,0x2f);
   iVar5 = iVar3 + 1;
   if (iVar3 == 0) {
     iVar5 = iVar2;
   }
-  FUN_02083dbc(&DAT_023cb4f0,iVar5,0x1d);
+  newlib_strncpy(&DAT_023cb4f0,iVar5,0x1d);
   DAT_023cb50c = 0;
-  FUN_0200da3c("Now Playing:",6,1);
-  FUN_0200da3c(&DAT_023cb4f0,7,1);
-  FUN_0200da3c("Rom Size:",9,1);
-  FUN_0200db8c(*(undefined4 *)(DAT_02098fc8 + 0x244),9,0xf);
-  FUN_0200da3c("Rom Checksum:",10,1);
-  FUN_0200dc64(*(undefined4 *)(DAT_02098fc8 + 0x240),10,0xf);
-  FUN_0200da3c("Rom Type:",0xb,1);
+  write_text_at_tile_position("Now Playing:",6,1);
+  write_text_at_tile_position(&DAT_023cb4f0,7,1);
+  write_text_at_tile_position("Rom Size:",9,1);
+  format_hexadecimal_value(*(undefined4 *)(DAT_02098fc8 + 0x244),9,0xf);
+  write_text_at_tile_position("Rom Checksum:",10,1);
+  write_hexadecimal_value_to_overlay(*(undefined4 *)(DAT_02098fc8 + 0x240),10,0xf);
+  write_text_at_tile_position("Rom Type:",0xb,1);
   puVar4 = &DAT_0208f0f0;
   if (*(char *)(DAT_02098fc8 + 0x260) == '\0') {
     puVar4 = &DAT_0208f0f4;
   }
-  FUN_0200da3c(puVar4,0xb,0xf);
-  FUN_0200da3c("______________________________",0xd,1);
-  FUN_0200da3c("   [SELECT]:Open File Menu",0x10,1);
-  FUN_0200da3c("    TOUCH screen to pause",0x11,1);
-  FUN_02006784(7);
-  FUN_02006b78();
-  FUN_020067d4(cVar1);
+  write_text_at_tile_position(puVar4,0xb,0xf);
+  write_text_at_tile_position("______________________________",0xd,1);
+  write_text_at_tile_position("   [SELECT]:Open File Menu",0x10,1);
+  write_text_at_tile_position("    TOUCH screen to pause",0x11,1);
+  draw_rom_browser_row_highlight(7);
+  copy_rom_information_overlay_tiles();
+  draw_rom_region_indicator(cVar1);
   if (*(char *)(DAT_02098fc8 + 0x261) != '\0') {
-    FUN_02006890();
+    draw_cartridge_sram_indicator();
   }
-  FUN_020068ac(cVar1 == '\x02');
-  FUN_020069a8();
-  FUN_020069e4(0,*(uint *)(DAT_02098fc8 + 600) & 0x20);
+  draw_rom_video_standard_indicator(cVar1 == '\x02');
+  draw_state_slots_label();
+  draw_savestate_slot_presence_indicator(0,*(uint *)(DAT_02098fc8 + 600) & 0x20);
   sRam0620156e = 0x84;
   if ((*(uint *)(DAT_02098fc8 + 600) & 0x40) == 0) {
     sRam0620156e = 0x87;
@@ -156,14 +156,14 @@ void FUN_020027d0(void)
 
 // 0x02002b2c  move_settings_highlight_down
 
-void FUN_02002b2c(void)
+void move_settings_highlight_down(void)
 
 {
   int iVar1;
   int iVar2;
   int iVar3;
   
-  FUN_02006b90(DAT_02098fe8 + 8);
+  restore_overlay_tilemap_row(DAT_02098fe8 + 8);
   iVar1 = DAT_02098fe8 + 9;
   DAT_02098fe8 = DAT_02098fe8 + 1;
   iVar1 = iVar1 * 0x40;
@@ -181,14 +181,14 @@ void FUN_02002b2c(void)
 
 // 0x02002b5c  move_settings_highlight_up
 
-void FUN_02002b5c(void)
+void move_settings_highlight_up(void)
 
 {
   int iVar1;
   int iVar2;
   int iVar3;
   
-  FUN_02006b90(DAT_02098fe8 + 8);
+  restore_overlay_tilemap_row(DAT_02098fe8 + 8);
   iVar1 = DAT_02098fe8 + 7;
   DAT_02098fe8 = DAT_02098fe8 + -1;
   iVar1 = iVar1 * 0x40;
@@ -206,17 +206,17 @@ void FUN_02002b5c(void)
 
 // 0x02002b8c  select_next_rom_browser_page
 
-void FUN_02002b8c(void)
+void select_next_rom_browser_page(void)
 
 {
   undefined4 extraout_r1;
   int iVar1;
   int iVar2;
   
-  FUN_02006b90(DAT_0208f344);
+  restore_overlay_tilemap_row(DAT_0208f344);
   DAT_02098fe4 = 0;
   DAT_0208f344 = 4;
-  FUN_0208047c(DAT_02098fe0 + 1,DAT_02098fd8);
+  compiler_aeabi_uidivmod(DAT_02098fe0 + 1,DAT_02098fd8);
   uRam06201100 = 0x4b;
   uRam0620113e = 1099;
   iVar1 = 0;
@@ -232,14 +232,14 @@ void FUN_02002b8c(void)
 
 // 0x02002be8  move_rom_browser_highlight_down
 
-void FUN_02002be8(void)
+void move_rom_browser_highlight_down(void)
 
 {
   int iVar1;
   int iVar2;
   int iVar3;
   
-  FUN_02006b90(DAT_0208f344);
+  restore_overlay_tilemap_row(DAT_0208f344);
   DAT_0208f344 = DAT_0208f344 + 1;
   DAT_02098fe4 = DAT_0208f344 - 4;
   iVar1 = (uint)DAT_0208f344 * 0x40;
@@ -257,14 +257,14 @@ void FUN_02002be8(void)
 
 // 0x02002c28  move_rom_browser_highlight_up
 
-void FUN_02002c28(void)
+void move_rom_browser_highlight_up(void)
 
 {
   int iVar1;
   int iVar2;
   int iVar3;
   
-  FUN_02006b90(DAT_0208f344);
+  restore_overlay_tilemap_row(DAT_0208f344);
   DAT_0208f344 = DAT_0208f344 - 1;
   DAT_02098fe4 = DAT_0208f344 - 4;
   iVar1 = (uint)DAT_0208f344 * 0x40;
@@ -284,7 +284,7 @@ void FUN_02002c28(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_020067d4(int param_1)
+void draw_rom_region_indicator(int param_1)
 
 {
   if (param_1 == 1) {
@@ -322,7 +322,7 @@ void FUN_020067d4(int param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_02006890(void)
+void draw_cartridge_sram_indicator(void)
 
 {
   _DAT_062015b6 = 0x5c;
@@ -335,7 +335,7 @@ void FUN_02006890(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_020068ac(int param_1)
+void draw_rom_video_standard_indicator(int param_1)
 
 {
   if (param_1 != 0) {
@@ -357,7 +357,7 @@ void FUN_020068ac(int param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void FUN_020069a8(void)
+void draw_state_slots_label(void)
 
 {
   _DAT_062015a6 = 0x9b;
@@ -372,7 +372,7 @@ void FUN_020069a8(void)
 
 // 0x020069e4  draw_savestate_slot_presence_indicator
 
-void FUN_020069e4(uint param_1,int param_2)
+void draw_savestate_slot_presence_indicator(uint param_1,int param_2)
 
 {
   int iVar1;
@@ -395,7 +395,7 @@ void FUN_020069e4(uint param_1,int param_2)
 
 // 0x02006b78  copy_rom_information_overlay_tiles
 
-undefined8 FUN_02006b78(void)
+undefined8 copy_rom_information_overlay_tiles(void)
 
 {
   software_interrupt(0xb);
@@ -405,7 +405,7 @@ undefined8 FUN_02006b78(void)
 
 // 0x02006b90  restore_overlay_tilemap_row
 
-undefined8 FUN_02006b90(int param_1)
+undefined8 restore_overlay_tilemap_row(int param_1)
 
 {
   software_interrupt(0xb);
@@ -417,7 +417,7 @@ undefined8 FUN_02006b90(int param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined8 FUN_02006bb0(void)
+undefined8 load_subscreen_palette_tiles_and_map(void)
 
 {
   undefined2 *puVar1;
@@ -430,7 +430,7 @@ undefined8 FUN_02006bb0(void)
     puVar1 = puVar2;
   } while (puVar2 != (undefined2 *)&DAT_050005e0);
   _DAT_050005fe = 0x35f;
-  thunk_FUN_0208033e(&DAT_020874a8,0x6208000,0x2700);
+  arm_veneer_for_nds_swicopy(&DAT_020874a8,0x6208000,0x2700);
   software_interrupt(0xb);
   return 0x620100002089ba8;
 }
@@ -438,7 +438,7 @@ undefined8 FUN_02006bb0(void)
 
 // 0x0200d8c4  clear_text_overlay_tilemap
 
-void FUN_0200d8c4(void)
+void clear_text_overlay_tilemap(void)
 
 {
   int iVar1;
@@ -461,7 +461,7 @@ void FUN_0200d8c4(void)
 
 /* WARNING: Removing unreachable block (ram,0x0200d8d0) */
 
-void FUN_0200d900(int param_1,int param_2,int param_3,int param_4,uint param_5)
+void initialize_text_overlay_tiles(int param_1,int param_2,int param_3,int param_4,uint param_5)
 
 {
   int iVar1;
@@ -506,7 +506,7 @@ void FUN_0200d900(int param_1,int param_2,int param_3,int param_4,uint param_5)
 
 // 0x0200d9ec  clear_text_rows_from
 
-void FUN_0200d9ec(int param_1)
+void clear_text_rows_from(int param_1)
 
 {
   int iVar1;
@@ -534,7 +534,7 @@ void FUN_0200d9ec(int param_1)
 
 // 0x0200da3c  write_text_at_tile_position
 
-void FUN_0200da3c(char *param_1,int param_2,int param_3)
+void write_text_at_tile_position(char *param_1,int param_2,int param_3)
 
 {
   char cVar1;
@@ -566,7 +566,7 @@ void FUN_0200da3c(char *param_1,int param_2,int param_3)
 
 // 0x0200dae0  write_clipped_text_row
 
-void FUN_0200dae0(char *param_1,int param_2,uint param_3)
+void write_clipped_text_row(char *param_1,int param_2,uint param_3)
 
 {
   char cVar1;
@@ -603,7 +603,7 @@ void FUN_0200dae0(char *param_1,int param_2,uint param_3)
 
 // 0x0200db8c  format_hexadecimal_value
 
-void FUN_0200db8c(uint param_1,int param_2,int param_3)
+void format_hexadecimal_value(uint param_1,int param_2,int param_3)
 
 {
   undefined4 uVar1;
@@ -642,7 +642,7 @@ void FUN_0200db8c(uint param_1,int param_2,int param_3)
 
 // 0x0200dc64  write_hexadecimal_value_to_overlay
 
-void FUN_0200dc64(uint param_1,int param_2,int param_3)
+void write_hexadecimal_value_to_overlay(uint param_1,int param_2,int param_3)
 
 {
   undefined4 uVar1;

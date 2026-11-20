@@ -4,7 +4,7 @@
 
 // 0x02016d20  m68k_move_word
 
-void m68k_dispatch_02016d20(void)
+void m68k_move_word_02016d20(void)
 
 {
   int unaff_r6;
@@ -23,7 +23,7 @@ void m68k_dispatch_02016d20(void)
 
 // 0x02017284  m68k_move_word
 
-void m68k_dispatch_02017284(void)
+void m68k_move_word_02017284(void)
 
 {
   int unaff_r6;

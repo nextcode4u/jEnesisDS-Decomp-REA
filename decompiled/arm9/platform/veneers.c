@@ -4,7 +4,7 @@
 
 // 0x020805e8  thumb_call_via_r3
 
-void FUN_020805e8(void)
+void thumb_call_via_r3(void)
 
 {
   code *UNRECOVERED_JUMPTABLE;
@@ -18,7 +18,7 @@ void FUN_020805e8(void)
 
 // 0x02085898  arm_veneer_for_thumb_call_via_r3
 
-void thunk_FUN_020805e8(void)
+void arm_veneer_for_thumb_call_via_r3(void)
 
 {
   code *UNRECOVERED_JUMPTABLE;
@@ -34,7 +34,7 @@ void thunk_FUN_020805e8(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void thunk_FUN_0208024c(uint param_1)
+void arm_veneer_for_disable_arm9_interrupt_sources(uint param_1)
 
 {
   if ((int)(param_1 << 0x1f) < 0) {
@@ -55,7 +55,7 @@ void thunk_FUN_0208024c(uint param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void thunk_FUN_020801fc(uint param_1)
+void arm_veneer_for_enable_arm9_interrupt_sources(uint param_1)
 
 {
   if ((param_1 & 1) != 0) {
@@ -77,7 +77,7 @@ void thunk_FUN_020801fc(uint param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void thunk_FUN_02080098(uint param_1,undefined4 param_2)
+void arm_veneer_for_install_arm9_interrupt_handler(uint param_1,undefined4 param_2)
 
 {
   int iVar1;
@@ -111,7 +111,7 @@ void thunk_FUN_02080098(uint param_1,undefined4 param_2)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void thunk_FUN_02080100(void)
+void arm_veneer_for_initialize_arm9_interrupt_table(void)
 
 {
   undefined4 *puVar1;
@@ -134,7 +134,7 @@ void thunk_FUN_02080100(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void thunk_FUN_0208014c(uint param_1)
+void arm_veneer_for_remove_arm9_interrupt_handler(uint param_1)
 
 {
   uint *puVar1;
@@ -168,7 +168,7 @@ void thunk_FUN_0208014c(uint param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void thunk_FUN_0207fb90(void)
+void arm_veneer_for_sample_ds_keys_and_update_repeat_state(void)
 
 {
   ushort uVar1;
@@ -181,7 +181,7 @@ void thunk_FUN_0207fb90(void)
   DAT_020b4ca0 = uVar1;
   if (bVar2) {
     DAT_0208f392 = '<';
-    DAT_020b4ca4 = FUN_0207fb7c();
+    DAT_020b4ca4 = read_newly_pressed_ds_keys();
   }
   DAT_0208f392 = DAT_0208f392 + -1;
   if (DAT_0208f392 == '\0') {
@@ -194,7 +194,7 @@ void thunk_FUN_0207fb90(void)
 
 // 0x020858f8  arm_veneer_for_read_latched_ds_key_state
 
-undefined2 thunk_FUN_0207fb70(void)
+undefined2 arm_veneer_for_read_latched_ds_key_state(void)
 
 {
   return DAT_020b4ca0;
@@ -205,7 +205,7 @@ undefined2 thunk_FUN_0207fb70(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined2 * thunk_FUN_0207fc70(undefined2 *param_1)
+undefined2 * arm_veneer_for_read_shared_arm7_touch_sample(undefined2 *param_1)
 
 {
   undefined2 uVar1;
@@ -227,17 +227,17 @@ undefined2 * thunk_FUN_0207fc70(undefined2 *param_1)
 
 // 0x02085910  arm_veneer_for_mount_browser_fat_storage
 
-void thunk_FUN_02072cdc(void)
+void arm_veneer_for_mount_browser_fat_storage(void)
 
 {
-  FUN_02072cdc();
+  mount_browser_fat_storage();
   return;
 }
 
 
 // 0x02085940  thumb_veneer_for_register_named_device
 
-int thunk_FUN_02084e4c(undefined4 *param_1)
+int arm_thumb_veneer_for_register_named_device(undefined4 *param_1)
 
 {
   int iVar1;
@@ -253,14 +253,14 @@ int thunk_FUN_02084e4c(undefined4 *param_1)
   while( true ) {
     iVar4 = iVar1;
     uVar3 = *(undefined4 *)puVar6[3];
-    iVar1 = FUN_020837ec(uVar3,uVar5);
+    iVar1 = newlib_strcmp(uVar3,uVar5);
     puVar6 = puVar6 + 1;
     if (iVar1 == 0) {
-      iVar1 = FUN_02083a6c(uVar3);
-      iVar2 = FUN_02083a6c(uVar5);
+      iVar1 = newlib_strlen(uVar3);
+      iVar2 = newlib_strlen(uVar5);
       if (iVar1 == iVar2) break;
     }
-    iVar1 = FUN_020837ec(uVar3,"stdnull");
+    iVar1 = newlib_strcmp(uVar3,"stdnull");
     if (iVar1 == 0) break;
     iVar1 = iVar4 + 1;
     if (iVar4 + 1 == 0x10) {
@@ -274,7 +274,7 @@ int thunk_FUN_02084e4c(undefined4 *param_1)
 
 // 0x02085944  arm_entry_for_register_named_device
 
-int thunk_FUN_02084e4c(undefined4 *param_1)
+int arm_thumb_veneer_for_register_named_device(undefined4 *param_1)
 
 {
   int iVar1;
@@ -290,14 +290,14 @@ int thunk_FUN_02084e4c(undefined4 *param_1)
   while( true ) {
     iVar4 = iVar1;
     uVar3 = *(undefined4 *)puVar6[3];
-    iVar1 = FUN_020837ec(uVar3,uVar5);
+    iVar1 = newlib_strcmp(uVar3,uVar5);
     puVar6 = puVar6 + 1;
     if (iVar1 == 0) {
-      iVar1 = FUN_02083a6c(uVar3);
-      iVar2 = FUN_02083a6c(uVar5);
+      iVar1 = newlib_strlen(uVar3);
+      iVar2 = newlib_strlen(uVar5);
       if (iVar1 == iVar2) break;
     }
-    iVar1 = FUN_020837ec(uVar3,"stdnull");
+    iVar1 = newlib_strcmp(uVar3,"stdnull");
     if (iVar1 == 0) break;
     iVar1 = iVar4 + 1;
     if (iVar4 + 1 == 0x10) {
@@ -311,7 +311,7 @@ int thunk_FUN_02084e4c(undefined4 *param_1)
 
 // 0x02085948  thumb_veneer_for_change_working_directory_on_device
 
-undefined4 thunk_FUN_0208553c(int param_1)
+undefined4 arm_thumb_veneer_for_change_working_directory_on_device(int param_1)
 
 {
   uint uVar1;
@@ -319,30 +319,30 @@ undefined4 thunk_FUN_0208553c(int param_1)
   int iVar3;
   undefined1 auStack_410 [1024];
   
-  uVar1 = FUN_02083ed0(param_1,0x401);
+  uVar1 = bounded_string_length(param_1,0x401);
   if (uVar1 < 0x400) {
-    iVar2 = FUN_020836d4(param_1,0x3a);
+    iVar2 = newlib_strchr(param_1,0x3a);
     if (iVar2 == 0) {
-      FUN_02083dbc(auStack_410,&DAT_0208fc04,0x400);
+      newlib_strncpy(auStack_410,&DAT_0208fc04,0x400);
     }
     else {
-      FUN_02083dbc(auStack_410,param_1,0x400);
-      param_1 = FUN_020836d4(param_1,0x3a);
+      newlib_strncpy(auStack_410,param_1,0x400);
+      param_1 = newlib_strchr(param_1,0x3a);
       param_1 = param_1 + 1;
     }
-    iVar2 = FUN_020836d4(auStack_410,0x3a);
+    iVar2 = newlib_strchr(auStack_410,0x3a);
     if (*(char *)(iVar2 + 1) == '/') {
-      iVar2 = FUN_02085394(&DAT_0208f3a0,auStack_410,param_1,0x400);
+      iVar2 = normalize_device_directory_path(&DAT_0208f3a0,auStack_410,param_1,0x400);
       if (iVar2 != -1) {
-        iVar2 = FUN_02084ee0(auStack_410);
+        iVar2 = select_device_for_path_prefix(auStack_410);
         if ((iVar2 < 0) || (*(code **)((&DAT_0208fbc0)[iVar2] + 0x2c) == (code *)0x0)) {
           DAT_0208f3a0 = 0x13;
           return 0xffffffff;
         }
         iVar3 = (**(code **)((&DAT_0208fbc0)[iVar2] + 0x2c))(&DAT_0208f3a0,auStack_410);
         if (iVar3 != -1) {
-          FUN_02084e34(iVar2);
-          FUN_02083dbc(&DAT_0208fc04,auStack_410,0x400);
+          set_default_device_slot(iVar2);
+          newlib_strncpy(&DAT_0208fc04,auStack_410,0x400);
           return 0;
         }
       }
@@ -360,7 +360,7 @@ undefined4 thunk_FUN_0208553c(int param_1)
 
 // 0x0208594c  arm_entry_for_change_working_directory_on_device
 
-undefined4 thunk_FUN_0208553c(int param_1)
+undefined4 arm_thumb_veneer_for_change_working_directory_on_device(int param_1)
 
 {
   uint uVar1;
@@ -368,30 +368,30 @@ undefined4 thunk_FUN_0208553c(int param_1)
   int iVar3;
   undefined1 auStack_410 [1024];
   
-  uVar1 = FUN_02083ed0(param_1,0x401);
+  uVar1 = bounded_string_length(param_1,0x401);
   if (uVar1 < 0x400) {
-    iVar2 = FUN_020836d4(param_1,0x3a);
+    iVar2 = newlib_strchr(param_1,0x3a);
     if (iVar2 == 0) {
-      FUN_02083dbc(auStack_410,&DAT_0208fc04,0x400);
+      newlib_strncpy(auStack_410,&DAT_0208fc04,0x400);
     }
     else {
-      FUN_02083dbc(auStack_410,param_1,0x400);
-      param_1 = FUN_020836d4(param_1,0x3a);
+      newlib_strncpy(auStack_410,param_1,0x400);
+      param_1 = newlib_strchr(param_1,0x3a);
       param_1 = param_1 + 1;
     }
-    iVar2 = FUN_020836d4(auStack_410,0x3a);
+    iVar2 = newlib_strchr(auStack_410,0x3a);
     if (*(char *)(iVar2 + 1) == '/') {
-      iVar2 = FUN_02085394(&DAT_0208f3a0,auStack_410,param_1,0x400);
+      iVar2 = normalize_device_directory_path(&DAT_0208f3a0,auStack_410,param_1,0x400);
       if (iVar2 != -1) {
-        iVar2 = FUN_02084ee0(auStack_410);
+        iVar2 = select_device_for_path_prefix(auStack_410);
         if ((iVar2 < 0) || (*(code **)((&DAT_0208fbc0)[iVar2] + 0x2c) == (code *)0x0)) {
           DAT_0208f3a0 = 0x13;
           return 0xffffffff;
         }
         iVar3 = (**(code **)((&DAT_0208fbc0)[iVar2] + 0x2c))(&DAT_0208f3a0,auStack_410);
         if (iVar3 != -1) {
-          FUN_02084e34(iVar2);
-          FUN_02083dbc(&DAT_0208fc04,auStack_410,0x400);
+          set_default_device_slot(iVar2);
+          newlib_strncpy(&DAT_0208fc04,auStack_410,0x400);
           return 0;
         }
       }
@@ -409,40 +409,40 @@ undefined4 thunk_FUN_0208553c(int param_1)
 
 // 0x02085968  thumb_veneer_for_newlib_free_global_reent_wrapper
 
-void thunk_FUN_020826fc(undefined4 param_1)
+void arm_thumb_veneer_for_newlib_free_global_reent_wrapper(undefined4 param_1)
 
 {
-  FUN_020818d4(&DAT_0208f3a0,param_1);
+  newlib_free_r(&DAT_0208f3a0,param_1);
   return;
 }
 
 
 // 0x0208596c  arm_entry_for_newlib_free_global_reent_wrapper
 
-void thunk_FUN_020826fc(undefined4 param_1)
+void arm_thumb_veneer_for_newlib_free_global_reent_wrapper(undefined4 param_1)
 
 {
-  FUN_020818d4(&DAT_0208f3a0,param_1);
+  newlib_free_r(&DAT_0208f3a0,param_1);
   return;
 }
 
 
 // 0x02085978  thumb_veneer_for_newlib_malloc_global_reent_wrapper
 
-void thunk_FUN_02082724(undefined4 param_1)
+void arm_thumb_veneer_for_newlib_malloc_global_reent_wrapper(undefined4 param_1)
 
 {
-  FUN_0208274c(&DAT_0208f3a0,param_1);
+  newlib_malloc_r(&DAT_0208f3a0,param_1);
   return;
 }
 
 
 // 0x0208597c  arm_entry_for_newlib_malloc_global_reent_wrapper
 
-void thunk_FUN_02082724(undefined4 param_1)
+void arm_thumb_veneer_for_newlib_malloc_global_reent_wrapper(undefined4 param_1)
 
 {
-  FUN_0208274c(&DAT_0208f3a0,param_1);
+  newlib_malloc_r(&DAT_0208f3a0,param_1);
   return;
 }
 
@@ -452,7 +452,7 @@ void thunk_FUN_02082724(undefined4 param_1)
 /* WARNING: Removing unreachable block (ram,0x0207ce54) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 thunk_FUN_0207cdc0(ushort *param_1,ushort *param_2)
+undefined4 arm_thumb_veneer_for_scsd_write_sector_data_and_crc(ushort *param_1,ushort *param_2)
 
 {
   byte *pbVar1;
@@ -500,7 +500,7 @@ LAB_0207ce18:
 /* WARNING: Removing unreachable block (ram,0x0207ce54) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 thunk_FUN_0207cdc0(ushort *param_1,ushort *param_2)
+undefined4 arm_thumb_veneer_for_scsd_write_sector_data_and_crc(ushort *param_1,ushort *param_2)
 
 {
   byte *pbVar1;
@@ -545,7 +545,7 @@ LAB_0207ce18:
 
 // 0x020859b0  thumb_veneer_for_bounded_string_length
 
-int thunk_FUN_02083ed0(char *param_1,int param_2)
+int arm_thumb_veneer_for_bounded_string_length(char *param_1,int param_2)
 
 {
   char *pcVar1;
@@ -564,7 +564,7 @@ int thunk_FUN_02083ed0(char *param_1,int param_2)
 
 // 0x020859b4  arm_entry_for_bounded_string_length
 
-int thunk_FUN_02083ed0(char *param_1,int param_2)
+int arm_thumb_veneer_for_bounded_string_length(char *param_1,int param_2)
 
 {
   char *pcVar1;
@@ -583,7 +583,7 @@ int thunk_FUN_02083ed0(char *param_1,int param_2)
 
 // 0x020859d8  thumb_veneer_for_uppercase_string_in_place_using_ctype_table
 
-void thunk_FUN_02083fb8(byte *param_1)
+void arm_thumb_veneer_for_uppercase_string_in_place_using_ctype_table(byte *param_1)
 
 {
   byte bVar1;
@@ -602,7 +602,7 @@ void thunk_FUN_02083fb8(byte *param_1)
 
 // 0x020859dc  arm_entry_for_uppercase_string_in_place_using_ctype_table
 
-void thunk_FUN_02083fb8(byte *param_1)
+void arm_thumb_veneer_for_uppercase_string_in_place_using_ctype_table(byte *param_1)
 
 {
   byte bVar1;

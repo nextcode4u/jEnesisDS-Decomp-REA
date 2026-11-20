@@ -6,6 +6,8 @@ import re
 from pathlib import Path
 import sys
 
+from pseudocode_names import identifier_maps, read_names, replace_identifiers
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -25,7 +27,7 @@ def find_routines(query, processor):
                         matches.append((0, cpu, row))
                     continue
                 role = re.findall(r"[a-z0-9]+", row["role"].casefold())
-                if words == role or query == row["ghidra_symbol"].casefold():
+                if words == role or query in (row["ghidra_symbol"].casefold(), row["symbol"].casefold()):
                     matches.append((0, cpu, row))
                     continue
                 context = re.findall(r"[a-z0-9]+", f"{row['subsystem']} {row['module']}".casefold())
@@ -42,7 +44,10 @@ def main():
     parser.add_argument("--cpu", choices=("arm9", "arm7"))
     parser.add_argument("--limit", type=int, default=12, help="Maximum results to list (default 12)")
     parser.add_argument("--show", action="store_true", help="Print the pseudocode for a single match")
+    parser.add_argument("--raw", action="store_true", help="Restore the original REA identifiers in --show")
     args = parser.parse_args()
+    if args.raw and not args.show:
+        parser.error("--raw requires --show")
     query = " ".join(args.query).strip()
     if not re.search(r"[a-zA-Z0-9]", query) or args.limit < 1:
         parser.error("provide a routine query and a positive result limit")
@@ -59,7 +64,14 @@ def main():
         if args.show and len(matches) == 1:
             lines = (ROOT / path).read_bytes().splitlines(keepends=True)
             end = body_line - 1 + int(row["line_count"])
-            print(b"".join(lines[body_line - 1:end]).decode("utf-8"), end="")
+            body = b"".join(lines[body_line - 1:end])
+            if args.raw:
+                directory = ROOT / "decompiled" / cpu
+                with (directory / "functions.tsv").open(newline="", encoding="utf-8") as index:
+                    names, locals_by_address = read_names(directory, list(csv.DictReader(index, delimiter="\t")))
+                _, reverse = identifier_maps(names, locals_by_address[row["address"]])
+                body = replace_identifiers(body, reverse)
+            print(body.decode("utf-8"), end="")
     if len(matches) > args.limit:
         print(f"Showing {args.limit} of {len(matches)} results.")
     if args.show and len(matches) != 1:

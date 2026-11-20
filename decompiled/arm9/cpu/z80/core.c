@@ -4,7 +4,7 @@
 
 // 0x01002cd0  dispatch_z80_mapped_read_by_address_page
 
-void FUN_01002cd0(uint param_1)
+void dispatch_z80_mapped_read_by_address_page(uint param_1)
 
 {
   int in_stack_00000098;
@@ -18,7 +18,7 @@ void FUN_01002cd0(uint param_1)
 
 // 0x01002cec  dispatch_z80_mapped_read_from_r10
 
-void FUN_01002cec(void)
+void dispatch_z80_mapped_read_from_r10(void)
 
 {
   uint unaff_r10;
@@ -33,47 +33,47 @@ void FUN_01002cec(void)
 
 // 0x01002cfc  bridge_to_z80_mapped_word_read
 
-void FUN_01002cfc(void)
+void bridge_to_z80_mapped_word_read(void)
 
 {
-  FUN_02004d68();
+  read_z80_mapped_little_endian_word();
   return;
 }
 
 
 // 0x01002d10  route_z80_mapped_byte_write
 
-void FUN_01002d10(int param_1)
+void route_z80_mapped_byte_write(int param_1)
 
 {
   if (param_1 < 0x3000) {
-    FUN_02005ba0();
+    queue_ym2612_register_or_dac_write();
     return;
   }
-  FUN_02004c50();
+  write_z80_mapped_byte();
   return;
 }
 
 
 // 0x01002d2c  route_z80_mapped_byte_write_from_r10
 
-void FUN_01002d2c(void)
+void route_z80_mapped_byte_write_from_r10(void)
 
 {
   uint unaff_r10;
   
   if (unaff_r10 >> 0x10 < 0x3000) {
-    FUN_02005ba0();
+    queue_ym2612_register_or_dac_write();
     return;
   }
-  FUN_02004c50();
+  write_z80_mapped_byte();
   return;
 }
 
 
 // 0x02000588  run_remaining_z80_cycles
 
-void FUN_02000588(void)
+void run_remaining_z80_cycles(void)
 
 {
   uint uVar1;
@@ -85,7 +85,7 @@ void FUN_02000588(void)
     do {
       while (((uVar1 = uVar1 - 0x3fff, (DAT_023cb610 & 2) == 0 && (DAT_02099001 == '\x01')) &&
              (DAT_02099000 == '\0'))) {
-        FUN_0200df50(&DAT_0b000158,0x3fff);
+        run_z80_cycle_budget(&DAT_0b000158,0x3fff);
         if (uVar1 == uVar2) goto LAB_02000634;
       }
     } while (uVar1 != uVar2);
@@ -93,7 +93,7 @@ void FUN_02000588(void)
 LAB_02000634:
   if (((uVar1 != 0) && ((DAT_023cb610 & 2) == 0)) &&
      ((DAT_02099001 == '\x01' && (DAT_02099000 == '\0')))) {
-    FUN_0200df50(&DAT_0b000158,uVar1);
+    run_z80_cycle_budget(&DAT_0b000158,uVar1);
   }
   DAT_02098f98 = DAT_02098f90;
   DAT_02098f9c = DAT_02098f94;
@@ -104,7 +104,7 @@ LAB_02000634:
 
 // 0x020006b8  accrue_z80_cycles_for_scanline
 
-void FUN_020006b8(void)
+void accrue_z80_cycles_for_scanline(void)
 
 {
   uint uVar1;
@@ -125,7 +125,7 @@ void FUN_020006b8(void)
       do {
         while (((uVar1 = uVar1 - 0x3fff, (DAT_023cb610 & 2) == 0 && (DAT_02099001 == '\x01')) &&
                (DAT_02099000 == '\0'))) {
-          FUN_0200df50(&DAT_0b000158,0x3fff);
+          run_z80_cycle_budget(&DAT_0b000158,0x3fff);
           if (uVar1 == uVar2) goto LAB_02000794;
         }
       } while (uVar1 != uVar2);
@@ -133,7 +133,7 @@ void FUN_020006b8(void)
 LAB_02000794:
     if (((uVar1 != 0) && ((DAT_023cb610 & 2) == 0)) &&
        ((DAT_02099001 == '\x01' && (DAT_02099000 == '\0')))) {
-      FUN_0200df50(&DAT_0b000158,uVar1);
+      run_z80_cycle_budget(&DAT_0b000158,uVar1);
     }
     DAT_02098f98 = DAT_02098f90;
     DAT_02098f9c = DAT_02098f94;
@@ -150,7 +150,7 @@ LAB_02000794:
 /* WARNING: Removing unreachable block (ram,0x01001fc4) */
 /* WARNING: Removing unreachable block (ram,0x010017a4) */
 
-undefined8 FUN_0200df50(int param_1,int param_2)
+undefined8 run_z80_cycle_budget(int param_1,int param_2)
 
 {
   byte bVar1;
@@ -303,7 +303,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
     case 0x1000060:
       uVar20 = (uVar22 | uVar23 >> 8) >> 0x10;
       if (0x1fff < uVar20) {
-        uVar20 = FUN_01002d10();
+        uVar20 = route_z80_mapped_byte_write();
         bVar5 = extraout_r1;
       }
       pbVar16[uVar20] = bVar5;
@@ -440,7 +440,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
     case 0x10001a0:
       uVar18 = (uVar22 | uVar23 >> 8) >> 0x10;
       if (0x1fff < uVar18) {
-        uVar18 = FUN_01002cd0();
+        uVar18 = dispatch_z80_mapped_read_by_address_page();
       }
       puVar28 = (ushort *)(pbVar29 + 2);
       uVar20 = uVar21 - 0x70000;
@@ -583,7 +583,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
     case 0x1000310:
       uVar20 = (uVar24 | uVar25 >> 8) >> 0x10;
       if (0x1fff < uVar20) {
-        uVar20 = FUN_01002d10();
+        uVar20 = route_z80_mapped_byte_write();
         bVar5 = extraout_r1_00;
       }
       pbVar16[uVar20] = bVar5;
@@ -711,7 +711,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
     case 0x1000450:
       uVar18 = (uVar24 | uVar25 >> 8) >> 0x10;
       if (0x1fff < uVar18) {
-        uVar18 = FUN_01002cd0();
+        uVar18 = dispatch_z80_mapped_read_by_address_page();
       }
       puVar28 = (ushort *)(pbVar29 + 2);
       uVar20 = uVar21 - 0x70000;
@@ -964,7 +964,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
     case 0x10006f0:
       uVar26 = (uint)*puVar30;
       if (0x1fff < uVar26) {
-        uVar26 = FUN_01002cfc();
+        uVar26 = bridge_to_z80_mapped_word_read();
       }
       uVar26 = (uint)CONCAT11(pbVar16[uVar26 + 1],pbVar16[uVar26]) << 0x10;
       puVar28 = (ushort *)(pbVar29 + 4);
@@ -1084,7 +1084,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
     case 0x1000850:
       uVar20 = (uint)*puVar30;
       if (0x1fff < uVar20) {
-        uVar20 = FUN_01002d10();
+        uVar20 = route_z80_mapped_byte_write();
         bVar5 = extraout_r1_01;
       }
       pbVar16[uVar20] = bVar5;
@@ -1110,7 +1110,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       break;
     case 0x10008a0:
       if (0x1fffffff < uVar26) {
-        FUN_01002cec();
+        dispatch_z80_mapped_read_from_r10();
       }
       uVar21 = uVar21 & 0xffffff29;
       iVar13 = (uint)pbVar16[uVar26 >> 0x10] * 0x1000000 + 0x1000000;
@@ -1125,7 +1125,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       }
       bVar3 = (byte)((uint)iVar13 >> 0x18);
       if (0x1fffffff < uVar26) {
-        FUN_01002d2c();
+        route_z80_mapped_byte_write_from_r10();
         bVar3 = extraout_r1_02;
       }
       pbVar16[uVar26 >> 0x10] = bVar3;
@@ -1140,7 +1140,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       break;
     case 0x10008f0:
       if (0x1fffffff < uVar26) {
-        FUN_01002cec();
+        dispatch_z80_mapped_read_from_r10();
       }
       iVar13 = (uint)pbVar16[uVar26 >> 0x10] * 0x1000000 + -0x1000000;
       uVar4 = uVar21 & 0xffffff29 | 2;
@@ -1155,7 +1155,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       }
       bVar3 = (byte)((uint)iVar13 >> 0x18);
       if (0x1fffffff < uVar26) {
-        FUN_01002d2c();
+        route_z80_mapped_byte_write_from_r10();
         bVar3 = extraout_r1_03;
       }
       pbVar16[uVar26 >> 0x10] = bVar3;
@@ -1171,7 +1171,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
     case 0x1000940:
       bVar3 = (byte)*puVar30;
       if (0x1fffffff < uVar26) {
-        FUN_01002d2c();
+        route_z80_mapped_byte_write_from_r10();
         bVar3 = extraout_r1_04;
       }
       pbVar16[uVar26 >> 0x10] = bVar3;
@@ -1232,7 +1232,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
     case 0x10009d0:
       uVar18 = (uint)*puVar30;
       if (0x1fff < uVar18) {
-        uVar18 = FUN_01002cd0();
+        uVar18 = dispatch_z80_mapped_read_by_address_page();
       }
       puVar28 = (ushort *)(pbVar29 + 4);
       uVar20 = uVar21 - 0xd0000;
@@ -1393,7 +1393,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       break;
     case 0x1000b80:
       if (0x1fffffff < uVar26) {
-        FUN_01002cec();
+        dispatch_z80_mapped_read_from_r10();
       }
       puVar28 = (ushort *)(pbVar29 + 2);
       uVar20 = uVar21 - 0x70000;
@@ -1483,7 +1483,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       break;
     case 0x1000c70:
       if (0x1fffffff < uVar26) {
-        FUN_01002cec();
+        dispatch_z80_mapped_read_from_r10();
       }
       puVar28 = (ushort *)(pbVar29 + 2);
       uVar20 = uVar21 - 0x70000;
@@ -1573,7 +1573,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       break;
     case 0x1000d60:
       if (0x1fffffff < uVar26) {
-        FUN_01002cec();
+        dispatch_z80_mapped_read_from_r10();
       }
       puVar28 = (ushort *)(pbVar29 + 2);
       uVar20 = uVar21 - 0x70000;
@@ -1663,7 +1663,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       break;
     case 0x1000e50:
       if (0x1fffffff < uVar26) {
-        FUN_01002cec();
+        dispatch_z80_mapped_read_from_r10();
       }
       puVar28 = (ushort *)(pbVar29 + 2);
       uVar20 = uVar21 - 0x70000;
@@ -1753,7 +1753,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       break;
     case 0x1000f40:
       if (0x1fffffff < uVar26) {
-        FUN_01002cec();
+        dispatch_z80_mapped_read_from_r10();
       }
       uVar26 = uVar26 & 0xff0000 | (uint)pbVar16[uVar26 >> 0x10] << 0x18;
       puVar28 = (ushort *)(pbVar29 + 2);
@@ -1843,7 +1843,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       break;
     case 0x1001040:
       if (0x1fffffff < uVar26) {
-        FUN_01002cec();
+        dispatch_z80_mapped_read_from_r10();
       }
       uVar26 = uVar26 & 0xff000000 | (uint)pbVar16[uVar26 >> 0x10] << 0x10;
       puVar28 = (ushort *)(pbVar29 + 2);
@@ -1868,7 +1868,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       break;
     case 0x1001090:
       if (0x1fffffff < uVar26) {
-        FUN_01002d2c();
+        route_z80_mapped_byte_write_from_r10();
         bVar6 = extraout_r1_05;
       }
       pbVar16[uVar26 >> 0x10] = bVar6;
@@ -1883,7 +1883,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       break;
     case 0x10010b0:
       if (0x1fffffff < uVar26) {
-        FUN_01002d2c();
+        route_z80_mapped_byte_write_from_r10();
         bVar7 = extraout_r1_06;
       }
       pbVar16[uVar26 >> 0x10] = bVar7;
@@ -1898,7 +1898,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       break;
     case 0x10010d0:
       if (0x1fffffff < uVar26) {
-        FUN_01002d2c();
+        route_z80_mapped_byte_write_from_r10();
         bVar8 = extraout_r1_07;
       }
       pbVar16[uVar26 >> 0x10] = bVar8;
@@ -1913,7 +1913,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       break;
     case 0x10010f0:
       if (0x1fffffff < uVar26) {
-        FUN_01002d2c();
+        route_z80_mapped_byte_write_from_r10();
         bVar9 = extraout_r1_08;
       }
       pbVar16[uVar26 >> 0x10] = bVar9;
@@ -1928,7 +1928,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       break;
     case 0x1001110:
       if (0x1fffffff < uVar26) {
-        FUN_01002d2c();
+        route_z80_mapped_byte_write_from_r10();
         bVar10 = extraout_r1_09;
       }
       pbVar16[uVar26 >> 0x10] = bVar10;
@@ -1943,7 +1943,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       break;
     case 0x1001130:
       if (0x1fffffff < uVar26) {
-        FUN_01002d2c();
+        route_z80_mapped_byte_write_from_r10();
         bVar3 = extraout_r1_10;
       }
       pbVar16[uVar26 >> 0x10] = bVar3;
@@ -1968,7 +1968,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       break;
     case 0x1001180:
       if (0x1fffffff < uVar26) {
-        FUN_01002d2c();
+        route_z80_mapped_byte_write_from_r10();
         bVar5 = extraout_r1_11;
       }
       pbVar16[uVar26 >> 0x10] = bVar5;
@@ -2049,7 +2049,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       break;
     case 0x1001260:
       if (0x1fffffff < uVar26) {
-        FUN_01002cec();
+        dispatch_z80_mapped_read_from_r10();
       }
       uVar20 = uVar21 - 0x70000;
                     /* WARNING: Could not recover jumptable at 0x01001278. Too many branches */
@@ -2225,7 +2225,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       break;
     case 0x10013b0:
       if (0x1fffffff < uVar26) {
-        FUN_01002cec();
+        dispatch_z80_mapped_read_from_r10();
       }
       uVar21 = uVar21 & 0xffffff28;
       uVar20 = (uint)pbVar16[uVar26 >> 0x10] * 0x1000000;
@@ -2492,7 +2492,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
     case 0x10015a0:
       uVar34 = SBORROW4(uVar26,0x20000000);
       if (0x1fffffff < uVar26) {
-        FUN_01002cec();
+        dispatch_z80_mapped_read_from_r10();
       }
       uVar4 = uVar21 & 0xffffff28;
       uVar20 = uVar18;
@@ -2718,7 +2718,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       break;
     case 0x1001750:
       if (0x1fffffff < uVar26) {
-        FUN_01002cec();
+        dispatch_z80_mapped_read_from_r10();
       }
       uVar17 = uVar21 & 0xffffff28 | 2;
       uVar20 = (uint)pbVar16[uVar26 >> 0x10] * 0x1000000;
@@ -2955,7 +2955,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       break;
     case 0x1001940:
       if (0x1fffffff < uVar26) {
-        FUN_01002cec();
+        dispatch_z80_mapped_read_from_r10();
       }
       uVar17 = uVar21 & 0xffffff28 | 2;
       uVar20 = (uVar21 & 1) * 0x1000000;
@@ -3096,7 +3096,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       break;
     case 0x1001af0:
       if (0x1fffffff < uVar26) {
-        FUN_01002cec();
+        dispatch_z80_mapped_read_from_r10();
       }
       uVar18 = uVar18 & (uint)pbVar16[uVar26 >> 0x10] << 0x18;
       uVar21 = uVar21 & 0xffffff28 | (uint)DAT_01001e44[uVar18 >> 0x18];
@@ -3194,7 +3194,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       break;
     case 0x1001c70:
       if (0x1fffffff < uVar26) {
-        FUN_01002cec();
+        dispatch_z80_mapped_read_from_r10();
       }
       uVar18 = uVar18 ^ (uint)pbVar16[uVar26 >> 0x10] << 0x18;
       uVar21 = uVar21 & 0xffffff28 | (uint)DAT_01001e44[uVar18 >> 0x18];
@@ -3293,7 +3293,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       break;
     case 0x1001df0:
       if (0x1fffffff < uVar26) {
-        FUN_01002cec();
+        dispatch_z80_mapped_read_from_r10();
       }
       uVar18 = uVar18 | (uint)pbVar16[uVar26 >> 0x10] << 0x18;
       uVar21 = uVar21 & 0xffffff28 | (uint)DAT_01001e44[uVar18 >> 0x18];
@@ -3459,7 +3459,7 @@ undefined8 FUN_0200df50(int param_1,int param_2)
       break;
     case 0x1001f70:
       if (0x1fffffff < uVar26) {
-        FUN_01002cec();
+        dispatch_z80_mapped_read_from_r10();
       }
       uVar20 = (uint)pbVar16[uVar26 >> 0x10] * 0x1000000;
       uVar4 = uVar21 & 0xffffff28 | 2;
@@ -4530,7 +4530,7 @@ LAB_01002c00:
 
 // 0x02011c48  dispatch_indexed_cb_with_displacement
 
-void z80_dispatch_02011c48(int param_1,undefined4 param_2,int param_3)
+void dispatch_indexed_cb_with_displacement(int param_1,undefined4 param_2,int param_3)
 
 {
   char *unaff_r11;
@@ -4545,7 +4545,7 @@ void z80_dispatch_02011c48(int param_1,undefined4 param_2,int param_3)
 
 // 0x02011d28  resume_base_decode_after_unused_index_prefix
 
-undefined8 z80_dispatch_02011d28(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 resume_base_decode_after_unused_index_prefix(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;

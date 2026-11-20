@@ -5,6 +5,8 @@ import hashlib
 from collections import defaultdict
 from pathlib import Path
 
+from pseudocode_names import identifier_maps, read_names, replace_identifiers
+
 
 def check_processor(directory):
     with (directory / "functions.tsv").open(newline="", encoding="utf-8") as index:
@@ -13,6 +15,8 @@ def check_processor(directory):
     if not addresses or addresses != sorted(set(addresses)):
         raise ValueError(f"{directory.name}: expected unique, ascending addresses")
 
+    names, locals_by_address = read_names(directory, rows)
+    default_maps = identifier_maps(names, {})
     modules = defaultdict(list)
     for row in rows:
         modules[row["module"]].append(row)
@@ -33,8 +37,13 @@ def check_processor(directory):
             if not start < end <= len(lines):
                 raise ValueError(f"{location}: invalid body length")
             body = b"".join(lines[start:end])
-            if hashlib.sha256(body).hexdigest() != row["body_sha256"]:
-                raise ValueError(f"{location}: pseudocode differs from the recorded checksum")
+            local_names = locals_by_address[row["address"]]
+            forward, reverse = identifier_maps(names, local_names) if local_names else default_maps
+            original = replace_identifiers(body, reverse)
+            if hashlib.sha256(original).hexdigest() != row["body_sha256"]:
+                raise ValueError(f"{location}: restored pseudocode differs from the REA body checksum")
+            if replace_identifiers(original, forward) != body:
+                raise ValueError(f"{location}: pseudocode does not apply the documented names")
             cursor = end
         if cursor != len(lines):
             raise ValueError(f"{directory.name}/{module}: unindexed content")

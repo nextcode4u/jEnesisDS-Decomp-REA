@@ -4,7 +4,7 @@
 
 // 0x0202358c  m68k_neg_byte
 
-void m68k_dispatch_0202358c(void)
+void m68k_neg_byte_0202358c(void)
 
 {
   int unaff_r6;
@@ -22,7 +22,7 @@ void m68k_dispatch_0202358c(void)
 
 // 0x020235c4  m68k_neg_word
 
-void m68k_dispatch_020235c4(void)
+void m68k_neg_word_020235c4(void)
 
 {
   int iVar1;
@@ -42,7 +42,7 @@ void m68k_dispatch_020235c4(void)
 
 // 0x02023600  m68k_neg_long
 
-void m68k_dispatch_02023600(void)
+void m68k_neg_long_02023600(void)
 
 {
   int unaff_r6;
@@ -60,7 +60,7 @@ void m68k_dispatch_02023600(void)
 
 // 0x02023630  m68k_neg_byte
 
-void m68k_dispatch_02023630(void)
+void m68k_neg_byte_02023630(void)
 
 {
   char *pcVar1;
@@ -81,7 +81,7 @@ void m68k_dispatch_02023630(void)
 
 // 0x0202367c  m68k_neg_word
 
-void m68k_dispatch_0202367c(void)
+void m68k_neg_word_0202367c(void)
 
 {
   short *psVar1;
@@ -102,7 +102,7 @@ void m68k_dispatch_0202367c(void)
 
 // 0x020236c4  m68k_neg_long
 
-void m68k_dispatch_020236c4(void)
+void m68k_neg_long_020236c4(void)
 
 {
   undefined2 uVar1;
@@ -126,7 +126,7 @@ void m68k_dispatch_020236c4(void)
 
 // 0x02023714  m68k_neg_byte
 
-void m68k_dispatch_02023714(void)
+void m68k_neg_byte_02023714(void)
 
 {
   uint uVar1;
@@ -159,7 +159,7 @@ void m68k_dispatch_02023714(void)
 
 // 0x02023774  m68k_neg_word
 
-void m68k_dispatch_02023774(void)
+void m68k_neg_word_02023774(void)
 
 {
   uint uVar1;
@@ -185,7 +185,7 @@ void m68k_dispatch_02023774(void)
 
 // 0x020237c8  m68k_neg_long
 
-void m68k_dispatch_020237c8(void)
+void m68k_neg_long_020237c8(void)
 
 {
   undefined2 uVar1;
@@ -214,7 +214,7 @@ void m68k_dispatch_020237c8(void)
 
 // 0x02023824  m68k_neg_byte
 
-void m68k_dispatch_02023824(void)
+void m68k_neg_byte_02023824(void)
 
 {
   uint uVar1;
@@ -246,7 +246,7 @@ void m68k_dispatch_02023824(void)
 
 // 0x02023884  m68k_neg_word
 
-void m68k_dispatch_02023884(void)
+void m68k_neg_word_02023884(void)
 
 {
   uint uVar1;
@@ -272,7 +272,7 @@ void m68k_dispatch_02023884(void)
 
 // 0x020238d8  m68k_neg_long
 
-void m68k_dispatch_020238d8(void)
+void m68k_neg_long_020238d8(void)
 
 {
   undefined2 uVar1;
@@ -301,7 +301,7 @@ void m68k_dispatch_020238d8(void)
 
 // 0x02023934  m68k_neg_byte
 
-void m68k_dispatch_02023934(void)
+void m68k_neg_byte_02023934(void)
 
 {
   char *pcVar1;
@@ -324,7 +324,7 @@ void m68k_dispatch_02023934(void)
 
 // 0x02023988  m68k_neg_word
 
-void m68k_dispatch_02023988(void)
+void m68k_neg_word_02023988(void)
 
 {
   short *psVar1;
@@ -346,7 +346,7 @@ void m68k_dispatch_02023988(void)
 
 // 0x020239d8  m68k_neg_long
 
-void m68k_dispatch_020239d8(void)
+void m68k_neg_long_020239d8(void)
 
 {
   undefined2 uVar1;
@@ -372,7 +372,7 @@ void m68k_dispatch_020239d8(void)
 
 // 0x02023a30  m68k_neg_byte
 
-void m68k_dispatch_02023a30(void)
+void m68k_neg_byte_02023a30(void)
 
 {
   uint uVar1;
@@ -410,7 +410,7 @@ void m68k_dispatch_02023a30(void)
 
 // 0x02023aa8  m68k_neg_word
 
-void m68k_dispatch_02023aa8(void)
+void m68k_neg_word_02023aa8(void)
 
 {
   uint uVar1;
@@ -448,7 +448,7 @@ void m68k_dispatch_02023aa8(void)
 
 // 0x02023b1c  m68k_neg_long
 
-void m68k_dispatch_02023b1c(void)
+void m68k_neg_long_02023b1c(void)
 
 {
   uint uVar1;
@@ -489,7 +489,7 @@ void m68k_dispatch_02023b1c(void)
 
 // 0x02023b98  m68k_neg_byte
 
-void m68k_dispatch_02023b98(void)
+void m68k_neg_byte_02023b98(void)
 
 {
   char *pcVar1;
@@ -508,7 +508,7 @@ void m68k_dispatch_02023b98(void)
 
 // 0x02023bd8  m68k_neg_word
 
-void m68k_dispatch_02023bd8(void)
+void m68k_neg_word_02023bd8(void)
 
 {
   int unaff_r8;
@@ -525,7 +525,7 @@ void m68k_dispatch_02023bd8(void)
 
 // 0x02023c14  m68k_neg_long
 
-void m68k_dispatch_02023c14(void)
+void m68k_neg_long_02023c14(void)
 
 {
   undefined2 uVar1;
@@ -547,7 +547,7 @@ void m68k_dispatch_02023c14(void)
 
 // 0x02023c58  m68k_neg_byte
 
-void m68k_dispatch_02023c58(void)
+void m68k_neg_byte_02023c58(void)
 
 {
   char *pcVar1;
@@ -566,7 +566,7 @@ void m68k_dispatch_02023c58(void)
 
 // 0x02023c9c  m68k_neg_word
 
-void m68k_dispatch_02023c9c(void)
+void m68k_neg_word_02023c9c(void)
 
 {
   short *psVar1;
@@ -585,7 +585,7 @@ void m68k_dispatch_02023c9c(void)
 
 // 0x02023cdc  m68k_neg_long
 
-void m68k_dispatch_02023cdc(void)
+void m68k_neg_long_02023cdc(void)
 
 {
   undefined2 uVar1;
@@ -607,7 +607,7 @@ void m68k_dispatch_02023cdc(void)
 
 // 0x02023d24  m68k_negx_byte
 
-void m68k_dispatch_02023d24(void)
+void m68k_negx_byte_02023d24(void)
 
 {
   int iVar1;
@@ -631,7 +631,7 @@ void m68k_dispatch_02023d24(void)
 
 // 0x02023d64  m68k_negx_word
 
-void m68k_dispatch_02023d64(void)
+void m68k_negx_word_02023d64(void)
 
 {
   int iVar1;
@@ -657,7 +657,7 @@ void m68k_dispatch_02023d64(void)
 
 // 0x02023da8  m68k_negx_long
 
-void m68k_dispatch_02023da8(void)
+void m68k_negx_long_02023da8(void)
 
 {
   int iVar1;
@@ -681,7 +681,7 @@ void m68k_dispatch_02023da8(void)
 
 // 0x02023de8  m68k_negx_byte
 
-void m68k_dispatch_02023de8(void)
+void m68k_negx_byte_02023de8(void)
 
 {
   int iVar1;
@@ -708,7 +708,7 @@ void m68k_dispatch_02023de8(void)
 
 // 0x02023e3c  m68k_negx_word
 
-void m68k_dispatch_02023e3c(void)
+void m68k_negx_word_02023e3c(void)
 
 {
   int iVar1;
@@ -735,7 +735,7 @@ void m68k_dispatch_02023e3c(void)
 
 // 0x02023e8c  m68k_negx_long
 
-void m68k_dispatch_02023e8c(void)
+void m68k_negx_long_02023e8c(void)
 
 {
   int iVar1;
@@ -763,7 +763,7 @@ void m68k_dispatch_02023e8c(void)
 
 // 0x02023eec  m68k_negx_byte
 
-void m68k_dispatch_02023eec(void)
+void m68k_negx_byte_02023eec(void)
 
 {
   uint uVar1;
@@ -802,7 +802,7 @@ void m68k_dispatch_02023eec(void)
 
 // 0x02023f54  m68k_negx_word
 
-void m68k_dispatch_02023f54(void)
+void m68k_negx_word_02023f54(void)
 
 {
   uint uVar1;
@@ -834,7 +834,7 @@ void m68k_dispatch_02023f54(void)
 
 // 0x02023fb0  m68k_negx_long
 
-void m68k_dispatch_02023fb0(void)
+void m68k_negx_long_02023fb0(void)
 
 {
   uint uVar1;
@@ -867,7 +867,7 @@ void m68k_dispatch_02023fb0(void)
 
 // 0x0202401c  m68k_negx_byte
 
-void m68k_dispatch_0202401c(void)
+void m68k_negx_byte_0202401c(void)
 
 {
   uint uVar1;
@@ -905,7 +905,7 @@ void m68k_dispatch_0202401c(void)
 
 // 0x02024084  m68k_negx_word
 
-void m68k_dispatch_02024084(void)
+void m68k_negx_word_02024084(void)
 
 {
   uint uVar1;
@@ -937,7 +937,7 @@ void m68k_dispatch_02024084(void)
 
 // 0x020240e0  m68k_negx_long
 
-void m68k_dispatch_020240e0(void)
+void m68k_negx_long_020240e0(void)
 
 {
   uint uVar1;
@@ -970,7 +970,7 @@ void m68k_dispatch_020240e0(void)
 
 // 0x0202414c  m68k_negx_byte
 
-void m68k_dispatch_0202414c(void)
+void m68k_negx_byte_0202414c(void)
 
 {
   int iVar1;
@@ -999,7 +999,7 @@ void m68k_dispatch_0202414c(void)
 
 // 0x020241a8  m68k_negx_word
 
-void m68k_dispatch_020241a8(void)
+void m68k_negx_word_020241a8(void)
 
 {
   int iVar1;
@@ -1028,7 +1028,7 @@ void m68k_dispatch_020241a8(void)
 
 // 0x02024200  m68k_negx_long
 
-void m68k_dispatch_02024200(void)
+void m68k_negx_long_02024200(void)
 
 {
   int iVar1;
@@ -1058,7 +1058,7 @@ void m68k_dispatch_02024200(void)
 
 // 0x02024268  m68k_negx_byte
 
-void m68k_dispatch_02024268(void)
+void m68k_negx_byte_02024268(void)
 
 {
   uint uVar1;
@@ -1101,7 +1101,7 @@ void m68k_dispatch_02024268(void)
 
 // 0x020242e8  m68k_negx_word
 
-void m68k_dispatch_020242e8(void)
+void m68k_negx_word_020242e8(void)
 
 {
   uint uVar1;
@@ -1144,7 +1144,7 @@ void m68k_dispatch_020242e8(void)
 
 // 0x02024364  m68k_negx_long
 
-void m68k_dispatch_02024364(void)
+void m68k_negx_long_02024364(void)
 
 {
   uint uVar1;
@@ -1188,7 +1188,7 @@ void m68k_dispatch_02024364(void)
 
 // 0x020243f0  m68k_negx_byte
 
-void m68k_dispatch_020243f0(void)
+void m68k_negx_byte_020243f0(void)
 
 {
   int iVar1;
@@ -1213,7 +1213,7 @@ void m68k_dispatch_020243f0(void)
 
 // 0x02024438  m68k_negx_word
 
-void m68k_dispatch_02024438(void)
+void m68k_negx_word_02024438(void)
 
 {
   int iVar1;
@@ -1236,7 +1236,7 @@ void m68k_dispatch_02024438(void)
 
 // 0x0202447c  m68k_negx_long
 
-void m68k_dispatch_0202447c(void)
+void m68k_negx_long_0202447c(void)
 
 {
   int iVar1;
@@ -1262,7 +1262,7 @@ void m68k_dispatch_0202447c(void)
 
 // 0x020244d0  m68k_negx_byte
 
-void m68k_dispatch_020244d0(void)
+void m68k_negx_byte_020244d0(void)
 
 {
   int iVar1;
@@ -1287,7 +1287,7 @@ void m68k_dispatch_020244d0(void)
 
 // 0x0202451c  m68k_negx_word
 
-void m68k_dispatch_0202451c(void)
+void m68k_negx_word_0202451c(void)
 
 {
   int iVar1;
@@ -1312,7 +1312,7 @@ void m68k_dispatch_0202451c(void)
 
 // 0x02024564  m68k_negx_long
 
-void m68k_dispatch_02024564(void)
+void m68k_negx_long_02024564(void)
 
 {
   int iVar1;

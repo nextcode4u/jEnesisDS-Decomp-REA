@@ -4,7 +4,7 @@
 
 // 0x01000060  z80_store_a_via_bc
 
-undefined8 z80_dispatch_01000060(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_store_a_via_bc(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   uint uVar1;
@@ -38,7 +38,7 @@ undefined8 z80_dispatch_01000060(undefined4 param_1,undefined4 param_2,int param
   uVar1 = (unaff_r6 | unaff_r7 >> 8) >> 0x10;
   uVar2 = (undefined1)((uint)unaff_r4 >> 0x18);
   if (0x1fff < uVar1) {
-    uVar1 = FUN_01002d10();
+    uVar1 = route_z80_mapped_byte_write();
     uVar2 = extraout_r1;
   }
   iVar5 = in_stack_00000028;
@@ -177,7 +177,7 @@ undefined8 z80_dispatch_01000060(undefined4 param_1,undefined4 param_2,int param
 
 // 0x010001a0  z80_load_a_via_bc
 
-undefined8 z80_dispatch_010001a0(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_load_a_via_bc(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -205,7 +205,7 @@ undefined8 z80_dispatch_010001a0(undefined4 param_1,undefined4 param_2,int param
   int in_stack_000000a4;
   
   if (0x1fff < (unaff_r6 | unaff_r7 >> 8) >> 0x10) {
-    FUN_01002cd0();
+    dispatch_z80_mapped_read_by_address_page();
   }
   iVar3 = in_stack_00000028;
   iVar2 = unaff_r5 + -0x70000;
@@ -342,7 +342,7 @@ undefined8 z80_dispatch_010001a0(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01000310  z80_store_a_via_de
 
-undefined8 z80_dispatch_01000310(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_store_a_via_de(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   uint uVar1;
@@ -376,7 +376,7 @@ undefined8 z80_dispatch_01000310(undefined4 param_1,undefined4 param_2,int param
   uVar2 = (undefined1)((uint)unaff_r4 >> 0x18);
   uVar1 = (unaff_r8 | unaff_r9 >> 8) >> 0x10;
   if (0x1fff < uVar1) {
-    uVar1 = FUN_01002d10();
+    uVar1 = route_z80_mapped_byte_write();
     uVar2 = extraout_r1;
   }
   iVar5 = in_stack_00000028;
@@ -515,7 +515,7 @@ undefined8 z80_dispatch_01000310(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01000450  z80_load_a_via_de
 
-undefined8 z80_dispatch_01000450(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_load_a_via_de(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -543,7 +543,7 @@ undefined8 z80_dispatch_01000450(undefined4 param_1,undefined4 param_2,int param
   int in_stack_000000a4;
   
   if (0x1fff < (unaff_r8 | unaff_r9 >> 8) >> 0x10) {
-    FUN_01002cd0();
+    dispatch_z80_mapped_read_by_address_page();
   }
   iVar3 = in_stack_00000028;
   iVar2 = unaff_r5 + -0x70000;
@@ -680,7 +680,7 @@ undefined8 z80_dispatch_01000450(undefined4 param_1,undefined4 param_2,int param
 
 // 0x010005a0  z80_store_hl_absolute
 
-undefined8 z80_dispatch_010005a0(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_store_hl_absolute(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   ushort uVar1;
@@ -847,7 +847,7 @@ undefined8 z80_dispatch_010005a0(undefined4 param_1,undefined4 param_2,int param
 
 // 0x010006f0  z80_load_hl_absolute
 
-undefined8 z80_dispatch_010006f0(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_load_hl_absolute(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -874,7 +874,7 @@ undefined8 z80_dispatch_010006f0(undefined4 param_1,undefined4 param_2,int param
   int in_stack_000000a4;
   
   if (0x1fff < *unaff_r11) {
-    FUN_01002cfc();
+    bridge_to_z80_mapped_word_read();
   }
   iVar4 = in_stack_00000028;
   iVar2 = unaff_r5 + -0x100000;
@@ -1012,7 +1012,7 @@ undefined8 z80_dispatch_010006f0(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01000850  z80_store_a_absolute
 
-undefined8 z80_dispatch_01000850(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_store_a_absolute(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   uint uVar1;
@@ -1045,7 +1045,7 @@ undefined8 z80_dispatch_01000850(undefined4 param_1,undefined4 param_2,int param
   uVar1 = (uint)*unaff_r11;
   uVar2 = (undefined1)((uint)unaff_r4 >> 0x18);
   if (0x1fff < uVar1) {
-    uVar1 = FUN_01002d10();
+    uVar1 = route_z80_mapped_byte_write();
     uVar2 = extraout_r1;
   }
   iVar6 = in_stack_00000028;
@@ -1185,7 +1185,7 @@ undefined8 z80_dispatch_01000850(undefined4 param_1,undefined4 param_2,int param
 
 // 0x010009d0  z80_load_a_absolute
 
-undefined8 z80_dispatch_010009d0(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_load_a_absolute(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1212,7 +1212,7 @@ undefined8 z80_dispatch_010009d0(undefined4 param_1,undefined4 param_2,int param
   int in_stack_000000a4;
   
   if (0x1fff < *unaff_r11) {
-    FUN_01002cd0();
+    dispatch_z80_mapped_read_by_address_page();
   }
   iVar4 = in_stack_00000028;
   iVar2 = unaff_r5 + -0xd0000;
@@ -1350,7 +1350,7 @@ undefined8 z80_dispatch_010009d0(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01000b80  z80_ld_b_from_via_hl
 
-undefined8 z80_dispatch_01000b80(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ld_b_from_via_hl(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1377,7 +1377,7 @@ undefined8 z80_dispatch_01000b80(undefined4 param_1,undefined4 param_2,int param
   int in_stack_000000a4;
   
   if (0x1fffffff < unaff_r10) {
-    FUN_01002cec();
+    dispatch_z80_mapped_read_from_r10();
   }
   iVar3 = in_stack_00000028;
   iVar2 = unaff_r5 + -0x70000;
@@ -1514,7 +1514,7 @@ undefined8 z80_dispatch_01000b80(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01000c70  z80_ld_c_from_via_hl
 
-undefined8 z80_dispatch_01000c70(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ld_c_from_via_hl(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1541,7 +1541,7 @@ undefined8 z80_dispatch_01000c70(undefined4 param_1,undefined4 param_2,int param
   int in_stack_000000a4;
   
   if (0x1fffffff < unaff_r10) {
-    FUN_01002cec();
+    dispatch_z80_mapped_read_from_r10();
   }
   iVar3 = in_stack_00000028;
   iVar2 = unaff_r5 + -0x70000;
@@ -1678,7 +1678,7 @@ undefined8 z80_dispatch_01000c70(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01000d60  z80_ld_d_from_via_hl
 
-undefined8 z80_dispatch_01000d60(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ld_d_from_via_hl(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1705,7 +1705,7 @@ undefined8 z80_dispatch_01000d60(undefined4 param_1,undefined4 param_2,int param
   int in_stack_000000a4;
   
   if (0x1fffffff < unaff_r10) {
-    FUN_01002cec();
+    dispatch_z80_mapped_read_from_r10();
   }
   iVar3 = in_stack_00000028;
   iVar2 = unaff_r5 + -0x70000;
@@ -1842,7 +1842,7 @@ undefined8 z80_dispatch_01000d60(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01000e50  z80_ld_e_from_via_hl
 
-undefined8 z80_dispatch_01000e50(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ld_e_from_via_hl(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1869,7 +1869,7 @@ undefined8 z80_dispatch_01000e50(undefined4 param_1,undefined4 param_2,int param
   int in_stack_000000a4;
   
   if (0x1fffffff < unaff_r10) {
-    FUN_01002cec();
+    dispatch_z80_mapped_read_from_r10();
   }
   iVar3 = in_stack_00000028;
   iVar2 = unaff_r5 + -0x70000;
@@ -2006,7 +2006,7 @@ undefined8 z80_dispatch_01000e50(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01000f40  z80_ld_h_from_via_hl
 
-undefined8 z80_dispatch_01000f40(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ld_h_from_via_hl(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -2033,7 +2033,7 @@ undefined8 z80_dispatch_01000f40(undefined4 param_1,undefined4 param_2,int param
   int in_stack_000000a4;
   
   if (0x1fffffff < unaff_r10) {
-    FUN_01002cec();
+    dispatch_z80_mapped_read_from_r10();
   }
   iVar3 = in_stack_00000028;
   iVar2 = unaff_r5 + -0x70000;
@@ -2170,7 +2170,7 @@ undefined8 z80_dispatch_01000f40(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01001040  z80_ld_l_from_via_hl
 
-undefined8 z80_dispatch_01001040(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ld_l_from_via_hl(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -2197,7 +2197,7 @@ undefined8 z80_dispatch_01001040(undefined4 param_1,undefined4 param_2,int param
   int in_stack_000000a4;
   
   if (0x1fffffff < unaff_r10) {
-    FUN_01002cec();
+    dispatch_z80_mapped_read_from_r10();
   }
   iVar3 = in_stack_00000028;
   iVar2 = unaff_r5 + -0x70000;
@@ -2334,7 +2334,7 @@ undefined8 z80_dispatch_01001040(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01001090  z80_ld_via_hl_from_b
 
-undefined8 z80_dispatch_01001090(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ld_via_hl_from_b(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   undefined1 extraout_r1;
@@ -2365,7 +2365,7 @@ undefined8 z80_dispatch_01001090(undefined4 param_1,undefined4 param_2,int param
   
   uVar1 = (undefined1)((uint)unaff_r6 >> 0x18);
   if (0x1fffffff < unaff_r10) {
-    FUN_01002d2c();
+    route_z80_mapped_byte_write_from_r10();
     uVar1 = extraout_r1;
   }
   iVar4 = in_stack_00000028;
@@ -2504,7 +2504,7 @@ undefined8 z80_dispatch_01001090(undefined4 param_1,undefined4 param_2,int param
 
 // 0x010010b0  z80_ld_via_hl_from_c
 
-undefined8 z80_dispatch_010010b0(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ld_via_hl_from_c(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   undefined1 extraout_r1;
@@ -2535,7 +2535,7 @@ undefined8 z80_dispatch_010010b0(undefined4 param_1,undefined4 param_2,int param
   
   uVar1 = (undefined1)((uint)unaff_r7 >> 0x18);
   if (0x1fffffff < unaff_r10) {
-    FUN_01002d2c();
+    route_z80_mapped_byte_write_from_r10();
     uVar1 = extraout_r1;
   }
   iVar4 = in_stack_00000028;
@@ -2674,7 +2674,7 @@ undefined8 z80_dispatch_010010b0(undefined4 param_1,undefined4 param_2,int param
 
 // 0x010010d0  z80_ld_via_hl_from_d
 
-undefined8 z80_dispatch_010010d0(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ld_via_hl_from_d(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   undefined1 extraout_r1;
@@ -2705,7 +2705,7 @@ undefined8 z80_dispatch_010010d0(undefined4 param_1,undefined4 param_2,int param
   
   uVar1 = (undefined1)((uint)unaff_r8 >> 0x18);
   if (0x1fffffff < unaff_r10) {
-    FUN_01002d2c();
+    route_z80_mapped_byte_write_from_r10();
     uVar1 = extraout_r1;
   }
   iVar4 = in_stack_00000028;
@@ -2844,7 +2844,7 @@ undefined8 z80_dispatch_010010d0(undefined4 param_1,undefined4 param_2,int param
 
 // 0x010010f0  z80_ld_via_hl_from_e
 
-undefined8 z80_dispatch_010010f0(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ld_via_hl_from_e(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   undefined1 extraout_r1;
@@ -2875,7 +2875,7 @@ undefined8 z80_dispatch_010010f0(undefined4 param_1,undefined4 param_2,int param
   
   uVar1 = (undefined1)((uint)unaff_r9 >> 0x18);
   if (0x1fffffff < unaff_r10) {
-    FUN_01002d2c();
+    route_z80_mapped_byte_write_from_r10();
     uVar1 = extraout_r1;
   }
   iVar4 = in_stack_00000028;
@@ -3014,7 +3014,7 @@ undefined8 z80_dispatch_010010f0(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01001110  z80_ld_via_hl_from_h
 
-undefined8 z80_dispatch_01001110(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ld_via_hl_from_h(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   undefined1 extraout_r1;
@@ -3044,7 +3044,7 @@ undefined8 z80_dispatch_01001110(undefined4 param_1,undefined4 param_2,int param
   
   uVar1 = (undefined1)(unaff_r10 >> 0x18);
   if (0x1fffffff < unaff_r10) {
-    FUN_01002d2c();
+    route_z80_mapped_byte_write_from_r10();
     uVar1 = extraout_r1;
   }
   iVar4 = in_stack_00000028;
@@ -3183,7 +3183,7 @@ undefined8 z80_dispatch_01001110(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01001130  z80_ld_via_hl_from_l
 
-undefined8 z80_dispatch_01001130(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ld_via_hl_from_l(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   undefined1 extraout_r1;
@@ -3213,7 +3213,7 @@ undefined8 z80_dispatch_01001130(undefined4 param_1,undefined4 param_2,int param
   
   uVar1 = (undefined1)(unaff_r10 >> 0x10);
   if (0x1fffffff < unaff_r10) {
-    FUN_01002d2c();
+    route_z80_mapped_byte_write_from_r10();
     uVar1 = extraout_r1;
   }
   iVar4 = in_stack_00000028;
@@ -3352,7 +3352,7 @@ undefined8 z80_dispatch_01001130(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01001180  z80_ld_via_hl_from_a
 
-undefined8 z80_dispatch_01001180(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ld_via_hl_from_a(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   undefined1 extraout_r1;
@@ -3383,7 +3383,7 @@ undefined8 z80_dispatch_01001180(undefined4 param_1,undefined4 param_2,int param
   
   uVar1 = (undefined1)((uint)unaff_r4 >> 0x18);
   if (0x1fffffff < unaff_r10) {
-    FUN_01002d2c();
+    route_z80_mapped_byte_write_from_r10();
     uVar1 = extraout_r1;
   }
   iVar4 = in_stack_00000028;
@@ -3522,7 +3522,7 @@ undefined8 z80_dispatch_01001180(undefined4 param_1,undefined4 param_2,int param
 
 // 0x01001260  z80_ld_a_from_via_hl
 
-undefined8 z80_dispatch_01001260(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ld_a_from_via_hl(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -3549,7 +3549,7 @@ undefined8 z80_dispatch_01001260(undefined4 param_1,undefined4 param_2,int param
   int in_stack_000000a4;
   
   if (0x1fffffff < unaff_r10) {
-    FUN_01002cec();
+    dispatch_z80_mapped_read_from_r10();
   }
   iVar3 = in_stack_00000028;
   iVar2 = unaff_r5 + -0x70000;

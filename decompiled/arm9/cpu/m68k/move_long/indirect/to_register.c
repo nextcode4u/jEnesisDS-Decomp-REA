@@ -4,7 +4,7 @@
 
 // 0x02017898  m68k_move_long
 
-void m68k_dispatch_02017898(void)
+void m68k_move_long_02017898(void)
 
 {
   undefined4 uVar1;
@@ -13,7 +13,7 @@ void m68k_dispatch_02017898(void)
   ushort *unaff_r10;
   uint unaff_r11;
   
-  uVar1 = FUN_010040fc(*(undefined4 *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4));
+  uVar1 = read_m68k_bus_long(*(undefined4 *)(unaff_r6 + 0x20 + (unaff_r11 & 7) * 4));
   *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = uVar1;
                     /* WARNING: Could not recover jumptable at 0x020178c8. Too many branches */
                     /* WARNING: Treating indirect jump as call */

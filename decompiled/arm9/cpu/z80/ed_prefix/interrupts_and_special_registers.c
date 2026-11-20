@@ -4,7 +4,7 @@
 
 // 0x02010344  z80_ed_retn
 
-void z80_dispatch_02010344(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+void z80_ed_retn(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   byte *pbVar1;
@@ -45,7 +45,7 @@ void z80_dispatch_02010344(undefined4 param_1,undefined4 param_2,int param_3,int
 
 /* WARNING: Removing unreachable block (ram,0x0200e004) */
 
-undefined8 z80_dispatch_02010370(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ed_set_interrupt_mode_0(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   uint uVar1;
@@ -206,7 +206,7 @@ undefined8 z80_dispatch_02010370(undefined4 param_1,undefined4 param_2,int param
 
 /* WARNING: Type propagation algorithm not settling */
 
-undefined8 z80_dispatch_0201038c(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ed_ld_i_a(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -321,7 +321,7 @@ undefined8 z80_dispatch_0201038c(undefined4 param_1,undefined4 param_2,int param
 
 // 0x02010458  z80_ed_reti
 
-undefined8 z80_dispatch_02010458(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ed_reti(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -486,7 +486,7 @@ undefined8 z80_dispatch_02010458(undefined4 param_1,undefined4 param_2,int param
 
 /* WARNING: Type propagation algorithm not settling */
 
-undefined8 z80_dispatch_02010478(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ed_ld_r_a(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -603,7 +603,7 @@ undefined8 z80_dispatch_02010478(undefined4 param_1,undefined4 param_2,int param
 
 /* WARNING: Removing unreachable block (ram,0x0200e004) */
 
-undefined8 z80_dispatch_0201053c(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ed_set_interrupt_mode_1(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   uint uVar1;
@@ -762,7 +762,7 @@ undefined8 z80_dispatch_0201053c(undefined4 param_1,undefined4 param_2,int param
 
 // 0x0201055c  z80_ed_ld_a_i
 
-undefined8 z80_dispatch_0201055c(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ed_ld_a_i(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -936,7 +936,7 @@ undefined8 z80_dispatch_0201055c(undefined4 param_1,undefined4 param_2,int param
 
 /* WARNING: Removing unreachable block (ram,0x0200dfe8) */
 
-undefined8 z80_dispatch_02010644(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ed_set_interrupt_mode_2(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   uint uVar1;
@@ -1094,7 +1094,7 @@ undefined8 z80_dispatch_02010644(undefined4 param_1,undefined4 param_2,int param
 
 // 0x02010664  z80_ed_ld_a_r
 
-undefined8 z80_dispatch_02010664(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ed_ld_a_r(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1266,7 +1266,7 @@ undefined8 z80_dispatch_02010664(undefined4 param_1,undefined4 param_2,int param
 
 // 0x02010974  z80_ed_undefined_ed
 
-undefined8 z80_dispatch_02010974(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ed_undefined_ed_02010974(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
@@ -1426,7 +1426,7 @@ undefined8 z80_dispatch_02010974(undefined4 param_1,undefined4 param_2,int param
 
 // 0x02010f00  z80_ed_undefined_ed
 
-undefined8 z80_dispatch_02010f00(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+undefined8 z80_ed_undefined_ed_02010f00(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
 
 {
   int iVar1;
