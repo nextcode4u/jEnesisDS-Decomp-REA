@@ -68,30 +68,33 @@ void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum ge
     m68k_reset(&md->cpu, md);
 }
 
-static ITCM_CODE __attribute__((noinline)) unsigned run_cpu_until(struct megadrive *md, unsigned cycles, unsigned end)
+static ITCM_CODE __attribute__((noinline)) unsigned run_cpu_until(struct megadrive *md, struct m68k *cpu, unsigned cycles, unsigned end)
 {
     enum { Z80_SYNC_CYCLES = 128 };
     unsigned next_sync = md->z80_synced_cycle + Z80_SYNC_CYCLES;
     bool hint_pending = md->hint_pending;
-    while (cycles < end && !md->cpu.stopped) {
-        if (hint_pending && (md->vdp_registers[0] & 0x10) && (md->cpu.sr & 0x0700) < 0x0400) {
-            unsigned elapsed = m68k_interrupt(&md->cpu, md, 4);
+    while (cycles < end && !cpu->stopped) {
+        if (hint_pending && (md->vdp_registers[0] & 0x10) && (cpu->sr & 0x0700) < 0x0400) {
+            unsigned elapsed = m68k_interrupt(cpu, md, 4);
             if (elapsed) {
                 hint_pending = md->hint_pending = false;
                 cycles += elapsed;
                 continue;
             }
-            if (md->cpu.stopped)
+            if (cpu->stopped)
                 break;
         }
-        md->frame_cycle = cycles;
-        unsigned elapsed = m68k_step(&md->cpu, md);
-        uint16_t op = md->cpu.opcode;
-        if (elapsed == 10 && md->cpu.pc <= md->cpu.instruction_address &&
-            elapsed < end - cycles &&
-            ((op & 0xfff8) == 0x51c8 || op == 0x66fa || op == 0x67fa))
-            elapsed += m68k_skip_idle(&md->cpu, md, end - cycles - elapsed);
-        cycles += elapsed;
+        unsigned boundary = next_sync < end ? next_sync : end;
+        do {
+            md->frame_cycle = cycles;
+            unsigned elapsed = m68k_step(cpu, md);
+            uint16_t op = cpu->opcode;
+            if (elapsed == 10 && cpu->pc <= cpu->instruction_address &&
+                elapsed < end - cycles &&
+                ((op & 0xfff8) == 0x51c8 || op == 0x66fa || op == 0x67fa))
+                elapsed += m68k_skip_idle(cpu, md, end - cycles - elapsed);
+            cycles += elapsed;
+        } while (!hint_pending && cycles < boundary && !cpu->stopped);
         if (cycles >= next_sync) {
             // I/O can have synchronized the sound CPU inside an instruction.
             if (cycles - md->z80_synced_cycle >= Z80_SYNC_CYCLES)
@@ -150,6 +153,9 @@ static void capture_raster_through(struct megadrive *md, unsigned next_line)
 
 void megadrive_run_frame(struct megadrive *md)
 {
+    // The BlocksDS ARM9 stack is in fast data TCM.
+    struct m68k core = md->cpu;
+    struct m68k *cpu = &core;
     unsigned cycles = md->cycle_carry;
     md->z80_synced_cycle = 0;
     md->frame_cycle = cycles;
@@ -167,12 +173,12 @@ void megadrive_run_frame(struct megadrive *md)
     // Run to each counter expiration. Reload from R10 at the start of
     // active display and when it expires, so writes take effect on reload.
     unsigned hint_line = md->vdp_registers[10];
-    while (hint_line <= active_lines && !md->cpu.stopped) {
-        cycles = run_cpu_until(md, cycles, 3420 * hint_line / 7);
+    while (hint_line <= active_lines && !cpu->stopped) {
+        cycles = run_cpu_until(md, cpu, cycles, 3420 * hint_line / 7);
         md->hint_pending = true;
         hint_line += md->vdp_registers[10] + 1;
     }
-    cycles = run_cpu_until(md, cycles, 3420 * active_lines / 7);
+    cycles = run_cpu_until(md, cpu, cycles, 3420 * active_lines / 7);
     md->vdp_capture_raster = false;
     if (md->vdp_row_count)
         capture_raster_through(md, active_lines);
@@ -180,12 +186,13 @@ void megadrive_run_frame(struct megadrive *md)
         ++md->video_revision;
     md->vblank = true;
     genesis_z80_vblank(md, cycles);
-    if (!md->cpu.stopped && (md->vdp_registers[1] & 0x20))
-        cycles += m68k_interrupt(&md->cpu, md, 6);
-    cycles = run_cpu_until(md, cycles, md->frame_cycles);
+    if (!cpu->stopped && (md->vdp_registers[1] & 0x20))
+        cycles += m68k_interrupt(cpu, md, 6);
+    cycles = run_cpu_until(md, cpu, cycles, md->frame_cycles);
     md->cycle_carry = cycles >= md->frame_cycles ? cycles - md->frame_cycles : 0;
     md->frame_cycle = 0;
     md->controller_cycles += md->frame_cycles;
+    md->cpu = core;
 }
 
 static unsigned ym_timer_period(const struct megadrive *md, unsigned timer)
@@ -564,6 +571,50 @@ static void dma_complete(struct megadrive *md)
     md->vdp_registers[19] = md->vdp_registers[20] = 0;
 }
 
+static bool dma_linear_vram(struct megadrive *md, uint32_t address, unsigned length)
+{
+    unsigned bytes = length * 2;
+    unsigned dest = md->vdp_address;
+    if ((md->vdp_code & 0xf) != 1 || md->vdp_registers[15] != 2 ||
+        (dest & 1) || bytes > 0x10000 - dest || bytes > 0x20000 - (address & 0x1ffff))
+        return false;
+
+    const uint8_t *source;
+    if (address < md->rom_size && bytes <= md->rom_size - address &&
+        (!(md->sram_control & 1) || address + bytes <= md->sram_start ||
+         address >= md->sram_start + md->sram_size)) {
+        source = md->rom + address;
+    } else if (address >= 0xe00000 && address >= md->rom_size &&
+               bytes <= 0x10000 - (address & 0xffff)) {
+        source = md->ram + (address & 0xffff);
+    } else {
+        return false;
+    }
+
+    // Compare within each VRAM revision block. Most sprite and scroll data
+    // are copied each frame even when their bytes are unchanged.
+    unsigned end = dest + bytes;
+    uint32_t revision = md->video_revision;
+    while (dest < end) {
+        unsigned block_end = (dest | 31) + 1;
+        if (block_end > end)
+            block_end = end;
+        unsigned count = block_end - dest;
+        uint8_t *target = md->vram + dest;
+        if (memcmp(target, source, count)) {
+            for (unsigned i = 0; i < count; ++i)
+                revision += target[i] != source[i];
+            memcpy(target, source, count);
+            md->vram_revisions[dest >> 5] = revision;
+        }
+        source += count;
+        dest = block_end;
+    }
+    md->vdp_address = end;
+    md->video_revision = revision;
+    return true;
+}
+
 static bool vdp_dma(struct megadrive *md)
 {
     unsigned mode = md->vdp_registers[23] >> 6;
@@ -585,10 +636,14 @@ static bool vdp_dma(struct megadrive *md)
         }
     } else {
         const uint32_t bank = (md->vdp_registers[23] & 0x7f) << 17;
-        for (unsigned i = 0; i < length; ++i) {
-            uint16_t value = megadrive_read_word(md, bank | ((uint16_t)offset << 1));
-            vdp_store(md, value);
-            ++offset;
+        if (dma_linear_vram(md, bank | ((uint16_t)offset << 1), length)) {
+            offset += length;
+        } else {
+            for (unsigned i = 0; i < length; ++i) {
+                uint16_t value = megadrive_read_word(md, bank | ((uint16_t)offset << 1));
+                vdp_store(md, value);
+                ++offset;
+            }
         }
     }
     md->vdp_registers[21] = offset;

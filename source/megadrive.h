@@ -51,8 +51,7 @@ struct megadrive {
     uint32_t sram_start, sram_size;
     uint8_t sram_control;
     bool sram_dirty;
-    uint8_t ram[0x10000];
-    uint8_t z80_ram[0x2000];
+
     z80 sound_cpu;
     uint16_t z80_bank;
     uint8_t z80_clock_phase;
@@ -71,15 +70,12 @@ struct megadrive {
     bool six_button;
     uint8_t th_phase[2];
     uint32_t controller_cycles, th_last_edge[2];
-    uint8_t vram[0x10000];
     uint16_t cram[64];
     uint16_t vsram[40];
-    struct vdp_scanline vdp_rows[VDP_MAX_ACTIVE_LINES];
-    uint8_t vdp_sprite_tables[VDP_RASTER_SPRITE_TABLES][VDP_SPRITE_TABLE_BYTES];
+
     unsigned vdp_row_count, vdp_sprite_table_count, vdp_active_lines;
     bool vdp_capture_raster, vdp_raster_layout;
     uint32_t video_revision;
-    uint32_t vram_revisions[0x10000 / 32];
     uint8_t vdp_registers[24];
     uint16_t vdp_address;
     uint8_t vdp_code;
@@ -102,6 +98,14 @@ struct megadrive {
     unsigned frame_cycles;
     unsigned cycle_carry;
     unsigned frame_cycle;
+
+    // Bulk memory follows the CPU, bus and video registers used in the hot path.
+    uint8_t ram[0x10000];
+    uint8_t z80_ram[0x2000];
+    uint8_t vram[0x10000];
+    struct vdp_scanline vdp_rows[VDP_MAX_ACTIVE_LINES];
+    uint8_t vdp_sprite_tables[VDP_RASTER_SPRITE_TABLES][VDP_SPRITE_TABLE_BYTES];
+    uint32_t vram_revisions[0x10000 / 32];
     uint8_t sram[CARTRIDGE_SRAM_CAPACITY];
 };
 

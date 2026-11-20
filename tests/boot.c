@@ -382,6 +382,28 @@ static void test_vdp_dma(struct megadrive *md)
     uint32_t written_revision = md->vram_revisions[0x100 / 32];
     assert(written_revision != 0 && md->vram_revisions[0x120 / 32] == 0);
 
+    // The two changed bytes straddle VRAM revision blocks.
+    md->ram[1] = 0x12;
+    md->ram[2] = 0x34;
+    for (unsigned i = 0; i < 2; ++i) {
+        vdp_register(md, 19, 2);
+        vdp_register(md, 21, 0);
+        vdp_register(md, 22, 0);
+        vdp_register(md, 23, 0x70);
+        uint32_t revision = md->video_revision;
+        assert(megadrive_write_word(md, 0xc00004, 0x421e));
+        assert(megadrive_write_word(md, 0xc00004, 0x0080));
+        assert(md->vdp_address == 0x222 && md->vdp_registers[21] == 2);
+        assert(md->vram[0x21f] == 0x12 && md->vram[0x220] == 0x34);
+        if (!i) {
+            assert(md->vram_revisions[0x21f / 32] == revision + 1);
+            assert(md->vram_revisions[0x220 / 32] == revision + 2);
+        } else {
+            assert(md->video_revision == revision);
+        }
+    }
+    md->ram[1] = md->ram[2] = 0;
+
     vdp_register(md, 15, 1);
     vdp_register(md, 19, 3);
     vdp_register(md, 23, 0x80);

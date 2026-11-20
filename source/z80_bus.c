@@ -92,15 +92,20 @@ static void finish_poll(z80 *cpu, unsigned value, unsigned iterations)
 static unsigned run_local_delay(struct megadrive *md, unsigned budget)
 {
     z80 *cpu = &md->sound_cpu;
-    if (cpu->int_pending || cpu->nmi_pending || cpu->iff_delay || md->ym_busy_cycles ||
-        cpu->pc >= 0x4000)
+    if (cpu->pc >= 0x4000)
         return 0;
-
     const uint8_t *ram = md->z80_ram;
     unsigned offset = cpu->pc & 0x1fff;
-    if (offset <= 0x1ffe && ram[offset] == 0x10 && ram[offset + 1] == 0xfe) {
+    unsigned op = ram[offset];
+    if (op != 0x10 && op != 0x7a && op != 0x7e)
+        return 0;
+    if (cpu->int_pending || cpu->nmi_pending || cpu->iff_delay || md->ym_busy_cycles)
+        return 0;
+    if (offset <= 0x1ffe && op == 0x10 && ram[offset + 1] == 0xfe) {
         // DJNZ to itself. Leave the last, untaken iteration to the interpreter.
-        unsigned iterations = budget / 13;
+        // The normal path also executes the complete DJNZ if the slice
+        // expires within its 13 clocks.
+        unsigned iterations = (budget + 12) / 13;
         unsigned taken = (uint8_t)(cpu->b - 1);
         if (iterations > taken)
             iterations = taken;
@@ -115,7 +120,7 @@ static unsigned run_local_delay(struct megadrive *md, unsigned budget)
     // LD A,D; OR E; JR Z back to the load. DE can change in an interrupt,
     // so leave any slice with a pending interrupt to the interpreter.
     if (offset <= 0x1ffc && !(cpu->d | cpu->e) &&
-        ram[offset] == 0x7a && ram[offset + 1] == 0xb3 &&
+        op == 0x7a && ram[offset + 1] == 0xb3 &&
         ram[offset + 2] == 0x28 && ram[offset + 3] == 0xfc) {
         // The branch may cross the slice boundary once its first eight clocks
         // have elapsed. The caller carries any resulting debt to the next slice.
@@ -127,15 +132,16 @@ static unsigned run_local_delay(struct megadrive *md, unsigned budget)
     // LD A,(HL); OR A; JP P back to the load. Neither processor writes
     // this RAM within the Z80 slice, so a clear sign bit remains clear.
     unsigned hl = (unsigned)cpu->h << 8 | cpu->l;
-    if (budget < 21 || hl >= 0x4000 || offset > 0x1ffb ||
-        ram[offset] != 0x7e || ram[offset + 1] != 0xb7 || ram[offset + 2] != 0xf2 ||
+    if (budget <= 11 || op != 0x7e || hl >= 0x4000 || offset > 0x1ffb ||
+        ram[offset + 1] != 0xb7 || ram[offset + 2] != 0xf2 ||
         ram[offset + 3] != (uint8_t)cpu->pc || ram[offset + 4] != cpu->pc >> 8)
         return 0;
 
     unsigned value = ram[hl & 0x1fff];
     if (value & 0x80)
         return 0;
-    unsigned iterations = budget / 21;
+    // The jump executes whenever the slice reaches its first clock.
+    unsigned iterations = (budget + 9) / 21;
     finish_poll(cpu, value, iterations);
     return iterations * 21;
 }

@@ -181,7 +181,7 @@ static unsigned memory_cycles(unsigned mode, unsigned reg, unsigned size)
     return overhead + (size == 4 ? 8 : 4);
 }
 
-static __attribute__((noinline)) unsigned move(struct m68k *cpu, struct megadrive *md, uint16_t op)
+static ITCM_CODE __attribute__((noinline)) unsigned move(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
     unsigned type = op >> 12;
     unsigned size = type == 1 ? 1 : type == 2 ? 4 : 2;
@@ -216,6 +216,56 @@ static __attribute__((noinline)) unsigned move(struct m68k *cpu, struct megadriv
             !write_memory(md, address, size, value))
             return 0;
         cycles += memory_cycles(target, dst_reg, size);
+    }
+    set_logic_flags(cpu, size, value);
+    return cycles;
+}
+
+// Fast paths for MOVE forms using data registers, stack or ordinary memory.
+static inline __attribute__((always_inline)) unsigned move_common(
+    struct m68k *cpu, struct megadrive *md, uint16_t op, unsigned size)
+{
+    unsigned source = (op >> 3) & 7, target = (op >> 6) & 7;
+    unsigned src_reg = op & 7, dst_reg = (op >> 9) & 7;
+    const unsigned ram_cycles = size == 4 ? 8 : 4;
+    const uint32_t mask = size_mask(size);
+    unsigned cycles = 4;
+    uint32_t value;
+    if (target == 0) {
+        if (source == 0) {
+            value = cpu->d[src_reg];
+        } else if (source == 2 || source == 3 || source == 5) {
+            uint32_t address = cpu->a[src_reg];
+            if (source == 3)
+                cpu->a[src_reg] += size == 1 && src_reg == 7 ? 2 : size;
+            else if (source == 5)
+                address += (int16_t)fetch(cpu, md, 2);
+            if (size != 1 && (address & 1))
+                return 0;
+            value = read_memory(md, address, size);
+            cycles += ram_cycles + (source == 5 ? 4 : 0);
+        } else if (source == 7 && src_reg == 4) {
+            value = fetch(cpu, md, size == 4 ? 4 : 2);
+            cycles += ram_cycles;
+        } else {
+            return move(cpu, md, op);
+        }
+        cpu->d[dst_reg] = (cpu->d[dst_reg] & ~mask) | (value & mask);
+    } else if (source == 0 && (target == 2 || target == 3 || target == 4 || target == 5)) {
+        uint32_t address = cpu->a[dst_reg];
+        unsigned increment = size == 1 && dst_reg == 7 ? 2 : size;
+        if (target == 3)
+            cpu->a[dst_reg] += increment;
+        else if (target == 4)
+            address = cpu->a[dst_reg] -= increment;
+        else if (target == 5)
+            address += (int16_t)fetch(cpu, md, 2);
+        value = cpu->d[src_reg];
+        if (!write_memory(md, address, size, value))
+            return 0;
+        cycles += ram_cycles + (target >= 4 ? 2 * (target - 3) : 0);
+    } else {
+        return move(cpu, md, op);
     }
     set_logic_flags(cpu, size, value);
     return cycles;
@@ -409,20 +459,26 @@ static unsigned immediate_logic(struct m68k *cpu, struct megadrive *md, uint16_t
 static uint32_t arithmetic_flags(struct m68k *cpu, unsigned size, uint32_t left,
                                  uint32_t right, bool subtract, bool preserve_x)
 {
-    uint32_t mask = size_mask(size), sign = (mask >> 1) + 1;
-    left &= mask;
-    right &= mask;
-    uint32_t result = (subtract ? left - right : left + right) & mask;
-    bool carry = subtract ? left < right : result < left;
-    uint32_t overflow = subtract ? (left ^ right) : ~(left ^ right);
-    set_logic_flags(cpu, size, result);
-    if ((overflow & (left ^ result) & sign) != 0)
-        cpu->sr |= CCR_V;
+    unsigned shift = 32 - size * 8;
+    left <<= shift;
+    right <<= shift;
+    uint32_t result;
+    bool carry;
+    uint32_t overflow;
+    if (subtract) {
+        carry = __builtin_sub_overflow(left, right, &result);
+        overflow = left ^ right;
+    } else {
+        carry = __builtin_add_overflow(left, right, &result);
+        overflow = ~(left ^ right);
+    }
+    unsigned flags = (result == 0 ? CCR_Z : (result >> 31) * CCR_N) |
+                     ((overflow & (left ^ result)) >> 31) * CCR_V;
     if (carry)
-        cpu->sr |= CCR_C;
-    if (!preserve_x)
-        cpu->sr = (cpu->sr & ~CCR_X) | (carry ? CCR_X : 0);
-    return result;
+        flags |= CCR_C | (preserve_x ? 0 : CCR_X);
+    unsigned keep = preserve_x ? ~15U : ~31U;
+    cpu->sr = (cpu->sr & keep) | flags;
+    return result >> shift;
 }
 
 static __attribute__((noinline)) unsigned extend_arithmetic(struct m68k *cpu, struct megadrive *md, uint16_t op)
@@ -769,7 +825,7 @@ static __attribute__((noinline)) unsigned shift_memory(struct m68k *cpu, struct 
     return write_memory(md, address, 2, result) ? 8 + memory_cycles(mode, reg, 2) : 0;
 }
 
-static __attribute__((noinline)) unsigned execute_misc(struct m68k *cpu, struct megadrive *md, uint16_t op)
+static ITCM_CODE __attribute__((noinline)) unsigned execute_misc(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
     if ((op & 0xf1c0) == 0x41c0) {
         unsigned mode = (op >> 3) & 7, reg = op & 7;
@@ -965,7 +1021,7 @@ static unsigned compare_memory(struct m68k *cpu, struct megadrive *md, uint16_t 
     return size == 4 ? 20 : 12;
 }
 
-static __attribute__((noinline)) unsigned execute_immediate(struct m68k *cpu, struct megadrive *md, uint16_t op)
+static ITCM_CODE __attribute__((noinline)) unsigned execute_immediate(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
     if ((op & 0xf138) == 0x0108)
         return move_peripheral(cpu, md, op);
@@ -978,7 +1034,7 @@ static __attribute__((noinline)) unsigned execute_immediate(struct m68k *cpu, st
     return 0;
 }
 
-static __attribute__((noinline)) unsigned execute_branch(struct m68k *cpu, struct megadrive *md, uint16_t op)
+static ITCM_CODE __attribute__((noinline)) unsigned execute_branch(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
     unsigned condition = (op >> 8) & 15;
     uint32_t base = cpu->pc;
@@ -1004,9 +1060,11 @@ static unsigned execute(struct m68k *cpu, struct megadrive *md, uint16_t op)
     case 0:
         return execute_immediate(cpu, md, op);
     case 1:
+        return move_common(cpu, md, op, 1);
     case 2:
+        return move_common(cpu, md, op, 4);
     case 3:
-        return move(cpu, md, op);
+        return move_common(cpu, md, op, 2);
     case 4:
         return execute_misc(cpu, md, op);
     case 5: {
