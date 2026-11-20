@@ -178,6 +178,7 @@ void megadrive_run_frame(struct megadrive *md)
     cycles = run_cpu_until(md, cycles, md->frame_cycles);
     md->cycle_carry = cycles >= md->frame_cycles ? cycles - md->frame_cycles : 0;
     md->frame_cycle = 0;
+    md->controller_cycles += md->frame_cycles;
 }
 
 static unsigned ym_timer_period(const struct megadrive *md, unsigned timer)
@@ -265,19 +266,45 @@ uint16_t megadrive_backdrop(const struct megadrive *md)
     return vdp_ds_color(md->cram[md->vdp_registers[7] & 0x3f]);
 }
 
+static unsigned controller_phase(const struct megadrive *md, unsigned port)
+{
+    enum { HANDSHAKE_TIMEOUT = 0x2000 };
+    uint32_t elapsed = md->controller_cycles + md->frame_cycle - md->th_last_edge[port];
+    return md->six_button && elapsed < HANDSHAKE_TIMEOUT ? md->th_phase[port] : 0;
+}
+
 static uint8_t read_port(const struct megadrive *md, unsigned port)
 {
     unsigned output = md->port_data[port], direction = md->port_direction[port];
     unsigned pins = 0x7f;
-    if (port == 0) {
+    if (port < 2) {
         bool th_high = !(direction & 0x40) || (output & 0x40);
-        unsigned buttons = md->pad1_pressed;
-        if (th_high)
-            pins &= ~(buttons & 0x3f);
-        else
-            pins = 0x33 & ~(buttons & 3) & ~(buttons >> 2 & 0x30);
+        unsigned buttons = port == 0 ? md->pad1_pressed : 0;
+        unsigned phase = controller_phase(md, port);
+        if (th_high) {
+            unsigned low_pins = phase == 3 ? (buttons >> 8) & 15 : buttons & 15;
+            pins &= ~(low_pins | (buttons & 0x30));
+        } else {
+            unsigned low_pins = phase == 3 ? 0 : phase == 4 ? 15 : 3 & ~buttons;
+            pins = (0x30 & ~(buttons >> 2)) | low_pins;
+        }
     }
     return (output & direction) | (pins & ~direction);
+}
+
+static void write_port(struct megadrive *md, unsigned port, bool direction, uint8_t value)
+{
+    unsigned old_th = (md->port_data[port] | ~md->port_direction[port]) & 0x40;
+    if (direction)
+        md->port_direction[port] = value;
+    else
+        md->port_data[port] = value;
+    unsigned new_th = (md->port_data[port] | ~md->port_direction[port]) & 0x40;
+    if (md->six_button && port < 2 && old_th && !new_th) {
+        unsigned phase = controller_phase(md, port);
+        md->th_phase[port] = phase < 5 ? phase + 1 : phase;
+        md->th_last_edge[port] = md->controller_cycles + md->frame_cycle;
+    }
 }
 
 static uint8_t read_serial(const struct megadrive *md, unsigned reg)
@@ -440,11 +467,11 @@ bool megadrive_write_byte(struct megadrive *md, uint32_t address, uint8_t value)
         return true;
     }
     if (address >= 0xa10002 && address <= 0xa10007) {
-        md->port_data[(address - 0xa10002) >> 1] = value;
+        write_port(md, (address - 0xa10002) >> 1, false, value);
         return true;
     }
     if (address >= 0xa10008 && address <= 0xa1000d) {
-        md->port_direction[(address - 0xa10008) >> 1] = value;
+        write_port(md, (address - 0xa10008) >> 1, true, value);
         return true;
     }
     if (address >= 0xa1000e && address <= 0xa1001f) {

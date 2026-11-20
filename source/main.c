@@ -112,6 +112,7 @@ struct application {
     unsigned save_slot;
     unsigned measured_fps;
     int save_line;
+    int settings_line;
     bool slots[2];
     enum frontend_view view;
     enum frontend_view before_settings;
@@ -261,15 +262,17 @@ static void draw_cartridge(const struct application *app)
     frontend_draw_fps(app->measured_fps);
 }
 
-static void draw_settings(enum genesis_region region)
+static void draw_settings(const struct application *app)
 {
     static const char *const regions[] = {"Auto", "USA", "Japan", "Europe"};
     frontend_cursor(2, 5);
     frontend_write("Configuration");
     frontend_cursor(2, 8);
-    frontend_printf("Country          %s", regions[region]);
-    frontend_cursor(2, 11);
-    frontend_write("Applies to the next ROM");
+    frontend_printf("Country          %s", regions[app->region]);
+    frontend_cursor(2, 10);
+    frontend_printf("Controller       %u Button", app->md.six_button ? 6 : 3);
+    frontend_cursor(2, 13);
+    frontend_write("Country applies to next ROM");
     frontend_cursor(2, 21);
     frontend_write("A Change       SELECT Back");
 }
@@ -297,7 +300,7 @@ static void draw_screen(const struct application *app, const char *message)
     if (app->view == VIEW_BROWSER && browser->count)
         selected = MENU_FIRST_ROW + (int)(browser->selected - browser->first_visible);
     if (app->view == VIEW_SETTINGS)
-        selected = 8;
+        selected = app->settings_line;
     if (app->view == VIEW_CARTRIDGE || app->view == VIEW_PAUSED)
         selected = 7;
     if (app->view == VIEW_SAVE)
@@ -318,7 +321,7 @@ static void draw_screen(const struct application *app, const char *message)
         draw_cartridge(app);
         break;
     case VIEW_SETTINGS:
-        draw_settings(app->region);
+        draw_settings(app);
         break;
     case VIEW_SAVE:
         draw_save_menu(app);
@@ -405,7 +408,9 @@ static const char *open_selection(struct application *app)
     const char *error = cartridge_load(&app->cart, entry->name);
     if (!error) {
         snprintf(app->filename, sizeof(app->filename), "%.28s", entry->name);
+        bool six_button = app->md.six_button;
         megadrive_reset(&app->md, &app->cart, app->region);
+        app->md.six_button = six_button;
         ++app->sound_generation;
         setup_savestates(app, entry->name);
         app->view = VIEW_CARTRIDGE;
@@ -469,16 +474,29 @@ static bool handle_menu(struct application *app, uint32_t keys, const touchPosit
     bool tapped_rom = tapped_header && touch->px >= 8 && touch->px < 40;
     bool tapped_settings = tapped_header && touch->px >= 48 && touch->px < 88;
     if (app->view == VIEW_SETTINGS) {
-        if ((keys & (KEY_SELECT | KEY_B)) || tapped_settings)
+        bool country_tap = touch && touch->py >= 64 && touch->py < 72;
+        bool controller_tap = touch && touch->py >= 80 && touch->py < 88;
+        if ((keys & (KEY_SELECT | KEY_B)) || tapped_settings) {
             app->view = app->before_settings;
-        else if ((keys & KEY_A) || (touch && touch->py >= 64 && touch->py < 72))
-            app->region = (app->region + 1) % GENESIS_REGION_COUNT;
-        else
+        } else if (keys & (KEY_UP | KEY_DOWN)) {
+            app->settings_line = app->settings_line == 8 ? 10 : 8;
+        } else if ((keys & KEY_A) || country_tap || controller_tap) {
+            if (country_tap || controller_tap)
+                app->settings_line = country_tap ? 8 : 10;
+            if (app->settings_line == 8)
+                app->region = (app->region + 1) % GENESIS_REGION_COUNT;
+            else {
+                app->md.six_button = !app->md.six_button;
+                memset(app->md.th_phase, 0, sizeof(app->md.th_phase));
+            }
+        } else {
             return false;
+        }
         return true;
     }
     if (tapped_settings) {
         app->before_settings = app->view;
+        app->settings_line = 8;
         app->view = VIEW_SETTINGS;
         return true;
     }
@@ -524,8 +542,18 @@ static bool handle_menu(struct application *app, uint32_t keys, const touchPosit
     return true;
 }
 
-static uint8_t genesis_buttons(uint32_t keys)
+static uint16_t genesis_buttons(uint32_t keys, bool six_button)
 {
+    unsigned extra = 0, start = keys & KEY_START ? GENESIS_START : 0;
+    if (six_button) {
+        extra = ((keys & KEY_X) ? GENESIS_X : 0) |
+                ((keys & KEY_L) ? GENESIS_Y : 0) |
+                ((keys & KEY_R) ? GENESIS_Z : 0);
+        if ((keys & (KEY_L | KEY_R | KEY_START)) == (KEY_L | KEY_R | KEY_START)) {
+            extra |= GENESIS_MODE;
+            start = 0;
+        }
+    }
     return ((keys & KEY_UP) ? GENESIS_UP : 0) |
            ((keys & KEY_DOWN) ? GENESIS_DOWN : 0) |
            ((keys & KEY_LEFT) ? GENESIS_LEFT : 0) |
@@ -533,7 +561,7 @@ static uint8_t genesis_buttons(uint32_t keys)
            ((keys & KEY_Y) ? GENESIS_A : 0) |
            ((keys & KEY_B) ? GENESIS_B : 0) |
            ((keys & KEY_A) ? GENESIS_C : 0) |
-           ((keys & KEY_START) ? GENESIS_START : 0);
+           start | extra;
 }
 
 static struct dac_frame dac_transfers[DAC_TRANSFER_SLOTS];
@@ -649,7 +677,7 @@ int main(void)
         // When one VBlank was missed, advance both guest frames but only
         // display the newest one. Bound the work so input stays responsive.
         if (running && frame_budget) {
-            app.md.pad1_pressed = genesis_buttons(keysHeld());
+            app.md.pad1_pressed = genesis_buttons(keysHeld(), app.md.six_button);
             bool presented_first_field = false;
             for (unsigned frame = 0; frame < frame_budget && !app.md.cpu.stopped; ++frame) {
                 struct dac_frame *audio = begin_audio_frame(&app, pal);

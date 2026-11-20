@@ -103,6 +103,27 @@ static void vdp_register(struct megadrive *md, unsigned reg, unsigned value)
     assert(megadrive_write_word(md, 0xc00004, 0x8000 | (reg << 8) | value));
 }
 
+static void test_six_button_controller(void)
+{
+    static struct megadrive md;
+    md.six_button = true;
+    md.pad1_pressed = GENESIS_Z | GENESIS_X | GENESIS_START;
+    assert(megadrive_write_byte(&md, 0xa10003, 0x40));
+    assert(megadrive_write_byte(&md, 0xa10009, 0x40));
+    for (unsigned phase = 1; phase <= 4; ++phase) {
+        assert(megadrive_write_byte(&md, 0xa10003, 0));
+        assert(md.th_phase[0] == phase);
+        unsigned expected_low = phase == 3 ? 0x10 : phase == 4 ? 0x1f : 0x13;
+        assert(megadrive_read_byte(&md, 0xa10003) == expected_low);
+        assert(megadrive_write_byte(&md, 0xa10003, 0x40));
+        assert(megadrive_read_byte(&md, 0xa10003) == (phase == 3 ? 0x7a : 0x7f));
+    }
+    md.controller_cycles += 0x2000;
+    assert(megadrive_write_byte(&md, 0xa10003, 0));
+    assert(md.th_phase[0] == 1 && megadrive_read_byte(&md, 0xa10003) == 0x13);
+    assert(megadrive_read_byte(&md, 0xa10005) == 0x7f);
+}
+
 static void test_startup_bus(struct megadrive *md)
 {
     assert(!megadrive_write_byte(md, 0xa00000, 0x55));
@@ -666,6 +687,7 @@ int main(void)
     test_dac_timing(&cartridge);
     test_z80_dac_writes(&cartridge);
     test_startup_bus(&md);
+    test_six_button_controller();
     test_z80_delay_loops(&cartridge);
     test_z80_and_ym(&md);
     test_vdp_dma(&md);

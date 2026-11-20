@@ -8,7 +8,7 @@
 
 enum { FNV_PRIME = 16777619 };
 static const uint32_t fnv_start = UINT32_C(2166136261);
-static const uint8_t magic[4] = {'J', 'S', 'C', 9};
+static const uint8_t magic[4] = {'J', 'S', 'C', 10};
 
 struct state_io {
     FILE *file;
@@ -170,6 +170,24 @@ static void transfer_state(struct state_io *io, struct megadrive *md, unsigned v
         md->vdp_row_count = md->vdp_sprite_table_count = 0;
         md->vdp_raster_layout = false;
     }
+    if (version >= 10) {
+        bool saved_mode = transfer_u32(io, md->six_button) != 0;
+        SCALAR(md->controller_cycles);
+        for (unsigned port = 0; port < 2; ++port) {
+            SCALAR(md->th_phase[port]);
+            SCALAR(md->th_last_edge[port]);
+            if (md->th_phase[port] > 5) {
+                io->ok = false;
+                return;
+            }
+            if (saved_mode != md->six_button)
+                md->th_phase[port] = 0;
+        }
+    } else {
+        md->controller_cycles = 0;
+        memset(md->th_phase, 0, sizeof(md->th_phase));
+        memset(md->th_last_edge, 0, sizeof(md->th_last_edge));
+    }
 #undef SCALAR
 #undef ARRAY_BYTES
 }
@@ -326,6 +344,7 @@ bool savestate_load(const char *path, uint32_t identity, struct megadrive *md)
     struct megadrive *loaded = calloc(1, sizeof(*loaded));
     if (!loaded)
         return false;
+    loaded->six_button = md->six_button;
     loaded->rom = md->rom;
     loaded->rom_size = md->rom_size;
     loaded->sram_start = md->sram_start;

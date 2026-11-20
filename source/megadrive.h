@@ -38,6 +38,10 @@ enum genesis_button {
     GENESIS_C = 1 << 5,
     GENESIS_A = 1 << 6,
     GENESIS_START = 1 << 7,
+    GENESIS_Z = 1 << 8,
+    GENESIS_Y = 1 << 9,
+    GENESIS_X = 1 << 10,
+    GENESIS_MODE = 1 << 11,
 };
 
 struct megadrive {
@@ -63,7 +67,10 @@ struct megadrive {
     uint8_t port_direction[3];
     uint8_t serial_tx[3];
     uint8_t serial_control[3];
-    uint8_t pad1_pressed;
+    uint16_t pad1_pressed;
+    bool six_button;
+    uint8_t th_phase[2];
+    uint32_t controller_cycles, th_last_edge[2];
     uint8_t vram[0x10000];
     uint16_t cram[64];
     uint16_t vsram[40];
