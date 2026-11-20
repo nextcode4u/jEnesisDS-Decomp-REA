@@ -63,6 +63,35 @@ def tile(color):
     return bytes([color] * 64)
 
 
+def footer_tiles(tiles):
+    # The emulator writes fixed tile IDs into the footer while a game runs.
+    tiles[0x4d:0x6a] = [tile(1)] * (0x6a - 0x4d)
+    # The cartridge header can indicate battery-backed SRAM.
+    tiles[0x4e] = glyph("S", 5, 1)
+    for first, region in ((0x4f, "USA"), (0x52, "JPN"), (0x55, "EUR")):
+        tiles[first:first+3] = [glyph(char, 6, 1) for char in region]
+    for first, label in ((0x58, "NT"), (0x66, "SC"), (0x5a, "PA"), (0x68, "L ")):
+        tiles[first:first+2] = [glyph(char, 7, 1) for char in label]
+
+    for i in range(10):
+        tiles[0x6a+i] = glyph(str(i), 5, 1)
+        # The original used two tile rows for the FPS digits.
+        tiles[0x74+i] = tile(1)
+
+    # Slots use three tiles per row. A filled slot is highlighted in green.
+    for first, number, color in ((0x7e, "1", 8), (0x81, "1", 6),
+                                 (0x84, "2", 8), (0x87, "2", 6)):
+        tiles[first:first+3] = [glyph(char, color, 3) for char in f"[{number}]"]
+        tiles[first+0xf:first+0x12] = [bytes([color] * 8 + [1] * 56)] * 3
+
+    for first, label in ((0x8a, "SAVE"), (0x99, "SLOT")):
+        letters = [glyph(char, 7, 1) for char in label]
+        rows = [b"".join(letter[y*8:y*8+6] for letter in letters) for y in range(8)]
+        tiles[first:first+3] = [
+            b"".join(row[x:x+8] for row in rows) for x in range(0, 24, 8)
+        ]
+
+
 def write_menu_sources(output: Path):
     palette = [0] * 256
     palette[1:9] = [
@@ -85,11 +114,7 @@ def write_menu_sources(output: Path):
     tiles[0x4b] = tile(5)
     tiles[0x4c] = tile(4)
 
-    for i in range(0x4d, 0x6a):
-        tiles[i] = tile(3)
-    for i in range(10):
-        tiles[0x6a+i] = glyph(str(i), 5, 1)
-        tiles[0x74+i] = glyph(str(i), 7, 1)
+    footer_tiles(tiles)
 
     board = [1] * (32 * 24)
     for y in range(3, 21):
@@ -104,7 +129,8 @@ def write_menu_sources(output: Path):
         for column, character in enumerate(text, x):
             key = character, color
             if key not in labels:
-                index = 0x80 + len(labels)
+                # Use the gap before the runtime highlight and footer tiles.
+                index = 5 + len(labels)
                 labels[key] = index
                 tiles[index] = glyph(character, color, 1)
             board[y*32+column] = labels[key]

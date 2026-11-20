@@ -22,7 +22,15 @@ The defaults use r20 tools under `~/.cache/jenesisds-decomp/devkitarm-r20/bin/` 
 - [Recovered assembly and data](recovered/) contain the emulator payload. Instructions that needed their original encodings are expressed with word or halfword directives and disassembly comments. Dispatch tables and other fixed data have explicit declarations.
 - [File browser graphics](rebuild/menu.py) generate the tile, font, and palette data used by the DS interface.
 
-The source build was tested in melonDS 1.1 with a virtual DLDI SD card. It loaded a Genesis diagnostic ROM and rendered the expected alternating red and cyan frames.
+## Compatibility checks
+
+The source build and the original jEnesisDS 0.7.4 were tested in melonDS 1.1 with virtual DLDI SD cards.
+
+- Sonic the Hedgehog and Sonic the Hedgehog 2 loaded from the ROM browser and produced audio. Directional input and jumping worked during gameplay.
+- Sonic the Hedgehog save states transferred between the builds in both directions and restored the earlier game position. The source build displays both touch-operated save slots and highlights slots containing a save.
+- Both builds produced pixel-identical red and cyan frames on the top screen with a Genesis VDP diagnostic ROM.
+
+The linked ARM7 image matches the original byte for byte. The ARM9 differences are confined to the replacement interface assets and the routine that remaps their palette. These checks cover the tested ROMs in melonDS.
 
 ## Developer note
 
