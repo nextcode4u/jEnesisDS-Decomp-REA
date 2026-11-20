@@ -1,8 +1,18 @@
-# jEnesisDS BlocksDS C port
+# jEnesisDS BlocksDS port
+
+Use the native BlocksDS build for the recovered jEnesisDS 0.7.4 emulator. It builds both original processor programs and the original interface with Wonderful and BlocksDS.
+
+```sh
+make -f blocksds/Makefile
+```
+
+See the [native build guide](blocksds/README.md) for installation, ROM comparison and source layout.
+
+## C port reference
 
 The port compiles the project's ARM7 and ARM9 programs from C with Wonderful's compiler. It links against libnds and uses the standard BlocksDS startup code. The C core runs the 68000 and VDP diagnostic, boots Sonic the Hedgehog into Green Hill Zone Act 1, and starts Sonic the Hedgehog 2 in one-player Emerald Hill Zone Act 1 in melonDS. The touch menu provides two save slots, and ARM7 synthesizes PSG audio. The C Z80 executes Genesis sound drivers and handles YM2612 timer status. Broader game compatibility, sustained full-speed emulation, and FM and DAC output remain open.
 
-## Build on Linux or WSL
+### Build the C reference on Linux or WSL
 
 Install Python 3, GNU Make, and the `blocksds-toolchain` package from Wonderful Toolchain. The C target was tested with BlocksDS 1.25.0. [BlocksDS Linux installation guide](https://blocksds.skylyrac.net/docs/setup/linux/)
 
@@ -21,7 +31,7 @@ In melonDS, enable a virtual DLDI SD card and add Genesis ROMs to it. The bottom
 - Tap the controller icon to open configuration. Use **A** or tap **Country** to cycle the region for the next cartridge. European cartridges target the PAL refresh rate of about 50 Hz.
 - Tap **[1]** or **[2]**, choose **SAVE** or **LOAD** with the D-pad, and press **A**. The portable C build's versioned `.jsc` files live next to the cartridge and have their own format.
 
-## C sources
+### C sources
 
 - [ROM browser](source/main.c) mounts the SD card through libnds and browses directories using standard file APIs.
 - [Bottom-screen interface](source/frontend.c) loads the [recovered menu assets](assets/frontend) into libnds tiled backgrounds and draws the browser, status panel and state slot indicators.
@@ -40,7 +50,7 @@ The C build runs the Genesis backdrop diagnostic in melonDS 1.1. Both captured t
 
 The original and BlocksDS browsers produced pixel-identical captures in melonDS with the same ROM listing. A Green Hill Zone spot check showed about 30 guest frames per second in DS mode. Its slot restored Sonic's earlier position and timer. A separate host smoke run advanced Sonic 1, Sonic 2, Gunstar Heroes, Streets of Rage 2, Castlevania Bloodlines, and Golden Axe through 1,400 frames each with scripted Start presses and no interpreter stop. The host run did not check graphical or audio output for those titles.
 
-## Gameplay reference
+### Gameplay reference
 
 The date-coded handoff contains a source-only devkitARM r20 build that matches jEnesisDS 0.7.4 byte for byte. Its verified ROM provides a baseline for frontend graphics, guest timing, audio, and save states. [Handoff 20261120](https://github.com/nextcode4u/jEnesisDS-Decomp-REA/releases/tag/20261120) · [devkitARM r20 archive](https://wii.leseratte10.de/devkitPro/devkitARM/r20%20%282007%29/)
 

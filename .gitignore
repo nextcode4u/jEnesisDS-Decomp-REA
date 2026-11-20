@@ -10,6 +10,7 @@
 *.elf
 *.map
 !/assets/frontend/menu.map
+!/blocksds/assets/frontend/*.map
 *.nds
 *.o
 *.rom
