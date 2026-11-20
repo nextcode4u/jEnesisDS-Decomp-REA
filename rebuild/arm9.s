@@ -135,12 +135,14 @@ _start:
 .Lreturn_address:           .word 0x027ffe78
 .size _start, . - _start
 
+.ifndef use_recovered_c
 .section .text.payload, "ax", %progbits
 .global arm9_call_via_r3
     .incbin "arm9-main.bin", 0, 0x85678
 .type arm9_call_via_r3, %function
 arm9_call_via_r3:
     .incbin "arm9-main.bin", 0x85678
+.endif
 
 .section .dtcm, "aw", %progbits
     .incbin "arm9-dtcm.bin"

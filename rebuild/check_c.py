@@ -10,44 +10,15 @@ import subprocess
 import tarfile
 from tempfile import TemporaryDirectory
 
-from build import EXPECTED_ROM_SHA256, check_match, run, tool
+from r20 import EXPECTED_ROM_SHA256, check_match, compile_c, compiler_command, run, tool
+from recovered import RECOVERED_REGIONS, SOURCE
 
 
-SOURCE = Path(__file__).resolve().parent
 NDSLIB_2005 = "eafb2703db6e2b6b414a2fa15107212522666bff"
 LIBNDS_APR_2006 = "79e4f563e2ed88f404b72e0d8a4f8b079b2abe2a"
+LIBNDS_ITCM_APR_2006 = "544a72e71ac59ef7a593d72096a8d62d12d464dd"
 LIBNDS_OCT_2007 = "8ea06b95fe716cfceff0bce34232217a61e0e6c9"
 
-STREAM_FUNCTIONS = {
-    "read_bounded_stream_byte": 0x0200C82C,
-    "write_bounded_stream_byte": 0x0200C858,
-}
-STREAM_SIZES = {"read_bounded_stream_byte": 44, "write_bounded_stream_byte": 36}
-LZSS_RING = 0x023DDEC0
-RECOVERED_REGIONS = (
-    ("LZSS match tree", "lzss_match_tree.c", "initialize_lzss_match_trees",
-     0x0200C5D8, 0x0200C82C, {
-         "lzss_ring_buffer": LZSS_RING,
-         "lzss_left_child": 0x023DEEE4,
-         "lzss_parent": 0x023E2EEC,
-         "lzss_right_child": 0x023E6EF0,
-         "lzss_match_position": 0x023EB30C,
-         "lzss_match_length": 0x023EB310,
-     }),
-    ("LZSS stream decoder", "lzss_decode.c", "decode_lzss_stream",
-     0x0200CB78, 0x0200CCB4, {
-         **STREAM_FUNCTIONS,
-         "lzss_ring_buffer": LZSS_RING,
-         "lzss_input_stream": 0x023DDEBC,
-         "lzss_output_stream": 0x023EB2F8,
-     }),
-    ("Cartridge bus", "cartridge_bus.c", "get_cartridge_rom_buffer",
-     0x02003CA4, 0x02003CF8, {
-         "cartridge_rom_bytes": 0x020B4CEC,
-         "genesis_work_ram_bytes": 0x023CB634,
-         "z80_cartridge_bank_base": 0x02099008,
-     }),
-)
 TOUCH_FUNCTIONS = {
     "touchRead": 0x03801244,
     "readTouchValue": 0x03801310,
@@ -85,12 +56,6 @@ ARM7_IRQ_FUNCTIONS = {
     "irqInitHandler": 0x038016A4,
     "irqEnable": 0x038016D8,
 }
-CPU_FLAGS = {
-    7: ("-mcpu=arm7tdmi", "-mtune=arm7tdmi", "-DARM7"),
-    9: ("-march=armv5te", "-mtune=arm946e-s", "-DARM9"),
-}
-
-
 def rom_images(path):
     rom = path.read_bytes()
     if sha256(rom).hexdigest() != EXPECTED_ROM_SHA256:
@@ -133,7 +98,7 @@ def functions_in_object(path):
             yield label, data[code_offset:code_offset + size], masked
 
 
-def compare(object_path, symbols, image, exact_sizes=None):
+def compare(object_path, symbols, image):
     base, memory = image
     functions = {name: (code, masked) for name, code, masked in functions_in_object(object_path)}
     exact = set()
@@ -142,8 +107,6 @@ def compare(object_path, symbols, image, exact_sizes=None):
             print(f"  {address:#010x} {name:25} absent")
             continue
         code, masked = functions[name]
-        if exact_sizes is not None and (len(code) != exact_sizes[name] or masked):
-            raise ValueError(f"{name} must match the original size without relocations")
         start = address - base
         expected = memory[start:start + len(code)]
         if start < 0 or len(expected) != len(code):
@@ -155,37 +118,6 @@ def compare(object_path, symbols, image, exact_sizes=None):
         print(f"  {address:#010x} {name:25} {matching}/{checked} bytes"
               f" ({len(masked)} relocation bytes skipped)")
     return exact
-
-
-def compiler_command(root):
-    gcc = tool(root / "bin/arm-eabi-", "gcc")
-    command = [gcc]
-    if gcc.endswith(".exe"):
-        # r20 Win32 derives search paths from argv[0]. Give it its host paths
-        # explicitly when starting it from a WSL shell.
-        for option, directory in (
-            ("-B", root / "libexec/gcc/arm-eabi/4.1.1"),
-            ("-B", root / "arm-eabi/bin"),
-            ("-isystem", root / "arm-eabi/include"),
-            ("-isystem", root / "lib/gcc/arm-eabi/4.1.1/include"),
-        ):
-            path = subprocess.check_output(["wslpath", "-w", str(directory)], text=True).strip()
-            command.append(option + path + ("/" if option == "-B" else ""))
-    version = subprocess.check_output([gcc, "--version"], text=True).splitlines()[0]
-    if "4.1.1" not in version or "devkitARM release 20" not in version:
-        raise ValueError(f"Expected GCC 4.1.1 from devkitARM r20, received {version}")
-    print(version)
-    return command
-
-
-def compile_c(compiler, root, source, cpu, optimization, instruction_set):
-    output = source.stem + f"-arm{cpu}-{optimization}.o"
-    subprocess.run(
-        [*compiler, optimization, instruction_set, "-mthumb-interwork", *CPU_FLAGS[cpu],
-         "-fomit-frame-pointer", "-ffast-math", "-Iinclude", "-c", str(source), "-o", output],
-        cwd=root, check=True,
-    )
-    return root / output
 
 
 def check_recovered_regions(compiler, prefix, work, arm9):
@@ -210,14 +142,49 @@ def snapshot(repository, revision, directory, paths):
         tree.extractall(directory, filter="data")
 
 
-def check_sdk(compiler, work, images, libnds, ndslib):
+def check_sdk_keys(compiler, linker, objcopy, sdk, arm9):
+    header = sdk / "include/nds/ipc.h"
+    contents = header.read_bytes()
+    buttons = b"\tuint16 buttons;"
+    if contents.count(buttons) != 1:
+        raise ValueError("Expected one buttons field in the October 2007 IPC header")
+    header.write_bytes(contents.replace(buttons, b"\tuint32 reserved_before_buttons;\n" + buttons))
+    shutil.copyfile(SOURCE / "sdk_keys.ld", sdk / "sdk_keys.ld")
+    obj = compile_c([*compiler, "-ffunction-sections"], sdk,
+                    Path("source/arm9/keys.c"), 9, "-O2", "-mthumb")
+    run(sdk, linker, "-T", "sdk_keys.ld", "-o", "keys.elf", obj.name)
+    base, memory = arm9
+    for section, address, length in ((".text", 0x0207FB70, 180), (".data", 0x0208F390, 3)):
+        run(sdk, objcopy, "-O", "binary", f"--only-section={section}", "keys.elf", "keys.bin")
+        start = address - base
+        check_match(memory[start:start + length], (sdk / "keys.bin").read_bytes(),
+                    f"linked libnds key routines {section}")
+    print("  0x0207fb70 keysHeld, keysDown, scanKeys: 180/180 linked code bytes and 3/3 data bytes")
+
+
+def check_sdk_irq(compiler, linker, objcopy, sdk, arm9):
+    run(sdk, *compiler, "-DARM9", "-mcpu=arm946e-s", "-x", "assembler-with-cpp",
+        "-c", "source/common/interruptDispatcher.s", "-o", "intr-main.o")
+    run(sdk, linker, "--section-start=.itcm=0x010057a8", "-e", "IntrMain",
+        "--defsym=irqTable=0x010056e0", "--defsym=__irq_flags=0x0b003ff8",
+        "-o", "intr-main.elf", "intr-main.o")
+    run(sdk, objcopy, "-O", "binary", "--only-section=.itcm", "intr-main.elf", "intr-main.bin")
+    base, memory = arm9
+    start = 0x020936F0 - base + 0x57A8
+    check_match(memory[start:start + 216], (sdk / "intr-main.bin").read_bytes(), "linked libnds IntrMain")
+    print("  0x010057a8 IntrMain: 216/216 linked ITCM bytes")
+
+
+def check_sdk(compiler, prefix, work, images, libnds, ndslib):
     sdk_2005 = work / "ndslib-2005"
     sdk_2006 = work / "libnds-2006"
     sdk_2007 = work / "libnds-2007"
+    sdk_irq = work / "libnds-itcm-apr-2006"
     for root, repository, revision, paths in (
         (sdk_2005, ndslib, NDSLIB_2005, ("include", "lib")),
         (sdk_2006, libnds, LIBNDS_APR_2006, ("include", "source")),
         (sdk_2007, libnds, LIBNDS_OCT_2007, ("include", "source")),
+        (sdk_irq, libnds, LIBNDS_ITCM_APR_2006, ("source/common/interruptDispatcher.s",)),
     ):
         snapshot(repository, revision, root, paths)
     for root, path, cpu, opt, symbols, required in (
@@ -241,6 +208,11 @@ def check_sdk(compiler, work, images, libnds, ndslib):
         exact = compare(obj, symbols, images[cpu])
         if not required <= exact:
             raise ValueError(f"Expected matches missing: {', '.join(sorted(required - exact))}")
+    linker, objcopy = (tool(prefix, name) for name in ("ld", "objcopy"))
+    print("libnds-2007 / ARM9 key routines with the jEnesisDS IPC field offset")
+    check_sdk_keys(compiler, linker, objcopy, sdk_2007, images[9])
+    print("libnds-itcm-apr-2006 / ARM9 IntrMain")
+    check_sdk_irq(compiler, linker, objcopy, sdk_irq, images[9])
 
 
 def main():
@@ -258,6 +230,7 @@ def main():
     try:
         r20 = Path(args.r20_root).expanduser().resolve()
         compiler = compiler_command(r20)
+        prefix = r20 / "bin/arm-eabi-"
         images = rom_images(args.rom)
         build = args.build_dir.resolve()
         build.mkdir(parents=True, exist_ok=True)
@@ -265,12 +238,9 @@ def main():
             work = Path(directory)
             shutil.copytree(SOURCE / "source", work, dirs_exist_ok=True)
             print("Reconstructed C / ARM9 -O2")
-            obj = compile_c(compiler, work, Path("bounded_stream.c"), 9, "-O2", "-marm")
-            if compare(obj, STREAM_FUNCTIONS, images[9], STREAM_SIZES) != set(STREAM_FUNCTIONS):
-                raise ValueError("Reconstructed LZSS stream helpers differ from the ROM")
-            check_recovered_regions(compiler, r20 / "bin/arm-eabi-", work, images[9])
+            check_recovered_regions(compiler, prefix, work, images[9])
             if args.libnds_repo:
-                check_sdk(compiler, work, images, args.libnds_repo, args.ndslib_repo)
+                check_sdk(compiler, prefix, work, images, args.libnds_repo, args.ndslib_repo)
     except (OSError, ValueError, subprocess.CalledProcessError) as error:
         parser.exit(1, f"{error}\n")
 

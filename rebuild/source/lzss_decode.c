@@ -1,9 +1,6 @@
 /* Stream decoder for the ARM9 LZSS format. */
 #include "lzss.h"
 
-extern BoundedStream *lzss_input_stream;
-extern BoundedStream *lzss_output_stream;
-
 void decode_lzss_stream(void)
 {
     int i;

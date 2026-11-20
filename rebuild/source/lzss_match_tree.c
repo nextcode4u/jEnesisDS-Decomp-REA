@@ -8,9 +8,6 @@ extern int lzss_parent[WINDOW_SIZE + 1];
 extern int lzss_left_child[WINDOW_SIZE + 1];
 extern int lzss_right_child[WINDOW_SIZE + 1 + ALPHABET_SIZE];
 
-extern int lzss_match_position;
-extern int lzss_match_length;
-
 void initialize_lzss_match_trees(void)
 {
     int i;

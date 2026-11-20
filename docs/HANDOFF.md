@@ -49,7 +49,8 @@ The released ROM uses routines from several points in libnds history. The eviden
 | ARM9 Slot-1 card | `0x0207fda8`, `0x0207fdcc`, `0x0207fe0c` | Three routines match April 2006 `card.c` with r20 `-O2`. The October 2007 object differs at one byte of `cardWriteCommand` within that symbol's range. [April card source](https://github.com/devkitPro/libnds/blob/79e4f563e2ed88f404b72e0d8a4f8b079b2abe2a/source/common/card.c) |
 | IRQ setup | ARM9 `0x02080098` through `0x0208024c`, ARM7 `0x03801564` through `0x038016d8` | The February and October 2007 source snapshots reproduce the identified functions with r20, using `-O2` for the setup functions and `-Os` for `irqEnable`. The December 2007 consolidation changes `irqSet` and `irqClear`. [October IRQ source](https://github.com/devkitPro/libnds/blob/8ea06b95fe716cfceff0bce34232217a61e0e6c9/source/common/interrupts.c) · [December change](https://github.com/devkitPro/libnds/commit/f959258b2e37af19d61161ee07b481c0a59796b9) |
 | BIOS, video, and data cache | ARM9 `0x02080310`, `0x0207fc98`, `0x02080298`, ARM7 `0x03801780` | Matching code sections in the 20071023 archives are ARM9 `biosCalls.o`, `video.o`, and `dcache.o`, and ARM7 `biosCalls.o`. The 20060201 archive also matches the ARM9 data-cache code. [Period libnds archives](https://wii.leseratte10.de/devkitPro/libnds/) |
-| ARM9 IRQ dispatcher | ITCM `0x010057a8` | Related to the October 2007 dispatcher. The ROM saves the interrupt-enable register, masks the active source before invoking the callback, and restores the enable mask afterward. These instructions differ from the archived object. [October dispatcher source](https://github.com/devkitPro/libnds/blob/8ea06b95fe716cfceff0bce34232217a61e0e6c9/source/common/interruptDispatcher.s) |
+| ARM9 IRQ dispatcher | ITCM `0x010057a8–0x01005880` | The April 26, 2006 `IntrMain` reproduces all 216 bytes with r20, including the linked IRQ flags and handler-table addresses. It masks the active source during the callback and acknowledges it on return. The December 2006 revision moves the acknowledgment before the callback. [April dispatcher source](https://github.com/devkitPro/libnds/blob/544a72e71ac59ef7a593d72096a8d62d12d464dd/source/common/interruptDispatcher.s) · [December change](https://github.com/devkitPro/libnds/commit/42771ddf0e2613a631a6414754865c0c5914c1cd) |
+| ARM9 key input | `0x0207fb70–0x0207fc24` | The October 2007 `keysHeld`, `keysDown`, and `scanKeys` reproduce all 180 code bytes and three initialized repeat bytes after positioning `IPC->buttons` at offset `0x18`. The ROM does not establish the purpose of the extra four bytes in this layout. [October keys source](https://github.com/devkitPro/libnds/blob/8ea06b95fe716cfceff0bce34232217a61e0e6c9/source/arm9/keys.c) |
 
 For the source comparisons, use GCC 4.1.1 from devkitARM r20. Compile the historical files with `-Iinclude -fomit-frame-pointer -ffast-math -mthumb -mthumb-interwork` and the optimization above. Use `-DARM7 -mcpu=arm7tdmi -mtune=arm7tdmi` or `-DARM9 -march=armv5te -mtune=arm946e-s`. In the object listing, compare each symbol's instruction bytes and account for the relocations shown by `arm-none-eabi-objdump -dr`. For archived sections, extract members with `arm-none-eabi-ar x` and inspect the code and relocations the same way.
 
@@ -61,16 +62,32 @@ Run `make check-c` with the complete r20 toolchain and the original 0.7.4 ROM. T
 
 | Area | Address range (end exclusive) | Verified C |
 | --- | --- | --- |
+| ARM9 IPC FIFO | `0x0200c4a8–0x0200c5d8` | Receive and dispatch messages, send with or without waiting, and initialize the interrupt through `irqSet` and `irqEnable`. [Source](../rebuild/source/arm9_fifo.c) |
 | LZSS match tree | `0x0200c5d8–0x0200c82c` | Initialize the first-byte roots, insert and record the longest prefix, and remove outgoing window entries. [Source](../rebuild/source/lzss_match_tree.c) |
 | Bounded streams | `0x0200c82c–0x0200c87c` | Read and write without advancing past stream capacity. [Source](../rebuild/source/bounded_stream.c) |
 | LZSS stream decoder | `0x0200cb78–0x0200ccb4` | Decode literal bytes and overlapping ring-buffer matches using the bounded streams. [Source](../rebuild/source/lzss_decode.c) |
 | Cartridge bus | `0x02003ca4–0x02003cf8` | Return the ROM, work RAM, and Z80 bank-latch addresses, and select backing storage for VDP DMA. [Source](../rebuild/source/cartridge_bus.c) |
+| Save-state setup | `0x0200d03c–0x0200d13c` | Populate the version 3 region table and build the numbered `.jst` path. [Source](../rebuild/source/savestate_layout.c) |
 
-The encoder entry at `0x0200c87c` and the prefix-aware decoding entry at `0x0200ccb4` are still in the pseudocode index. [Encoder](../decompiled/arm9/storage/cartridge.c#L465) · [Prefix decoder](../decompiled/arm9/storage/compression/lzss_decode.c#L6)
+Run `make reference-c` to link the six C regions into the actual ARM9 image. The linker map in `build/reference-c/arm9.map` records the input objects and original addresses. The target compares the complete ROM with the release and uses the original ROM bytes for the remaining code and data. [Build setup](../README.md#compile-recovered-c-with-devkitarm-r20)
+
+The FIFO receive ISR reads `REG_IPC_FIFO_RX` once per message and splits that word into a command and a payload. The nonblocking sender clears the send FIFO and returns zero when full. The waiting sender at `0x0200c530` was identified from ARM instructions between the indexed callback setter and nonblocking sender. [Indexed pseudocode](../decompiled/arm9/system/ipc.c#L449) · [Verified C](../rebuild/source/arm9_fifo.c)
+
+## Verify LZSS behavior
+
+The recovered encoder at `0x0200c87c` and buffer and file entries at `0x0200ccb4`, `0x0200cda4`, and `0x0200cf28` compile and pass 135 behavioral comparisons against the original ARM9 code. These four entries still generate different instructions with r20. Both prefix-aware read paths transfer control to the shared stream decoder at `0x0200cb78`. The nearby file writer at `0x0200cf28` copies the prefix, encodes the remainder, and writes the output stream to a file. [Encoder source](../rebuild/source/lzss_encode.c) · [Buffer and file entry points](../rebuild/source/lzss_buffers.c)
+
+Install the Python `unicorn` package in the interpreter used for this check, then run:
+
+```sh
+make check-lzss R20_ROOT=/mnt/d/tools/devkitARM
+```
+
+The check links all recovered codec routines together and executes the resulting ARM code and the released routines on the same inputs. It compares output bytes, stream state, dictionary state, and counters. The file tests also compare call order, output written, and return values using simulated stdio calls. Cases include ring wraparound, output exhaustion, truncated input, and failed file operations. [Behavior checker](../rebuild/check_lzss.py)
 
 ## Reproduce the SDK comparison
 
-`make check-sdk` runs the recovered C checks and recompiles selected SDK sources from July 2005, April 2006, and October 2007 with GCC 4.1.1 from devkitARM r20. For the SDK objects, it reports matching bytes at the ROM entry addresses and excludes relocation bytes. [Build setup](../README.md#compile-recovered-c-with-devkitarm-r20)
+`make check-sdk` runs the recovered C checks and recompiles selected SDK sources from July 2005, April 2006, and October 2007 with GCC 4.1.1 from devkitARM r20. The object comparison excludes relocations. The separate linked checks for `IntrMain` and ARM9 keys include relocations. The keys check applies the IPC offset change in a temporary copy of the October 2007 header. [Build setup](../README.md#compile-recovered-c-with-devkitarm-r20)
 
 Clone both SDK histories and point the Makefile at the complete r20 toolchain. The default repository paths used here keep the checkouts under the ignored build directory.
 
@@ -81,7 +98,7 @@ git clone https://github.com/devkitPro/libnds.git build/sdk-sources/libnds
 make check-sdk R20_ROOT=/mnt/d/tools/devkitARM
 ```
 
-The Codeberg mirror keeps its CVS import on the `history` branch. The July 2005 checkout matches `keysHeld`, `keysDown`, and `touchReadTemperature`, while its `scanKeys` and IRQ routines differ and it lacks `touchReadXY`. April 2006 reproduces all four tested ARM7 touch routines and the tested RTC and Slot-1 routines. October 2007 reproduces the IRQ setup functions, including `irqEnable` with `-Os`. Its ARM9 `scanKeys` differs by four instruction bytes, corresponding to the offset of the shared ARM7 key halfword. [SourceForge ndslib project](https://sourceforge.net/projects/ndslib/) · [CVS mirror snapshot](https://codeberg.org/SkyLyrac/ndslib-archive/src/commit/eafb2703db6e2b6b414a2fa15107212522666bff) · [April 2006 libnds](https://github.com/devkitPro/libnds/tree/79e4f563e2ed88f404b72e0d8a4f8b079b2abe2a) · [October 2007 libnds](https://github.com/devkitPro/libnds/tree/8ea06b95fe716cfceff0bce34232217a61e0e6c9)
+The Codeberg mirror keeps its CVS import on the `history` branch. The July 2005 checkout matches `keysHeld`, `keysDown`, and `touchReadTemperature`. April 2006 reproduces all four tested ARM7 touch routines and the tested RTC and Slot-1 routines. October 2007 reproduces the IRQ setup functions, including `irqEnable` with `-Os`. The unmodified October 2007 `scanKeys` differs by four instruction bytes at the two shared button reads. [SourceForge ndslib project](https://sourceforge.net/projects/ndslib/) · [CVS mirror snapshot](https://codeberg.org/SkyLyrac/ndslib-archive/src/commit/eafb2703db6e2b6b414a2fa15107212522666bff) · [April 2006 libnds](https://github.com/devkitPro/libnds/tree/79e4f563e2ed88f404b72e0d8a4f8b079b2abe2a) · [October 2007 libnds](https://github.com/devkitPro/libnds/tree/8ea06b95fe716cfceff0bce34232217a61e0e6c9)
 
 Compiler selection, source revision, and per-file optimization can each affect a match. The ROM's libnds routines have matching code from different points in SDK history. The reconstructed C check isolates functions so each match demonstrates what the compiler produced from source.
 
@@ -118,7 +135,7 @@ To check MPCF, extract `lib/libfat.a` from the archive. Use `arm-none-eabi-ar x 
 | ARM9 boot and emulator | `0x02000000` · `0x020011e4` · [Startup](../decompiled/arm9/system/startup.c#L5) · [Emulator](../decompiled/arm9/system/emulator.c#L343) |
 | Browser and ROM loading | `0x020034b0` · `0x02001d40` · [Browser loop](../decompiled/arm9/frontend/rom_browser.c#L187) · [Cartridge loader](../decompiled/arm9/storage/cartridge.c#L260) |
 | Save states | `0x0200d13c` · `0x0200d4c8` · [Load](../decompiled/arm9/storage/save_states.c#L356) · [Write](../decompiled/arm9/storage/save_states.c#L438) |
-| LZSS compression | `0x0200c87c` · `0x0200cb78` · [Encoder pseudocode](../decompiled/arm9/storage/cartridge.c#L465) · [Recovered stream decoder](../rebuild/source/lzss_decode.c) |
+| LZSS compression | `0x0200c87c` · `0x0200cb78` · [Recovered encoder](../rebuild/source/lzss_encode.c) · [Recovered stream decoder](../rebuild/source/lzss_decode.c) |
 | CPU dispatch examples | `0x01003d00` · `0x01000020` · [68000 NOP](../decompiled/arm9/cpu/m68k/exceptions_and_control.c#L157) · [Z80 NOP](../decompiled/arm9/cpu/z80/control_and_io/flags_io_and_cpu_control.c#L5) |
 | ARM7 startup and audio | `0x037f8000` · `0x037f81f4` · [Startup](../decompiled/arm7/platform/startup.c#L5) · [Audio service](../decompiled/arm7/audio/service.c#L5) |
 | Sound generation | `0x037f86f4` · `0x037f95fc` · [PSG](../decompiled/arm7/audio/psg.c#L59) · [FM channel](../decompiled/arm7/audio/ym2612/channel_rendering.c#L127) |
