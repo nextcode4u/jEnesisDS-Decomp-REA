@@ -3,16 +3,23 @@ BLOCKSDS ?= $(if $(wildcard $(WONDERFUL_TOOLCHAIN)/thirdparty/blocksds/core),$(W
 export BLOCKSDS
 
 CC_ARM := $(WONDERFUL_TOOLCHAIN)/toolchain/gcc-arm-none-eabi/bin/arm-none-eabi-gcc
+HOST_CC ?= cc
 LIBNDS := $(BLOCKSDS)/libs/libnds
 SPECS := $(BLOCKSDS)/sys/crts/ds_arm9.specs
 NDSTOOL := $(BLOCKSDS)/tools/ndstool/ndstool
 ARM7 := $(BLOCKSDS)/sys/arm7/main_core/arm7_minimal.elf
-OBJ := build/c/main.o build/c/cartridge.o
+OBJ := build/c/main.o build/c/cartridge.o build/c/m68k.o build/c/megadrive.o
 ELF := build/c/arm9.elf
 ROM := build/jEnesisDS-C.nds
 
-.PHONY: all
+.PHONY: all check
 all: $(ROM)
+
+check:
+	@mkdir -p build/c
+	"$(HOST_CC)" -std=c11 -Wall -Wextra -Werror -Isource \
+		tests/boot.c source/m68k.c source/megadrive.c -o build/c/boot-test
+	build/c/boot-test
 
 build/c/%.o: source/%.c Makefile
 	@mkdir -p "$(@D)"

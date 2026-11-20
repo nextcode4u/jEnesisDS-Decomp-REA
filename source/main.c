@@ -1,4 +1,5 @@
 #include "cartridge.h"
+#include "megadrive.h"
 
 #include <dirent.h>
 #include <errno.h>
@@ -115,7 +116,7 @@ static void draw_browser(const struct browser *browser, const char *error)
         printf("%.31s\n", error);
 }
 
-static void draw_cartridge(const struct cartridge *cart)
+static void draw_cartridge(const struct cartridge *cart, const struct m68k *cpu)
 {
     consoleClear();
     puts("Cartridge loaded\n");
@@ -125,7 +126,15 @@ static void draw_cartridge(const struct cartridge *cart)
     printf("Region       %s\n", cart->region);
     printf("ROM checksum %04X\n", (unsigned)cart->header_checksum);
     printf("Computed     %04X\n", (unsigned)cart->computed_checksum);
-    puts("\nGameplay is not available.\nB  Return to ROM browser");
+    if (!cpu)
+        puts("\nSTART  Run cartridge");
+    else if (cpu->stopped)
+        printf("\nStopped at %06lX (opcode %04X)\n",
+               (unsigned long)(cpu->instruction_address & 0xffffff),
+               (unsigned)cpu->opcode);
+    else
+        puts("\nRunning cartridge");
+    puts("B  Return to ROM browser");
 }
 
 int main(void)
@@ -140,6 +149,8 @@ int main(void)
     }
     struct browser browser = {0};
     struct cartridge cart = {0};
+    static struct megadrive md;
+    bool running = false;
     draw_browser(&browser, read_directory(&browser));
 
     for (;;) {
@@ -148,8 +159,20 @@ int main(void)
         uint32_t keys = keysDown();
         if (cart.data) {
             if (keys & KEY_B) {
+                running = false;
+                BG_PALETTE[0] = 0;
                 cartridge_unload(&cart);
                 draw_browser(&browser, NULL);
+            } else if ((keys & KEY_START) && !running) {
+                megadrive_reset(&md, &cart);
+                running = true;
+                draw_cartridge(&cart, &md.cpu);
+            }
+            if (running && !md.cpu.stopped) {
+                megadrive_run_frame(&md);
+                BG_PALETTE[0] = megadrive_backdrop(&md);
+                if (md.cpu.stopped)
+                    draw_cartridge(&cart, &md.cpu);
             }
             continue;
         }
@@ -166,7 +189,7 @@ int main(void)
                 if (error)
                     draw_browser(&browser, error);
                 else
-                    draw_cartridge(&cart);
+                    draw_cartridge(&cart, NULL);
             }
         } else if (keys & (KEY_UP | KEY_DOWN)) {
             if ((keys & KEY_UP) && browser.selected > 0)
