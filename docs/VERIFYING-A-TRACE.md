@@ -1,0 +1,73 @@
+# Verify a trace against the original ROM
+
+Follow this walkthrough when a pseudocode body gets too long, a function name is provisional, or you want to confirm where a Genesis opcode goes. Start in the repository root or the top folder of the handoff ZIP.
+
+| What you have | What you need |
+| --- | --- |
+| A Ghidra symbol or routine address | Python 3 and the repository files |
+| A Genesis opcode or YM2612 selector | The local jEnesisDS 0.7.4 DS ROM at `input/jEnesisDS.nds` |
+| An ARM branch or register operation to verify | The reference-build ELF and GNU ARM `objdump` |
+
+## 1. Find the routine without a ROM
+
+```sh
+python3 scripts/find_routine.py FUN_020033a4
+```
+
+The first output line is `decompiled/arm9/storage/cartridge.c:377  0x020033a4  open_rom_from_browser_selection`. Open the file at line 377 to see its short label above the original body. The second output line explains what the routine does and how the name was assigned. Given a working name instead, try `python3 scripts/find_routine.py open rom from browser selection`. Use `--cpu arm7` to limit a search to ARM7 or `--show` to print a single matched body. [Selection handler](../decompiled/arm9/storage/cartridge.c#L377)
+
+For an offline editor search, use the zero-padded address `0x020033a4` or the Ghidra symbol `FUN_020033a4`. The indexes are tab-separated text. In an index row, `module` is relative to the processor directory, and `line` starts the original REA body, one line after its address label. [ARM9 index](../decompiled/arm9/functions.tsv) · [ARM7 index](../decompiled/arm7/functions.tsv)
+
+## 2. Read the dispatch pointer in the original ROM
+
+Keep track of three different numbers. **Guest opcode** identifies a Genesis instruction, **native address** identifies ARM code that implements it, and **ROM offset** identifies bytes in `jEnesisDS.nds`. For example, `0x4e71` is a Genesis 68000 NOP. Its dispatch slot at ARM9 address `0x020465ec` contains the native handler pointer `0x01003d00`.
+
+In the three tables below, each slot is a four-byte little-endian ARM pointer. The tables are within the loaded ARM9 or ARM7 images. For a slot in one of those images, calculate `image_rom_offset + slot_address - image_load_address`. The target address can be in another memory range, such as ARM9 ITCM. [Image layout](../extracted/nds-layout.json) · [ARM9 memory mapping](HANDOFF.md#rom-and-memory-layout)
+
+| Example | Table address | Slot index | Expected pointer |
+| --- | --- | --- | --- |
+| 68000 NOP | `0x02032c28` | `0x4e71` | `0x01003d00` |
+| Indexed Z80 RES bit 0 to B | `0x020164b0` | `0x80` after DD/FD CB | `0x020135b0` |
+| YM2612 algorithm 4, mask 15 | `0x03800e50` | `0x4f` | `0x037ff0e0` |
+
+With the original ROM from the [reference rebuild instructions](../README.md#matching-rom-rebuild-in-wsl), run this from WSL. It reads the image locations from the DS header and checks the three pointers.
+
+```sh
+python3 - <<'PY'
+from pathlib import Path
+from struct import unpack_from
+
+rom = Path('input/jEnesisDS.nds').read_bytes()
+examples = (
+    ('68000 NOP', 0x20, 0x02032c28, 0x4e71, 0x01003d00),
+    ('Z80 RES bit 0 to B', 0x20, 0x020164b0, 0x80, 0x020135b0),
+    ('YM2612 algorithm 4', 0x30, 0x03800e50, 0x4f, 0x037ff0e0),
+)
+for label, header, table, index, expected in examples:
+    rom_offset, _, load_address, image_size = unpack_from('<4I', rom, header)
+    slot = table + 4 * index
+    in_image = slot - load_address
+    assert 0 <= in_image <= image_size - 4, label
+    pointer, = unpack_from('<I', rom, rom_offset + in_image)
+    print(f'{label}: slot 0x{slot:08x} -> 0x{pointer:08x}')
+    assert pointer == expected, label
+PY
+```
+
+Look up the printed **pointer** in `find_routine.py` to reach the handler. An entry in the table confirms the incoming opcode or selector. Examine the body or ARM listing to verify its side effects. [68000 NOP](../decompiled/arm9/cpu/m68k/exceptions_and_control.c#L157) · [Indexed Z80 RES](../decompiled/arm9/cpu/z80/indexed_bit_set_and_reset/reset/bit_0.c#L5) · [YM2612 dispatch walkthrough](READING-GUIDE.md#follow-one-ym2612-channel)
+
+## 3. Check a short ARM entry
+
+Build the reference ELF files as described in the [README](../README.md#matching-rom-rebuild-in-wsl). With GNU ARM `objdump` on your `PATH`, inspect the indexed Z80 RES handler. The stop address is the start of the next ARM entry.
+
+```sh
+arm-none-eabi-objdump -D --start-address=0x020135b0 --stop-address=0x020135ec build/arm9.elf
+```
+
+Look for `bic r1, r0, #1` at `0x020135c4`. That instruction clears bit 0 in the value read from indexed memory. The entry also records the result in the emulated B register, writes the byte back, then fetches and dispatches the next guest opcode. Conditional calls cover mapped addresses. The short ARM entry helps distinguish the handler from the shared paths that REA expanded into its body. [Why some exports are long](READING-GUIDE.md#read-a-large-export)
+
+If you already have the prepared Ghidra projects open, go to the same native address in the correct processor’s Listing view and use the index’s `ghidra_symbol` as a second check. The handoff gives the commands to recreate those projects. [Ghidra project setup](HANDOFF.md#validate-and-reproduce)
+
+## Record what you verified
+
+Keep the guest opcode, table slot, and native address in your notes. Record which ARM instructions or caller branches support the role. If you can confirm the operation but cannot prove when it runs, say so in the description. Keep new working labels in the module header and index. Run `python3 scripts/check_pseudocode.py` to confirm the label, line range, and body hash still agree. [Analysis basis](HANDOFF.md#trace-a-routine)

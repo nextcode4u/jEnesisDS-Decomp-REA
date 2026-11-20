@@ -2,6 +2,12 @@
 
 Start with the feature you want to understand. The Nintendo DS has two host CPUs in this codebase. ARM9 runs the emulator and draws the display. It emulates both the Genesis 68000 and Z80. ARM7 receives sound commands from ARM9 and turns them into sample buffers for the DS sound hardware.
 
+- [Start a game from the ROM browser](#start-a-game-from-the-rom-browser)
+- [Follow the gameplay loop and display](#follow-the-gameplay-loop-and-display)
+- [Read a large export](#read-a-large-export)
+- [Follow audio from ARM9 to ARM7](#follow-an-arm7-audio-command)
+- [Follow saved data to disk](#follow-saved-data-to-disk)
+
 Names in the short `// 0x…` headers describe what a routine does. Inside a body, Ghidra often uses `FUN_…` for a routine, `DAT_…` for a memory location, and `LAB_…` for a jump destination. Use the lookup command from the repository root to turn a call you are reading into a module and line number. Quote a phrase or type it as separate words.
 
 ```sh
@@ -9,6 +15,8 @@ python3 scripts/find_routine.py FUN_020033a4
 python3 scripts/find_routine.py 0x037f86f4 --show
 python3 scripts/find_routine.py rom browser --limit 5
 ```
+
+The result gives a file and the line with its address label. The final bracketed word is the evidence behind the working name. For a complete example that checks the address and operation against the ROM, follow the [worked trace](VERIFYING-A-TRACE.md).
 
 ## Start a game from the ROM browser
 
@@ -70,7 +78,11 @@ The dispatcher puts the algorithm in the high nibble and uses the low nibble for
 
 ## Follow saved data to disk
 
-The two emulator slots use filenames ending in `_1.jst` and `_2.jst`. The writer stores the header word `0x4a530003`, selected CPU fields, and chunks of emulated memory. The reader checks the low version byte when deciding which additional fields to load. After reading, it rebuilds the display and restores the live state before returning to gameplay. [Slot filenames](../decompiled/arm9/storage/save_states.c#L341) · [Write a state](../decompiled/arm9/storage/save_states.c#L447) · [Load a state](../decompiled/arm9/storage/save_states.c#L365)
+**A save slot captures the emulator's running state.** Follow slot 1 from the menu to disk.
+
+1. The slots are probed when a ROM is loaded. The presence flags control whether the slot dialog shows a load action. The dialog routes the chosen action to the loader or writer with the slot number. [Slot probe](../decompiled/arm9/storage/save_states.c#L513) · [Slot dialog](../decompiled/arm9/storage/save_states.c#L5)
+2. The path builder uses the current cartridge filename to form a path ending in `_1.jst` or `_2.jst`. Type `python3 scripts/find_routine.py FUN_0200d0b8 --show` to see the suffix bytes and slot digit. [Slot path](../decompiled/arm9/storage/save_states.c#L341)
+3. The writer opens the path and writes the header word `0x4a530003`, followed by CPU fields and emulated memory regions. The reader consults the low version byte when deciding whether to read the additional fields. It rebuilds the display and restores live state after reading. [Write a state](../decompiled/arm9/storage/save_states.c#L447) · [Load a state](../decompiled/arm9/storage/save_states.c#L365)
 
 Cartridge SRAM is the game’s own persistent memory and uses `.srm` files. The cartridge code prepares SRAM after reading the ROM header. The gameplay loop can flush changed SRAM during its periodic menu and input checks. [Configure cartridge SRAM](../decompiled/arm9/storage/save_ram.c#L66) · [Flush cartridge SRAM](../decompiled/arm9/storage/save_ram.c#L32)
 

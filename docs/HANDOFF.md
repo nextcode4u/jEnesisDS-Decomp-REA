@@ -2,7 +2,7 @@
 
 Use `descriptive-decomp` to trace the released Nintendo DS emulator by subsystem. The annotation pass identified 2,336 ARM9 opcode dispatch targets and 128 ARM7 dispatch targets. The branch preserves the REA pseudocode for all 3,083 indexed routines. A separate reference rebuild uses the original DS ROM as input. The source-only emulator work lives on the [BlocksDS port branch](https://github.com/nextcode4u/jEnesisDS-Decomp-REA/tree/blocksds-port).
 
-For a first pass, follow the [reading guide](READING-GUIDE.md) from ROM selection through gameplay, video, audio, and saved data.
+Follow the [reading guide](READING-GUIDE.md) to understand a feature. Use the [worked trace](VERIFYING-A-TRACE.md) to check a routine against the dispatch table and ARM instructions.
 
 ## Folder map
 
@@ -46,7 +46,15 @@ The 40 routines previously in the unresolved folders were traced to CPU bus and 
 | Sound generation | `0x037f86f4` · `0x037f95fc` · [PSG](../decompiled/arm7/audio/psg.c#L59) · [FM channel](../decompiled/arm7/audio/ym2612/channel_rendering.c#L127) |
 | ARM7 IPC | `0x037fc218` · `0x037fc468` · [Audio command](../decompiled/arm7/platform/ipc.c#L16) · [FIFO interrupt](../decompiled/arm7/platform/ipc.c#L190) |
 
-Treat `reviewed`, `dispatch table`, and `library match` as evidence from the corresponding analysis. `Control flow`, `call context`, and `pseudocode clue` describe working interpretations. `Unresolved` identifies routines whose purpose still needs investigation. Machine flags, indirect branches, and overlapping symbols can be misrepresented in pseudocode. Opcode decoding references are available in the original manuals. [Motorola M68000 reference](https://www.nxp.com/docs/en/reference-manual/M68000PRM.pdf) · [Zilog Z80 manual](https://www.zilog.com/docs/z80/um0080.pdf)
+| Index basis | What it tells you |
+| --- | --- |
+| `reviewed` | The description comes from inspecting the routine or related code. Read the note for any remaining unknowns. |
+| `dispatch table` | One or more table slots identify the incoming opcode or selector. Several slots can share a handler. |
+| `library match` | The routine was matched to a known library implementation. |
+| `control flow`, `call context`, `pseudocode clue` | The label is a working interpretation based on the available evidence. |
+| `unresolved` | The role still needs investigation. |
+
+Use the ARM listing to resolve machine flags, indirect branches, and overlapping symbols. Opcode decoding references are available in the original manuals. [Motorola M68000 reference](https://www.nxp.com/docs/en/reference-manual/M68000PRM.pdf) · [Zilog Z80 manual](https://www.zilog.com/docs/z80/um0080.pdf)
 
 ## ROM and memory layout
 
