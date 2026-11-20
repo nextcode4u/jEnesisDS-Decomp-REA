@@ -126,10 +126,22 @@ The Codeberg mirror keeps its CVS import on the `history` branch. The July 2005 
 ### Link the period libnds sources
 
 ```sh
+make arm7-sdk R20_ROOT=/mnt/d/tools/devkitARM LIBNDS_REPO=build/sdk-sources/libnds
+make check-arm7-sdk R20_ROOT=/mnt/d/tools/devkitARM LIBNDS_REPO=build/sdk-sources/libnds
 make reference-c-sdk R20_ROOT=/mnt/d/tools/devkitARM LIBNDS_REPO=build/sdk-sources/libnds
 ```
 
-This target adds the 180 bytes of libnds key code, its three initialized repeat bytes, and the 216-byte ITCM dispatcher to the recovered code linked from source. It reads the pinned libnds revisions from the local history checkout. The output ROM and linker map are under `build/reference-c-sdk/`. The ROM input still supplies the remaining regions. [SDK source staging](../rebuild/sdk_source.py)
+`arm7-sdk` builds the five ranges below from libnds source, r20 runtime objects, and the reconstructed interworking entry and division-by-zero hook. It writes an ELF, a linker map, and one file per range under `build/arm7-sdk/`. `check-arm7-sdk` opens the original ROM after the build to compare all 2,236 bytes, including calls, pointer literals, and padding. [ARM7 SDK build](../rebuild/sdk_arm7.py)
+
+| ARM7 range (end exclusive) | Contents |
+| --- | --- |
+| `0x037f8144–0x037f814c` | Thumb entry for the ARM division routine. |
+| `0x03801060–0x03801560` | April 2006 libnds RTC and touchscreen code, with calibration state at `0x0380bb0c`. |
+| `0x03801780–0x03801800` | October 2007 libnds BIOS calls. |
+| `0x03801800–0x038018d8` | April 2006 libnds interrupt dispatcher, linked to the ARM7 flags and handler table. |
+| `0x038018d8–0x03801b34` | Signed and unsigned division and remainder from the r20 runtime, with the recovered `__div0` hook. |
+
+`reference-c-sdk` links those ARM7 ranges and the ARM9 key routines, ITCM dispatcher, Slot-1 code and its command data, video bank control, data-cache maintenance, BIOS calls, division, and newlib `memcpy`. The output ROM and linker maps are under `build/reference-c-sdk/`. The reference build still uses the original ROM for the remaining regions. [ARM9 SDK staging](../rebuild/sdk_arm9.py)
 
 Compiler selection, source revision, and per-file optimization can each affect a match. The ROM's libnds routines have matching code from different points in SDK history. The reconstructed C check isolates functions so each match demonstrates what the compiler produced from source.
 

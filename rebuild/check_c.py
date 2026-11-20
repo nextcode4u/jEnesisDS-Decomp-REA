@@ -10,12 +10,11 @@ from tempfile import TemporaryDirectory
 
 from r20 import EXPECTED_ROM_SHA256, check_match, compile_c, compiler_command, run, tool
 from recovered import ARM7_REGIONS, RECOVERED_REGIONS, SOURCE, compile_arm9_source
-from sdk_source import (LIBNDS_ITCM_APR_2006, LIBNDS_OCT_2007, assemble_sdk_irq,
+from sdk_source import (LIBNDS_APR_2006, LIBNDS_ITCM_APR_2006, LIBNDS_OCT_2007, assemble_sdk_irq,
                         compile_sdk_keys, snapshot)
 
 
 NDSLIB_2005 = "eafb2703db6e2b6b414a2fa15107212522666bff"
-LIBNDS_APR_2006 = "79e4f563e2ed88f404b72e0d8a4f8b079b2abe2a"
 
 TOUCH_FUNCTIONS = {
     "touchRead": 0x03801244,

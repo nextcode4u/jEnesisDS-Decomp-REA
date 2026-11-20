@@ -24,7 +24,7 @@ def main():
     )
     parser.add_argument("--rom", type=Path, default=WORKSPACE / "input/jEnesisDS.nds")
     parser.add_argument("--r20-root", type=Path, help="Compile and link the matched ARM7 and ARM9 regions")
-    parser.add_argument("--libnds-repo", type=Path, help="Also build matched keys and IntrMain from libnds history")
+    parser.add_argument("--libnds-repo", type=Path, help="Link matched code from period libnds sources")
     parser.add_argument("--replace-codec", action="store_true",
                         help="Link behavior-matched LZSS encoder and file routines")
     args = parser.parse_args()
@@ -52,10 +52,13 @@ def main():
         objects = {7: [], 9: []}
         if r20:
             compiler = compiler_command(r20)
+            shutil.copytree(SOURCE / "source", work, dirs_exist_ok=True)
             runtime = stage_c_runtime_init(work, r20, objcopy)
+            objects[7] = prepare_reference_arm7(
+                work, compiler, arm7, arm7_base, runtime, r20, args.libnds_repo)
             objects[9] = prepare_reference_arm9(
-                work, compiler, arm9, arm9_base, runtime, args.libnds_repo, replace_codec=args.replace_codec)
-            objects[7] = prepare_reference_arm7(work, compiler, arm7, arm7_base, runtime)
+                work, compiler, arm9, arm9_base, runtime, r20, args.libnds_repo,
+                replace_codec=args.replace_codec)
         else:
             (work / "arm9-main.bin").write_bytes(arm9[0x220:0x90004])
             (work / "arm7-main.bin").write_bytes(arm7[0xd0:])

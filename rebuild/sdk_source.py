@@ -8,6 +8,7 @@ from pathlib import Path
 from r20 import compile_c, run
 
 
+LIBNDS_APR_2006 = "79e4f563e2ed88f404b72e0d8a4f8b079b2abe2a"
 LIBNDS_ITCM_APR_2006 = "544a72e71ac59ef7a593d72096a8d62d12d464dd"
 LIBNDS_OCT_2007 = "8ea06b95fe716cfceff0bce34232217a61e0e6c9"
 
@@ -30,10 +31,22 @@ def compile_sdk_keys(compiler, sdk):
                      Path("source/arm9/keys.c"), 9, "-O2", "-mthumb")
 
 
-def assemble_sdk_irq(compiler, sdk):
-    run(sdk, *compiler, "-DARM9", "-mcpu=arm946e-s", "-x", "assembler-with-cpp",
+def assemble_sdk_irq(compiler, sdk, cpu=9):
+    processor = "arm946e-s" if cpu == 9 else "arm7tdmi"
+    run(sdk, *compiler, f"-DARM{cpu}", f"-mcpu={processor}", "-x", "assembler-with-cpp",
         "-c", "source/common/interruptDispatcher.s", "-o", "intr-main.o")
     return sdk / "intr-main.o"
+
+
+def stage_sdk_bios(work, compiler, repository, cpu):
+    sdk = work / f"arm{cpu}-bios"
+    snapshot(repository, LIBNDS_OCT_2007, sdk, ("source/common/biosCalls.s",))
+    processor = "arm946e-s" if cpu == 9 else "arm7tdmi"
+    name = f"arm{cpu}-bios.o"
+    run(sdk, *compiler, f"-DARM{cpu}", f"-mcpu={processor}", "-x", "assembler-with-cpp",
+        "-c", "source/common/biosCalls.s", "-o", name)
+    shutil.copyfile(sdk / name, work / name)
+    return name
 
 
 def stage_sdk_for_reference(compiler, work, repository):

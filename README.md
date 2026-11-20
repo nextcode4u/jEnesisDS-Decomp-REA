@@ -41,7 +41,7 @@ make check-pseudocode
 
 `make check-lzss` uses Python Unicorn to compare the recovered compression and file-entry code with the original ARM9 routines. `make check-sdk` recompiles and compares selected period ndslib and libnds sources. [Test setup](docs/HANDOFF.md#verify-lzss-behavior) · [SDK comparison](docs/HANDOFF.md#reproduce-the-sdk-comparison)
 
-Use `make reference-c-sdk` with the same `R20_ROOT` and a `LIBNDS_REPO` history checkout to also link the period libnds key routines and ITCM interrupt dispatcher into the full ROM. [SDK source build](docs/HANDOFF.md#link-the-period-libnds-sources)
+Use `make arm7-sdk` with `R20_ROOT` and a `LIBNDS_REPO` history checkout to build the recovered ARM7 SDK ranges without a ROM input. `make check-arm7-sdk` builds those ranges and then compares them with `ROM`. `make reference-c-sdk` links the recovered regions for both processors into the byte-identical ROM and still uses the release for the unrecovered payload. [SDK source build](docs/HANDOFF.md#link-the-period-libnds-sources)
 
 `make check-codec-rom` builds a ROM with the full recovered LZSS codec in place and runs the 135 Unicorn comparisons against its linked entries. It writes `build/reference-c-codec/jEnesisDS-codec-test.nds`. [Codec ROM verification](docs/HANDOFF.md#verify-lzss-behavior)
 

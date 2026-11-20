@@ -8,7 +8,7 @@ NDSLIB_REPO ?= build/sdk-sources/ndslib-archive
 
 LZSS_SOURCES = bounded_stream lzss_match_tree lzss_encode lzss_decode lzss_memory lzss_buffers lzss_state
 
-.PHONY: check-c check-lzss check-lzss-standalone check-codec-rom check-sdk check-pseudocode \
+.PHONY: check-c check-lzss check-lzss-standalone check-codec-rom check-sdk check-pseudocode arm7-sdk check-arm7-sdk \
 	reference reference-c reference-c-sdk reference-c-codec
 
 check-c:
@@ -29,6 +29,12 @@ check-codec-rom: reference-c-codec
 check-sdk:
 	$(PYTHON) rebuild/check_c.py --r20-root "$(R20_ROOT)" --build-dir "$(R20_BUILD_DIR)" --rom "$(ROM)" \
 		--libnds-repo "$(LIBNDS_REPO)" --ndslib-repo "$(NDSLIB_REPO)"
+
+arm7-sdk:
+	$(PYTHON) rebuild/sdk_arm7.py --r20-root "$(R20_ROOT)" --libnds-repo "$(LIBNDS_REPO)" --output "$(R20_BUILD_DIR)/arm7-sdk"
+
+check-arm7-sdk: arm7-sdk
+	$(PYTHON) rebuild/sdk_arm7.py --output "$(R20_BUILD_DIR)/arm7-sdk" --compare "$(ROM)"
 
 check-pseudocode:
 	$(PYTHON) scripts/check_pseudocode.py

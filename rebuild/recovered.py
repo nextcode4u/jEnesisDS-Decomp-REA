@@ -3,7 +3,10 @@ from pathlib import Path
 import shutil
 
 from r20 import check_match, compile_c, run
-from sdk_source import stage_sdk_for_reference
+from sdk_arm7 import (ARM7_SDK_EXTERNALS, ARM7_SDK_REGIONS, DIVISION_OBJECTS, TOUCH_BSS,
+                      stage_arm7_sdk)
+from sdk_arm9 import ARM9_SDK_REGIONS, stage_arm9_sdk
+from sdk_source import stage_sdk_bios, stage_sdk_for_reference
 
 
 SOURCE = Path(__file__).resolve().parent
@@ -230,7 +233,7 @@ def write_payload_layout(work, core, image, base, begin, end, veneer, regions, *
     return "\n        ".join(layout)
 
 
-def prepare_reference_arm7(work, compiler, image, base, runtime):
+def prepare_reference_arm7(work, compiler, image, base, runtime, r20, libnds=None):
     regions = [init_region(base, 0xd0, runtime)]
     objects = list(runtime)
     externals = {}
@@ -239,16 +242,24 @@ def prepare_reference_arm7(work, compiler, image, base, runtime):
         objects.append(obj)
         regions.append((start, end, f'"{obj}"(.text)'))
         externals.update(symbols)
-    layout = write_payload_layout(work, "arm7", image, base, 0xd0, len(image), 0x037f80f0, regions)
     script = work / "arm7.ld"
+    source = script.read_text()
+    if libnds:
+        objects.extend(stage_arm7_sdk(work, compiler, r20, libnds))
+        regions.extend((start, end, selectors) for start, end, _, selectors in ARM7_SDK_REGIONS)
+        externals.update(ARM7_SDK_EXTERNALS)
+        source = source.replace(". += 0x0380becc - 0x03806d94;",
+                                f". = {TOUCH_BSS:#x} - 0x03806d94;\n"
+                                "        arm7-touch.o(.bss)\n"
+                                "        . = 0x0380becc - 0x03806d94;")
+    layout = write_payload_layout(work, "arm7", image, base, 0xd0, len(image), 0x037f80f0, regions)
     definitions = "".join(f"PROVIDE({name} = {address:#x});\n" for name, address in externals.items())
-    script.write_text(script.read_text().replace("*(.text.payload)", layout) + definitions)
+    script.write_text(source.replace("*(.text.payload)", layout) + definitions)
     return objects
 
 
-def prepare_reference_arm9(work, compiler, image, base, runtime, libnds=None, *, replace_codec=False):
+def prepare_reference_arm9(work, compiler, image, base, runtime, r20, libnds=None, *, replace_codec=False):
     """Generate ROM gaps and link input for rebuilding with matched C objects."""
-    shutil.copytree(SOURCE / "source", work, dirs_exist_ok=True)
     regions = [init_region(base, 0x220, runtime)]
     objects = list(runtime)
     assembly = []
@@ -278,11 +289,16 @@ def prepare_reference_arm9(work, compiler, image, base, runtime, libnds=None, *,
     source = script.read_text()
     if libnds:
         keys, irq = stage_sdk_for_reference(compiler, work, libnds)
-        objects.extend((keys, irq))
+        bios = stage_sdk_bios(work, compiler, libnds, 9)
+        objects.extend((keys, irq, bios, *DIVISION_OBJECTS))
+        objects.extend(stage_arm9_sdk(work, compiler, r20, libnds))
+        regions.extend(ARM9_SDK_REGIONS)
         key_sections = " ".join(f'"{keys}"(.text.{name})'
                                 for name in ("keysHeld", "keysDown", "scanKeys"))
         regions.extend((
             (0x0207FB70, 0x0207FC24, key_sections),
+            (0x02080310, 0x02080380, f'"{bios}"(.text)'),
+            (0x02080380, 0x020805DC, " ".join(f'"{obj}"(.text)' for obj in DIVISION_OBJECTS)),
             (0x0208F390, 0x0208F393, f'"{keys}"(.data)'),
         ))
         # IntrMain runs in ITCM, whose load image begins at 0x020936f0.
