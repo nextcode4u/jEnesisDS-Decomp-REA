@@ -118,7 +118,7 @@ undefined4 allocate_genesis_controller_port(void)
 {
   undefined4 port_state;
   
-  port_state = newlib_malloc_global_reent_wrapper(0x2c);
+  port_state = malloc(0x2c);
   reset_genesis_controller_port();
   return port_state;
 }

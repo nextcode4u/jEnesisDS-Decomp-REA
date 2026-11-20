@@ -43,7 +43,7 @@ void calculate_m68k_cycles_per_frame_line(void)
   
   if (DAT_0b000008 != 0) {
     uVar1 = get_m68k_cycle_counter_field(&m68k_context);
-    compiler_udivsi3(uVar1,DAT_0b000008 * DAT_0b000000);
+    __udivsi3(uVar1,DAT_0b000008 * DAT_0b000000);
     return;
   }
   return;

@@ -371,7 +371,7 @@ void reset_bus_tables_work_ram_and_z80_bus_lines(void)
 {
   DAT_0209900e = 0;
   initialize_m68k_bus_dispatch_tables();
-  newlib_memset(&genesis_work_ram_bytes,0,0x10000);
+  memset(&genesis_work_ram_bytes,0,0x10000);
   z80_cartridge_bank_base = 0;
   DAT_0208f34a = 1;
   DAT_02099010 = 0;

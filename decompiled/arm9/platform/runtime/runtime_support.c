@@ -2,9 +2,9 @@
  * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x020805d8  arm9_divide_by_zero_return_stub
+// 0x020805d8  __div0
 
-void arm9_divide_by_zero_return_stub(void)
+void __div0(void)
 
 {
   return;
@@ -126,57 +126,57 @@ LAB_02080c48:
 }
 
 
-// 0x02082560  newlib_memalign_global_reent_wrapper
+// 0x02082560  memalign
 
-void newlib_memalign_global_reent_wrapper(undefined4 param_1,undefined4 param_2)
+void memalign(undefined4 param_1,undefined4 param_2)
 
 {
-  newlib_memalign_r(&DAT_0208f3a0,param_1,param_2);
+  _memalign_r(&DAT_0208f3a0,param_1,param_2);
   return;
 }
 
 
-// 0x020826fc  newlib_free_global_reent_wrapper
+// 0x020826fc  free
 
-void newlib_free_global_reent_wrapper(undefined4 param_1)
+void free(undefined4 param_1)
 
 {
-  newlib_free_r(&DAT_0208f3a0,param_1);
+  _free_r(&DAT_0208f3a0,param_1);
   return;
 }
 
 
-// 0x02082724  newlib_malloc_global_reent_wrapper
+// 0x02082724  malloc
 
-void newlib_malloc_global_reent_wrapper(undefined4 param_1)
+void malloc(undefined4 param_1)
 
 {
-  newlib_malloc_r(&DAT_0208f3a0,param_1);
+  _malloc_r(&DAT_0208f3a0,param_1);
   return;
 }
 
 
-// 0x020830f0  newlib_malloc_lock_return_stub
+// 0x020830f0  __malloc_lock
 
-void newlib_malloc_lock_return_stub(void)
-
-{
-  return;
-}
-
-
-// 0x020830f4  newlib_malloc_unlock_return_stub
-
-void newlib_malloc_unlock_return_stub(void)
+void __malloc_lock(void)
 
 {
   return;
 }
 
 
-// 0x02083ed0  bounded_string_length
+// 0x020830f4  __malloc_unlock
 
-int bounded_string_length(char *param_1,int param_2)
+void __malloc_unlock(void)
+
+{
+  return;
+}
+
+
+// 0x02083ed0  strnlen
+
+int strnlen(char *param_1,int param_2)
 
 {
   char *pcVar1;
@@ -193,9 +193,9 @@ int bounded_string_length(char *param_1,int param_2)
 }
 
 
-// 0x02083fb8  uppercase_string_in_place_using_ctype_table
+// 0x02083fb8  strupr
 
-void uppercase_string_in_place_using_ctype_table(byte *param_1)
+void strupr(byte *param_1)
 
 {
   byte bVar1;
@@ -212,9 +212,9 @@ void uppercase_string_in_place_using_ctype_table(byte *param_1)
 }
 
 
-// 0x020850a0  stdio_terminal_check_returns_zero
+// 0x020850a0  isatty
 
-undefined4 stdio_terminal_check_returns_zero(void)
+undefined4 isatty(void)
 
 {
   return 0;

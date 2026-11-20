@@ -1,0 +1,510 @@
+{
+  "defaults": {
+    "AddDevice": "thunk_FUN_02084e4c",
+    "__aeabi_idivmod": "thunk_FUN_020805c0",
+    "__aeabi_uidivmod": "thunk_FUN_0208047c",
+    "__divsi3": "FUN_02080494",
+    "__udivsi3": "FUN_02080380",
+    "_call_via_r3": "thunk_FUN_020805e8",
+    "chdir": "FUN_0208553c",
+    "fatInitDefault": "thunk_FUN_02072cdc",
+    "free": "thunk_FUN_020826fc",
+    "irqClear": "thunk_FUN_0208014c",
+    "irqDisable": "thunk_FUN_0208024c",
+    "irqEnable": "thunk_FUN_020801fc",
+    "irqInit": "thunk_FUN_02080100",
+    "irqSet": "thunk_FUN_02080098",
+    "keysHeld": "thunk_FUN_0207fb70",
+    "malloc": "FUN_02082724",
+    "memcpy": "thunk_FUN_02082ec0",
+    "memmove": "FUN_02082f5c",
+    "memset": "thunk_FUN_02083058",
+    "scanKeys": "thunk_FUN_0207fb90",
+    "strcasecmp": "FUN_02083638",
+    "strchr": "FUN_020836d4",
+    "strlen": "FUN_02083a6c",
+    "strncasecmp": "thunk_FUN_02083afc",
+    "strncmp": "thunk_FUN_02083c80",
+    "strncpy": "FUN_02083dbc",
+    "strnlen": "thunk_FUN_02083ed0",
+    "strpbrk": "thunk_FUN_02083f18",
+    "strrchr": "thunk_FUN_02083f68",
+    "strupr": "thunk_FUN_02083fb8",
+    "swiCopy": "thunk_FUN_0208033e",
+    "swiWaitForVBlank": "thunk_FUN_0208031c",
+    "touchReadXY": "thunk_FUN_0207fc70",
+    "vramSetBankE": "thunk_FUN_0207fd44",
+    "vramSetMainBanks": "thunk_FUN_0207fc98"
+  },
+  "routines": {
+    "0x020050a8": {
+      "memset": [
+        "FUN_02083058"
+      ]
+    },
+    "0x020016d4": {
+      "memset": [
+        "FUN_02083058",
+        "FUN_02083058"
+      ]
+    },
+    "0x02001c4c": {
+      "memcpy": [
+        "FUN_02082ec0"
+      ]
+    },
+    "0x02001d40": {
+      "memset": [
+        "FUN_02083058"
+      ]
+    },
+    "0x020025a8": {
+      "memcpy": [
+        "FUN_02082ec0"
+      ]
+    },
+    "0x0207fb70": {
+      "keysHeld": [
+        "FUN_0207fb70"
+      ]
+    },
+    "0x0207fb90": {
+      "scanKeys": [
+        "FUN_0207fb90"
+      ]
+    },
+    "0x0207fc70": {
+      "touchReadXY": [
+        "FUN_0207fc70"
+      ]
+    },
+    "0x0207fc98": {
+      "vramSetMainBanks": [
+        "FUN_0207fc98"
+      ]
+    },
+    "0x0207fd44": {
+      "vramSetBankE": [
+        "FUN_0207fd44"
+      ]
+    },
+    "0x02080098": {
+      "irqSet": [
+        "FUN_02080098"
+      ]
+    },
+    "0x02080100": {
+      "irqInit": [
+        "FUN_02080100"
+      ]
+    },
+    "0x0208014c": {
+      "irqClear": [
+        "FUN_0208014c"
+      ]
+    },
+    "0x020801fc": {
+      "irqEnable": [
+        "FUN_020801fc"
+      ]
+    },
+    "0x0208024c": {
+      "irqDisable": [
+        "FUN_0208024c"
+      ]
+    },
+    "0x0208031c": {
+      "swiWaitForVBlank": [
+        "FUN_0208031c"
+      ]
+    },
+    "0x0208033e": {
+      "swiCopy": [
+        "FUN_0208033e"
+      ]
+    },
+    "0x02001948": {
+      "memset": [
+        "FUN_02083058",
+        "FUN_02083058"
+      ],
+      "memcpy": [
+        "FUN_02082ec0"
+      ]
+    },
+    "0x0200311c": {
+      "free": [
+        "FUN_020826fc"
+      ]
+    },
+    "0x020027d0": {
+      "strrchr": [
+        "FUN_02083f68"
+      ]
+    },
+    "0x02002b8c": {
+      "__aeabi_uidivmod": [
+        "FUN_0208047c"
+      ]
+    },
+    "0x0200d82c": {
+      "free": [
+        "FUN_020826fc"
+      ]
+    },
+    "0x02004bf0": {
+      "memset": [
+        "FUN_02083058"
+      ]
+    },
+    "0x0200ccb4": {
+      "memcpy": [
+        "FUN_02082ec0"
+      ]
+    },
+    "0x0200cda4": {
+      "memcpy": [
+        "FUN_02082ec0"
+      ]
+    },
+    "0x02072c8c": {
+      "chdir": [
+        "thunk_FUN_0208553c"
+      ]
+    },
+    "0x02072cdc": {
+      "fatInitDefault": [
+        "FUN_02072cdc"
+      ]
+    },
+    "0x02072d38": {
+      "strlen": [
+        "thunk_FUN_02083a6c"
+      ],
+      "strchr": [
+        "thunk_FUN_020836d4"
+      ]
+    },
+    "0x02072e70": {
+      "malloc": [
+        "thunk_FUN_02082724"
+      ],
+      "__udivsi3": [
+        "thunk_FUN_02080380"
+      ]
+    },
+    "0x02073e68": {
+      "irqDisable": [
+        "FUN_0208024c"
+      ]
+    },
+    "0x0207d0c4": {
+      "malloc": [
+        "thunk_FUN_02082724",
+        "thunk_FUN_02082724",
+        "thunk_FUN_02082724"
+      ]
+    },
+    "0x0207d15c": {
+      "strncpy": [
+        "thunk_FUN_02083dbc"
+      ]
+    },
+    "0x0207d428": {
+      "strchr": [
+        "thunk_FUN_020836d4",
+        "thunk_FUN_020836d4"
+      ]
+    },
+    "0x0207d64c": {
+      "strchr": [
+        "thunk_FUN_020836d4",
+        "thunk_FUN_020836d4"
+      ],
+      "strncpy": [
+        "thunk_FUN_02083dbc"
+      ]
+    },
+    "0x0207efe4": {
+      "strcasecmp": [
+        "thunk_FUN_02083638",
+        "thunk_FUN_02083638"
+      ]
+    },
+    "0x0207f07c": {
+      "strchr": [
+        "thunk_FUN_020836d4",
+        "thunk_FUN_020836d4"
+      ],
+      "strlen": [
+        "thunk_FUN_02083a6c"
+      ]
+    },
+    "0x0207f238": {
+      "strchr": [
+        "thunk_FUN_020836d4"
+      ]
+    },
+    "0x0207f5bc": {
+      "strlen": [
+        "thunk_FUN_02083a6c",
+        "thunk_FUN_02083a6c",
+        "thunk_FUN_02083a6c",
+        "thunk_FUN_02083a6c"
+      ],
+      "memmove": [
+        "thunk_FUN_02082f5c"
+      ],
+      "strchr": [
+        "thunk_FUN_020836d4"
+      ],
+      "__divsi3": [
+        "thunk_FUN_02080494"
+      ],
+      "__udivsi3": [
+        "thunk_FUN_02080380"
+      ]
+    },
+    "0x0207d1f8": {
+      "strchr": [
+        "thunk_FUN_020836d4",
+        "thunk_FUN_020836d4"
+      ]
+    },
+    "0x0207dac8": {
+      "strchr": [
+        "thunk_FUN_020836d4",
+        "thunk_FUN_020836d4"
+      ],
+      "strncpy": [
+        "thunk_FUN_02083dbc"
+      ]
+    },
+    "0x0208047c": {
+      "__aeabi_uidivmod": [
+        "FUN_0208047c"
+      ]
+    },
+    "0x020805c0": {
+      "__aeabi_idivmod": [
+        "FUN_020805c0"
+      ]
+    },
+    "0x020826fc": {
+      "free": [
+        "FUN_020826fc"
+      ]
+    },
+    "0x02083ed0": {
+      "strnlen": [
+        "FUN_02083ed0"
+      ]
+    },
+    "0x02083fb8": {
+      "strupr": [
+        "FUN_02083fb8"
+      ]
+    },
+    "0x020805e8": {
+      "_call_via_r3": [
+        "FUN_020805e8"
+      ]
+    },
+    "0x02085910": {
+      "fatInitDefault": [
+        "thunk_FUN_02072cdc",
+        "FUN_02072cdc"
+      ]
+    },
+    "0x02085948": {
+      "chdir": [
+        "thunk_FUN_0208553c"
+      ],
+      "strnlen": [
+        "FUN_02083ed0"
+      ]
+    },
+    "0x0208594c": {
+      "chdir": [
+        "thunk_FUN_0208553c"
+      ],
+      "strnlen": [
+        "FUN_02083ed0"
+      ]
+    },
+    "0x02085978": {
+      "malloc": [
+        "thunk_FUN_02082724"
+      ]
+    },
+    "0x0208597c": {
+      "malloc": [
+        "thunk_FUN_02082724"
+      ]
+    },
+    "0x02081370": {
+      "memset": [
+        "FUN_02083058"
+      ]
+    },
+    "0x020815a4": {
+      "memcpy": [
+        "FUN_02082ec0",
+        "FUN_02082ec0",
+        "FUN_02082ec0"
+      ]
+    },
+    "0x02082590": {
+      "__aeabi_uidivmod": [
+        "FUN_0208047c"
+      ]
+    },
+    "0x02082ec0": {
+      "memcpy": [
+        "FUN_02082ec0"
+      ]
+    },
+    "0x02083058": {
+      "memset": [
+        "FUN_02083058"
+      ]
+    },
+    "0x02083afc": {
+      "strncasecmp": [
+        "FUN_02083afc"
+      ]
+    },
+    "0x02083c80": {
+      "strncmp": [
+        "FUN_02083c80"
+      ]
+    },
+    "0x02083f18": {
+      "strpbrk": [
+        "FUN_02083f18"
+      ]
+    },
+    "0x02083f68": {
+      "strrchr": [
+        "FUN_02083f68"
+      ]
+    },
+    "0x02084e4c": {
+      "AddDevice": [
+        "FUN_02084e4c"
+      ]
+    },
+    "0x02084ee0": {
+      "strncmp": [
+        "FUN_02083c80"
+      ]
+    },
+    "0x02084fc0": {
+      "free": [
+        "FUN_020826fc"
+      ]
+    },
+    "0x020850fc": {
+      "free": [
+        "FUN_020826fc"
+      ]
+    },
+    "0x02085394": {
+      "strnlen": [
+        "FUN_02083ed0"
+      ],
+      "strncmp": [
+        "FUN_02083c80",
+        "FUN_02083c80"
+      ],
+      "strrchr": [
+        "FUN_02083f68"
+      ]
+    },
+    "0x0208553c": {
+      "strnlen": [
+        "FUN_02083ed0"
+      ]
+    },
+    "0x02085760": {
+      "free": [
+        "FUN_020826fc"
+      ]
+    },
+    "0x020857d4": {
+      "free": [
+        "FUN_020826fc"
+      ]
+    },
+    "0x02085950": {
+      "strlen": [
+        "thunk_FUN_02083a6c"
+      ]
+    },
+    "0x02085954": {
+      "strlen": [
+        "thunk_FUN_02083a6c"
+      ]
+    },
+    "0x02085958": {
+      "strchr": [
+        "thunk_FUN_020836d4"
+      ]
+    },
+    "0x0208595c": {
+      "strchr": [
+        "thunk_FUN_020836d4"
+      ]
+    },
+    "0x02085980": {
+      "__udivsi3": [
+        "thunk_FUN_02080380"
+      ]
+    },
+    "0x02085984": {
+      "__udivsi3": [
+        "thunk_FUN_02080380"
+      ]
+    },
+    "0x02085998": {
+      "strncpy": [
+        "thunk_FUN_02083dbc"
+      ]
+    },
+    "0x0208599c": {
+      "strncpy": [
+        "thunk_FUN_02083dbc"
+      ]
+    },
+    "0x020859b8": {
+      "strcasecmp": [
+        "thunk_FUN_02083638"
+      ]
+    },
+    "0x020859bc": {
+      "strcasecmp": [
+        "thunk_FUN_02083638"
+      ]
+    },
+    "0x020859d0": {
+      "memmove": [
+        "thunk_FUN_02082f5c"
+      ]
+    },
+    "0x020859d4": {
+      "memmove": [
+        "thunk_FUN_02082f5c"
+      ]
+    },
+    "0x020859e0": {
+      "__divsi3": [
+        "thunk_FUN_02080494"
+      ]
+    },
+    "0x020859e4": {
+      "__divsi3": [
+        "thunk_FUN_02080494"
+      ]
+    }
+  }
+}

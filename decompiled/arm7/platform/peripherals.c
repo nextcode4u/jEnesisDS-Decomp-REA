@@ -2,9 +2,9 @@
  * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x037f80fc  arm_veneer_for_initialize_rtc_control
+// 0x037f80fc  rtcReset_arm_veneer
 
-undefined4 arm_veneer_for_initialize_rtc_control(void)
+undefined4 rtcReset(void)
 
 {
   undefined4 in_lr;
@@ -13,21 +13,21 @@ undefined4 arm_veneer_for_initialize_rtc_control(void)
   byte abStack_11 [5];
   
   uStack_13 = 0x61;
-  transfer_rtc_command_and_response(&uStack_13,1,abStack_11,1);
+  rtcTransaction(&uStack_13,1,abStack_11,1);
   if ((abStack_11[0] & 0xc0) != 0) {
     uStack_13 = 0x60;
     bStack_12 = abStack_11[0] | 1;
-    transfer_rtc_command_and_response(&uStack_13,2,0,0);
+    rtcTransaction(&uStack_13,2,0,0);
   }
   return in_lr;
 }
 
 
-// 0x037f8138  arm_veneer_for_calibrate_touch_coordinates
+// 0x037f8138  touchReadXY_arm_veneer
 
 /* WARNING: Restarted to delay deadcode elimination for space: ram */
 
-undefined8 arm_veneer_for_calibrate_touch_coordinates(short *param_1)
+undefined8 touchReadXY(short *param_1)
 
 {
   ushort uVar1;
@@ -53,26 +53,26 @@ undefined8 arm_veneer_for_calibrate_touch_coordinates(short *param_1)
     uVar13 = (uint)DAT_027ffcdc;
     uVar1 = CONCAT11(DAT_027ffcdf,DAT_027ffcde);
     uVar2 = CONCAT11(DAT_027ffcd9,DAT_027ffcd8);
-    iVar11 = arm_thumb_veneer_for_compiler_divsi3((uVar12 - uVar13) * 0x80000,(uint)uVar1 - (uint)uVar2);
+    iVar11 = __divsi3((uVar12 - uVar13) * 0x80000,(uint)uVar1 - (uint)uVar2);
     uVar14 = (uint)DAT_027ffce3;
     uVar15 = (uint)DAT_027ffcdd;
     uVar3 = CONCAT11(DAT_027ffce1,DAT_027ffce0);
     uVar4 = CONCAT11(DAT_027ffcdb,DAT_027ffcda);
     DAT_0380bb10 = iVar11;
-    DAT_0380bb14 = arm_thumb_veneer_for_compiler_divsi3((uVar14 - uVar15) * 0x80000,(uint)uVar3 - (uint)uVar4);
+    DAT_0380bb14 = __divsi3((uVar14 - uVar15) * 0x80000,(uint)uVar3 - (uint)uVar4);
     DAT_0380bb18 = (int)(((uint)uVar2 + (uint)uVar1) * iVar11 + (uVar13 + uVar12) * -0x80000) / 2;
     DAT_0380bb1c = (int)(DAT_0380bb14 * ((uint)uVar4 + (uint)uVar3) + (uVar15 + uVar14) * -0x80000)
                    / 2;
     DAT_0380bb0c = '\x01';
   }
-  sVar5 = sample_touch_coordinates(0xd0,5,0x1e);
-  sVar6 = sample_touch_coordinates(0x90,5,0x1e);
+  sVar5 = readTouchValue(0xd0,5,0x1e);
+  sVar6 = readTouchValue(0x90,5,0x1e);
   iVar16 = (sVar5 * DAT_0380bb10 - DAT_0380bb18) + DAT_0380bb10 / 2;
   iVar11 = (sVar6 * DAT_0380bb14 - DAT_0380bb1c) + DAT_0380bb14 / 2;
   sVar9 = (short)(iVar11 >> 0x13);
-  sVar7 = sample_touch_coordinates(0xb4,5,0x1e);
+  sVar7 = readTouchValue(0xb4,5,0x1e);
   sVar10 = (short)(iVar16 >> 0x13);
-  sVar8 = sample_touch_coordinates(0xc4,5,0x1e);
+  sVar8 = readTouchValue(0xc4,5,0x1e);
   if ((iVar16 >> 0x13) * 0x10000 < 0) {
     sVar10 = 0;
   }
@@ -95,9 +95,9 @@ undefined8 arm_veneer_for_calibrate_touch_coordinates(short *param_1)
 }
 
 
-// 0x03801060  convert_bcd_bytes_to_decimal
+// 0x03801060  BCDToInteger
 
-undefined4 convert_bcd_bytes_to_decimal(int param_1,int param_2)
+undefined4 BCDToInteger(int param_1,int param_2)
 
 {
   int iVar1;
@@ -115,9 +115,9 @@ undefined4 convert_bcd_bytes_to_decimal(int param_1,int param_2)
 }
 
 
-// 0x0380108c  convert_decimal_bytes_to_bcd
+// 0x0380108c  integerToBCD
 
-undefined4 convert_decimal_bytes_to_bcd(int param_1,int param_2)
+undefined4 integerToBCD(int param_1,int param_2)
 
 {
   int iVar1;
@@ -128,7 +128,7 @@ undefined4 convert_decimal_bytes_to_bcd(int param_1,int param_2)
   if (param_2 != 0) {
     iVar1 = 0;
     do {
-      bios_divide_with_remainder(*(undefined1 *)(iVar1 + param_1),10,&local_20,local_1c);
+      swiDivMod(*(undefined1 *)(iVar1 + param_1),10,&local_20,local_1c);
       *(byte *)(iVar1 + param_1) = (byte)(local_20 << 4) | local_1c[0];
       iVar1 = iVar1 + 1;
     } while (param_2 != iVar1);
@@ -137,9 +137,9 @@ undefined4 convert_decimal_bytes_to_bcd(int param_1,int param_2)
 }
 
 
-// 0x038010c8  transfer_rtc_command_and_response
+// 0x038010c8  rtcTransaction
 
-undefined4 transfer_rtc_command_and_response(byte *param_1,int param_2,undefined1 *param_3,int param_4)
+undefined4 rtcTransaction(byte *param_1,int param_2,undefined1 *param_3,int param_4)
 
 {
   byte bVar1;
@@ -149,9 +149,9 @@ undefined4 transfer_rtc_command_and_response(byte *param_1,int param_2,undefined
   undefined4 in_lr;
   
   DAT_04000138 = 0x73;
-  bios_delay_cycles(0x30);
+  swiDelay(0x30);
   DAT_04000138 = 0x77;
-  bios_delay_cycles(0x30);
+  swiDelay(0x30);
   for (; param_2 != 0; param_2 = param_2 + -1) {
     uVar2 = (uint)*param_1;
     param_1 = param_1 + 1;
@@ -159,9 +159,9 @@ undefined4 transfer_rtc_command_and_response(byte *param_1,int param_2,undefined
     do {
       bVar1 = (byte)(uVar2 >> 7);
       DAT_04000138 = bVar1 | 0x74;
-      bios_delay_cycles(0x30);
+      swiDelay(0x30);
       DAT_04000138 = bVar1 | 0x76;
-      bios_delay_cycles(0x30);
+      swiDelay(0x30);
       iVar3 = iVar3 + 1;
       uVar2 = (uVar2 & 0x7f) << 1;
     } while (iVar3 != 8);
@@ -172,9 +172,9 @@ undefined4 transfer_rtc_command_and_response(byte *param_1,int param_2,undefined
       uVar4 = 0;
       do {
         DAT_04000138 = 100;
-        bios_delay_cycles(0x30);
+        swiDelay(0x30);
         DAT_04000138 = 0x66;
-        bios_delay_cycles(0x30);
+        swiDelay(0x30);
         if ((DAT_04000138 & 1) != 0) {
           uVar4 = 1 << (uVar2 & 0xff) & 0xffU | uVar4;
         }
@@ -187,14 +187,14 @@ undefined4 transfer_rtc_command_and_response(byte *param_1,int param_2,undefined
     }
   }
   DAT_04000138 = 0x62;
-  bios_delay_cycles(0x30);
+  swiDelay(0x30);
   return in_lr;
 }
 
 
-// 0x03801200  initialize_rtc_control
+// 0x03801200  rtcReset
 
-undefined4 initialize_rtc_control(void)
+undefined4 rtcReset(void)
 
 {
   undefined4 in_lr;
@@ -203,17 +203,17 @@ undefined4 initialize_rtc_control(void)
   byte local_11 [5];
   
   local_13 = 0x61;
-  transfer_rtc_command_and_response(&local_13,1,local_11,1);
+  rtcTransaction(&local_13,1,local_11,1);
   if ((local_11[0] & 0xc0) != 0) {
     local_13 = 0x60;
     local_12 = local_11[0] | 1;
-    transfer_rtc_command_and_response(&local_13,2,0,0);
+    rtcTransaction(&local_13,2,0,0);
   }
   return in_lr;
 }
 
 
-// 0x03801244  read_touch_adc_sample
+// 0x03801244  touchRead
 
 /* WARNING: Removing unreachable block (ram,0x03801284) */
 /* WARNING: Removing unreachable block (ram,0x03801288) */
@@ -223,7 +223,7 @@ undefined4 initialize_rtc_control(void)
 /* WARNING: Removing unreachable block (ram,0x038012a6) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-longlong read_touch_adc_sample(void)
+longlong touchRead(void)
 
 {
   undefined2 uVar1;
@@ -233,7 +233,7 @@ longlong read_touch_adc_sample(void)
   _DAT_04000208 = 0;
   if ((int)((uint)_DAT_040001c0 << 0x18) < 0) {
     do {
-      bios_delay_cycles(1);
+      swiDelay(1);
     } while ((_DAT_040001c0 & 0x80) != 0);
   }
   _DAT_040001c2 = 0;
@@ -243,9 +243,9 @@ longlong read_touch_adc_sample(void)
 }
 
 
-// 0x03801310  sample_touch_coordinates
+// 0x03801310  readTouchValue
 
-undefined8 sample_touch_coordinates(uint param_1,int param_2,int param_3)
+undefined8 readTouchValue(uint param_1,int param_2,int param_3)
 
 {
   int iVar1;
@@ -254,7 +254,7 @@ undefined8 sample_touch_coordinates(uint param_1,int param_2,int param_3)
   int iVar4;
   undefined4 in_lr;
   
-  iVar1 = read_touch_adc_sample(param_1 | 1);
+  iVar1 = touchRead(param_1 | 1);
   if (param_2 < 1) {
     iVar2 = 0;
     iVar4 = 0;
@@ -262,7 +262,7 @@ undefined8 sample_touch_coordinates(uint param_1,int param_2,int param_3)
   else {
     iVar4 = 0;
     do {
-      iVar2 = read_touch_adc_sample(param_1 | 1);
+      iVar2 = touchRead(param_1 | 1);
       iVar3 = iVar1 - iVar2;
       if (iVar3 < 0) {
         iVar3 = -iVar3;
@@ -276,11 +276,11 @@ undefined8 sample_touch_coordinates(uint param_1,int param_2,int param_3)
 }
 
 
-// 0x03801360  calibrate_touch_coordinates
+// 0x03801360  touchReadXY
 
 /* WARNING: Restarted to delay deadcode elimination for space: ram */
 
-undefined8 calibrate_touch_coordinates(short *param_1)
+undefined8 touchReadXY(short *param_1)
 
 {
   ushort uVar1;
@@ -306,26 +306,26 @@ undefined8 calibrate_touch_coordinates(short *param_1)
     uVar13 = (uint)DAT_027ffcdc;
     uVar1 = CONCAT11(DAT_027ffcdf,DAT_027ffcde);
     uVar2 = CONCAT11(DAT_027ffcd9,DAT_027ffcd8);
-    iVar11 = arm_thumb_veneer_for_compiler_divsi3((uVar12 - uVar13) * 0x80000,(uint)uVar1 - (uint)uVar2);
+    iVar11 = __divsi3((uVar12 - uVar13) * 0x80000,(uint)uVar1 - (uint)uVar2);
     uVar14 = (uint)DAT_027ffce3;
     uVar15 = (uint)DAT_027ffcdd;
     uVar3 = CONCAT11(DAT_027ffce1,DAT_027ffce0);
     uVar4 = CONCAT11(DAT_027ffcdb,DAT_027ffcda);
     DAT_0380bb10 = iVar11;
-    DAT_0380bb14 = arm_thumb_veneer_for_compiler_divsi3((uVar14 - uVar15) * 0x80000,(uint)uVar3 - (uint)uVar4);
+    DAT_0380bb14 = __divsi3((uVar14 - uVar15) * 0x80000,(uint)uVar3 - (uint)uVar4);
     DAT_0380bb18 = (int)(((uint)uVar2 + (uint)uVar1) * iVar11 + (uVar13 + uVar12) * -0x80000) / 2;
     DAT_0380bb1c = (int)(DAT_0380bb14 * ((uint)uVar4 + (uint)uVar3) + (uVar15 + uVar14) * -0x80000)
                    / 2;
     DAT_0380bb0c = '\x01';
   }
-  sVar5 = sample_touch_coordinates(0xd0,5,0x1e);
-  sVar6 = sample_touch_coordinates(0x90,5,0x1e);
+  sVar5 = readTouchValue(0xd0,5,0x1e);
+  sVar6 = readTouchValue(0x90,5,0x1e);
   iVar16 = (sVar5 * DAT_0380bb10 - DAT_0380bb18) + DAT_0380bb10 / 2;
   iVar11 = (sVar6 * DAT_0380bb14 - DAT_0380bb1c) + DAT_0380bb14 / 2;
   sVar9 = (short)(iVar11 >> 0x13);
-  sVar7 = sample_touch_coordinates(0xb4,5,0x1e);
+  sVar7 = readTouchValue(0xb4,5,0x1e);
   sVar10 = (short)(iVar16 >> 0x13);
-  sVar8 = sample_touch_coordinates(0xc4,5,0x1e);
+  sVar8 = readTouchValue(0xc4,5,0x1e);
   if ((iVar16 >> 0x13) * 0x10000 < 0) {
     sVar10 = 0;
   }
@@ -348,17 +348,17 @@ undefined8 calibrate_touch_coordinates(short *param_1)
 }
 
 
-// 0x0380152c  read_temperature_adc_pair
+// 0x0380152c  touchReadTemperature
 
-undefined8 read_temperature_adc_pair(int *param_1,int *param_2)
+undefined8 touchReadTemperature(int *param_1,int *param_2)
 
 {
   int iVar1;
   undefined4 in_lr;
   
-  iVar1 = read_touch_adc_sample(0x84);
+  iVar1 = touchRead(0x84);
   *param_1 = iVar1;
-  iVar1 = read_touch_adc_sample(0xf4);
+  iVar1 = touchRead(0xf4);
   *param_2 = iVar1;
   return CONCAT44(in_lr,(iVar1 - *param_1) * 0x212a + -0x111000);
 }

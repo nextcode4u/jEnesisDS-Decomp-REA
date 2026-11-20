@@ -2,86 +2,86 @@
  * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x02072c5c  fat_unsafe_unmount_partition_wrapper
+// 0x02072c5c  fatUnsafeUnmount
 
-void fat_unsafe_unmount_partition_wrapper(void)
+void fatUnsafeUnmount(void)
 
 {
-  fat_fat_partition_unsafeunmount();
+  _FAT_partition_unsafeUnmount();
   return;
 }
 
 
-// 0x02072c68  fat_unmount_partition_wrapper
+// 0x02072c68  fatUnmount
 
-void fat_unmount_partition_wrapper(void)
+void fatUnmount(void)
 
 {
-  fat_fat_partition_unmount();
+  _FAT_partition_unmount();
   return;
 }
 
 
-// 0x02072c74  fat_mount_custom_interface_wrapper
+// 0x02072c74  fatMountCustomInterface
 
-void fat_mount_custom_interface_wrapper(void)
+void fatMountCustomInterface(void)
 
 {
-  fat_fat_partition_mountcustominterface();
+  _FAT_partition_mountCustomInterface();
   return;
 }
 
 
-// 0x02072c80  fat_mount_partition_wrapper
+// 0x02072c80  fatMountNormalInterface
 
-void fat_mount_partition_wrapper(void)
+void fatMountNormalInterface(void)
 
 {
-  fat_fat_partition_mount();
+  _FAT_partition_mount();
   return;
 }
 
 
-// 0x02072c8c  fat_mount_default_and_register_device
+// 0x02072c8c  fatInit
 
-undefined4 fat_mount_default_and_register_device(undefined4 param_1,int param_2)
+undefined4 fatInit(undefined4 param_1,int param_2)
 
 {
   int iVar1;
   int iVar2;
   
-  iVar1 = fat_fat_partition_mount(1,param_1);
-  iVar2 = fat_fat_partition_mount(2,param_1);
+  iVar1 = _FAT_partition_mount(1,param_1);
+  iVar2 = _FAT_partition_mount(2,param_1);
   if (iVar1 == 0) {
     if (iVar2 == 0) {
       return 0;
     }
-    fat_fat_partition_setdefaultinterface(2);
+    _FAT_partition_setDefaultInterface(2);
   }
   else {
-    fat_fat_partition_setdefaultinterface(1);
+    _FAT_partition_setDefaultInterface(1);
   }
-  arm_thumb_veneer_for_register_named_device("");
+  AddDevice("");
   if (param_2 != 0) {
-    arm_thumb_veneer_for_change_working_directory_on_device(&DAT_0208f2f8);
+    chdir(&DAT_0208f2f8);
   }
   return 1;
 }
 
 
-// 0x02072cdc  mount_browser_fat_storage
+// 0x02072cdc  fatInitDefault
 
-void mount_browser_fat_storage(void)
+void fatInitDefault(void)
 
 {
-  fat_mount_default_and_register_device(8,1);
+  fatInit(8,1);
   return;
 }
 
 
-// 0x02072cec  fat_fat_partition_setdefaultinterface
+// 0x02072cec  _FAT_partition_setDefaultInterface
 
-undefined4 fat_fat_partition_setdefaultinterface(int param_1)
+undefined4 _FAT_partition_setDefaultInterface(int param_1)
 
 {
   undefined4 uVar1;
@@ -97,9 +97,9 @@ undefined4 fat_fat_partition_setdefaultinterface(int param_1)
 }
 
 
-// 0x02072d10  fat_fat_partition_setdefaultpartition
+// 0x02072d10  _FAT_partition_setDefaultPartition
 
-undefined4 fat_fat_partition_setdefaultpartition(int param_1)
+undefined4 _FAT_partition_setDefaultPartition(int param_1)
 
 {
   undefined4 uVar1;
@@ -116,19 +116,19 @@ undefined4 fat_fat_partition_setdefaultpartition(int param_1)
 }
 
 
-// 0x02072d38  fat_fat_partition_getpartitionfrompath
+// 0x02072d38  _FAT_partition_getPartitionFromPath
 
-undefined4 fat_fat_partition_getpartitionfrompath(int param_1)
+undefined4 _FAT_partition_getPartitionFromPath(int param_1)
 
 {
   int iVar1;
   int iVar2;
   uint uVar3;
   
-  iVar1 = arm_thumb_veneer_for_newlib_strlen(&DAT_0208f300);
-  iVar2 = arm_thumb_veneer_for_newlib_strchr(param_1,0x3a);
+  iVar1 = strlen(&DAT_0208f300);
+  iVar2 = strchr(param_1,0x3a);
   if (iVar2 != 0) {
-    iVar2 = arm_thumb_veneer_for_newlib_strncmp(&DAT_0208f300,param_1,iVar1);
+    iVar2 = strncmp(&DAT_0208f300,param_1,iVar1);
     if (iVar2 != 0) {
       return 0;
     }
@@ -153,21 +153,21 @@ LAB_02072d56:
 }
 
 
-// 0x02072d9c  fat_fat_partition_destructor
+// 0x02072d9c  _FAT_partition_destructor
 
-void fat_fat_partition_destructor(int *param_1)
+void _FAT_partition_destructor(int *param_1)
 
 {
-  fat_fat_cache_destructor(param_1[1]);
+  _FAT_cache_destructor(param_1[1]);
   (**(code **)(*param_1 + 0x1c))();
-  arm_thumb_veneer_for_newlib_free_global_reent_wrapper(param_1);
+  free(param_1);
   return;
 }
 
 
-// 0x02072db4  fat_fat_partition_unsafeunmount
+// 0x02072db4  _FAT_partition_unsafeUnmount
 
-undefined4 fat_fat_partition_unsafeunmount(int param_1)
+undefined4 _FAT_partition_unsafeUnmount(int param_1)
 
 {
   undefined4 uVar1;
@@ -190,17 +190,17 @@ undefined4 fat_fat_partition_unsafeunmount(int param_1)
     if (iVar2 == DAT_020b4c68) {
       DAT_020b4c68 = 0;
     }
-    fat_fat_cache_invalidate(*(undefined4 *)(iVar2 + 4));
-    fat_fat_partition_destructor(iVar2);
+    _FAT_cache_invalidate(*(undefined4 *)(iVar2 + 4));
+    _FAT_partition_destructor(iVar2);
     uVar1 = 1;
   }
   return uVar1;
 }
 
 
-// 0x02072e14  fat_fat_partition_unmount
+// 0x02072e14  _FAT_partition_unmount
 
-undefined4 fat_fat_partition_unmount(int param_1)
+undefined4 _FAT_partition_unmount(int param_1)
 
 {
   int iVar1;
@@ -223,18 +223,18 @@ undefined4 fat_fat_partition_unmount(int param_1)
     if (iVar1 == DAT_020b4c68) {
       DAT_020b4c68 = 0;
     }
-    fat_fat_partition_destructor();
+    _FAT_partition_destructor();
     uVar2 = 1;
   }
   return uVar2;
 }
 
 
-// 0x02072e70  fat_fat_partition_constructor
+// 0x02072e70  _FAT_partition_constructor
 
 /* WARNING: Removing unreachable block (ram,0x02072fb2) */
 
-int * fat_fat_partition_constructor(int param_1,undefined4 param_2)
+int * _FAT_partition_constructor(int param_1,undefined4 param_2)
 
 {
   char cVar1;
@@ -273,7 +273,7 @@ int * fat_fat_partition_constructor(int param_1,undefined4 param_2)
   ushort local_5a;
   byte local_58 [56];
   
-  arm_thumb_veneer_for_newlib_memset(acStack_220,0,0x200);
+  memset(acStack_220,0,0x200);
   cVar1 = (**(code **)(param_1 + 0x10))(0,1,acStack_220);
   if (cVar1 == '\0') {
     return (int *)0x0;
@@ -320,7 +320,7 @@ LAB_02073062:
             (uint)(&bStack_216)[iVar3] << 0x10 | (uint)*(byte *)((int)&local_215 + iVar3) << 0x18;
   }
   cVar1 = (**(code **)(param_1 + 0x10))(uVar5,1,acStack_220);
-  if ((cVar1 == '\0') || (piVar2 = (int *)arm_thumb_veneer_for_newlib_malloc_global_reent_wrapper(0x44), piVar2 == (int *)0x0)) {
+  if ((cVar1 == '\0') || (piVar2 = (int *)malloc(0x44), piVar2 == (int *)0x0)) {
     return (int *)0x0;
   }
   *piVar2 = param_1;
@@ -344,7 +344,7 @@ LAB_02073062:
   iVar3 = iVar3 + (uint)(local_20f >> 4);
   piVar2[7] = iVar3;
   piVar2[3] = (piVar2[6] - iVar3) * 0x200;
-  uVar5 = arm_thumb_veneer_for_compiler_udivsi3();
+  uVar5 = __udivsi3();
   piVar2[0xd] = uVar5;
   piVar2[0xe] = 2;
   if (uVar5 < 0xff5) {
@@ -363,7 +363,7 @@ LAB_02073062:
   }
   piVar2[5] = 0;
 LAB_0207300e:
-  iVar3 = fat_fat_cache_constructor(param_2,*piVar2);
+  iVar3 = _FAT_cache_constructor(param_2,*piVar2);
   piVar2[1] = iVar3;
   piVar2[0xf] = piVar2[5];
   *(byte *)(piVar2 + 2) = ~(byte)(*(uint *)(param_1 + 4) >> 1) & 1;
@@ -372,9 +372,9 @@ LAB_0207300e:
 }
 
 
-// 0x020730f0  fat_fat_partition_mountcustominterface
+// 0x020730f0  _FAT_partition_mountCustomInterface
 
-undefined4 fat_fat_partition_mountcustominterface(int param_1,undefined4 param_2)
+undefined4 _FAT_partition_mountCustomInterface(int param_1,undefined4 param_2)
 
 {
   undefined4 uVar1;
@@ -393,7 +393,7 @@ undefined4 fat_fat_partition_mountcustominterface(int param_1,undefined4 param_2
       }
       piVar3 = piVar4 + 1;
     } while (piVar4 + 1 != &DAT_020b4c6c);
-    iVar2 = fat_fat_partition_constructor(param_1,param_2);
+    iVar2 = _FAT_partition_constructor(param_1,param_2);
     *piVar4 = iVar2;
     if (iVar2 == 0) {
       uVar1 = 0;
@@ -409,9 +409,9 @@ undefined4 fat_fat_partition_mountcustominterface(int param_1,undefined4 param_2
 }
 
 
-// 0x02073150  fat_fat_partition_mount
+// 0x02073150  _FAT_partition_mount
 
-bool fat_fat_partition_mount(int param_1,undefined4 param_2)
+bool _FAT_partition_mount(int param_1,undefined4 param_2)
 
 {
   int iVar1;
@@ -420,13 +420,13 @@ bool fat_fat_partition_mount(int param_1,undefined4 param_2)
   
   if ((&DAT_020b4c5c)[param_1] == 0) {
     if (param_1 == 1) {
-      iVar1 = fat_fat_disc_dsslotfindinterface();
+      iVar1 = _FAT_disc_dsSlotFindInterface();
     }
     else {
       if (param_1 != 2) {
         return false;
       }
-      iVar1 = fat_fat_disc_gbaslotfindinterface();
+      iVar1 = _FAT_disc_gbaSlotFindInterface();
     }
     if (iVar1 != 0) {
       piVar2 = &DAT_020b4c5c;
@@ -434,7 +434,7 @@ bool fat_fat_partition_mount(int param_1,undefined4 param_2)
       {
         piVar2 = piVar3 + 1;
         if (piVar3 + 1 == &DAT_020b4c6c) {
-          iVar1 = fat_fat_partition_constructor(iVar1,param_2);
+          iVar1 = _FAT_partition_constructor(iVar1,param_2);
           piVar3[param_1 + -3] = iVar1;
           return iVar1 != 0;
         }
@@ -447,11 +447,11 @@ bool fat_fat_partition_mount(int param_1,undefined4 param_2)
 }
 
 
-// 0x020731bc  fat_fat_disc_gbaslotfindinterface
+// 0x020731bc  _FAT_disc_gbaSlotFindInterface
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 fat_fat_disc_gbaslotfindinterface(void)
+undefined4 _FAT_disc_gbaSlotFindInterface(void)
 
 {
   int iVar1;
@@ -476,11 +476,11 @@ undefined4 fat_fat_disc_gbaslotfindinterface(void)
 }
 
 
-// 0x020731f8  fat_fat_disc_dsslotfindinterface
+// 0x020731f8  _FAT_disc_dsSlotFindInterface
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 fat_fat_disc_dsslotfindinterface(void)
+undefined4 _FAT_disc_dsSlotFindInterface(void)
 
 {
   int iVar1;
@@ -505,11 +505,11 @@ undefined4 fat_fat_disc_dsslotfindinterface(void)
 }
 
 
-// 0x02073238  fat_fat_disc_findinterface
+// 0x02073238  _FAT_disc_findInterface
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 fat_fat_disc_findinterface(void)
+undefined4 _FAT_disc_findInterface(void)
 
 {
   int iVar1;

@@ -9,7 +9,7 @@
 void copy_prepared_palette_to_main_bg_and_obj(void)
 
 {
-  clean_and_invalidate_arm9_data_cache_range(&ds_converted_vdp_palette,0x80);
+  DC_FlushRange(&ds_converted_vdp_palette,0x80);
   ds_dma3_source = &ds_converted_vdp_palette;
   ds_dma3_destination = &DAT_05000200;
   ds_dma3_control = 0x80000040;

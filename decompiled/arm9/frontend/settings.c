@@ -161,7 +161,7 @@ undefined4 run_configuration_menu(int param_1)
   }
   previous_ds_keys = 0;
   while( true ) {
-    arm_veneer_for_sample_ds_keys_and_update_repeat_state();
+    scanKeys();
     puVar5 = &DAT_02085a10;
     iVar3 = 0;
     do {
@@ -171,7 +171,7 @@ undefined4 run_configuration_menu(int param_1)
       iVar3 = iVar4;
     } while (iVar4 != 10);
     draw_rom_browser_row_highlight(DAT_02098fe8 + 8);
-    uVar2 = arm_veneer_for_read_latched_ds_key_state();
+    uVar2 = keysHeld();
     if (((uVar2 & 0x40) == 0) || ((previous_ds_keys & 0x40) != 0)) {
       if (((uVar2 & 0x80) != 0) && (((previous_ds_keys & 0x80) == 0 && (DAT_02098fe8 < 9)))) {
         move_settings_highlight_down();
@@ -185,18 +185,18 @@ undefined4 run_configuration_menu(int param_1)
     }
     previous_ds_keys = uVar2;
     if ((uVar2 & 4) != 0) break;
-    arm_veneer_for_nds_swiwaitforvblank();
-    arm_veneer_for_nds_swiwaitforvblank();
+    swiWaitForVBlank();
+    swiWaitForVBlank();
   }
-  arm_veneer_for_nds_swiwaitforvblank();
-  arm_veneer_for_nds_swiwaitforvblank();
-  arm_veneer_for_nds_swiwaitforvblank();
+  swiWaitForVBlank();
+  swiWaitForVBlank();
+  swiWaitForVBlank();
   restore_overlay_tilemap_row(DAT_02098fe8 + 8);
-  arm_veneer_for_nds_swiwaitforvblank();
+  swiWaitForVBlank();
   if (iVar1 != emulator_option_flags) {
     configure_frame_timing_callbacks();
   }
-  arm_veneer_for_nds_swiwaitforvblank();
+  swiWaitForVBlank();
   previous_ds_keys = 0;
   if (param_1 != 0) {
     clear_text_overlay_tilemap();

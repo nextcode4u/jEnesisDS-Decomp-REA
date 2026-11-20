@@ -47,12 +47,12 @@ void render_rom_directory_page(int param_1)
     iVar2 = 4;
     do {
       if (piVar3[2] == 2) {
-        newlib_strlcpy(auStack_35,&DAT_0208f150,0x1d);
-        newlib_strncat(auStack_35,piVar3 + 3,0x1b);
-        newlib_strlcat(auStack_35,&DAT_0208f154,0x1d);
+        strlcpy(auStack_35,&DAT_0208f150,0x1d);
+        strncat(auStack_35,piVar3 + 3,0x1b);
+        strlcat(auStack_35,&DAT_0208f154,0x1d);
       }
       else {
-        newlib_strlcpy(auStack_35,piVar3 + 3,0x1d);
+        strlcpy(auStack_35,piVar3 + 3,0x1d);
       }
       iVar4 = iVar2 + 1;
       write_clipped_text_row(auStack_35,iVar2);
@@ -91,7 +91,7 @@ void free_rom_directory_list(void)
     }
     do {
       piVar2 = (int *)*DAT_02098ff0;
-      newlib_free_global_reent_wrapper();
+      free();
       DAT_02098ff0 = piVar2;
     } while (piVar2 != (int *)0x0);
   }
@@ -114,28 +114,28 @@ void add_rom_browser_entry(int param_1,int param_2)
   undefined4 *puVar4;
   int iVar5;
   
-  iVar2 = newlib_strlen();
+  iVar2 = strlen();
   if (param_2 != 2) {
     iVar5 = param_1 + iVar2 + -4;
-    iVar2 = newlib_strcasecmp(&DAT_0208f20c,iVar5);
-    if (((iVar2 != 0) && (iVar2 = newlib_strcasecmp(&DAT_0208f214,iVar5), iVar2 != 0)) &&
-       (iVar2 = newlib_strcasecmp(&DAT_0208f21c,iVar5), iVar2 != 0)) {
+    iVar2 = strcasecmp(&DAT_0208f20c,iVar5);
+    if (((iVar2 != 0) && (iVar2 = strcasecmp(&DAT_0208f214,iVar5), iVar2 != 0)) &&
+       (iVar2 = strcasecmp(&DAT_0208f21c,iVar5), iVar2 != 0)) {
       return;
     }
   }
   puVar4 = DAT_02098ff4;
   if (DAT_02098ff4 == (undefined4 *)0x0) {
-    DAT_02098ff4 = (undefined4 *)newlib_malloc_global_reent_wrapper(0x10c);
+    DAT_02098ff4 = (undefined4 *)malloc(0x10c);
     DAT_02098ff4[1] = 0;
   }
   else {
-    uVar3 = newlib_malloc_global_reent_wrapper(0x10c);
+    uVar3 = malloc(0x10c);
     *puVar4 = uVar3;
     puVar4 = (undefined4 *)*DAT_02098ff4;
     puVar4[1] = DAT_02098ff4;
     DAT_02098ff4 = puVar4;
   }
-  newlib_strcpy(DAT_02098ff4 + 3,param_1);
+  strcpy(DAT_02098ff4 + 3,param_1);
   puVar1 = DAT_02098ff4;
   puVar4 = DAT_02098ff0;
   DAT_02098ff4[2] = param_2;
@@ -161,7 +161,7 @@ void enumerate_rom_browser_directory(void)
   free_rom_directory_list();
   DAT_023cb614 = devoptab_open_directory(&DAT_0208f224);
   while (directory_result = devoptab_read_next_directory_entry(DAT_023cb614,&DAT_023cb510,entry_stat_prefix), directory_result == 0) {
-    while (directory_result = newlib_strcmp(&DAT_023cb510,&DAT_0208f224), directory_result != 0) {
+    while (directory_result = strcmp(&DAT_023cb510,&DAT_0208f224), directory_result != 0) {
       if ((entry_mode & 0x4000) == 0) {
         entry_kind = 1;
       }
@@ -196,7 +196,7 @@ undefined4 run_rom_browser_event_loop(int param_1)
   int iVar5;
   
   if (DAT_0208f346 != '\0') {
-    iVar5 = arm_veneer_for_mount_browser_fat_storage();
+    iVar5 = fatInitDefault();
     if (iVar5 == 0) {
       if (DAT_0208f346 != '\0') {
         DAT_0208f344 = 4;
@@ -215,8 +215,8 @@ undefined4 run_rom_browser_event_loop(int param_1)
   iVar5 = 0;
   if (param_1 != 0) goto LAB_02003610;
 LAB_02003504:
-  arm_veneer_for_sample_ds_keys_and_update_repeat_state();
-  uVar1 = arm_veneer_for_read_latched_ds_key_state();
+  scanKeys();
+  uVar1 = keysHeld();
   if ((uVar1 & 0x80) == 0) goto LAB_02003644;
 LAB_02003518:
   uVar3 = (uint)DAT_0208f344;
@@ -250,20 +250,20 @@ LAB_02003568:
     while( true ) {
       if (((uVar1 & 0x20) != 0) && ((previous_ds_keys & 0x20) == 0)) {
         select_previous_rom_browser_page();
-        arm_veneer_for_nds_swiwaitforvblank();
+        swiWaitForVBlank();
       }
       if (((uVar1 & 0x10) != 0) && ((previous_ds_keys & 0x10) == 0)) {
         select_next_rom_browser_page();
-        arm_veneer_for_nds_swiwaitforvblank();
+        swiWaitForVBlank();
       }
       if (((uVar1 & 2) != 0) && ((previous_ds_keys & 2) == 0)) {
-        change_working_directory_on_device(&DAT_0208f254);
+        chdir(&DAT_0208f254);
         enumerate_rom_browser_directory();
         restore_overlay_tilemap_row(DAT_0208f344);
         DAT_0208f344 = 4;
         draw_rom_browser_row_highlight(4);
-        arm_veneer_for_nds_swiwaitforvblank();
-        arm_veneer_for_nds_swiwaitforvblank();
+        swiWaitForVBlank();
+        swiWaitForVBlank();
       }
       if ((uVar1 & 1) == 0) {
         uVar3 = 0;
@@ -280,30 +280,30 @@ LAB_02003568:
       DAT_02098fe4 = DAT_0208f344 - 4;
       if (uVar3 != 0) {
         iVar2 = open_rom_from_browser_selection(DAT_02098fe4 + DAT_02098fe0 * 0x10);
-        arm_veneer_for_nds_swiwaitforvblank();
-        arm_veneer_for_nds_swiwaitforvblank();
-        arm_veneer_for_nds_swiwaitforvblank();
+        swiWaitForVBlank();
+        swiWaitForVBlank();
+        swiWaitForVBlank();
         if (iVar2 != 0) {
-          arm_veneer_for_nds_swiwaitforvblank();
-          arm_veneer_for_nds_swiwaitforvblank();
-          arm_veneer_for_nds_swiwaitforvblank();
+          swiWaitForVBlank();
+          swiWaitForVBlank();
+          swiWaitForVBlank();
           previous_ds_keys = uVar1;
           free_rom_directory_list();
           return 1;
         }
         draw_rom_browser_row_highlight(DAT_0208f344);
       }
-      arm_veneer_for_nds_swiwaitforvblank();
-      arm_veneer_for_nds_swiwaitforvblank();
-      arm_veneer_for_nds_swiwaitforvblank();
+      swiWaitForVBlank();
+      swiWaitForVBlank();
+      swiWaitForVBlank();
       previous_ds_keys = uVar1;
       render_rom_directory_page(DAT_02098fe0);
       if (param_1 == 0) goto LAB_02003504;
 LAB_02003610:
       write_text_at_tile_position("[A]     : Start Game",0x15,1);
       write_text_at_tile_position("[SELECT]: Continue",0x16,1);
-      arm_veneer_for_sample_ds_keys_and_update_repeat_state();
-      uVar1 = arm_veneer_for_read_latched_ds_key_state();
+      scanKeys();
+      uVar1 = keysHeld();
       if ((uVar1 & 0x80) != 0) goto LAB_02003518;
 LAB_02003644:
       iVar5 = 0;

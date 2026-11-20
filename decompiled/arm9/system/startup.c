@@ -49,8 +49,8 @@ void start_arm9_and_map_tcm(void)
   clear_aligned_words_to_zero(&DAT_02098f70,0x3523e0);
   clear_aligned_words_to_zero(0xb0036ec,0);
   DAT_020b4ce0 = 0x23ff000;
-  arm_veneer_for_thumb_call_via_r3();
-  arm_veneer_for_thumb_call_via_r3(0,0);
+  _call_via_r3();
+  _call_via_r3(0,0);
   _LAB_027ffe78 = 0xeafffffe;
   (*(code *)&LAB_027ffe78)();
   return;
@@ -101,9 +101,9 @@ void copy_aligned_tcm_words(undefined4 param_1,undefined4 *param_2,undefined4 *p
 }
 
 
-// 0x02000220  arm9_empty_runtime_initializer
+// 0x02000220  _init
 
-void arm9_empty_runtime_initializer(void)
+void _init(void)
 
 {
   return;
@@ -123,14 +123,14 @@ void initialize_ds_display_and_overlay(void)
   configure_menu_vblank_interrupt();
   _DAT_04000304 = _DAT_04000304 | 0x20f;
   show_startup_graphics_and_run_scanline_transition();
-  arm_veneer_for_nds_swiwaitforvblank();
+  swiWaitForVBlank();
   _DAT_04000000 = 0x113f10;
   select_background_tilemap_layout(0);
   initialize_ds_sprite_attribute_buffer();
   _DAT_04000000 = _DAT_04000000 | 0x20;
   _DAT_04001000 = 0x10300;
-  arm_veneer_for_nds_vramsetmainbanks(1,9,4,2);
-  arm_veneer_for_nds_vramsetbanke(2);
+  vramSetMainBanks(1,9,4,2);
+  vramSetBankE(2);
   _DAT_0400100a = 0x288;
   _DAT_04001008 = 0x1f90;
   initialize_text_overlay_tiles(&DAT_02085aa8,0x6210000,0x620f800,0x5f,0xf);
@@ -147,18 +147,18 @@ void initialize_ds_display_and_overlay(void)
 }
 
 
-// 0x02082370  run_arm9_c_runtime_initializers
+// 0x02082370  __libc_init_array
 
 /* WARNING: Removing unreachable block (ram,0x02082388) */
 /* WARNING: Removing unreachable block (ram,0x02082390) */
 
-void run_arm9_c_runtime_initializers(void)
+void __libc_init_array(void)
 
 {
   int iVar1;
   undefined4 *puVar2;
   
-  arm9_empty_runtime_initializer();
+  _init();
   iVar1 = 0;
   puVar2 = &DAT_0208f330;
   do {

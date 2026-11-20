@@ -13,7 +13,7 @@ void wait_six_vblanks_per_unit(int param_1)
     iVar1 = 0;
     do {
       iVar1 = iVar1 + 1;
-      arm_veneer_for_nds_swiwaitforvblank();
+      swiWaitForVBlank();
     } while (iVar1 != param_1 * 6);
   }
   return;
@@ -29,20 +29,20 @@ undefined4 default_dldi_operation_returns_false(void)
 }
 
 
-// 0x0207fb7c  read_newly_pressed_ds_keys
+// 0x0207fb7c  keysDown
 
-ushort read_newly_pressed_ds_keys(void)
+ushort keysDown(void)
 
 {
   return DAT_020b4ca0 & ~DAT_020b4ca2;
 }
 
 
-// 0x0207fc98  nds_vramsetmainbanks
+// 0x0207fc98  vramSetMainBanks
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 nds_vramsetmainbanks(undefined1 param_1,undefined1 param_2,undefined1 param_3,undefined1 param_4)
+undefined4 vramSetMainBanks(undefined1 param_1,undefined1 param_2,undefined1 param_3,undefined1 param_4)
 
 {
   undefined4 uVar1;
@@ -53,9 +53,9 @@ undefined4 nds_vramsetmainbanks(undefined1 param_1,undefined1 param_2,undefined1
 }
 
 
-// 0x0207fd44  nds_vramsetbanke
+// 0x0207fd44  vramSetBankE
 
-void nds_vramsetbanke(byte param_1)
+void vramSetBankE(byte param_1)
 
 {
   DAT_04000244 = param_1 | 0x80;
@@ -63,9 +63,9 @@ void nds_vramsetbanke(byte param_1)
 }
 
 
-// 0x0207fda8  load_slot1_card_command_registers
+// 0x0207fda8  cardWriteCommand
 
-void load_slot1_card_command_registers(int param_1)
+void cardWriteCommand(int param_1)
 
 {
   undefined1 *puVar1;
@@ -84,16 +84,16 @@ void load_slot1_card_command_registers(int param_1)
 }
 
 
-// 0x0207fdcc  read_slot1_card_transfer_words
+// 0x0207fdcc  cardPolledTransfer
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void read_slot1_card_transfer_words(uint param_1,undefined4 *param_2,int param_3,undefined4 param_4)
+void cardPolledTransfer(uint param_1,undefined4 *param_2,int param_3,undefined4 param_4)
 
 {
   undefined4 *puVar1;
   
-  load_slot1_card_command_registers(param_4);
+  cardWriteCommand(param_4);
   puVar1 = param_2 + param_3;
   _DAT_040001a4 = param_1;
   do {
@@ -108,14 +108,14 @@ void read_slot1_card_transfer_words(uint param_1,undefined4 *param_2,int param_3
 }
 
 
-// 0x0207fe0c  start_slot1_card_transfer_with_dma
+// 0x0207fe0c  cardStartTransfer
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void start_slot1_card_transfer_with_dma(undefined4 param_1,undefined4 param_2,int param_3,undefined4 param_4)
+void cardStartTransfer(undefined4 param_1,undefined4 param_2,int param_3,undefined4 param_4)
 
 {
-  load_slot1_card_command_registers();
+  cardWriteCommand();
   param_3 = param_3 * 0xc;
   *(undefined1 **)(param_3 + 0x40000b0) = &DAT_04100010;
   *(undefined4 *)(param_3 + 0x40000b4) = param_2;
@@ -125,11 +125,11 @@ void start_slot1_card_transfer_with_dma(undefined4 param_1,undefined4 param_2,in
 }
 
 
-// 0x02080098  install_arm9_interrupt_handler
+// 0x02080098  irqSet
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void install_arm9_interrupt_handler(uint param_1,undefined4 param_2)
+void irqSet(uint param_1,undefined4 param_2)
 
 {
   int iVar1;
@@ -159,11 +159,11 @@ void install_arm9_interrupt_handler(uint param_1,undefined4 param_2)
 }
 
 
-// 0x02080100  initialize_arm9_interrupt_table
+// 0x02080100  irqInit
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void initialize_arm9_interrupt_table(void)
+void irqInit(void)
 
 {
   undefined4 *puVar1;
@@ -182,11 +182,11 @@ void initialize_arm9_interrupt_table(void)
 }
 
 
-// 0x0208014c  remove_arm9_interrupt_handler
+// 0x0208014c  irqClear
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void remove_arm9_interrupt_handler(uint param_1)
+void irqClear(uint param_1)
 
 {
   uint *puVar1;
@@ -216,11 +216,11 @@ void remove_arm9_interrupt_handler(uint param_1)
 }
 
 
-// 0x020801cc  install_custom_arm9_interrupt_dispatcher
+// 0x020801cc  irqInitHandler
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void install_custom_arm9_interrupt_dispatcher(undefined4 param_1)
+void irqInitHandler(undefined4 param_1)
 
 {
   _DAT_04000214 = 0xffffffff;
@@ -231,11 +231,11 @@ void install_custom_arm9_interrupt_dispatcher(undefined4 param_1)
 }
 
 
-// 0x020801fc  enable_arm9_interrupt_sources
+// 0x020801fc  irqEnable
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void enable_arm9_interrupt_sources(uint param_1)
+void irqEnable(uint param_1)
 
 {
   if ((param_1 & 1) != 0) {
@@ -253,11 +253,11 @@ void enable_arm9_interrupt_sources(uint param_1)
 }
 
 
-// 0x0208024c  disable_arm9_interrupt_sources
+// 0x0208024c  irqDisable
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void disable_arm9_interrupt_sources(uint param_1)
+void irqDisable(uint param_1)
 
 {
   if ((int)(param_1 << 0x1f) < 0) {
@@ -274,9 +274,9 @@ void disable_arm9_interrupt_sources(uint param_1)
 }
 
 
-// 0x020802c4  clean_and_invalidate_arm9_data_cache_range
+// 0x020802c4  DC_FlushRange
 
-void clean_and_invalidate_arm9_data_cache_range(uint param_1,int param_2)
+void DC_FlushRange(uint param_1,int param_2)
 
 {
   uint uVar1;
@@ -290,29 +290,9 @@ void clean_and_invalidate_arm9_data_cache_range(uint param_1,int param_2)
 }
 
 
-// 0x0208031c  nds_swiwaitforvblank
+// 0x0208031c  swiWaitForVBlank
 
-void nds_swiwaitforvblank(void)
-
-{
-  software_interrupt(5);
-  return;
-}
-
-
-// 0x0208033e  nds_swicopy
-
-void nds_swicopy(void)
-
-{
-  software_interrupt(0xb);
-  return;
-}
-
-
-// 0x020858a4  arm_veneer_for_nds_swiwaitforvblank
-
-void arm_veneer_for_nds_swiwaitforvblank(void)
+void swiWaitForVBlank(void)
 
 {
   software_interrupt(5);
@@ -320,9 +300,9 @@ void arm_veneer_for_nds_swiwaitforvblank(void)
 }
 
 
-// 0x0208591c  arm_veneer_for_nds_swicopy
+// 0x0208033e  swiCopy
 
-void arm_veneer_for_nds_swicopy(void)
+void swiCopy(void)
 
 {
   software_interrupt(0xb);
@@ -330,12 +310,32 @@ void arm_veneer_for_nds_swicopy(void)
 }
 
 
-// 0x02085928  arm_veneer_for_nds_vramsetmainbanks
+// 0x020858a4  swiWaitForVBlank_arm_veneer
+
+void swiWaitForVBlank(void)
+
+{
+  software_interrupt(5);
+  return;
+}
+
+
+// 0x0208591c  swiCopy_arm_veneer
+
+void swiCopy(void)
+
+{
+  software_interrupt(0xb);
+  return;
+}
+
+
+// 0x02085928  vramSetMainBanks_arm_veneer
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
 undefined4
-arm_veneer_for_nds_vramsetmainbanks(undefined1 param_1,undefined1 param_2,undefined1 param_3,undefined1 param_4)
+vramSetMainBanks(undefined1 param_1,undefined1 param_2,undefined1 param_3,undefined1 param_4)
 
 {
   undefined4 uVar1;
@@ -346,9 +346,9 @@ arm_veneer_for_nds_vramsetmainbanks(undefined1 param_1,undefined1 param_2,undefi
 }
 
 
-// 0x02085934  arm_veneer_for_nds_vramsetbanke
+// 0x02085934  vramSetBankE_arm_veneer
 
-void arm_veneer_for_nds_vramsetbanke(byte param_1)
+void vramSetBankE(byte param_1)
 
 {
   DAT_04000244 = param_1 | 0x80;

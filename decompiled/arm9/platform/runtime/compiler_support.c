@@ -2,9 +2,9 @@
  * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x02080380  compiler_udivsi3
+// 0x02080380  __udivsi3
 
-uint compiler_udivsi3(uint param_1,uint param_2)
+uint __udivsi3(uint param_1,uint param_2)
 
 {
   uint uVar1;
@@ -16,7 +16,7 @@ uint compiler_udivsi3(uint param_1,uint param_2)
     return param_1;
   }
   if (param_2 == 0) {
-    arm9_divide_by_zero_return_stub();
+    __div0();
     return 0;
   }
   if (param_1 <= param_2) {
@@ -89,19 +89,19 @@ uint compiler_udivsi3(uint param_1,uint param_2)
 }
 
 
-// 0x0208047c  compiler_aeabi_uidivmod
+// 0x0208047c  __aeabi_uidivmod
 
-void compiler_aeabi_uidivmod(void)
+void __aeabi_uidivmod(void)
 
 {
-  compiler_udivsi3();
+  __udivsi3();
   return;
 }
 
 
-// 0x02080494  compiler_divsi3
+// 0x02080494  __divsi3
 
-uint compiler_divsi3(uint param_1,uint param_2)
+uint __divsi3(uint param_1,uint param_2)
 
 {
   uint uVar1;
@@ -114,7 +114,7 @@ uint compiler_divsi3(uint param_1,uint param_2)
   
   uVar6 = param_1 ^ param_2;
   if (param_2 == 0) {
-    arm9_divide_by_zero_return_stub();
+    __div0();
     return 0;
   }
   uVar4 = param_2;
@@ -214,19 +214,19 @@ uint compiler_divsi3(uint param_1,uint param_2)
 }
 
 
-// 0x020805c0  compiler_aeabi_idivmod
+// 0x020805c0  __aeabi_idivmod
 
-void compiler_aeabi_idivmod(void)
+void __aeabi_idivmod(void)
 
 {
-  compiler_divsi3();
+  __divsi3();
   return;
 }
 
 
-// 0x02080620  compiler_subdf3
+// 0x02080620  __subdf3
 
-ulonglong compiler_subdf3(uint param_1,uint param_2,uint param_3,uint param_4)
+ulonglong __subdf3(uint param_1,uint param_2,uint param_3,uint param_4)
 
 {
   int iVar1;
@@ -466,9 +466,9 @@ LAB_020807f8:
 }
 
 
-// 0x02080624  compiler_adddf3
+// 0x02080624  __adddf3
 
-ulonglong compiler_adddf3(uint param_1,uint param_2,uint param_3,uint param_4)
+ulonglong __adddf3(uint param_1,uint param_2,uint param_3,uint param_4)
 
 {
   int iVar1;
@@ -707,11 +707,11 @@ LAB_020807f8:
 }
 
 
-// 0x02080958  compiler_floatsidf
+// 0x02080958  __floatsidf
 
 /* WARNING: Removing unreachable block (ram,0x02080778) */
 
-ulonglong compiler_floatsidf(uint param_1)
+ulonglong __floatsidf(uint param_1)
 
 {
   uint uVar1;
@@ -799,9 +799,9 @@ LAB_020807f8:
 }
 
 
-// 0x02080a34  compiler_muldf3
+// 0x02080a34  __muldf3
 
-ulonglong compiler_muldf3(undefined4 param_1,uint param_2,uint param_3,uint param_4)
+ulonglong __muldf3(undefined4 param_1,uint param_2,uint param_3,uint param_4)
 
 {
   longlong lVar1;
@@ -946,9 +946,9 @@ ulonglong compiler_muldf3(undefined4 param_1,uint param_2,uint param_3,uint para
 }
 
 
-// 0x02080cc4  compiler_divdf3
+// 0x02080cc4  __divdf3
 
-ulonglong compiler_divdf3(undefined4 param_1,uint param_2,uint param_3,uint param_4)
+ulonglong __divdf3(undefined4 param_1,uint param_2,uint param_3,uint param_4)
 
 {
   uint uVar1;
@@ -1142,9 +1142,9 @@ LAB_02080e04:
 }
 
 
-// 0x02080ed0  compiler_fixunsdfsi
+// 0x02080ed0  __fixunsdfsi
 
-uint compiler_fixunsdfsi(uint param_1,uint param_2)
+uint __fixunsdfsi(uint param_1,uint param_2)
 
 {
   int iVar1;

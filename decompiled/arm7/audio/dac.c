@@ -18,7 +18,7 @@ void reset_dac_sample_cursor(undefined4 output_sample_count)
 {
   dac_source_index = 0;
   dac_source_fraction_q16 = 0;
-  dac_source_step_q16 = compiler_udivsi3(dac_staged_byte_count << 0x10,output_sample_count);
+  dac_source_step_q16 = __udivsi3(dac_staged_byte_count << 0x10,output_sample_count);
   dac_staged_byte_count = 0;
   return;
 }

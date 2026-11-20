@@ -188,7 +188,7 @@ bool submit_arm7_dac_sample_buffer(void)
   }
   DAT_0209904c = 0;
   dac_queue_bytes = 0;
-  clean_and_invalidate_arm9_data_cache_range(shared_audio_descriptor,0x104);
+  DC_FlushRange(shared_audio_descriptor,0x104);
   bVar2 = (ds_ipc_fifo_control & 2) != 0;
   uVar1 = ds_ipc_fifo_control;
   if (bVar2) {
@@ -223,7 +223,7 @@ void submit_fm_and_psg_write_buffers_to_arm7(void)
   ym2612_bank_0_queue_bytes = 0;
   ym2612_bank_1_queue_bytes = 0;
   psg_queue_bytes = 0;
-  clean_and_invalidate_arm9_data_cache_range(iVar2,0x104);
+  DC_FlushRange(iVar2,0x104);
   send_arm9_fifo_command_and_payload(0xb,0);
   DAT_0209905c = DAT_0209905c + 1;
   return;
@@ -412,14 +412,14 @@ bool restart_arm7_audio_and_replay_fm_registers(void)
   uint uVar3;
   bool bVar4;
   
-  arm_veneer_for_enable_arm9_interrupt_sources(1);
+  irqEnable(1);
   request_arm7_audio_stop();
-  arm_veneer_for_nds_swiwaitforvblank();
-  arm_veneer_for_nds_swiwaitforvblank();
+  swiWaitForVBlank();
+  swiWaitForVBlank();
   clear_audio_queues_and_reset_or_stop_arm7_audio(1);
-  arm_veneer_for_nds_swiwaitforvblank();
-  arm_veneer_for_nds_swiwaitforvblank();
-  arm_veneer_for_disable_arm9_interrupt_sources(1);
+  swiWaitForVBlank();
+  swiWaitForVBlank();
+  irqDisable(1);
   uVar3 = 0;
   do {
     queue_ym2612_register_or_dac_write(0,uVar3 & 0xff);
@@ -429,9 +429,9 @@ bool restart_arm7_audio_and_replay_fm_registers(void)
     uVar3 = uVar3 + 1;
     queue_ym2612_register_or_dac_write(3,*puVar1);
   } while (uVar3 != 0x100);
-  arm_veneer_for_enable_arm9_interrupt_sources(1);
-  arm_veneer_for_nds_swiwaitforvblank();
-  arm_veneer_for_nds_swiwaitforvblank();
+  irqEnable(1);
+  swiWaitForVBlank();
+  swiWaitForVBlank();
   bVar4 = (ds_ipc_fifo_control & 2) != 0;
   uVar2 = ds_ipc_fifo_control;
   if (bVar4) {
@@ -513,8 +513,8 @@ bool send_arm9_fifo_command_and_payload(int command_id,uint payload)
 void initialize_arm9_fifo_receive_interrupt(void)
 
 {
-  arm_veneer_for_install_arm9_interrupt_handler(0x40000,dispatch_arm9_fifo_receive_interrupt);
-  arm_veneer_for_enable_arm9_interrupt_sources(0x40000);
+  irqSet(0x40000,dispatch_arm9_fifo_receive_interrupt);
+  irqEnable(0x40000);
   ds_ipc_fifo_control = 0x8408;
   return;
 }

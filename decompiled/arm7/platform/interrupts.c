@@ -2,11 +2,11 @@
  * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x037f8108  arm_veneer_for_initialize_interrupt_controller
+// 0x037f8108  irqInit_arm_veneer
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 arm_veneer_for_initialize_interrupt_controller(void)
+undefined4 irqInit(void)
 
 {
   undefined4 *puVar1;
@@ -26,11 +26,11 @@ undefined4 arm_veneer_for_initialize_interrupt_controller(void)
 }
 
 
-// 0x037f8114  arm_veneer_for_install_interrupt_callback
+// 0x037f8114  irqSet_arm_veneer
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 arm_veneer_for_install_interrupt_callback(uint param_1,undefined4 param_2)
+undefined4 irqSet(uint param_1,undefined4 param_2)
 
 {
   int iVar1;
@@ -61,11 +61,11 @@ undefined4 arm_veneer_for_install_interrupt_callback(uint param_1,undefined4 par
 }
 
 
-// 0x037f8120  arm_veneer_for_enable_interrupt_sources
+// 0x037f8120  irqEnable_arm_veneer
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 arm_veneer_for_enable_interrupt_sources(uint param_1)
+undefined4 irqEnable(uint param_1)
 
 {
   undefined4 in_lr;
@@ -85,11 +85,11 @@ undefined4 arm_veneer_for_enable_interrupt_sources(uint param_1)
 }
 
 
-// 0x03801564  install_interrupt_callback
+// 0x03801564  irqSet
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 install_interrupt_callback(uint param_1,undefined4 param_2)
+undefined4 irqSet(uint param_1,undefined4 param_2)
 
 {
   int iVar1;
@@ -120,11 +120,11 @@ undefined4 install_interrupt_callback(uint param_1,undefined4 param_2)
 }
 
 
-// 0x038015d0  initialize_interrupt_controller
+// 0x038015d0  irqInit
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 initialize_interrupt_controller(void)
+undefined4 irqInit(void)
 
 {
   undefined4 *puVar1;
@@ -144,11 +144,11 @@ undefined4 initialize_interrupt_controller(void)
 }
 
 
-// 0x03801620  disable_interrupt_sources
+// 0x03801620  irqClear
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 disable_interrupt_sources(uint param_1)
+undefined4 irqClear(uint param_1)
 
 {
   uint *puVar1;
@@ -179,11 +179,11 @@ undefined4 disable_interrupt_sources(uint param_1)
 }
 
 
-// 0x038016a4  replace_irq_dispatcher
+// 0x038016a4  irqInitHandler
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 replace_irq_dispatcher(undefined4 param_1)
+undefined4 irqInitHandler(undefined4 param_1)
 
 {
   undefined4 in_lr;
@@ -196,11 +196,11 @@ undefined4 replace_irq_dispatcher(undefined4 param_1)
 }
 
 
-// 0x038016d8  enable_interrupt_sources
+// 0x038016d8  irqEnable
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined4 enable_interrupt_sources(uint param_1)
+undefined4 irqEnable(uint param_1)
 
 {
   undefined4 in_lr;

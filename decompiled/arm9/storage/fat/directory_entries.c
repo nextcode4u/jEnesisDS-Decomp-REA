@@ -2,9 +2,9 @@
  * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x0207d15c  fat_fat_dirnext_r
+// 0x0207d15c  _FAT_dirnext_r
 
-undefined4 fat_fat_dirnext_r(undefined4 *param_1,int param_2,undefined4 param_3,int param_4)
+undefined4 _FAT_dirnext_r(undefined4 *param_1,int param_2,undefined4 param_3,int param_4)
 
 {
   undefined1 uVar1;
@@ -21,11 +21,11 @@ undefined4 fat_fat_dirnext_r(undefined4 *param_1,int param_2,undefined4 param_3,
     *param_1 = 2;
   }
   else {
-    arm_thumb_veneer_for_newlib_strncpy(param_3,puVar3 + 0xf,0x100);
+    strncpy(param_3,puVar3 + 0xf,0x100);
     if (param_4 != 0) {
-      fat_fat_directory_entrystat(*puVar3,puVar3 + 1,param_4);
+      _FAT_directory_entryStat(*puVar3,puVar3 + 1,param_4);
     }
-    uVar1 = fat_fat_directory_getnextentry(*puVar3,puVar3 + 1);
+    uVar1 = _FAT_directory_getNextEntry(*puVar3,puVar3 + 1);
     *(undefined1 *)((int)puVar3 + 0x141) = uVar1;
     uVar2 = 0;
   }
@@ -33,9 +33,9 @@ undefined4 fat_fat_dirnext_r(undefined4 *param_1,int param_2,undefined4 param_3,
 }
 
 
-// 0x0207d1c4  fat_fat_dirreset_r
+// 0x0207d1c4  _FAT_dirreset_r
 
-undefined4 fat_fat_dirreset_r(undefined4 *param_1,int param_2)
+undefined4 _FAT_dirreset_r(undefined4 *param_1,int param_2)
 
 {
   undefined1 uVar1;
@@ -48,7 +48,7 @@ undefined4 fat_fat_dirreset_r(undefined4 *param_1,int param_2)
     uVar2 = 0xffffffff;
   }
   else {
-    uVar1 = fat_fat_directory_getfirstentry(*puVar3,puVar3 + 1,puVar3[0x4f]);
+    uVar1 = _FAT_directory_getFirstEntry(*puVar3,puVar3 + 1,puVar3[0x4f]);
     *(undefined1 *)((int)puVar3 + 0x141) = uVar1;
     uVar2 = 0;
   }
@@ -56,9 +56,9 @@ undefined4 fat_fat_dirreset_r(undefined4 *param_1,int param_2)
 }
 
 
-// 0x0207d428  fat_fat_diropen_r
+// 0x0207d428  _FAT_diropen_r
 
-int * fat_fat_diropen_r(undefined4 *param_1,int param_2,int param_3)
+int * _FAT_diropen_r(undefined4 *param_1,int param_2,int param_3)
 
 {
   undefined1 uVar1;
@@ -69,31 +69,31 @@ int * fat_fat_diropen_r(undefined4 *param_1,int param_2,int param_3)
   byte local_145;
   
   piVar4 = *(int **)(param_2 + 4);
-  iVar2 = fat_fat_partition_getpartitionfrompath(param_3);
+  iVar2 = _FAT_partition_getPartitionFromPath(param_3);
   *piVar4 = iVar2;
   if (iVar2 == 0) {
     piVar4 = (int *)0x0;
     *param_1 = 0x13;
   }
   else {
-    iVar3 = arm_thumb_veneer_for_newlib_strchr(param_3,0x3a);
+    iVar3 = strchr(param_3,0x3a);
     if (iVar3 != 0) {
       param_3 = iVar3 + 1;
-      iVar3 = arm_thumb_veneer_for_newlib_strchr(param_3,0x3a);
+      iVar3 = strchr(param_3,0x3a);
       if (iVar3 != 0) {
         *param_1 = 0x16;
         return (int *)0x0;
       }
     }
-    iVar2 = fat_fat_directory_entryfrompath(iVar2,auStack_150,param_3,0);
+    iVar2 = _FAT_directory_entryFromPath(iVar2,auStack_150,param_3,0);
     if (iVar2 == 0) {
       *param_1 = 2;
       piVar4 = (int *)0x0;
     }
     else if ((int)((uint)local_145 << 0x1b) < 0) {
-      iVar2 = fat_fat_directory_entrygetcluster(auStack_150);
+      iVar2 = _FAT_directory_entryGetCluster(auStack_150);
       piVar4[0x4f] = iVar2;
-      uVar1 = fat_fat_directory_getfirstentry(*piVar4,piVar4 + 1,iVar2);
+      uVar1 = _FAT_directory_getFirstEntry(*piVar4,piVar4 + 1,iVar2);
       *(undefined1 *)((int)piVar4 + 0x141) = uVar1;
       *(undefined1 *)(piVar4 + 0x50) = 1;
     }
@@ -106,9 +106,9 @@ int * fat_fat_diropen_r(undefined4 *param_1,int param_2,int param_3)
 }
 
 
-// 0x0207d64c  fat_fat_mkdir_r
+// 0x0207d64c  _FAT_mkdir_r
 
-undefined4 fat_fat_mkdir_r(undefined4 *param_1,int param_2)
+undefined4 _FAT_mkdir_r(undefined4 *param_1,int param_2)
 
 {
   undefined1 uVar1;
@@ -139,57 +139,57 @@ undefined4 fat_fat_mkdir_r(undefined4 *param_1,int param_2)
   undefined4 local_30;
   undefined4 local_2c;
   
-  iVar3 = fat_fat_partition_getpartitionfrompath(param_2);
+  iVar3 = _FAT_partition_getPartitionFromPath(param_2);
   if (iVar3 == 0) {
     *param_1 = 0x13;
     return 0xffffffff;
   }
-  iVar4 = arm_thumb_veneer_for_newlib_strchr(param_2,0x3a);
+  iVar4 = strchr(param_2,0x3a);
   if (iVar4 != 0) {
     param_2 = iVar4 + 1;
-    iVar4 = arm_thumb_veneer_for_newlib_strchr(param_2,0x3a);
+    iVar4 = strchr(param_2,0x3a);
     if (iVar4 != 0) {
       *param_1 = 0x16;
       return 0xffffffff;
     }
   }
-  iVar4 = fat_fat_directory_entryfrompath(iVar3,auStack_180,param_2,0);
+  iVar4 = _FAT_directory_entryFromPath(iVar3,auStack_180,param_2,0);
   if (iVar4 == 0) {
     if (*(char *)(iVar3 + 8) != '\0') {
       *param_1 = 0x1e;
       return 0xffffffff;
     }
-    iVar4 = arm_thumb_veneer_for_newlib_strrchr(param_2,0x2f);
+    iVar4 = strrchr(param_2,0x2f);
     if (iVar4 == 0) {
       uVar7 = *(undefined4 *)(iVar3 + 0x3c);
     }
     else {
-      iVar5 = fat_fat_directory_entryfrompath(iVar3,auStack_180,param_2,iVar4);
+      iVar5 = _FAT_directory_entryFromPath(iVar3,auStack_180,param_2,iVar4);
       if ((iVar5 == 0) || (-1 < (int)((uint)local_175 << 0x1b))) {
         *param_1 = 0x14;
         return 0xffffffff;
       }
-      uVar7 = fat_fat_directory_entrygetcluster(auStack_180);
+      uVar7 = _FAT_directory_entryGetCluster(auStack_180);
       param_2 = iVar4 + 1;
     }
-    arm_thumb_veneer_for_newlib_strncpy(auStack_148,param_2,0xff);
-    arm_thumb_veneer_for_newlib_memset(auStack_180,0,0x20);
+    strncpy(auStack_148,param_2,0xff);
+    memset(auStack_180,0,0x20);
     local_173 = 0;
-    uVar2 = fat_fat_filetime_gettimefromrtc();
+    uVar2 = _FAT_filetime_getTimeFromRTC();
     local_172 = (undefined1)uVar2;
     local_171 = (undefined1)((ushort)uVar2 >> 8);
-    uVar2 = fat_fat_filetime_getdatefromrtc();
+    uVar2 = _FAT_filetime_getDateFromRTC();
     local_170 = (undefined1)uVar2;
     local_16f = (undefined1)((ushort)uVar2 >> 8);
     local_175 = 0x10;
-    uVar6 = fat_fat_fat_linkfreeclustercleared(iVar3,0);
+    uVar6 = _FAT_fat_linkFreeClusterCleared(iVar3,0);
     if (uVar6 != 0) {
       uVar1 = (undefined1)(uVar6 >> 8);
       local_16c = (undefined1)(uVar6 >> 0x10);
       local_16b = (undefined1)(uVar6 >> 0x18);
       local_166 = (char)uVar6;
       local_165 = uVar1;
-      iVar4 = fat_fat_directory_addentry(iVar3,auStack_180,uVar7);
+      iVar4 = _FAT_directory_addEntry(iVar3,auStack_180,uVar7);
       if (iVar4 != 0) {
         local_48 = 0;
         local_44 = 0;
@@ -199,7 +199,7 @@ undefined4 fat_fat_mkdir_r(undefined4 *param_1,int param_2)
         local_34 = 0;
         local_30 = 0;
         local_2c = 0;
-        arm_thumb_veneer_for_newlib_memset(&local_48,0x20,0xb);
+        memset(&local_48,0x20,0xb);
         local_48 = CONCAT31(local_48._1_3_,0x2e);
         local_40 = CONCAT13(0x10,(undefined3)local_40);
         local_30._0_3_ = CONCAT12((char)uVar6,(undefined2)local_30);
@@ -211,7 +211,7 @@ undefined4 fat_fat_mkdir_r(undefined4 *param_1,int param_2)
         else {
           iVar4 = *(int *)(iVar3 + 0x24) * (uVar6 - 2) + *(int *)(iVar3 + 0x1c);
         }
-        fat_fat_cache_erasewritepartialsector(*(undefined4 *)(iVar3 + 4),&local_48,iVar4,0,0x20);
+        _FAT_cache_eraseWritePartialSector(*(undefined4 *)(iVar3 + 4),&local_48,iVar4,0,0x20);
         local_48._0_2_ = CONCAT11(0x2e,(undefined1)local_48);
         local_30._0_3_ = CONCAT12((char)uVar7,(undefined2)local_30);
         local_30 = CONCAT13((char)((uint)uVar7 >> 8),(undefined3)local_30);
@@ -222,8 +222,8 @@ undefined4 fat_fat_mkdir_r(undefined4 *param_1,int param_2)
         else {
           iVar4 = *(int *)(iVar3 + 0x24) * (uVar6 - 2) + *(int *)(iVar3 + 0x1c);
         }
-        fat_fat_cache_writepartialsector(*(undefined4 *)(iVar3 + 4),&local_48,iVar4,0x20,0x20);
-        iVar3 = fat_fat_cache_flush(*(undefined4 *)(iVar3 + 4));
+        _FAT_cache_writePartialSector(*(undefined4 *)(iVar3 + 4),&local_48,iVar4,0x20,0x20);
+        iVar3 = _FAT_cache_flush(*(undefined4 *)(iVar3 + 4));
         if (iVar3 == 0) {
           *param_1 = 5;
           return 0xffffffff;
@@ -239,9 +239,9 @@ undefined4 fat_fat_mkdir_r(undefined4 *param_1,int param_2)
 }
 
 
-// 0x0207eca8  fat_fat_directory_entrygetalias
+// 0x0207eca8  _FAT_directory_entryGetAlias
 
-bool fat_fat_directory_entrygetalias(char *param_1,char *param_2)
+bool _FAT_directory_entryGetAlias(char *param_1,char *param_2)
 
 {
   int iVar1;
@@ -292,18 +292,18 @@ LAB_0207ecce:
 }
 
 
-// 0x0207ed1c  fat_fat_directory_entrygetcluster
+// 0x0207ed1c  _FAT_directory_entryGetCluster
 
-undefined4 fat_fat_directory_entrygetcluster(int param_1)
+undefined4 _FAT_directory_entryGetCluster(int param_1)
 
 {
   return CONCAT22(*(undefined2 *)(param_1 + 0x14),*(undefined2 *)(param_1 + 0x1a));
 }
 
 
-// 0x0207ed34  fat_fat_directory_getrootentry
+// 0x0207ed34  _FAT_directory_getRootEntry
 
-undefined4 fat_fat_directory_getrootentry(int param_1,undefined1 *param_2)
+undefined4 _FAT_directory_getRootEntry(int param_1,undefined1 *param_2)
 
 {
   undefined2 uVar1;
@@ -315,10 +315,10 @@ undefined4 fat_fat_directory_getrootentry(int param_1,undefined1 *param_2)
   *(undefined4 *)(param_2 + 0x2c) = *(undefined4 *)(param_2 + 0x20);
   *(undefined4 *)(param_2 + 0x30) = *(undefined4 *)(param_2 + 0x24);
   *(undefined4 *)(param_2 + 0x34) = *(undefined4 *)(param_2 + 0x28);
-  arm_thumb_veneer_for_newlib_memset(param_2 + 0x38,0,0x100,param_2 + 0x2c);
+  memset(param_2 + 0x38,0,0x100,param_2 + 0x2c);
   param_2[0x38] = 0x2e;
-  arm_thumb_veneer_for_newlib_memset(param_2,0,0x20);
-  arm_thumb_veneer_for_newlib_memset(param_2,0x20,0xb);
+  memset(param_2,0,0x20);
+  memset(param_2,0x20,0xb);
   *param_2 = 0x2e;
   param_2[0xb] = 0x10;
   uVar2 = *(undefined4 *)(param_1 + 0x14);
@@ -331,9 +331,9 @@ undefined4 fat_fat_directory_getrootentry(int param_1,undefined1 *param_2)
 }
 
 
-// 0x0207ed90  fat_fat_directory_incrementdirentryposition
+// 0x0207ed90  _FAT_directory_incrementDirEntryPosition
 
-undefined4 fat_fat_directory_incrementdirentryposition(int param_1,int *param_2,int param_3)
+undefined4 _FAT_directory_incrementDirEntryPosition(int param_1,int *param_2,int param_3)
 
 {
   int iVar1;
@@ -349,12 +349,12 @@ undefined4 fat_fat_directory_incrementdirentryposition(int param_1,int *param_2,
   iVar2 = iVar2 + 1;
   if (iVar2 == *(int *)(param_1 + 0x24)) {
     if (iVar4 != 0) {
-      iVar1 = fat_fat_fat_nextcluster(param_1,iVar4);
+      iVar1 = _FAT_fat_nextCluster(param_1,iVar4);
       if (iVar1 == 0xfffffff) {
         if (param_3 == 0) {
           return 0;
         }
-        iVar1 = fat_fat_fat_linkfreeclustercleared(param_1,iVar4);
+        iVar1 = _FAT_fat_linkFreeClusterCleared(param_1,iVar4);
         if (iVar1 == 0) {
           return 0;
         }
@@ -378,11 +378,11 @@ LAB_0207eda6:
 }
 
 
-// 0x0207ee00  fat_fat_directory_getnextentry
+// 0x0207ee00  _FAT_directory_getNextEntry
 
 /* WARNING: Restarted to delay deadcode elimination for space: stack */
 
-undefined4 fat_fat_directory_getnextentry(int param_1,int param_2)
+undefined4 _FAT_directory_getNextEntry(int param_1,int param_2)
 
 {
   bool bVar1;
@@ -422,14 +422,14 @@ undefined4 fat_fat_directory_getnextentry(int param_1,int param_2)
   local_30 = iStack_3c;
   local_2c = iStack_38;
   do {
-    iVar3 = fat_fat_directory_incrementdirentryposition(param_1,&local_34,0);
+    iVar3 = _FAT_directory_incrementDirEntryPosition(param_1,&local_34,0);
     if (local_34 < 2) {
       iVar11 = *(int *)(param_1 + 0x10);
     }
     else {
       iVar11 = *(int *)(param_1 + 0x24) * (local_34 - 2) + *(int *)(param_1 + 0x1c);
     }
-    fat_fat_cache_readpartialsector(*(undefined4 *)(param_1 + 4),local_60,iVar11 + local_30,local_2c << 5,0x20);
+    _FAT_cache_readPartialSector(*(undefined4 *)(param_1 + 4),local_60,iVar11 + local_30,local_2c << 5,0x20);
     uVar2 = local_34;
     if (local_55 == 0xf) {
       if ((int)((uint)local_60[0] * 0x1000000) < 0) {
@@ -487,7 +487,7 @@ LAB_0207ef80:
           local_40 = local_34;
           iStack_3c = local_30;
           iStack_38 = local_2c;
-          fat_fat_directory_entrygetalias(local_60,puVar6,&local_34,auStack_28);
+          _FAT_directory_entryGetAlias(local_60,puVar6,&local_34,auStack_28);
           local_40 = uVar2;
         }
         if (iVar3 == 0) {
@@ -501,7 +501,7 @@ LAB_0207eed6:
           *(uint *)(param_2 + 0x2c) = local_34;
           *(int *)(param_2 + 0x30) = local_30;
           *(int *)(param_2 + 0x34) = local_2c;
-          arm_thumb_veneer_for_newlib_memcpy(param_2,local_60,0x20,auStack_28);
+          memcpy(param_2,local_60,0x20,auStack_28);
           uVar4 = 1;
         }
         return uVar4;
@@ -512,9 +512,9 @@ LAB_0207eed6:
 }
 
 
-// 0x0207efc4  fat_fat_directory_getfirstentry
+// 0x0207efc4  _FAT_directory_getFirstEntry
 
-void fat_fat_directory_getfirstentry(undefined4 param_1,int param_2,undefined4 param_3)
+void _FAT_directory_getFirstEntry(undefined4 param_1,int param_2,undefined4 param_3)
 
 {
   *(undefined4 *)(param_2 + 0x24) = 0;
@@ -523,14 +523,14 @@ void fat_fat_directory_getfirstentry(undefined4 param_1,int param_2,undefined4 p
   *(undefined4 *)(param_2 + 0x2c) = *(undefined4 *)(param_2 + 0x20);
   *(undefined4 *)(param_2 + 0x30) = *(undefined4 *)(param_2 + 0x24);
   *(undefined4 *)(param_2 + 0x34) = *(undefined4 *)(param_2 + 0x28);
-  fat_fat_directory_getnextentry(param_1,param_2,param_2 + 0x38,param_2 + 0x2c);
+  _FAT_directory_getNextEntry(param_1,param_2,param_2 + 0x38,param_2 + 0x2c);
   return;
 }
 
 
-// 0x0207efe4  fat_fat_directory_entryexists
+// 0x0207efe4  _FAT_directory_entryExists
 
-undefined4 fat_fat_directory_entryexists(undefined4 param_1,undefined4 param_2,undefined4 param_3)
+undefined4 _FAT_directory_entryExists(undefined4 param_1,undefined4 param_2,undefined4 param_3)
 
 {
   uint uVar1;
@@ -540,28 +540,28 @@ undefined4 fat_fat_directory_entryexists(undefined4 param_1,undefined4 param_2,u
   undefined1 auStack_130 [259];
   undefined1 auStack_2d [17];
   
-  uVar1 = arm_thumb_veneer_for_bounded_string_length(param_2,0x100);
-  if ((uVar1 < 0x100) && (iVar2 = fat_fat_directory_getfirstentry(param_1,auStack_168,param_3), iVar2 != 0)) {
+  uVar1 = strnlen(param_2,0x100);
+  if ((uVar1 < 0x100) && (iVar2 = _FAT_directory_getFirstEntry(param_1,auStack_168,param_3), iVar2 != 0)) {
     do {
-      uVar3 = arm_thumb_veneer_for_bounded_string_length(auStack_130,0x100);
-      if ((uVar1 == uVar3) && (iVar2 = arm_thumb_veneer_for_newlib_strcasecmp(auStack_130,param_2), iVar2 == 0)) {
+      uVar3 = strnlen(auStack_130,0x100);
+      if ((uVar1 == uVar3) && (iVar2 = strcasecmp(auStack_130,param_2), iVar2 == 0)) {
         return 1;
       }
-      fat_fat_directory_entrygetalias(auStack_168,auStack_2d);
-      uVar3 = arm_thumb_veneer_for_bounded_string_length(auStack_2d,0xd);
-      if ((uVar1 == uVar3) && (iVar2 = arm_thumb_veneer_for_newlib_strcasecmp(auStack_2d,param_2), iVar2 == 0)) {
+      _FAT_directory_entryGetAlias(auStack_168,auStack_2d);
+      uVar3 = strnlen(auStack_2d,0xd);
+      if ((uVar1 == uVar3) && (iVar2 = strcasecmp(auStack_2d,param_2), iVar2 == 0)) {
         return 1;
       }
-      iVar2 = fat_fat_directory_getnextentry(param_1,auStack_168);
+      iVar2 = _FAT_directory_getNextEntry(param_1,auStack_168);
     } while (iVar2 != 0);
   }
   return 0;
 }
 
 
-// 0x0207f07c  fat_fat_directory_entryfrompath
+// 0x0207f07c  _FAT_directory_entryFromPath
 
-undefined4 fat_fat_directory_entryfrompath(int param_1,int param_2,char *param_3,char *param_4)
+undefined4 _FAT_directory_entryFromPath(int param_1,int param_2,char *param_3,char *param_4)
 
 {
   bool bVar1;
@@ -575,7 +575,7 @@ undefined4 fat_fat_directory_entryfrompath(int param_1,int param_2,char *param_3
   
   local_3c = param_4;
   if (param_4 == (char *)0x0) {
-    local_3c = (char *)arm_thumb_veneer_for_newlib_strchr(param_3,0);
+    local_3c = (char *)strchr(param_3,0);
   }
   if (*param_3 == '/') {
     iVar6 = *(int *)(param_1 + 0x14);
@@ -583,7 +583,7 @@ undefined4 fat_fat_directory_entryfrompath(int param_1,int param_2,char *param_3
       param_3 = param_3 + 1;
     } while (*param_3 == '/');
     if (local_3c <= param_3) {
-      fat_fat_directory_getrootentry(param_1,param_2);
+      _FAT_directory_getRootEntry(param_1,param_2);
       bVar1 = true;
       goto LAB_0207f0a6;
     }
@@ -595,30 +595,30 @@ undefined4 fat_fat_directory_entryfrompath(int param_1,int param_2,char *param_3
 LAB_0207f0a6:
     if (iVar6 != *(int *)(param_1 + 0x14)) goto LAB_0207f0ae;
   }
-  iVar4 = arm_thumb_veneer_for_newlib_strncasecmp(&DAT_0208f224,param_3,2);
+  iVar4 = strncasecmp(&DAT_0208f224,param_3,2);
   if (iVar4 == 0) {
-    fat_fat_directory_getrootentry(param_1,param_2);
+    _FAT_directory_getRootEntry(param_1,param_2);
     return 1;
   }
 LAB_0207f0ae:
   if (!bVar1) {
     do {
       do {
-        pcVar2 = (char *)arm_thumb_veneer_for_newlib_strchr(param_3,0x2f);
+        pcVar2 = (char *)strchr(param_3,0x2f);
         if (pcVar2 == (char *)0x0) {
-          uVar5 = arm_thumb_veneer_for_newlib_strlen(param_3);
+          uVar5 = strlen(param_3);
         }
         else {
           uVar5 = (int)pcVar2 - (int)param_3;
         }
-        if ((0x100 < uVar5) || (iVar6 = fat_fat_directory_getfirstentry(param_1,param_2,iVar6), iVar6 == 0)) {
+        if ((0x100 < uVar5) || (iVar6 = _FAT_directory_getFirstEntry(param_1,param_2,iVar6), iVar6 == 0)) {
           return 0;
         }
         do {
-          uVar3 = arm_thumb_veneer_for_bounded_string_length(param_2 + 0x38,0x100);
+          uVar3 = strnlen(param_2 + 0x38,0x100);
           if (uVar5 == uVar3) {
             bVar1 = false;
-            iVar4 = arm_thumb_veneer_for_newlib_strncasecmp(param_2 + 0x38,param_3,uVar5);
+            iVar4 = strncasecmp(param_2 + 0x38,param_3,uVar5);
             if (iVar4 == 0) {
               bVar1 = true;
             }
@@ -626,9 +626,9 @@ LAB_0207f0ae:
           else {
             bVar1 = false;
           }
-          fat_fat_directory_entrygetalias(param_2,auStack_35);
-          uVar3 = arm_thumb_veneer_for_bounded_string_length(auStack_35,0xd);
-          if ((uVar5 == uVar3) && (iVar4 = arm_thumb_veneer_for_newlib_strncasecmp(auStack_35,param_3,uVar5), iVar4 == 0)
+          _FAT_directory_entryGetAlias(param_2,auStack_35);
+          uVar3 = strnlen(auStack_35,0xd);
+          if ((uVar5 == uVar3) && (iVar4 = strncasecmp(auStack_35,param_3,uVar5), iVar4 == 0)
              ) {
             bVar1 = true;
 LAB_0207f106:
@@ -640,7 +640,7 @@ LAB_0207f106:
           else {
             if (bVar1) goto LAB_0207f106;
 LAB_0207f116:
-            iVar6 = fat_fat_directory_getnextentry(param_1,param_2);
+            iVar6 = _FAT_directory_getNextEntry(param_1,param_2);
           }
           if (iVar6 == 0) {
             return 0;
@@ -655,7 +655,7 @@ LAB_0207f116:
         if (-1 < (int)((uint)*(byte *)(param_2 + 0xb) << 0x1b)) {
           return 1;
         }
-        iVar6 = fat_fat_directory_entrygetcluster(param_2);
+        iVar6 = _FAT_directory_entryGetCluster(param_2);
         param_3 = pcVar2;
       } while (*pcVar2 != '/');
       do {
@@ -668,9 +668,9 @@ LAB_0207f116:
 }
 
 
-// 0x0207f208  fat_fat_directory_chdir
+// 0x0207f208  _FAT_directory_chdir
 
-undefined4 fat_fat_directory_chdir(int param_1,undefined4 param_2)
+undefined4 _FAT_directory_chdir(int param_1,undefined4 param_2)
 
 {
   int iVar1;
@@ -678,9 +678,9 @@ undefined4 fat_fat_directory_chdir(int param_1,undefined4 param_2)
   undefined1 auStack_148 [11];
   byte local_13d;
   
-  iVar1 = fat_fat_directory_entryfrompath(param_1,auStack_148,param_2,0);
+  iVar1 = _FAT_directory_entryFromPath(param_1,auStack_148,param_2,0);
   if ((iVar1 != 0) && ((int)((uint)local_13d << 0x1b) < 0)) {
-    uVar2 = fat_fat_directory_entrygetcluster(auStack_148);
+    uVar2 = _FAT_directory_entryGetCluster(auStack_148);
     *(undefined4 *)(param_1 + 0x3c) = uVar2;
     return 1;
   }
@@ -688,20 +688,20 @@ undefined4 fat_fat_directory_chdir(int param_1,undefined4 param_2)
 }
 
 
-// 0x0207f238  fat_fat_directory_isvalidalias
+// 0x0207f238  _FAT_directory_isValidAlias
 
-uint fat_fat_directory_isvalidalias(byte *param_1)
+uint _FAT_directory_isValidAlias(byte *param_1)
 
 {
   uint uVar1;
   int iVar2;
   int iVar3;
   
-  uVar1 = arm_thumb_veneer_for_bounded_string_length(param_1,0xd);
-  if ((0xc < uVar1) || (iVar2 = arm_thumb_veneer_for_newlib_strpbrk(param_1,"\\/:;*?\"<>|&+,=[]"), iVar2 != 0)) {
+  uVar1 = strnlen(param_1,0xd);
+  if ((0xc < uVar1) || (iVar2 = strpbrk(param_1,"\\/:;*?\"<>|&+,=[]"), iVar2 != 0)) {
     return 0;
   }
-  iVar2 = arm_thumb_veneer_for_bounded_string_length(param_1,0xd);
+  iVar2 = strnlen(param_1,0xd);
   if (iVar2 != 0) {
     if (*param_1 < 0x20) {
       return 0;
@@ -713,24 +713,24 @@ uint fat_fat_directory_isvalidalias(byte *param_1)
       }
     }
   }
-  iVar3 = arm_thumb_veneer_for_newlib_strchr(param_1,0x2e);
+  iVar3 = strchr(param_1,0x2e);
   if (iVar3 == 0) {
     uVar1 = 0;
     if (iVar2 - 1U < 8) goto LAB_0207f2b8;
   }
   else {
-    iVar2 = arm_thumb_veneer_for_newlib_strrchr(param_1,0x2e);
+    iVar2 = strrchr(param_1,0x2e);
     if (iVar3 != iVar2) {
       return 0;
     }
     if (7 < (iVar3 - (int)param_1) - 2U) {
       return 0;
     }
-    uVar1 = arm_thumb_veneer_for_bounded_string_length(iVar3 + 1,0xd);
+    uVar1 = strnlen(iVar3 + 1,0xd);
     if (3 < uVar1) {
       return 0;
     }
-    iVar2 = arm_thumb_veneer_for_bounded_string_length(iVar3 + 1,0xd);
+    iVar2 = strnlen(iVar3 + 1,0xd);
     uVar1 = 0;
     if (iVar2 != 0) goto LAB_0207f2b8;
   }
@@ -740,18 +740,18 @@ LAB_0207f2b8:
 }
 
 
-// 0x0207f2d4  fat_fat_directory_isvalidlfn
+// 0x0207f2d4  _FAT_directory_isValidLfn
 
-undefined4 fat_fat_directory_isvalidlfn(byte *param_1)
+undefined4 _FAT_directory_isValidLfn(byte *param_1)
 
 {
   uint uVar1;
   int iVar2;
   int iVar3;
   
-  uVar1 = arm_thumb_veneer_for_bounded_string_length(param_1,0x100);
-  if ((uVar1 < 0x100) && (iVar2 = arm_thumb_veneer_for_newlib_strpbrk(param_1,"\\/:*?\"<>|"), iVar2 == 0)) {
-    iVar2 = arm_thumb_veneer_for_bounded_string_length(param_1,0x100);
+  uVar1 = strnlen(param_1,0x100);
+  if ((uVar1 < 0x100) && (iVar2 = strpbrk(param_1,"\\/:*?\"<>|"), iVar2 == 0)) {
+    iVar2 = strnlen(param_1,0x100);
     if (iVar2 == 0) {
       return 1;
     }
@@ -769,9 +769,9 @@ undefined4 fat_fat_directory_isvalidlfn(byte *param_1)
 }
 
 
-// 0x0207f320  fat_fat_directory_entryfromposition
+// 0x0207f320  _FAT_directory_entryFromPosition
 
-bool fat_fat_directory_entryfromposition(int param_1,int param_2)
+bool _FAT_directory_entryFromPosition(int param_1,int param_2)
 
 {
   int iVar1;
@@ -792,7 +792,7 @@ bool fat_fat_directory_entryfromposition(int param_1,int param_2)
   iVar3 = *(int *)(param_2 + 0x30);
   iVar1 = *(int *)(param_2 + 0x34);
   uVar5 = *(uint *)(param_2 + 0x2c);
-  arm_thumb_veneer_for_newlib_memset(param_2 + 0x38,0,0x100);
+  memset(param_2 + 0x38,0,0x100);
   while( true ) {
     if (local_34 < 2) {
       iVar6 = *(int *)(param_1 + 0x10);
@@ -800,9 +800,9 @@ bool fat_fat_directory_entryfromposition(int param_1,int param_2)
     else {
       iVar6 = *(int *)(param_1 + 0x24) * (local_34 - 2) + *(int *)(param_1 + 0x1c);
     }
-    fat_fat_cache_readpartialsector(*(undefined4 *)(param_1 + 4),local_54,iVar6 + local_30,local_2c << 5,0x20);
+    _FAT_cache_readPartialSector(*(undefined4 *)(param_1 + 4),local_54,iVar6 + local_30,local_2c << 5,0x20);
     if (((local_34 == uVar5) && (local_30 == iVar3)) && (local_2c == iVar1)) {
-      arm_thumb_veneer_for_newlib_memcpy(param_2,local_54,0x20);
+      memcpy(param_2,local_54,0x20);
       bVar7 = true;
     }
     else {
@@ -816,11 +816,11 @@ bool fat_fat_directory_entryfromposition(int param_1,int param_2)
       } while (piVar4 != (int *)&DAT_0208ee7c);
       bVar7 = false;
     }
-    iVar6 = fat_fat_directory_incrementdirentryposition(param_1,&local_34,0);
+    iVar6 = _FAT_directory_incrementDirEntryPosition(param_1,&local_34,0);
     if (iVar6 == 0) break;
     if (bVar7) {
       if (((local_34 == uVar5) && (local_30 == iVar3)) && (local_2c == iVar1)) {
-        iVar1 = fat_fat_directory_entrygetalias(param_2,param_2 + 0x38);
+        iVar1 = _FAT_directory_entryGetAlias(param_2,param_2 + 0x38);
         bVar7 = iVar1 != 0;
       }
       else {
@@ -833,9 +833,9 @@ bool fat_fat_directory_entryfromposition(int param_1,int param_2)
 }
 
 
-// 0x0207f430  fat_fat_directory_removeentry
+// 0x0207f430  _FAT_directory_removeEntry
 
-undefined4 fat_fat_directory_removeentry(int param_1,int param_2)
+undefined4 _FAT_directory_removeEntry(int param_1,int param_2)
 
 {
   bool bVar1;
@@ -861,7 +861,7 @@ undefined4 fat_fat_directory_removeentry(int param_1,int param_2)
     else {
       iVar5 = *(int *)(param_1 + 0x24) * (local_2c - 2) + *(int *)(param_1 + 0x1c);
     }
-    fat_fat_cache_readpartialsector(*(undefined4 *)(param_1 + 4),local_4c,iVar5 + local_28,local_24 << 5,0x20);
+    _FAT_cache_readPartialSector(*(undefined4 *)(param_1 + 4),local_4c,iVar5 + local_28,local_24 << 5,0x20);
     local_4c[0] = 0xe5;
     if (local_2c < 2) {
       iVar5 = *(int *)(param_1 + 0x10);
@@ -869,7 +869,7 @@ undefined4 fat_fat_directory_removeentry(int param_1,int param_2)
     else {
       iVar5 = *(int *)(param_1 + 0x24) * (local_2c - 2) + *(int *)(param_1 + 0x1c);
     }
-    fat_fat_cache_writepartialsector(*(undefined4 *)(param_1 + 4),local_4c,iVar5 + local_28,local_24 << 5,0x20);
+    _FAT_cache_writePartialSector(*(undefined4 *)(param_1 + 4),local_4c,iVar5 + local_28,local_24 << 5,0x20);
     if ((local_2c == uVar3) && (local_28 == iVar4)) {
       if (iVar2 == local_24) {
         bVar1 = true;
@@ -881,7 +881,7 @@ undefined4 fat_fat_directory_removeentry(int param_1,int param_2)
     else {
       bVar1 = false;
     }
-    iVar5 = fat_fat_directory_incrementdirentryposition(param_1,&local_2c,0);
+    iVar5 = _FAT_directory_incrementDirEntryPosition(param_1,&local_2c,0);
     if (iVar5 == 0) break;
     if (bVar1) {
       return 1;
@@ -891,9 +891,9 @@ undefined4 fat_fat_directory_removeentry(int param_1,int param_2)
 }
 
 
-// 0x0207f4f0  fat_fat_directory_entrystat
+// 0x0207f4f0  _FAT_directory_entryStat
 
-void fat_fat_directory_entrystat(undefined4 *param_1,int param_2,undefined4 *param_3)
+void _FAT_directory_entryStat(undefined4 *param_1,int param_2,undefined4 *param_3)
 
 {
   undefined4 uVar1;
@@ -902,7 +902,7 @@ void fat_fat_directory_entrystat(undefined4 *param_1,int param_2,undefined4 *par
   int iVar4;
   
   *param_3 = *(undefined4 *)*param_1;
-  uVar1 = fat_fat_directory_entrygetcluster(param_2);
+  uVar1 = _FAT_directory_entryGetCluster(param_2);
   param_3[1] = uVar1;
   if ((int)((uint)*(byte *)(param_2 + 0xb) << 0x1b) < 0) {
     uVar2 = 0x4124;
@@ -923,13 +923,13 @@ void fat_fat_directory_entrystat(undefined4 *param_1,int param_2,undefined4 *par
   param_3[5] = *param_3;
   param_3[6] = (uint)*(ushort *)(param_2 + 0x1c) |
                (uint)*(byte *)(param_2 + 0x1e) << 0x10 | (uint)*(byte *)(param_2 + 0x1f) << 0x18;
-  uVar1 = fat_fat_filetime_to_time_t(0,*(undefined2 *)(param_2 + 0x12));
+  uVar1 = _FAT_filetime_to_time_t(0,*(undefined2 *)(param_2 + 0x12));
   param_3[7] = uVar1;
   param_3[8] = 0;
-  uVar1 = fat_fat_filetime_to_time_t(*(undefined2 *)(param_2 + 0x16),*(undefined2 *)(param_2 + 0x18));
+  uVar1 = _FAT_filetime_to_time_t(*(undefined2 *)(param_2 + 0x16),*(undefined2 *)(param_2 + 0x18));
   param_3[10] = 0;
   param_3[9] = uVar1;
-  uVar1 = fat_fat_filetime_to_time_t(*(undefined2 *)(param_2 + 0xe),*(undefined2 *)(param_2 + 0x10));
+  uVar1 = _FAT_filetime_to_time_t(*(undefined2 *)(param_2 + 0xe),*(undefined2 *)(param_2 + 0x10));
   param_3[0xb] = uVar1;
   param_3[0xc] = 0;
   param_3[0xd] = 0x200;
@@ -944,9 +944,9 @@ void fat_fat_directory_entrystat(undefined4 *param_1,int param_2,undefined4 *par
 }
 
 
-// 0x0207f5bc  fat_fat_directory_addentry
+// 0x0207f5bc  _FAT_directory_addEntry
 
-undefined4 fat_fat_directory_addentry(int param_1,byte *param_2,uint param_3)
+undefined4 _FAT_directory_addEntry(int param_1,byte *param_2,uint param_3)
 
 {
   bool bVar1;
@@ -986,15 +986,15 @@ undefined4 fat_fat_directory_addentry(int param_1,byte *param_2,uint param_3)
   int local_2c;
   
   pbVar12 = param_2 + 0x38;
-  iVar2 = arm_thumb_veneer_for_bounded_string_length(pbVar12,0x100);
+  iVar2 = strnlen(pbVar12,0x100);
   if (iVar2 == 0) {
     return 0;
   }
-  iVar2 = fat_fat_directory_isvalidlfn(pbVar12);
+  iVar2 = _FAT_directory_isValidLfn(pbVar12);
   if (iVar2 == 0) {
     return 0;
   }
-  iVar2 = arm_thumb_veneer_for_newlib_strlen(pbVar12);
+  iVar2 = strlen(pbVar12);
   iVar7 = iVar2 + -1;
   if ((0 < iVar7) && (param_2[iVar2 + 0x37] == 0x20)) {
     pbVar3 = param_2 + iVar2 + 0x37;
@@ -1006,32 +1006,32 @@ undefined4 fat_fat_directory_addentry(int param_1,byte *param_2,uint param_3)
       pbVar3 = pbVar3 + -1;
     } while (*pbVar8 == 0x20);
   }
-  iVar2 = arm_thumb_veneer_for_newlib_strlen(pbVar12);
+  iVar2 = strlen(pbVar12);
   for (iVar7 = 0; (iVar7 != iVar2 && (param_2[iVar7 + 0x38] == 0x20)); iVar7 = iVar7 + 1) {
   }
   if (0 < iVar7) {
-    uVar4 = arm_thumb_veneer_for_newlib_strlen(pbVar12 + iVar7);
-    arm_thumb_veneer_for_newlib_memmove(pbVar12,pbVar12 + iVar7,uVar4);
+    uVar4 = strlen(pbVar12 + iVar7);
+    memmove(pbVar12,pbVar12 + iVar7,uVar4);
   }
-  iVar2 = arm_thumb_veneer_for_newlib_strlen(pbVar12);
-  arm_thumb_veneer_for_newlib_memset(pbVar12 + iVar2,0,0x100 - iVar2);
-  iVar2 = fat_fat_directory_entryexists(param_1,pbVar12,param_3);
+  iVar2 = strlen(pbVar12);
+  memset(pbVar12 + iVar2,0,0x100 - iVar2);
+  iVar2 = _FAT_directory_entryExists(param_1,pbVar12,param_3);
   if (iVar2 != 0) {
     return 0;
   }
-  arm_thumb_veneer_for_newlib_memset(param_2,0x20,0xb);
-  iVar2 = arm_thumb_veneer_for_newlib_strncmp(pbVar12,&DAT_0208f224,0x100);
+  memset(param_2,0x20,0xb);
+  iVar2 = strncmp(pbVar12,&DAT_0208f224,0x100);
   local_4c = param_3;
   local_40 = param_3;
   if (iVar2 == 0) {
     *param_2 = 0x2e;
   }
   else {
-    iVar2 = arm_thumb_veneer_for_newlib_strncmp(pbVar12,&DAT_0208f254,0x100);
+    iVar2 = strncmp(pbVar12,&DAT_0208f254,0x100);
     if (iVar2 != 0) {
-      iVar2 = fat_fat_directory_isvalidalias(pbVar12);
+      iVar2 = _FAT_directory_isValidAlias(pbVar12);
       if (iVar2 != 0) {
-        arm_thumb_veneer_for_uppercase_string_in_place_using_ctype_table(pbVar12);
+        strupr(pbVar12);
         iVar2 = 0;
         do {
           pbVar3 = param_2 + iVar2;
@@ -1046,10 +1046,10 @@ undefined4 fat_fat_directory_addentry(int param_1,byte *param_2,uint param_3)
         pbVar3 = param_2 + 8;
         goto LAB_0207f944;
       }
-      iVar2 = arm_thumb_veneer_for_bounded_string_length(pbVar12,0x100);
-      pbVar3 = (byte *)arm_thumb_veneer_for_newlib_strrchr(pbVar12,0x2e);
+      iVar2 = strnlen(pbVar12,0x100);
+      pbVar3 = (byte *)strrchr(pbVar12,0x2e);
       if (pbVar3 == (byte *)0x0) {
-        pbVar3 = (byte *)arm_thumb_veneer_for_newlib_strchr(pbVar12,0);
+        pbVar3 = (byte *)strchr(pbVar12,0);
       }
       iVar9 = 0;
       for (iVar7 = 0; pbVar12 + iVar7 < pbVar3; iVar7 = iVar7 + 1) {
@@ -1067,7 +1067,7 @@ undefined4 fat_fat_directory_addentry(int param_1,byte *param_2,uint param_3)
         } while (pbVar3 != &local_51);
         iVar9 = 8;
       }
-      pbVar12 = (byte *)arm_thumb_veneer_for_newlib_strrchr(pbVar12,0x2e);
+      pbVar12 = (byte *)strrchr(pbVar12,0x2e);
       if (pbVar12 == (byte *)0x0) {
         local_51 = 0;
         local_50[0] = local_51;
@@ -1099,12 +1099,12 @@ undefined4 fat_fat_directory_addentry(int param_1,byte *param_2,uint param_3)
       iVar7 = 0;
       while( true ) {
         iVar7 = iVar7 + 1;
-        uVar4 = arm_thumb_veneer_for_compiler_divsi3(iVar7,10);
-        arm_thumb_veneer_for_compiler_aeabi_idivmod(uVar4,10);
+        uVar4 = __divsi3(iVar7,10);
+        __aeabi_idivmod(uVar4,10);
         local_59[6] = extraout_r1 + '0';
-        arm_thumb_veneer_for_compiler_aeabi_idivmod(iVar7,10);
+        __aeabi_idivmod(iVar7,10);
         local_59[7] = extraout_r1_00 + '0';
-        iVar9 = fat_fat_directory_entryexists(param_1,local_59,param_3);
+        iVar9 = _FAT_directory_entryExists(param_1,local_59,param_3);
         if (iVar9 == 0) break;
         if (iVar7 == 100) {
           return 0;
@@ -1113,9 +1113,9 @@ undefined4 fat_fat_directory_addentry(int param_1,byte *param_2,uint param_3)
       if (iVar7 == 100) {
         return 0;
       }
-      arm_thumb_veneer_for_uppercase_string_in_place_using_ctype_table(local_59);
-      arm_thumb_veneer_for_newlib_memcpy(param_2,local_59,8);
-      arm_thumb_veneer_for_newlib_memcpy(param_2 + 8,local_50,3);
+      strupr(local_59);
+      memcpy(param_2,local_59,8);
+      memcpy(param_2 + 8,local_50,3);
       iVar7 = 0;
       do {
         if (param_2[iVar7] < 0x20) {
@@ -1136,7 +1136,7 @@ undefined4 fat_fat_directory_addentry(int param_1,byte *param_2,uint param_3)
         iVar7 = iVar7 + 1;
         local_a4 = iVar9 + (local_a4 >> 1) + (uint)*pbVar12 & 0xff;
       } while (iVar7 != 0xb);
-      local_a8 = arm_thumb_veneer_for_compiler_udivsi3(iVar2 + 0xc,0xd);
+      local_a8 = __udivsi3(iVar2 + 0xc,0xd);
       local_a8 = local_a8 + 1;
       local_44 = 0;
       local_48 = 0;
@@ -1165,7 +1165,7 @@ LAB_0207f6c4:
     else {
       iVar9 = *(int *)(param_1 + 0x24) * (local_4c - 2) + *(int *)(param_1 + 0x1c);
     }
-    fat_fat_cache_readpartialsector(*(undefined4 *)(param_1 + 4),local_79,iVar9 + local_48,local_44 << 5,0x20);
+    _FAT_cache_readPartialSector(*(undefined4 *)(param_1 + 4),local_79,iVar9 + local_48,local_44 << 5,0x20);
     puVar10 = (uint *)(uint)local_79[0];
     if (puVar10 == (uint *)0x0) {
       local_40 = local_4c;
@@ -1189,7 +1189,7 @@ LAB_0207f6c4:
           goto LAB_0207f6dc;
         }
       }
-      iVar7 = fat_fat_directory_incrementdirentryposition(param_1,&local_4c,1,puVar10);
+      iVar7 = _FAT_directory_incrementDirEntryPosition(param_1,&local_4c,1,puVar10);
       bVar1 = false;
     }
 LAB_0207f6dc:
@@ -1201,13 +1201,13 @@ LAB_0207f6dc:
       *(int *)(param_2 + 0x24) = iStack_3c;
       *(int *)(param_2 + 0x28) = iStack_38;
       iVar9 = iVar9 + 1;
-      arm_thumb_veneer_for_newlib_memset(local_79,0,0x20);
+      memset(local_79,0,0x20);
       if (iVar9 != 0) {
         while( true ) {
           *(uint *)(param_2 + 0x2c) = local_4c;
           *(int *)(param_2 + 0x30) = local_48;
           *(int *)(param_2 + 0x34) = local_44;
-          iVar2 = fat_fat_directory_incrementdirentryposition(param_1,&local_4c,1,&local_40);
+          iVar2 = _FAT_directory_incrementDirEntryPosition(param_1,&local_4c,1,&local_40);
           iVar9 = iVar9 + -1;
           if (local_4c < 2) {
             iVar7 = *(int *)(param_1 + 0x10);
@@ -1215,7 +1215,7 @@ LAB_0207f6dc:
           else {
             iVar7 = *(int *)(param_1 + 0x24) * (local_4c - 2) + *(int *)(param_1 + 0x1c);
           }
-          fat_fat_cache_writepartialsector(*(undefined4 *)(param_1 + 4),local_79,iVar7 + local_48,local_44 << 5,0x20);
+          _FAT_cache_writePartialSector(*(undefined4 *)(param_1 + 4),local_79,iVar7 + local_48,local_44 << 5,0x20);
           if (iVar9 == 0) break;
           if (iVar2 == 0) {
             return 0;
@@ -1251,7 +1251,7 @@ LAB_0207f7c6:
         else {
           iVar9 = *(int *)(param_1 + 0x24) * (local_34 - 2) + *(int *)(param_1 + 0x1c);
         }
-        fat_fat_cache_writepartialsector(*(undefined4 *)(param_1 + 4),param_2,iVar9 + local_30,local_2c << 5,0x20);
+        _FAT_cache_writePartialSector(*(undefined4 *)(param_1 + 4),param_2,iVar9 + local_30,local_2c << 5,0x20);
       }
       else {
         if (iVar2 == local_a8) {
@@ -1300,9 +1300,9 @@ LAB_0207f84c:
         else {
           iVar9 = *(int *)(param_1 + 0x24) * (local_34 - 2) + *(int *)(param_1 + 0x1c);
         }
-        fat_fat_cache_writepartialsector(*(undefined4 *)(param_1 + 4),local_99,iVar9 + local_30,local_2c << 5,0x20);
+        _FAT_cache_writePartialSector(*(undefined4 *)(param_1 + 4),local_99,iVar9 + local_30,local_2c << 5,0x20);
       }
-      iVar9 = fat_fat_directory_incrementdirentryposition(param_1,&local_34,0);
+      iVar9 = _FAT_directory_incrementDirEntryPosition(param_1,&local_34,0);
       if (iVar9 == 0) {
         return 1;
       }

@@ -2,9 +2,9 @@
  * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x037f8144  thumb_veneer_for_compiler_divsi3
+// 0x037f8144  __divsi3_thumb_veneer
 
-uint arm_thumb_veneer_for_compiler_divsi3(uint param_1,uint param_2)
+uint __divsi3(uint param_1,uint param_2)
 
 {
   uint uVar1;
@@ -17,7 +17,7 @@ uint arm_thumb_veneer_for_compiler_divsi3(uint param_1,uint param_2)
   
   uVar6 = param_1 ^ param_2;
   if (param_2 == 0) {
-    arm7_divide_by_zero_return_stub();
+    __div0();
     return 0;
   }
   uVar4 = param_2;
@@ -117,9 +117,9 @@ uint arm_thumb_veneer_for_compiler_divsi3(uint param_1,uint param_2)
 }
 
 
-// 0x037f8148  arm_entry_for_compiler_divsi3
+// 0x037f8148  __divsi3_arm_veneer
 
-uint arm_thumb_veneer_for_compiler_divsi3(uint param_1,uint param_2)
+uint __divsi3(uint param_1,uint param_2)
 
 {
   uint uVar1;
@@ -132,7 +132,7 @@ uint arm_thumb_veneer_for_compiler_divsi3(uint param_1,uint param_2)
   
   uVar6 = param_1 ^ param_2;
   if (param_2 == 0) {
-    arm7_divide_by_zero_return_stub();
+    __div0();
     return 0;
   }
   uVar4 = param_2;
@@ -245,9 +245,9 @@ void call_optional_arm7_registration_hooks(void)
 }
 
 
-// 0x038018d8  compiler_udivsi3
+// 0x038018d8  __udivsi3
 
-uint compiler_udivsi3(uint param_1,uint param_2)
+uint __udivsi3(uint param_1,uint param_2)
 
 {
   uint uVar1;
@@ -259,7 +259,7 @@ uint compiler_udivsi3(uint param_1,uint param_2)
     return param_1;
   }
   if (param_2 == 0) {
-    arm7_divide_by_zero_return_stub();
+    __div0();
     return 0;
   }
   if (param_1 <= param_2) {
@@ -332,19 +332,19 @@ uint compiler_udivsi3(uint param_1,uint param_2)
 }
 
 
-// 0x038019d4  compiler_aeabi_uidivmod
+// 0x038019d4  __aeabi_uidivmod
 
-void compiler_aeabi_uidivmod(void)
+void __aeabi_uidivmod(void)
 
 {
-  compiler_udivsi3();
+  __udivsi3();
   return;
 }
 
 
-// 0x038019ec  compiler_divsi3
+// 0x038019ec  __divsi3
 
-uint compiler_divsi3(uint param_1,uint param_2)
+uint __divsi3(uint param_1,uint param_2)
 
 {
   uint uVar1;
@@ -357,7 +357,7 @@ uint compiler_divsi3(uint param_1,uint param_2)
   
   uVar6 = param_1 ^ param_2;
   if (param_2 == 0) {
-    arm7_divide_by_zero_return_stub();
+    __div0();
     return 0;
   }
   uVar4 = param_2;
@@ -457,28 +457,28 @@ uint compiler_divsi3(uint param_1,uint param_2)
 }
 
 
-// 0x03801b18  compiler_aeabi_idivmod
+// 0x03801b18  __aeabi_idivmod
 
-void compiler_aeabi_idivmod(void)
+void __aeabi_idivmod(void)
 
 {
-  compiler_divsi3();
+  __divsi3();
   return;
 }
 
 
-// 0x03801b30  arm7_divide_by_zero_return_stub
+// 0x03801b30  __div0
 
-void arm7_divide_by_zero_return_stub(void)
+void __div0(void)
 
 {
   return;
 }
 
 
-// 0x03801b40  thumb_call_via_r3
+// 0x03801b40  _call_via_r3
 
-void thumb_call_via_r3(void)
+void _call_via_r3(void)
 
 {
   code *UNRECOVERED_JUMPTABLE;
@@ -490,9 +490,9 @@ void thumb_call_via_r3(void)
 }
 
 
-// 0x03801b7c  compiler_adddf3
+// 0x03801b7c  __adddf3
 
-ulonglong compiler_adddf3(uint param_1,uint param_2,uint param_3,uint param_4)
+ulonglong __adddf3(uint param_1,uint param_2,uint param_3,uint param_4)
 
 {
   int iVar1;
@@ -731,11 +731,11 @@ LAB_03801d50:
 }
 
 
-// 0x03801eb0  compiler_floatsidf
+// 0x03801eb0  __floatsidf
 
 /* WARNING: Removing unreachable block (ram,0x03801cd0) */
 
-ulonglong compiler_floatsidf(uint param_1)
+ulonglong __floatsidf(uint param_1)
 
 {
   uint uVar1;
@@ -823,9 +823,9 @@ LAB_03801d50:
 }
 
 
-// 0x03801f8c  compiler_muldf3
+// 0x03801f8c  __muldf3
 
-ulonglong compiler_muldf3(undefined4 param_1,uint param_2,uint param_3,uint param_4)
+ulonglong __muldf3(undefined4 param_1,uint param_2,uint param_3,uint param_4)
 
 {
   longlong lVar1;
@@ -1026,9 +1026,9 @@ ulonglong compiler_muldf3_special_operands(int param_1,uint param_2,int param_3,
 }
 
 
-// 0x0380221c  compiler_divdf3
+// 0x0380221c  __divdf3
 
-ulonglong compiler_divdf3(undefined4 param_1,uint param_2,uint param_3,uint param_4)
+ulonglong __divdf3(undefined4 param_1,uint param_2,uint param_3,uint param_4)
 
 {
   uint uVar1;
@@ -1281,9 +1281,9 @@ LAB_038021a0:
 }
 
 
-// 0x03802428  compiler_fixdfsi
+// 0x03802428  __fixdfsi
 
-uint compiler_fixdfsi(uint param_1,uint param_2)
+uint __fixdfsi(uint param_1,uint param_2)
 
 {
   uint uVar1;
@@ -1316,9 +1316,9 @@ uint compiler_fixdfsi(uint param_1,uint param_2)
 }
 
 
-// 0x03802484  compiler_fixunsdfsi
+// 0x03802484  __fixunsdfsi
 
-uint compiler_fixunsdfsi(uint param_1,uint param_2)
+uint __fixunsdfsi(uint param_1,uint param_2)
 
 {
   int iVar1;
@@ -1344,9 +1344,9 @@ uint compiler_fixunsdfsi(uint param_1,uint param_2)
 }
 
 
-// 0x038025ac  newlib_memcpy
+// 0x038025ac  memcpy
 
-void newlib_memcpy(undefined4 *param_1,undefined4 *param_2,uint param_3)
+void memcpy(undefined4 *param_1,undefined4 *param_2,uint param_3)
 
 {
   uint uVar1;
@@ -1379,9 +1379,9 @@ void newlib_memcpy(undefined4 *param_1,undefined4 *param_2,uint param_3)
 }
 
 
-// 0x03802648  newlib_memset
+// 0x03802648  memset
 
-void newlib_memset(undefined4 *param_1,undefined1 param_2,uint param_3)
+void memset(undefined4 *param_1,undefined1 param_2,uint param_3)
 
 {
   uint uVar1;

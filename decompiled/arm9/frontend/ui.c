@@ -51,7 +51,7 @@ undefined8 arm_tail_branch_to_load_subscreen_palette_tiles_and_map(void)
     puVar1 = puVar2;
   } while (puVar2 != (undefined2 *)&DAT_050005e0);
   _DAT_050005fe = 0x35f;
-  arm_veneer_for_nds_swicopy(&DAT_020874a8,0x6208000,0x2700);
+  swiCopy(&DAT_020874a8,0x6208000,0x2700);
   software_interrupt(0xb);
   return 0x620100002089ba8;
 }
@@ -72,7 +72,7 @@ void draw_loading_message(undefined4 param_1)
   
   arm_tail_branch_to_load_subscreen_palette_tiles_and_map();
   clear_text_rows_from(3);
-  newlib_strncpy(&DAT_023cb4f0,param_1,0x1d);
+  strncpy(&DAT_023cb4f0,param_1,0x1d);
   DAT_023cb50c = 0;
   write_text_at_tile_position("Loading:",6,1);
   uVar2 = DAT_020b4c54;
@@ -110,12 +110,12 @@ void draw_current_rom_information(void)
   arm_tail_branch_to_load_subscreen_palette_tiles_and_map();
   clear_text_rows_from(3);
   iVar2 = loaded_cartridge_metadata;
-  iVar3 = newlib_strrchr(loaded_cartridge_metadata,0x2f);
+  iVar3 = strrchr(loaded_cartridge_metadata,0x2f);
   iVar5 = iVar3 + 1;
   if (iVar3 == 0) {
     iVar5 = iVar2;
   }
-  newlib_strncpy(&DAT_023cb4f0,iVar5,0x1d);
+  strncpy(&DAT_023cb4f0,iVar5,0x1d);
   DAT_023cb50c = 0;
   write_text_at_tile_position("Now Playing:",6,1);
   write_text_at_tile_position(&DAT_023cb4f0,7,1);
@@ -216,7 +216,7 @@ void select_next_rom_browser_page(void)
   restore_overlay_tilemap_row(DAT_0208f344);
   DAT_02098fe4 = 0;
   DAT_0208f344 = 4;
-  compiler_aeabi_uidivmod(DAT_02098fe0 + 1,DAT_02098fd8);
+  __aeabi_uidivmod(DAT_02098fe0 + 1,DAT_02098fd8);
   uRam06201100 = 0x4b;
   uRam0620113e = 1099;
   iVar1 = 0;
@@ -430,7 +430,7 @@ undefined8 load_subscreen_palette_tiles_and_map(void)
     puVar1 = puVar2;
   } while (puVar2 != (undefined2 *)&DAT_050005e0);
   _DAT_050005fe = 0x35f;
-  arm_veneer_for_nds_swicopy(&DAT_020874a8,0x6208000,0x2700);
+  swiCopy(&DAT_020874a8,0x6208000,0x2700);
   software_interrupt(0xb);
   return 0x620100002089ba8;
 }

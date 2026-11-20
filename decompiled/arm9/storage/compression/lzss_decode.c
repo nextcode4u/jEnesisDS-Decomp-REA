@@ -31,7 +31,7 @@ void decode_lzss_from_memory_with_prefix(int input_buffer,int output_buffer,uint
       DAT_023eb300 = output_buffer;
       DAT_023eb304 = output_capacity;
       if (prefix_length != 0) {
-        newlib_memcpy(output_buffer,input_buffer);
+        memcpy(output_buffer,input_buffer);
         piVar3 = DAT_023eb2f8;
         piVar2 = DAT_023ddebc;
         iVar8 = *DAT_023ddebc;
@@ -113,49 +113,49 @@ uint load_file_and_decode_lzss_with_prefix(int input_buffer,int output_buffer,ui
   if (((output_buffer != 0 && input_buffer != 0) && (param_4 != 0 && param_3 != 0)) && (prefix_length < param_4)) {
     DAT_023ddebc = &DAT_023deed4;
     DAT_023eb2f8 = &DAT_023eb2fc;
-    source_stream = newlib_fopen(param_3,&binary_read_mode);
+    source_stream = fopen(param_3,&binary_read_mode);
     param_3 = 0;
     if (source_stream != 0) {
-      newlib_fseek(source_stream,0,2);
+      fseek(source_stream,0,2);
       piVar2 = DAT_023ddebc;
-      iVar7 = newlib_ftell(source_stream);
+      iVar7 = ftell(source_stream);
       piVar2[2] = iVar7;
-      newlib_fseek(source_stream,0,0);
+      fseek(source_stream,0,0);
       if ((param_4 < (uint)DAT_023ddebc[2]) || ((uint)DAT_023ddebc[2] < prefix_length)) {
         if (source_stream == 0) {
           uVar8 = 0;
         }
         else {
-          newlib_sfp_lock_acquire();
-          newlib_sinit(&DAT_0208f3a0);
+          __sfp_lock_acquire();
+          __sinit(&DAT_0208f3a0);
           uVar8 = 0;
           if (*(short *)(source_stream + 0xc) != 0) {
-            uVar8 = newlib_fflush(source_stream);
+            uVar8 = fflush(source_stream);
             if ((*(code **)(source_stream + 0x30) != (code *)0x0) &&
                (iVar7 = (**(code **)(source_stream + 0x30))(*(undefined4 *)(source_stream + 0x20)), iVar7 < 0)) {
               uVar8 = 0xffffffff;
             }
             if ((*(ushort *)(source_stream + 0xc) & 0x80) != 0) {
-              newlib_free_r(&DAT_0208f3a0,*(undefined4 *)(source_stream + 0x14));
+              _free_r(&DAT_0208f3a0,*(undefined4 *)(source_stream + 0x14));
             }
             if (*(int *)(source_stream + 0x34) != 0) {
               if (*(int *)(source_stream + 0x34) != source_stream + 0x44) {
-                newlib_free_r(&DAT_0208f3a0);
+                _free_r(&DAT_0208f3a0);
               }
               *(undefined4 *)(source_stream + 0x34) = 0;
             }
             if (*(int *)(source_stream + 0x48) != 0) {
-              newlib_free_r(&DAT_0208f3a0);
+              _free_r(&DAT_0208f3a0);
               *(undefined4 *)(source_stream + 0x48) = 0;
             }
             *(undefined2 *)(source_stream + 0xc) = 0;
           }
-          newlib_sfp_lock_release();
+          __sfp_lock_release();
         }
         return uVar8;
       }
-      newlib_fread(input_buffer,1,param_4,source_stream);
-      newlib_fclose(source_stream);
+      fread(input_buffer,1,param_4,source_stream);
+      fclose(source_stream);
       piVar3 = DAT_023eb2f8;
       piVar2 = DAT_023ddebc;
       DAT_023eb2f8[2] = param_4;
@@ -166,7 +166,7 @@ uint load_file_and_decode_lzss_with_prefix(int input_buffer,int output_buffer,ui
       piVar3[3] = 0;
       piVar3[1] = output_buffer;
       if (prefix_length != 0) {
-        newlib_memcpy(output_buffer,piVar2[1],prefix_length);
+        memcpy(output_buffer,piVar2[1],prefix_length);
         piVar3 = DAT_023eb2f8;
         piVar2 = DAT_023ddebc;
         source_stream = *DAT_023ddebc;

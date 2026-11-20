@@ -315,7 +315,7 @@ void initialize_ym2612_tables_and_channels(undefined4 param_1,int param_2,int pa
     iVar7 = iVar7 + param_3;
     piVar9 = piVar10;
   } while (piVar10 != &DAT_03806ea0);
-  newlib_memset(&DAT_03807308,0,0x978);
+  memset(&DAT_03807308,0,0x978);
   DAT_03806ea8 = param_1;
   DAT_03806eac = param_2;
   if (param_2 == 0) {
@@ -323,13 +323,13 @@ void initialize_ym2612_tables_and_channels(undefined4 param_1,int param_2,int pa
     DAT_03807300 = 0;
   }
   else {
-    uVar12 = compiler_floatsidf(param_1);
-    uVar13 = compiler_floatsidf(param_2);
-    uVar13 = compiler_muldf3((int)uVar13,(int)((ulonglong)uVar13 >> 0x20),0,0x40620000);
-    uVar12 = compiler_divdf3((int)uVar12,(int)((ulonglong)uVar12 >> 0x20),(int)uVar13,
+    uVar12 = __floatsidf(param_1);
+    uVar13 = __floatsidf(param_2);
+    uVar13 = __muldf3((int)uVar13,(int)((ulonglong)uVar13 >> 0x20),0,0x40620000);
+    uVar12 = __divdf3((int)uVar12,(int)((ulonglong)uVar12 >> 0x20),(int)uVar13,
                           (int)((ulonglong)uVar13 >> 0x20));
-    compiler_muldf3((int)uVar12,(int)((ulonglong)uVar12 >> 0x20),0,0x40f00000);
-    DAT_03807300 = compiler_fixunsdfsi();
+    __muldf3((int)uVar12,(int)((ulonglong)uVar12 >> 0x20),0,0x40f00000);
+    DAT_03807300 = __fixunsdfsi();
   }
   local_2c = 0;
   do {
@@ -340,15 +340,15 @@ void initialize_ym2612_tables_and_channels(undefined4 param_1,int param_2,int pa
       DAT_03806eb4 = (undefined4)((ulonglong)uVar12 >> 0x20);
       DAT_03806eb0 = (undefined4)uVar12;
       cVar1 = (&DAT_03806cb4)[iVar7 + local_2c * 0x20];
-      uVar12 = compiler_floatsidf((int)cVar1);
+      uVar12 = __floatsidf((int)cVar1);
       iVar7 = iVar7 + 1;
       if (cVar1 < 0) {
-        uVar12 = compiler_adddf3((int)uVar12,(int)((ulonglong)uVar12 >> 0x20),0,0x40700000);
+        uVar12 = __adddf3((int)uVar12,(int)((ulonglong)uVar12 >> 0x20),0,0x40700000);
       }
-      uVar13 = compiler_muldf3(0,0x40500000,DAT_03806eb0,DAT_03806eb4);
-      compiler_muldf3((int)uVar12,(int)((ulonglong)uVar12 >> 0x20),(int)uVar13,
+      uVar13 = __muldf3(0,0x40500000,DAT_03806eb0,DAT_03806eb4);
+      __muldf3((int)uVar12,(int)((ulonglong)uVar12 >> 0x20),(int)uVar13,
                    (int)((ulonglong)uVar13 >> 0x20));
-      iVar4 = compiler_fixdfsi();
+      iVar4 = __fixdfsi();
       *piVar10 = iVar4;
       *piVar9 = -iVar4;
       uVar12 = CONCAT44(DAT_03806eb4,DAT_03806eb0);
@@ -357,14 +357,14 @@ void initialize_ym2612_tables_and_channels(undefined4 param_1,int param_2,int pa
     } while (iVar7 != 0x20);
     local_2c = local_2c + 1;
   } while (local_2c != 4);
-  uVar12 = compiler_muldf3(0,0x40a00000,DAT_03806eb0,DAT_03806eb4);
+  uVar12 = __muldf3(0,0x40a00000,DAT_03806eb0,DAT_03806eb4);
   iVar7 = 0;
   puVar2 = &DAT_03807820;
   do {
-    uVar13 = compiler_floatsidf(iVar7);
-    compiler_muldf3((int)uVar13,(int)((ulonglong)uVar13 >> 0x20),(int)uVar12,
+    uVar13 = __floatsidf(iVar7);
+    __muldf3((int)uVar13,(int)((ulonglong)uVar13 >> 0x20),(int)uVar12,
                  (int)((ulonglong)uVar12 >> 0x20));
-    uVar5 = compiler_fixunsdfsi();
+    uVar5 = __fixunsdfsi();
     iVar7 = iVar7 + 1;
     *puVar2 = uVar5;
     puVar2 = puVar2 + 1;

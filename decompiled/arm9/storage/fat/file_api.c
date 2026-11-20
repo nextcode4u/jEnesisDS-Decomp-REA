@@ -2,9 +2,9 @@
  * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x0207d1f8  fat_fat_stat_r
+// 0x0207d1f8  _FAT_stat_r
 
-undefined4 fat_fat_stat_r(undefined4 *param_1,int param_2,undefined4 param_3)
+undefined4 _FAT_stat_r(undefined4 *param_1,int param_2,undefined4 param_3)
 
 {
   int iVar1;
@@ -12,28 +12,28 @@ undefined4 fat_fat_stat_r(undefined4 *param_1,int param_2,undefined4 param_3)
   undefined4 uVar3;
   undefined1 auStack_150 [312];
   
-  iVar1 = fat_fat_partition_getpartitionfrompath(param_2);
+  iVar1 = _FAT_partition_getPartitionFromPath(param_2);
   if (iVar1 == 0) {
     uVar3 = 0xffffffff;
     *param_1 = 0x13;
   }
   else {
-    iVar2 = arm_thumb_veneer_for_newlib_strchr(param_2,0x3a);
+    iVar2 = strchr(param_2,0x3a);
     if (iVar2 != 0) {
       param_2 = iVar2 + 1;
-      iVar2 = arm_thumb_veneer_for_newlib_strchr(param_2,0x3a);
+      iVar2 = strchr(param_2,0x3a);
       if (iVar2 != 0) {
         *param_1 = 0x16;
         return 0xffffffff;
       }
     }
-    iVar2 = fat_fat_directory_entryfrompath(iVar1,auStack_150,param_2,0);
+    iVar2 = _FAT_directory_entryFromPath(iVar1,auStack_150,param_2,0);
     if (iVar2 == 0) {
       uVar3 = 0xffffffff;
       *param_1 = 2;
     }
     else {
-      fat_fat_directory_entrystat(iVar1,auStack_150,param_3);
+      _FAT_directory_entryStat(iVar1,auStack_150,param_3);
       uVar3 = 0;
     }
   }
@@ -41,9 +41,9 @@ undefined4 fat_fat_stat_r(undefined4 *param_1,int param_2,undefined4 param_3)
 }
 
 
-// 0x0207d848  fat_fat_fstat_r
+// 0x0207d848  _FAT_fstat_r
 
-undefined4 fat_fat_fstat_r(undefined4 *param_1,undefined4 *param_2,int param_3)
+undefined4 _FAT_fstat_r(undefined4 *param_1,undefined4 *param_2,int param_3)
 
 {
   undefined4 uVar1;
@@ -69,13 +69,13 @@ undefined4 fat_fat_fstat_r(undefined4 *param_1,undefined4 *param_2,int param_3)
     local_12c = param_2[0xe];
     uStack_128 = param_2[0xf];
     uStack_124 = param_2[0x10];
-    iVar2 = fat_fat_directory_entryfromposition(uVar1,auStack_158,auStack_120,param_2 + 0x11);
+    iVar2 = _FAT_directory_entryFromPosition(uVar1,auStack_158,auStack_120,param_2 + 0x11);
     if (iVar2 == 0) {
       uVar1 = 0xffffffff;
       *param_1 = 5;
     }
     else {
-      fat_fat_directory_entrystat(uVar1,auStack_158,param_3);
+      _FAT_directory_entryStat(uVar1,auStack_158,param_3);
       uVar1 = 0;
       *(undefined4 *)(param_3 + 4) = param_2[1];
       *(undefined4 *)(param_3 + 0x18) = *param_2;
@@ -85,9 +85,9 @@ undefined4 fat_fat_fstat_r(undefined4 *param_1,undefined4 *param_2,int param_3)
 }
 
 
-// 0x0207dac8  fat_fat_open_r
+// 0x0207dac8  _FAT_open_r
 
-uint * fat_fat_open_r(undefined4 *param_1,uint *param_2,int param_3,uint param_4)
+uint * _FAT_open_r(undefined4 *param_1,uint *param_2,int param_3,uint param_4)
 
 {
   undefined2 uVar1;
@@ -117,15 +117,15 @@ uint * fat_fat_open_r(undefined4 *param_1,uint *param_2,int param_3,uint param_4
   uint uStack_12c;
   undefined1 auStack_128 [260];
   
-  uVar2 = fat_fat_partition_getpartitionfrompath(param_3);
+  uVar2 = _FAT_partition_getPartitionFromPath(param_3);
   if (uVar2 == 0) {
     *param_1 = 0x13;
     return (uint *)0xffffffff;
   }
-  iVar3 = arm_thumb_veneer_for_newlib_strchr(param_3,0x3a);
+  iVar3 = strchr(param_3,0x3a);
   if (iVar3 != 0) {
     param_3 = iVar3 + 1;
-    iVar3 = arm_thumb_veneer_for_newlib_strchr(param_3,0x3a);
+    iVar3 = strchr(param_3,0x3a);
     if (iVar3 != 0) {
       *param_1 = 0x16;
       return (uint *)0xffffffff;
@@ -155,7 +155,7 @@ uint * fat_fat_open_r(undefined4 *param_1,uint *param_2,int param_3,uint param_4
     *param_1 = 0x1e;
     return (uint *)0xffffffff;
   }
-  iVar3 = fat_fat_directory_entryfrompath(uVar2,auStack_160,param_3,0);
+  iVar3 = _FAT_directory_entryFromPath(uVar2,auStack_160,param_3,0);
   if ((param_4 & 0xa00) == 0xa00) {
     if (iVar3 != 0) {
       *param_1 = 0x11;
@@ -170,29 +170,29 @@ LAB_0207dc46:
       *param_1 = 0x1e;
       return (uint *)0xffffffff;
     }
-    iVar3 = arm_thumb_veneer_for_newlib_strrchr(param_3,0x2f);
+    iVar3 = strrchr(param_3,0x2f);
     if (iVar3 == 0) {
       uVar5 = *(undefined4 *)(uVar2 + 0x3c);
     }
     else {
-      iVar4 = fat_fat_directory_entryfrompath(uVar2,auStack_160,param_3,iVar3);
+      iVar4 = _FAT_directory_entryFromPath(uVar2,auStack_160,param_3,iVar3);
       if ((iVar4 == 0) || (-1 < (int)((uint)local_155 << 0x1b))) {
         *param_1 = 0x14;
         return (uint *)0xffffffff;
       }
-      uVar5 = fat_fat_directory_entrygetcluster(auStack_160);
+      uVar5 = _FAT_directory_entryGetCluster(auStack_160);
       param_3 = iVar3 + 1;
     }
-    arm_thumb_veneer_for_newlib_strncpy(auStack_128,param_3,0xff);
-    arm_thumb_veneer_for_newlib_memset(auStack_160,0,0x20);
+    strncpy(auStack_128,param_3,0xff);
+    memset(auStack_160,0,0x20);
     local_153 = 0;
-    uVar1 = fat_fat_filetime_gettimefromrtc();
+    uVar1 = _FAT_filetime_getTimeFromRTC();
     local_152 = (undefined1)uVar1;
     local_151 = (undefined1)((ushort)uVar1 >> 8);
-    uVar1 = fat_fat_filetime_getdatefromrtc();
+    uVar1 = _FAT_filetime_getDateFromRTC();
     local_150 = (undefined1)uVar1;
     local_14f = (undefined1)((ushort)uVar1 >> 8);
-    iVar3 = fat_fat_directory_addentry(uVar2,auStack_160,uVar5);
+    iVar3 = _FAT_directory_addEntry(uVar2,auStack_160,uVar5);
     if (iVar3 == 0) {
       *param_1 = 0x1c;
       return (uint *)0xffffffff;
@@ -211,11 +211,11 @@ LAB_0207dc46:
     return (uint *)0xffffffff;
   }
   param_2[10] = uVar2;
-  uVar6 = fat_fat_directory_entrygetcluster(auStack_160);
+  uVar6 = _FAT_directory_entryGetCluster(auStack_160);
   param_2[1] = uVar6;
   if (((int)(param_4 << 0x15) < 0) && (*(char *)((int)param_2 + 0x25) != '\0')) {
     if (uVar6 != 0) {
-      fat_fat_fat_clearlinks(uVar2,uVar6);
+      _FAT_fat_clearLinks(uVar2,uVar6);
       param_2[1] = 0;
       *param_2 = 0;
       goto LAB_0207dba0;
@@ -225,7 +225,7 @@ LAB_0207dc46:
 LAB_0207dba0:
     if (param_2[1] != 0) goto LAB_0207dbb0;
   }
-  uVar6 = fat_fat_fat_linkfreecluster(uVar2,0);
+  uVar6 = _FAT_fat_linkFreeCluster(uVar2,0);
   param_2[1] = uVar6;
 LAB_0207dbb0:
   param_2[0xb] = local_140;
@@ -238,13 +238,13 @@ LAB_0207dbb0:
   param_2[4] = 0;
   param_2[5] = 0;
   param_2[3] = param_2[1];
-  uVar6 = fat_fat_fat_lastcluster(uVar2,param_2[1],param_2 + 0x11);
+  uVar6 = _FAT_fat_lastCluster(uVar2,param_2[1],param_2 + 0x11);
   uVar7 = *param_2;
   param_2[6] = uVar6;
-  arm_thumb_veneer_for_compiler_aeabi_uidivmod(uVar7,*(undefined4 *)(uVar2 + 0x28));
+  __aeabi_uidivmod(uVar7,*(undefined4 *)(uVar2 + 0x28));
   param_2[7] = extraout_r1 >> 9;
   param_2[8] = uVar7 & 0x1ff;
-  if ((uVar7 != 0) && (arm_thumb_veneer_for_compiler_aeabi_uidivmod(uVar7,*(undefined4 *)(uVar2 + 0x28)), extraout_r1_00 == 0)
+  if ((uVar7 != 0) && (__aeabi_uidivmod(uVar7,*(undefined4 *)(uVar2 + 0x28)), extraout_r1_00 == 0)
      ) {
     uVar6 = *(uint *)(uVar2 + 0x24);
     param_2[8] = 0;
@@ -259,9 +259,9 @@ LAB_0207dbb0:
 }
 
 
-// 0x0207dd80  fat_fat_read_r
+// 0x0207dd80  _FAT_read_r
 
-int fat_fat_read_r(undefined4 *param_1,uint *param_2,int param_3,uint param_4)
+int _FAT_read_r(undefined4 *param_1,uint *param_2,int param_3,uint param_4)
 
 {
   bool bVar1;
@@ -307,7 +307,7 @@ int fat_fat_read_r(undefined4 *param_1,uint *param_2,int param_3,uint param_4)
     else {
       iVar2 = piVar9[9] * (uVar5 - 2) + piVar9[7];
     }
-    fat_fat_cache_readpartialsector(iVar6,param_3,iVar2 + uVar8,local_30,uVar3);
+    _FAT_cache_readPartialSector(iVar6,param_3,iVar2 + uVar8,local_30,uVar3);
     local_30 = local_30 + uVar3;
     param_3 = param_3 + uVar3;
     uVar10 = local_2c - uVar3;
@@ -335,7 +335,7 @@ int fat_fat_read_r(undefined4 *param_1,uint *param_2,int param_3,uint param_4)
     uVar8 = uVar8 + uVar7;
   }
   if (uVar3 <= uVar8) {
-    uVar3 = fat_fat_fat_nextcluster(piVar9,uVar5);
+    uVar3 = _FAT_fat_nextCluster(piVar9,uVar5);
     if ((uVar10 != 0) || (uVar3 != 0xfffffff)) {
       if (uVar3 == 0) {
         *param_1 = 5;
@@ -364,7 +364,7 @@ LAB_0207de44:
     (**(code **)(*piVar9 + 0x10))(iVar2,iVar4,param_3);
     iVar2 = piVar9[10];
     uVar10 = uVar10 - iVar2;
-    uVar3 = fat_fat_fat_nextcluster(piVar9,uVar5);
+    uVar3 = _FAT_fat_nextCluster(piVar9,uVar5);
     if ((uVar10 == 0) && (uVar3 == 0xfffffff)) {
       uVar8 = piVar9[9];
       param_3 = param_3 + iVar2;
@@ -400,7 +400,7 @@ LAB_0207de44:
     else {
       iVar2 = piVar9[9] * (uVar5 - 2) + piVar9[7];
     }
-    fat_fat_cache_readpartialsector(iVar6,param_3,iVar2 + uVar8,0,uVar10);
+    _FAT_cache_readPartialSector(iVar6,param_3,iVar2 + uVar8,0,uVar10);
     local_30 = local_30 + uVar10;
     uVar10 = 0;
   }
@@ -412,9 +412,9 @@ LAB_0207de44:
 }
 
 
-// 0x0207dfc8  fat_fat_write_r
+// 0x0207dfc8  _FAT_write_r
 
-int fat_fat_write_r(undefined4 *param_1,uint *param_2,int param_3,uint param_4)
+int _FAT_write_r(undefined4 *param_1,uint *param_2,int param_3,uint param_4)
 
 {
   bool bVar1;
@@ -445,11 +445,11 @@ int fat_fat_write_r(undefined4 *param_1,uint *param_2,int param_3,uint param_4)
       uVar2 = *param_2;
       uVar6 = param_2[2];
       if (uVar2 < param_2[2]) {
-        arm_thumb_veneer_for_newlib_memset(auStack_228,0,0x200);
+        memset(auStack_228,0,0x200);
         uVar12 = *param_2 & 0x1ff;
-        arm_thumb_veneer_for_compiler_aeabi_uidivmod(*param_2,piVar11[10]);
+        __aeabi_uidivmod(*param_2,piVar11[10]);
         uVar6 = extraout_r1 >> 9;
-        uVar2 = fat_fat_fat_lastcluster(piVar11,param_2[1]);
+        uVar2 = _FAT_fat_lastCluster(piVar11,param_2[1]);
         uVar10 = param_2[2] - *param_2;
         uVar4 = uVar10 + uVar12;
         if (uVar4 < 0x200) {
@@ -459,7 +459,7 @@ int fat_fat_write_r(undefined4 *param_1,uint *param_2,int param_3,uint param_4)
           else {
             iVar7 = piVar11[9] * (uVar2 - 2) + piVar11[7];
           }
-          fat_fat_cache_writepartialsector(iVar8,auStack_228,iVar7 + uVar6,uVar12,uVar10);
+          _FAT_cache_writePartialSector(iVar8,auStack_228,iVar7 + uVar6,uVar12,uVar10);
           uVar5 = uVar2;
           uVar12 = uVar4;
         }
@@ -471,7 +471,7 @@ int fat_fat_write_r(undefined4 *param_1,uint *param_2,int param_3,uint param_4)
             else {
               iVar7 = piVar11[9] * (uVar2 - 2) + piVar11[7];
             }
-            fat_fat_cache_writepartialsector(iVar8,auStack_228,iVar7 + uVar6,uVar12,0x200 - uVar12);
+            _FAT_cache_writePartialSector(iVar8,auStack_228,iVar7 + uVar6,uVar12,0x200 - uVar12);
             uVar10 = uVar4 - 0x200;
             uVar12 = 0;
             uVar6 = uVar6 + 1;
@@ -481,9 +481,9 @@ int fat_fat_write_r(undefined4 *param_1,uint *param_2,int param_3,uint param_4)
               uVar4 = uVar6 + 1;
             }
             else {
-              uVar5 = fat_fat_fat_nextcluster(piVar11,uVar2);
+              uVar5 = _FAT_fat_nextCluster(piVar11,uVar2);
               if (((uVar5 == 0xfffffff) || (uVar5 == 0)) &&
-                 (uVar5 = fat_fat_fat_linkfreecluster(piVar11,uVar2), uVar5 == 0)) {
+                 (uVar5 = _FAT_fat_linkFreeCluster(piVar11,uVar2), uVar5 == 0)) {
                 *param_1 = 0x1c;
                 return 0;
               }
@@ -502,9 +502,9 @@ int fat_fat_write_r(undefined4 *param_1,uint *param_2,int param_3,uint param_4)
           }
           uVar5 = uVar2;
           if ((uint)piVar11[9] <= uVar6) {
-            uVar5 = fat_fat_fat_nextcluster(piVar11,uVar2);
+            uVar5 = _FAT_fat_nextCluster(piVar11,uVar2);
             if (((uVar5 == 0xfffffff) || (uVar5 == 0)) &&
-               (uVar5 = fat_fat_fat_linkfreecluster(piVar11,uVar2), uVar5 == 0)) {
+               (uVar5 = _FAT_fat_linkFreeCluster(piVar11,uVar2), uVar5 == 0)) {
               *param_1 = 0x1c;
               return 0;
             }
@@ -517,7 +517,7 @@ int fat_fat_write_r(undefined4 *param_1,uint *param_2,int param_3,uint param_4)
             else {
               iVar7 = piVar11[9] * (uVar5 - 2) + piVar11[7];
             }
-            fat_fat_cache_writepartialsector(iVar8,auStack_228,iVar7 + uVar6,0,uVar10);
+            _FAT_cache_writePartialSector(iVar8,auStack_228,iVar7 + uVar6,0,uVar10);
             uVar12 = uVar10;
           }
         }
@@ -548,9 +548,9 @@ int fat_fat_write_r(undefined4 *param_1,uint *param_2,int param_3,uint param_4)
       uVar6 = 1;
     }
     else {
-      uVar2 = fat_fat_fat_nextcluster(piVar11,uVar12);
+      uVar2 = _FAT_fat_nextCluster(piVar11,uVar12);
       if (((uVar2 == 0xfffffff) || (uVar2 == 0)) &&
-         (uVar2 = fat_fat_fat_linkfreecluster(piVar11,uVar12), uVar2 == 0)) {
+         (uVar2 = _FAT_fat_linkFreeCluster(piVar11,uVar12), uVar2 == 0)) {
         *param_1 = 0x1c;
         uVar4 = 0;
         uVar6 = uVar4;
@@ -573,7 +573,7 @@ int fat_fat_write_r(undefined4 *param_1,uint *param_2,int param_3,uint param_4)
       else {
         iVar7 = piVar11[9] * (uVar12 - 2) + piVar11[7];
       }
-      fat_fat_cache_writepartialsector(iVar8,param_3,iVar7 + uVar4,local_22c,uVar2);
+      _FAT_cache_writePartialSector(iVar8,param_3,iVar7 + uVar4,local_22c,uVar2);
       local_22c = local_22c + uVar2;
       param_3 = param_3 + uVar2;
       uVar10 = param_4 - uVar2;
@@ -604,9 +604,9 @@ int fat_fat_write_r(undefined4 *param_1,uint *param_2,int param_3,uint param_4)
       uVar2 = piVar11[10];
     }
     else {
-      uVar5 = fat_fat_fat_nextcluster(piVar11,uVar12);
+      uVar5 = _FAT_fat_nextCluster(piVar11,uVar12);
       if (((uVar5 == 0xfffffff) || (uVar5 == 0)) &&
-         (uVar5 = fat_fat_fat_linkfreecluster(piVar11,uVar12), uVar5 == 0)) {
+         (uVar5 = _FAT_fat_linkFreeCluster(piVar11,uVar12), uVar5 == 0)) {
         *param_1 = 0x1c;
         uVar6 = 0;
         uVar2 = piVar11[10];
@@ -639,9 +639,9 @@ int fat_fat_write_r(undefined4 *param_1,uint *param_2,int param_3,uint param_4)
           uVar9 = uVar2;
         }
         else {
-          uVar5 = fat_fat_fat_nextcluster(piVar11,uVar12);
+          uVar5 = _FAT_fat_nextCluster(piVar11,uVar12);
           if (((uVar5 == 0xfffffff) || (uVar5 == 0)) &&
-             (uVar5 = fat_fat_fat_linkfreecluster(piVar11,uVar12), uVar5 == 0)) {
+             (uVar5 = _FAT_fat_linkFreeCluster(piVar11,uVar12), uVar5 == 0)) {
             *param_1 = 0x1c;
             uVar6 = 0;
             uVar9 = piVar11[10];
@@ -676,7 +676,7 @@ int fat_fat_write_r(undefined4 *param_1,uint *param_2,int param_3,uint param_4)
         else {
           iVar7 = piVar11[9] * (uVar5 - 2) + piVar11[7];
         }
-        fat_fat_cache_erasewritepartialsector(iVar8,param_3,iVar7 + uVar4,0,uVar10);
+        _FAT_cache_eraseWritePartialSector(iVar8,param_3,iVar7 + uVar4,0,uVar10);
       }
       else {
         if (uVar5 < 2) {
@@ -685,7 +685,7 @@ int fat_fat_write_r(undefined4 *param_1,uint *param_2,int param_3,uint param_4)
         else {
           iVar7 = piVar11[9] * (uVar5 - 2) + piVar11[7];
         }
-        fat_fat_cache_writepartialsector(iVar8,param_3,iVar7 + uVar4,0,uVar10);
+        _FAT_cache_writePartialSector(iVar8,param_3,iVar7 + uVar4,0,uVar10);
       }
       local_22c = local_22c + uVar10;
       uVar10 = 0;
@@ -712,9 +712,9 @@ int fat_fat_write_r(undefined4 *param_1,uint *param_2,int param_3,uint param_4)
 }
 
 
-// 0x0207e808  fat_fat_filetime_gettimefromrtc
+// 0x0207e808  _FAT_filetime_getTimeFromRTC
 
-uint fat_fat_filetime_gettimefromrtc(void)
+uint _FAT_filetime_getTimeFromRTC(void)
 
 {
   uint uVar1;
@@ -736,9 +736,9 @@ uint fat_fat_filetime_gettimefromrtc(void)
 }
 
 
-// 0x0207e854  fat_fat_filetime_getdatefromrtc
+// 0x0207e854  _FAT_filetime_getDateFromRTC
 
-uint fat_fat_filetime_getdatefromrtc(void)
+uint _FAT_filetime_getDateFromRTC(void)
 
 {
   uint uVar1;
@@ -753,9 +753,9 @@ uint fat_fat_filetime_getdatefromrtc(void)
 }
 
 
-// 0x0207e898  fat_fat_filetime_to_time_t
+// 0x0207e898  _FAT_filetime_to_time_t
 
-int fat_fat_filetime_to_time_t(uint param_1,uint param_2)
+int _FAT_filetime_to_time_t(uint param_1,uint param_2)
 
 {
   return ((param_2 & 0x1ff) >> 5) * 0x28206f + (param_2 & 0x1f) * 0x15180 +

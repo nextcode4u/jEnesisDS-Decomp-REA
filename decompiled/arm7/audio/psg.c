@@ -184,7 +184,7 @@ void reset_psg_channel_state(void)
 void initialize_psg_clock_and_state(int param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)
 
 {
-  psg_ticks_per_sample_q12 = compiler_divsi3(param_1 << 8,param_3);
+  psg_ticks_per_sample_q12 = __divsi3(param_1 << 8,param_3);
   reset_psg_channel_state(param_1,param_2,param_3);
   DAT_03806db8 = param_4;
   return;

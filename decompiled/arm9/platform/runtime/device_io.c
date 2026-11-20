@@ -2,15 +2,15 @@
  * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x0208201c  newlib_reentrant_device_seek
+// 0x0208201c  _fstat_r
 
-void newlib_reentrant_device_seek(int *param_1,undefined4 param_2,undefined4 param_3)
+void _fstat_r(int *param_1,undefined4 param_2,undefined4 param_3)
 
 {
   int iVar1;
   
   DAT_023eb34c = 0;
-  iVar1 = seek_device_descriptor(param_2,param_3);
+  iVar1 = _fstat(param_2,param_3);
   if ((iVar1 == -1) && (DAT_023eb34c != 0)) {
     *param_1 = DAT_023eb34c;
   }
@@ -18,15 +18,15 @@ void newlib_reentrant_device_seek(int *param_1,undefined4 param_2,undefined4 par
 }
 
 
-// 0x020830f8  newlib_reentrant_device_open
+// 0x020830f8  _open_r
 
-void newlib_reentrant_device_open(int *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)
+void _open_r(int *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)
 
 {
   int iVar1;
   
   DAT_023eb34c = 0;
-  iVar1 = open_device_path(param_2,param_3,param_4);
+  iVar1 = _open(param_2,param_3,param_4);
   if ((iVar1 == -1) && (DAT_023eb34c != 0)) {
     *param_1 = DAT_023eb34c;
   }
@@ -34,15 +34,15 @@ void newlib_reentrant_device_open(int *param_1,undefined4 param_2,undefined4 par
 }
 
 
-// 0x020834c8  newlib_reentrant_adjust_heap_break
+// 0x020834c8  _sbrk_r
 
-void newlib_reentrant_adjust_heap_break(int *param_1,undefined4 param_2)
+void _sbrk_r(int *param_1,undefined4 param_2)
 
 {
   int iVar1;
   
   DAT_023eb34c = 0;
-  iVar1 = adjust_newlib_heap_break(param_2);
+  iVar1 = _sbrk(param_2);
   if ((iVar1 == -1) && (DAT_023eb34c != 0)) {
     *param_1 = DAT_023eb34c;
   }
@@ -50,15 +50,15 @@ void newlib_reentrant_adjust_heap_break(int *param_1,undefined4 param_2)
 }
 
 
-// 0x02083ffc  newlib_reentrant_device_write
+// 0x02083ffc  _write_r
 
-void newlib_reentrant_device_write(int *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)
+void _write_r(int *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)
 
 {
   int iVar1;
   
   DAT_023eb34c = 0;
-  iVar1 = write_to_device_descriptor(param_2,param_3,param_4);
+  iVar1 = _write(param_2,param_3,param_4);
   if ((iVar1 == -1) && (DAT_023eb34c != 0)) {
     *param_1 = DAT_023eb34c;
   }
@@ -66,15 +66,15 @@ void newlib_reentrant_device_write(int *param_1,undefined4 param_2,undefined4 pa
 }
 
 
-// 0x02084048  newlib_reentrant_device_close
+// 0x02084048  _close_r
 
-void newlib_reentrant_device_close(int *param_1,undefined4 param_2)
+void _close_r(int *param_1,undefined4 param_2)
 
 {
   int iVar1;
   
   DAT_023eb34c = 0;
-  iVar1 = close_device_descriptor(param_2);
+  iVar1 = _close(param_2);
   if ((iVar1 == -1) && (DAT_023eb34c != 0)) {
     *param_1 = DAT_023eb34c;
   }
@@ -82,15 +82,15 @@ void newlib_reentrant_device_close(int *param_1,undefined4 param_2)
 }
 
 
-// 0x02084574  newlib_reentrant_device_read
+// 0x02084574  _read_r
 
-void newlib_reentrant_device_read(int *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)
+void _read_r(int *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)
 
 {
   int iVar1;
   
   DAT_023eb34c = 0;
-  iVar1 = read_from_device_descriptor(param_2,param_3,param_4);
+  iVar1 = _read(param_2,param_3,param_4);
   if ((iVar1 == -1) && (DAT_023eb34c != 0)) {
     *param_1 = DAT_023eb34c;
   }
@@ -98,15 +98,15 @@ void newlib_reentrant_device_read(int *param_1,undefined4 param_2,undefined4 par
 }
 
 
-// 0x020846c0  newlib_reentrant_device_stat
+// 0x020846c0  _lseek_r
 
-void newlib_reentrant_device_stat(int *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)
+void _lseek_r(int *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)
 
 {
   int iVar1;
   
   DAT_023eb34c = 0;
-  iVar1 = query_device_descriptor_stat(param_2,param_3,param_4);
+  iVar1 = _lseek(param_2,param_3,param_4);
   if ((iVar1 == -1) && (DAT_023eb34c != 0)) {
     *param_1 = DAT_023eb34c;
   }
@@ -126,9 +126,9 @@ void set_default_device_slot(int param_1)
 }
 
 
-// 0x02084e4c  register_named_device
+// 0x02084e4c  AddDevice
 
-int register_named_device(undefined4 *param_1)
+int AddDevice(undefined4 *param_1)
 
 {
   int iVar1;
@@ -144,14 +144,14 @@ int register_named_device(undefined4 *param_1)
   while( true ) {
     iVar4 = iVar1;
     uVar3 = *(undefined4 *)puVar6[3];
-    iVar1 = newlib_strcmp(uVar3,uVar5);
+    iVar1 = strcmp(uVar3,uVar5);
     puVar6 = puVar6 + 1;
     if (iVar1 == 0) {
-      iVar1 = newlib_strlen(uVar3);
-      iVar2 = newlib_strlen(uVar5);
+      iVar1 = strlen(uVar3);
+      iVar2 = strlen(uVar5);
       if (iVar1 == iVar2) break;
     }
-    iVar1 = newlib_strcmp(uVar3,"stdnull");
+    iVar1 = strcmp(uVar3,"stdnull");
     if (iVar1 == 0) break;
     iVar1 = iVar4 + 1;
     if (iVar4 + 1 == 0x10) {
@@ -179,8 +179,8 @@ int select_device_for_path_prefix(int param_1)
   do {
     if ((undefined4 *)*piVar4 != (undefined4 *)0x0) {
       uVar3 = *(undefined4 *)*piVar4;
-      iVar1 = newlib_strlen(uVar3);
-      iVar2 = newlib_strncmp(uVar3,param_1,iVar1);
+      iVar1 = strlen(uVar3);
+      iVar2 = strncmp(uVar3,param_1,iVar1);
       if (iVar2 == 0) {
         if ((*(byte *)(param_1 + iVar1) == 0x3a) ||
            ((*(byte *)(param_1 + iVar1) - 0x30 < 10 && (*(char *)(param_1 + iVar1 + 1) == ':')))) {
@@ -216,9 +216,9 @@ int unregister_device_by_path_prefix(void)
 }
 
 
-// 0x02084fc0  close_device_descriptor
+// 0x02084fc0  _close
 
-int * close_device_descriptor(int *param_1)
+int * _close(int *param_1)
 
 {
   int *piVar1;
@@ -229,15 +229,15 @@ int * close_device_descriptor(int *param_1)
     if (*(code **)((&DAT_0208fbc0)[*param_1] + 0xc) != (code *)0x0) {
       piVar1 = (int *)(**(code **)((&DAT_0208fbc0)[*param_1] + 0xc))(&DAT_0208f3a0,param_1[1]);
     }
-    newlib_free_global_reent_wrapper(param_1);
+    free(param_1);
   }
   return piVar1;
 }
 
 
-// 0x0208502c  seek_device_descriptor
+// 0x0208502c  _fstat
 
-undefined4 * seek_device_descriptor(undefined4 *param_1,undefined4 param_2)
+undefined4 * _fstat(undefined4 *param_1,undefined4 param_2)
 
 {
   undefined4 uVar1;
@@ -271,9 +271,9 @@ undefined4 * seek_device_descriptor(undefined4 *param_1,undefined4 param_2)
 }
 
 
-// 0x020850a8  read_from_device_descriptor
+// 0x020850a8  _read
 
-undefined4 read_from_device_descriptor(int *param_1,undefined4 param_2,undefined4 param_3)
+undefined4 _read(int *param_1,undefined4 param_2,undefined4 param_3)
 
 {
   undefined4 uVar1;
@@ -288,9 +288,9 @@ undefined4 read_from_device_descriptor(int *param_1,undefined4 param_2,undefined
 }
 
 
-// 0x020850fc  open_device_path
+// 0x020850fc  _open
 
-int * open_device_path(undefined4 param_1,undefined4 param_2,undefined4 param_3)
+int * _open(undefined4 param_1,undefined4 param_2,undefined4 param_3)
 
 {
   undefined4 uVar1;
@@ -306,7 +306,7 @@ int * open_device_path(undefined4 param_1,undefined4 param_2,undefined4 param_3)
     uVar1 = DAT_0208f3a0;
   }
   else {
-    piVar3 = (int *)newlib_malloc_global_reent_wrapper(*(int *)((&DAT_0208fbc0)[iVar2] + 4) + 8);
+    piVar3 = (int *)malloc(*(int *)((&DAT_0208fbc0)[iVar2] + 4) + 8);
     if (piVar3 == (int *)0x0) {
       param_2 = 0x3f;
     }
@@ -320,7 +320,7 @@ int * open_device_path(undefined4 param_1,undefined4 param_2,undefined4 param_3)
       piVar4 = piVar3;
       uVar1 = DAT_0208f3a0;
       if (iVar2 == -1) {
-        newlib_free_global_reent_wrapper(piVar3);
+        free(piVar3);
         piVar4 = (int *)0xffffffff;
         uVar1 = DAT_0208f3a0;
       }
@@ -331,9 +331,9 @@ int * open_device_path(undefined4 param_1,undefined4 param_2,undefined4 param_3)
 }
 
 
-// 0x020851cc  query_device_descriptor_stat
+// 0x020851cc  _lseek
 
-undefined4 query_device_descriptor_stat(undefined4 *param_1,undefined4 param_2,undefined4 param_3)
+undefined4 _lseek(undefined4 *param_1,undefined4 param_2,undefined4 param_3)
 
 {
   undefined4 uVar1;
@@ -358,9 +358,9 @@ undefined4 query_device_descriptor_stat(undefined4 *param_1,undefined4 param_2,u
 }
 
 
-// 0x0208523c  adjust_newlib_heap_break
+// 0x0208523c  _sbrk
 
-undefined1 * adjust_newlib_heap_break(int param_1)
+undefined1 * _sbrk(int param_1)
 
 {
   undefined1 *puVar1;
@@ -391,9 +391,9 @@ undefined1 * adjust_newlib_heap_break(int param_1)
 }
 
 
-// 0x020852bc  write_to_device_descriptor
+// 0x020852bc  _write
 
-undefined4 write_to_device_descriptor(undefined4 *param_1,undefined4 param_2,undefined4 param_3)
+undefined4 _write(undefined4 *param_1,undefined4 param_2,undefined4 param_3)
 
 {
   undefined4 uVar1;
@@ -430,7 +430,7 @@ undefined4 normalize_device_directory_path(undefined4 *param_1,int param_2,char 
   char cVar5;
   undefined1 *puVar6;
   
-  iVar2 = bounded_string_length(param_2,param_4);
+  iVar2 = strnlen(param_2,param_4);
   if (param_4 <= iVar2) {
 LAB_02085504:
     *param_1 = 0x5b;
@@ -446,14 +446,14 @@ LAB_02085504:
     puVar6 = puVar6 + 1;
   }
   if (cVar5 == '/') {
-    iVar3 = newlib_strchr(param_2,0x2f);
+    iVar3 = strchr(param_2,0x2f);
     puVar6 = (undefined1 *)(iVar3 + 1);
     goto LAB_02085460;
   }
   do {
-    iVar3 = newlib_strchr(param_3,0x2f);
+    iVar3 = strchr(param_3,0x2f);
     if (iVar3 == 0) {
-      iVar3 = newlib_strchr(param_3,0);
+      iVar3 = strchr(param_3,0);
     }
     else {
       iVar3 = iVar3 + 1;
@@ -468,18 +468,18 @@ LAB_02085504:
     }
     if (cVar5 == '.') {
       if (param_3[1] != '\0' && param_3[1] != '/') {
-        iVar4 = newlib_strncmp(param_3,&DAT_0208efe0,2);
+        iVar4 = strncmp(param_3,&DAT_0208efe0,2);
         goto joined_r0x02085494;
       }
     }
     else {
-      iVar4 = newlib_strncmp(param_3,&DAT_0208efe0,2);
+      iVar4 = strncmp(param_3,&DAT_0208efe0,2);
 joined_r0x02085494:
       if ((iVar4 == 0) && (param_3[2] == '\0' || param_3[2] == '/')) {
         if (puVar6[-1] == '/') {
           puVar6[-1] = 0;
         }
-        iVar2 = newlib_strrchr(param_2,0x2f);
+        iVar2 = strrchr(param_2,0x2f);
         if (iVar2 == 0) {
           *param_1 = 2;
           return 0xffffffff;
@@ -490,7 +490,7 @@ joined_r0x02085494:
       else {
         iVar2 = iVar2 + iVar3;
         if (param_4 <= iVar2) goto LAB_02085504;
-        newlib_strncpy(puVar6,param_3,iVar3);
+        strncpy(puVar6,param_3,iVar3);
         puVar6 = puVar6 + iVar3;
       }
     }
@@ -506,9 +506,9 @@ LAB_02085460:
 }
 
 
-// 0x0208553c  change_working_directory_on_device
+// 0x0208553c  chdir
 
-undefined4 change_working_directory_on_device(int param_1)
+undefined4 chdir(int param_1)
 
 {
   uint uVar1;
@@ -516,18 +516,18 @@ undefined4 change_working_directory_on_device(int param_1)
   int iVar3;
   undefined1 auStack_410 [1024];
   
-  uVar1 = bounded_string_length(param_1,0x401);
+  uVar1 = strnlen(param_1,0x401);
   if (uVar1 < 0x400) {
-    iVar2 = newlib_strchr(param_1,0x3a);
+    iVar2 = strchr(param_1,0x3a);
     if (iVar2 == 0) {
-      newlib_strncpy(auStack_410,&DAT_0208fc04,0x400);
+      strncpy(auStack_410,&DAT_0208fc04,0x400);
     }
     else {
-      newlib_strncpy(auStack_410,param_1,0x400);
-      param_1 = newlib_strchr(param_1,0x3a);
+      strncpy(auStack_410,param_1,0x400);
+      param_1 = strchr(param_1,0x3a);
       param_1 = param_1 + 1;
     }
-    iVar2 = newlib_strchr(auStack_410,0x3a);
+    iVar2 = strchr(auStack_410,0x3a);
     if (*(char *)(iVar2 + 1) == '/') {
       iVar2 = normalize_device_directory_path(&DAT_0208f3a0,auStack_410,param_1,0x400);
       if (iVar2 != -1) {
@@ -539,7 +539,7 @@ undefined4 change_working_directory_on_device(int param_1)
         iVar3 = (**(code **)((&DAT_0208fbc0)[iVar2] + 0x2c))(&DAT_0208f3a0,auStack_410);
         if (iVar3 != -1) {
           set_default_device_slot(iVar2);
-          newlib_strncpy(&DAT_0208fc04,auStack_410,0x400);
+          strncpy(&DAT_0208fc04,auStack_410,0x400);
           return 0;
         }
       }
@@ -605,7 +605,7 @@ undefined4 devoptab_close_directory(int *param_1)
       pcVar1 = DAT_0208f3a0;
     }
     DAT_0208f3a0 = pcVar1;
-    newlib_free_global_reent_wrapper(param_1);
+    free(param_1);
   }
   return uVar2;
 }
@@ -625,7 +625,7 @@ int * devoptab_open_directory(undefined4 param_1)
     DAT_0208f3a0 = 0x58;
   }
   else {
-    piVar2 = (int *)newlib_malloc_global_reent_wrapper(*(int *)((&DAT_0208fbc0)[iVar1] + 0x38) + 8);
+    piVar2 = (int *)malloc(*(int *)((&DAT_0208fbc0)[iVar1] + 0x38) + 8);
     if (piVar2 == (int *)0x0) {
       DAT_0208f3a0 = 0x3f;
     }
@@ -634,7 +634,7 @@ int * devoptab_open_directory(undefined4 param_1)
       *piVar2 = iVar1;
       iVar1 = (**(code **)((&DAT_0208fbc0)[iVar1] + 0x3c))(&DAT_0208f3a0,piVar2,param_1);
       if (iVar1 == 0) {
-        newlib_free_global_reent_wrapper(piVar2);
+        free(piVar2);
         piVar2 = (int *)0x0;
       }
     }

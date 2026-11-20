@@ -9,31 +9,31 @@
 void run_arm7_audio_service(void)
 
 {
-  arm_veneer_for_initialize_rtc_control();
+  rtcReset();
   _DAT_04000304 = _DAT_04000304 | 1;
   _DAT_04000500 = 0x807f;
   shared_audio_descriptor = 0;
-  arm_veneer_for_initialize_interrupt_controller();
+  irqInit();
   _DAT_04000004 = _DAT_04000004 & 0x7f | 0x5000;
-  arm_veneer_for_install_interrupt_callback(4,&LAB_037f831c);
-  arm_veneer_for_enable_interrupt_sources(4);
+  irqSet(4,&LAB_037f831c);
+  irqEnable(4);
   initialize_audio_buffers_and_clocks();
   initialize_sound_message_handler();
   reset_audio_buffers_and_chips(1);
-  arm_veneer_for_install_interrupt_callback(1,0);
-  arm_veneer_for_enable_interrupt_sources(1);
+  irqSet(1,0);
+  irqEnable(1);
   ds_ipc_sync = 0x100;
   while (audio_refills_enabled == 0) {
     if (audio_reset_requested != 0) {
       reset_audio_buffers_and_chips();
     }
-    arm_veneer_for_bios_wait_for_vblank();
+    swiWaitForVBlank();
   }
   if (audio_refills_enabled != 0) goto LAB_037f82f4;
 LAB_037f82d4:
   if (audio_reset_requested != 0) goto LAB_037f8308;
   do {
-    arm_veneer_for_bios_wait_for_vblank();
+    swiWaitForVBlank();
     while( true ) {
       if (audio_refills_enabled == 0) goto LAB_037f82d4;
 LAB_037f82f4:
@@ -41,7 +41,7 @@ LAB_037f82f4:
       if (audio_reset_requested == 0) break;
 LAB_037f8308:
       reset_audio_buffers_and_chips();
-      arm_veneer_for_bios_wait_for_vblank();
+      swiWaitForVBlank();
     }
   } while( true );
 }
@@ -63,13 +63,13 @@ void configure_ds_audio_channels_and_timers(void)
   fm_buffer_pointer_cursor = &fm_channel_pcm_bases;
   iVar4 = 0;
   do {
-    uVar1 = compiler_divsi3(0xff000000,fm_psg_sample_rate_hz);
+    uVar1 = __divsi3(0xff000000,fm_psg_sample_rate_hz);
     fm_channel_pcm_base = *fm_buffer_pointer_cursor;
     *(undefined2 *)(iVar4 * 0x10 + 0x4000408) = uVar1;
     *(undefined4 *)(iVar4 * 0x10 + 0x4000404) = fm_channel_pcm_base;
     *(int *)(iVar4 * 0x10 + 0x400040c) = fm_psg_ring_samples >> 1;
     *(undefined4 *)(&DAT_04000400 + iVar4 * 0x10) = 0xa83f007f;
-    uVar1 = compiler_divsi3(0xff000000,fm_psg_sample_rate_hz);
+    uVar1 = __divsi3(0xff000000,fm_psg_sample_rate_hz);
     paired_ds_channel = iVar4 + 6;
     *(undefined2 *)(paired_ds_channel * 0x10 + 0x4000408) = uVar1;
     *(undefined4 *)(paired_ds_channel * 0x10 + 0x4000404) = fm_channel_pcm_base;
@@ -78,7 +78,7 @@ void configure_ds_audio_channels_and_timers(void)
     *(undefined4 *)(&DAT_04000400 + paired_ds_channel * 0x10) = 0xa83f007f;
     fm_buffer_pointer_cursor = fm_buffer_pointer_cursor + 1;
   } while (iVar4 != 6);
-  iVar4 = compiler_divsi3(0xff000000,fm_psg_sample_rate_hz);
+  iVar4 = __divsi3(0xff000000,fm_psg_sample_rate_hz);
   _DAT_040004c8 = (short)iVar4;
   _DAT_040004c4 = psg_pcm_base;
   _DAT_040004cc = fm_psg_ring_samples >> 1;

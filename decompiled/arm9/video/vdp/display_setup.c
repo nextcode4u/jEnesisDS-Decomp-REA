@@ -14,11 +14,11 @@ void advance_ds_display_compare_irq_phase(void)
     DAT_020b4ce8 = 2;
   }
   else if (DAT_020b4ce8 == 2) {
-    arm_veneer_for_enable_arm9_interrupt_sources(2);
+    irqEnable(2);
     DAT_020b4ce8 = 0;
   }
   else if (DAT_020b4ce8 == 0) {
-    arm_veneer_for_disable_arm9_interrupt_sources(2);
+    irqDisable(2);
     DAT_020b4ce8 = 1;
   }
   _DAT_04000004 =
@@ -36,18 +36,18 @@ void configure_gameplay_display_interrupts(void)
 
 {
   if (DAT_02098fc4 == 0) {
-    arm_veneer_for_initialize_arm9_interrupt_table();
+    irqInit();
   }
   else if (DAT_02098fc4 == 1) {
-    arm_veneer_for_disable_arm9_interrupt_sources(1);
-    arm_veneer_for_remove_arm9_interrupt_handler(1);
+    irqDisable(1);
+    irqClear(1);
   }
   DAT_02098fc4 = 2;
-  arm_veneer_for_install_arm9_interrupt_handler(2,&LAB_02000f1c);
+  irqSet(2,&LAB_02000f1c);
   _DAT_04000004 = _DAT_04000004 & 0x7f | 0xc000;
   DAT_020b4ce8 = 0;
-  arm_veneer_for_install_arm9_interrupt_handler(4,advance_ds_display_compare_irq_phase);
-  arm_veneer_for_install_arm9_interrupt_handler(1,&LAB_02000fdc);
+  irqSet(4,advance_ds_display_compare_irq_phase);
+  irqSet(1,&LAB_02000fdc);
   _DAT_04000004 = _DAT_04000004 | 0x38;
   _DAT_04000210 = _DAT_04000210 | 7;
   _DAT_04000208 = 1;
@@ -65,14 +65,14 @@ void configure_menu_vblank_interrupt(void)
 
 {
   if (DAT_02098fc4 == 0) {
-    arm_veneer_for_initialize_arm9_interrupt_table();
+    irqInit();
   }
   else if (DAT_02098fc4 == 2) {
-    arm_veneer_for_disable_arm9_interrupt_sources(2);
-    arm_veneer_for_remove_arm9_interrupt_handler(2);
+    irqDisable(2);
+    irqClear(2);
   }
   DAT_02098fc4 = 1;
-  arm_veneer_for_install_arm9_interrupt_handler(1,&DAT_02000f18);
+  irqSet(1,&DAT_02000f18);
   _DAT_04000004 = _DAT_04000004 | 8;
   _DAT_04000210 = _DAT_04000210 | 1;
   _DAT_04000208 = 1;
@@ -96,9 +96,9 @@ void show_startup_graphics_and_run_scanline_transition(void)
   uint uVar8;
   int iVar6;
   
-  arm_veneer_for_nds_swiwaitforvblank();
+  swiWaitForVBlank();
   _DAT_04000000 = 0x10801;
-  arm_veneer_for_nds_vramsetmainbanks(1,9,4,2);
+  vramSetMainBanks(1,9,4,2);
   _DAT_0400000e = 0x42c8;
   _DAT_04000030 = 0x100;
   _DAT_04000036 = 0x100;
@@ -114,13 +114,13 @@ void show_startup_graphics_and_run_scanline_transition(void)
     puVar2 = puVar2 + 1;
     puVar3 = puVar4;
   } while (puVar4 != (undefined2 *)&DAT_05000200);
-  arm_veneer_for_nds_swicopy(&DAT_0208a3a8,&DAT_06008000,16000);
-  arm_veneer_for_nds_swicopy(&DAT_0208e228,&DAT_06001000,0x300);
+  swiCopy(&DAT_0208a3a8,&DAT_06008000,16000);
+  swiCopy(&DAT_0208e228,&DAT_06001000,0x300);
   iVar5 = 0;
   do {
     iVar6 = iVar5;
     iVar5 = iVar6 + 1;
-    arm_veneer_for_nds_swiwaitforvblank();
+    swiWaitForVBlank();
   } while (iVar5 != 0x78);
   uVar7 = iVar6 - 0x77;
   uVar8 = uVar7;
@@ -154,7 +154,7 @@ void show_startup_graphics_and_run_scanline_transition(void)
     uVar7 = uVar7 + 3;
     uVar8 = uVar8 + 1;
   }
-  arm_veneer_for_nds_swiwaitforvblank();
+  swiWaitForVBlank();
   puVar2 = (undefined2 *)&DAT_05000000;
   do {
     puVar3 = puVar2 + 1;

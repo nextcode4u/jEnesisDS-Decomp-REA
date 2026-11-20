@@ -2,23 +2,9 @@
  * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x020805e8  thumb_call_via_r3
+// 0x020805e8  _call_via_r3
 
-void thumb_call_via_r3(void)
-
-{
-  code *UNRECOVERED_JUMPTABLE;
-  
-                    /* WARNING: Could not recover jumptable at 0x020805e8. Too many branches */
-                    /* WARNING: Treating indirect jump as call */
-  (*UNRECOVERED_JUMPTABLE)();
-  return;
-}
-
-
-// 0x02085898  arm_veneer_for_thumb_call_via_r3
-
-void arm_veneer_for_thumb_call_via_r3(void)
+void _call_via_r3(void)
 
 {
   code *UNRECOVERED_JUMPTABLE;
@@ -30,11 +16,25 @@ void arm_veneer_for_thumb_call_via_r3(void)
 }
 
 
-// 0x020858b0  arm_veneer_for_disable_arm9_interrupt_sources
+// 0x02085898  _call_via_r3_arm_veneer
+
+void _call_via_r3(void)
+
+{
+  code *UNRECOVERED_JUMPTABLE;
+  
+                    /* WARNING: Could not recover jumptable at 0x020805e8. Too many branches */
+                    /* WARNING: Treating indirect jump as call */
+  (*UNRECOVERED_JUMPTABLE)();
+  return;
+}
+
+
+// 0x020858b0  irqDisable_arm_veneer
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void arm_veneer_for_disable_arm9_interrupt_sources(uint param_1)
+void irqDisable(uint param_1)
 
 {
   if ((int)(param_1 << 0x1f) < 0) {
@@ -51,11 +51,11 @@ void arm_veneer_for_disable_arm9_interrupt_sources(uint param_1)
 }
 
 
-// 0x020858bc  arm_veneer_for_enable_arm9_interrupt_sources
+// 0x020858bc  irqEnable_arm_veneer
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void arm_veneer_for_enable_arm9_interrupt_sources(uint param_1)
+void irqEnable(uint param_1)
 
 {
   if ((param_1 & 1) != 0) {
@@ -73,11 +73,11 @@ void arm_veneer_for_enable_arm9_interrupt_sources(uint param_1)
 }
 
 
-// 0x020858c8  arm_veneer_for_install_arm9_interrupt_handler
+// 0x020858c8  irqSet_arm_veneer
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void arm_veneer_for_install_arm9_interrupt_handler(uint param_1,undefined4 param_2)
+void irqSet(uint param_1,undefined4 param_2)
 
 {
   int iVar1;
@@ -107,11 +107,11 @@ void arm_veneer_for_install_arm9_interrupt_handler(uint param_1,undefined4 param
 }
 
 
-// 0x020858d4  arm_veneer_for_initialize_arm9_interrupt_table
+// 0x020858d4  irqInit_arm_veneer
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void arm_veneer_for_initialize_arm9_interrupt_table(void)
+void irqInit(void)
 
 {
   undefined4 *puVar1;
@@ -130,11 +130,11 @@ void arm_veneer_for_initialize_arm9_interrupt_table(void)
 }
 
 
-// 0x020858e0  arm_veneer_for_remove_arm9_interrupt_handler
+// 0x020858e0  irqClear_arm_veneer
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void arm_veneer_for_remove_arm9_interrupt_handler(uint param_1)
+void irqClear(uint param_1)
 
 {
   uint *puVar1;
@@ -164,11 +164,11 @@ void arm_veneer_for_remove_arm9_interrupt_handler(uint param_1)
 }
 
 
-// 0x020858ec  arm_veneer_for_sample_ds_keys_and_update_repeat_state
+// 0x020858ec  scanKeys_arm_veneer
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void arm_veneer_for_sample_ds_keys_and_update_repeat_state(void)
+void scanKeys(void)
 
 {
   ushort uVar1;
@@ -181,7 +181,7 @@ void arm_veneer_for_sample_ds_keys_and_update_repeat_state(void)
   DAT_020b4ca0 = uVar1;
   if (bVar2) {
     DAT_0208f392 = '<';
-    DAT_020b4ca4 = read_newly_pressed_ds_keys();
+    DAT_020b4ca4 = keysDown();
   }
   DAT_0208f392 = DAT_0208f392 + -1;
   if (DAT_0208f392 == '\0') {
@@ -192,20 +192,20 @@ void arm_veneer_for_sample_ds_keys_and_update_repeat_state(void)
 }
 
 
-// 0x020858f8  arm_veneer_for_read_latched_ds_key_state
+// 0x020858f8  keysHeld_arm_veneer
 
-undefined2 arm_veneer_for_read_latched_ds_key_state(void)
+undefined2 keysHeld(void)
 
 {
   return DAT_020b4ca0;
 }
 
 
-// 0x02085904  arm_veneer_for_read_shared_arm7_touch_sample
+// 0x02085904  touchReadXY_arm_veneer
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined2 * arm_veneer_for_read_shared_arm7_touch_sample(undefined2 *param_1)
+undefined2 * touchReadXY(undefined2 *param_1)
 
 {
   undefined2 uVar1;
@@ -225,19 +225,19 @@ undefined2 * arm_veneer_for_read_shared_arm7_touch_sample(undefined2 *param_1)
 }
 
 
-// 0x02085910  arm_veneer_for_mount_browser_fat_storage
+// 0x02085910  fatInitDefault_arm_veneer
 
-void arm_veneer_for_mount_browser_fat_storage(void)
+void fatInitDefault(void)
 
 {
-  mount_browser_fat_storage();
+  fatInitDefault();
   return;
 }
 
 
-// 0x02085940  thumb_veneer_for_register_named_device
+// 0x02085940  AddDevice_thumb_veneer
 
-int arm_thumb_veneer_for_register_named_device(undefined4 *param_1)
+int AddDevice(undefined4 *param_1)
 
 {
   int iVar1;
@@ -253,14 +253,14 @@ int arm_thumb_veneer_for_register_named_device(undefined4 *param_1)
   while( true ) {
     iVar4 = iVar1;
     uVar3 = *(undefined4 *)puVar6[3];
-    iVar1 = newlib_strcmp(uVar3,uVar5);
+    iVar1 = strcmp(uVar3,uVar5);
     puVar6 = puVar6 + 1;
     if (iVar1 == 0) {
-      iVar1 = newlib_strlen(uVar3);
-      iVar2 = newlib_strlen(uVar5);
+      iVar1 = strlen(uVar3);
+      iVar2 = strlen(uVar5);
       if (iVar1 == iVar2) break;
     }
-    iVar1 = newlib_strcmp(uVar3,"stdnull");
+    iVar1 = strcmp(uVar3,"stdnull");
     if (iVar1 == 0) break;
     iVar1 = iVar4 + 1;
     if (iVar4 + 1 == 0x10) {
@@ -272,9 +272,9 @@ int arm_thumb_veneer_for_register_named_device(undefined4 *param_1)
 }
 
 
-// 0x02085944  arm_entry_for_register_named_device
+// 0x02085944  AddDevice_arm_veneer
 
-int arm_thumb_veneer_for_register_named_device(undefined4 *param_1)
+int AddDevice(undefined4 *param_1)
 
 {
   int iVar1;
@@ -290,14 +290,14 @@ int arm_thumb_veneer_for_register_named_device(undefined4 *param_1)
   while( true ) {
     iVar4 = iVar1;
     uVar3 = *(undefined4 *)puVar6[3];
-    iVar1 = newlib_strcmp(uVar3,uVar5);
+    iVar1 = strcmp(uVar3,uVar5);
     puVar6 = puVar6 + 1;
     if (iVar1 == 0) {
-      iVar1 = newlib_strlen(uVar3);
-      iVar2 = newlib_strlen(uVar5);
+      iVar1 = strlen(uVar3);
+      iVar2 = strlen(uVar5);
       if (iVar1 == iVar2) break;
     }
-    iVar1 = newlib_strcmp(uVar3,"stdnull");
+    iVar1 = strcmp(uVar3,"stdnull");
     if (iVar1 == 0) break;
     iVar1 = iVar4 + 1;
     if (iVar4 + 1 == 0x10) {
@@ -309,9 +309,9 @@ int arm_thumb_veneer_for_register_named_device(undefined4 *param_1)
 }
 
 
-// 0x02085948  thumb_veneer_for_change_working_directory_on_device
+// 0x02085948  chdir_thumb_veneer
 
-undefined4 arm_thumb_veneer_for_change_working_directory_on_device(int param_1)
+undefined4 chdir(int param_1)
 
 {
   uint uVar1;
@@ -319,18 +319,18 @@ undefined4 arm_thumb_veneer_for_change_working_directory_on_device(int param_1)
   int iVar3;
   undefined1 auStack_410 [1024];
   
-  uVar1 = bounded_string_length(param_1,0x401);
+  uVar1 = strnlen(param_1,0x401);
   if (uVar1 < 0x400) {
-    iVar2 = newlib_strchr(param_1,0x3a);
+    iVar2 = strchr(param_1,0x3a);
     if (iVar2 == 0) {
-      newlib_strncpy(auStack_410,&DAT_0208fc04,0x400);
+      strncpy(auStack_410,&DAT_0208fc04,0x400);
     }
     else {
-      newlib_strncpy(auStack_410,param_1,0x400);
-      param_1 = newlib_strchr(param_1,0x3a);
+      strncpy(auStack_410,param_1,0x400);
+      param_1 = strchr(param_1,0x3a);
       param_1 = param_1 + 1;
     }
-    iVar2 = newlib_strchr(auStack_410,0x3a);
+    iVar2 = strchr(auStack_410,0x3a);
     if (*(char *)(iVar2 + 1) == '/') {
       iVar2 = normalize_device_directory_path(&DAT_0208f3a0,auStack_410,param_1,0x400);
       if (iVar2 != -1) {
@@ -342,7 +342,7 @@ undefined4 arm_thumb_veneer_for_change_working_directory_on_device(int param_1)
         iVar3 = (**(code **)((&DAT_0208fbc0)[iVar2] + 0x2c))(&DAT_0208f3a0,auStack_410);
         if (iVar3 != -1) {
           set_default_device_slot(iVar2);
-          newlib_strncpy(&DAT_0208fc04,auStack_410,0x400);
+          strncpy(&DAT_0208fc04,auStack_410,0x400);
           return 0;
         }
       }
@@ -358,9 +358,9 @@ undefined4 arm_thumb_veneer_for_change_working_directory_on_device(int param_1)
 }
 
 
-// 0x0208594c  arm_entry_for_change_working_directory_on_device
+// 0x0208594c  chdir_arm_veneer
 
-undefined4 arm_thumb_veneer_for_change_working_directory_on_device(int param_1)
+undefined4 chdir(int param_1)
 
 {
   uint uVar1;
@@ -368,18 +368,18 @@ undefined4 arm_thumb_veneer_for_change_working_directory_on_device(int param_1)
   int iVar3;
   undefined1 auStack_410 [1024];
   
-  uVar1 = bounded_string_length(param_1,0x401);
+  uVar1 = strnlen(param_1,0x401);
   if (uVar1 < 0x400) {
-    iVar2 = newlib_strchr(param_1,0x3a);
+    iVar2 = strchr(param_1,0x3a);
     if (iVar2 == 0) {
-      newlib_strncpy(auStack_410,&DAT_0208fc04,0x400);
+      strncpy(auStack_410,&DAT_0208fc04,0x400);
     }
     else {
-      newlib_strncpy(auStack_410,param_1,0x400);
-      param_1 = newlib_strchr(param_1,0x3a);
+      strncpy(auStack_410,param_1,0x400);
+      param_1 = strchr(param_1,0x3a);
       param_1 = param_1 + 1;
     }
-    iVar2 = newlib_strchr(auStack_410,0x3a);
+    iVar2 = strchr(auStack_410,0x3a);
     if (*(char *)(iVar2 + 1) == '/') {
       iVar2 = normalize_device_directory_path(&DAT_0208f3a0,auStack_410,param_1,0x400);
       if (iVar2 != -1) {
@@ -391,7 +391,7 @@ undefined4 arm_thumb_veneer_for_change_working_directory_on_device(int param_1)
         iVar3 = (**(code **)((&DAT_0208fbc0)[iVar2] + 0x2c))(&DAT_0208f3a0,auStack_410);
         if (iVar3 != -1) {
           set_default_device_slot(iVar2);
-          newlib_strncpy(&DAT_0208fc04,auStack_410,0x400);
+          strncpy(&DAT_0208fc04,auStack_410,0x400);
           return 0;
         }
       }
@@ -407,42 +407,42 @@ undefined4 arm_thumb_veneer_for_change_working_directory_on_device(int param_1)
 }
 
 
-// 0x02085968  thumb_veneer_for_newlib_free_global_reent_wrapper
+// 0x02085968  free_thumb_veneer
 
-void arm_thumb_veneer_for_newlib_free_global_reent_wrapper(undefined4 param_1)
+void free(undefined4 param_1)
 
 {
-  newlib_free_r(&DAT_0208f3a0,param_1);
+  _free_r(&DAT_0208f3a0,param_1);
   return;
 }
 
 
-// 0x0208596c  arm_entry_for_newlib_free_global_reent_wrapper
+// 0x0208596c  free_arm_veneer
 
-void arm_thumb_veneer_for_newlib_free_global_reent_wrapper(undefined4 param_1)
+void free(undefined4 param_1)
 
 {
-  newlib_free_r(&DAT_0208f3a0,param_1);
+  _free_r(&DAT_0208f3a0,param_1);
   return;
 }
 
 
-// 0x02085978  thumb_veneer_for_newlib_malloc_global_reent_wrapper
+// 0x02085978  malloc_thumb_veneer
 
-void arm_thumb_veneer_for_newlib_malloc_global_reent_wrapper(undefined4 param_1)
+void malloc(undefined4 param_1)
 
 {
-  newlib_malloc_r(&DAT_0208f3a0,param_1);
+  _malloc_r(&DAT_0208f3a0,param_1);
   return;
 }
 
 
-// 0x0208597c  arm_entry_for_newlib_malloc_global_reent_wrapper
+// 0x0208597c  malloc_arm_veneer
 
-void arm_thumb_veneer_for_newlib_malloc_global_reent_wrapper(undefined4 param_1)
+void malloc(undefined4 param_1)
 
 {
-  newlib_malloc_r(&DAT_0208f3a0,param_1);
+  _malloc_r(&DAT_0208f3a0,param_1);
   return;
 }
 
@@ -543,28 +543,9 @@ LAB_0207ce18:
 }
 
 
-// 0x020859b0  thumb_veneer_for_bounded_string_length
+// 0x020859b0  strnlen_thumb_veneer
 
-int arm_thumb_veneer_for_bounded_string_length(char *param_1,int param_2)
-
-{
-  char *pcVar1;
-  
-  if ((param_2 == 0) || (*param_1 == '\0')) {
-    return 0;
-  }
-  pcVar1 = param_1;
-  do {
-    pcVar1 = pcVar1 + 1;
-    if (pcVar1 == param_1 + param_2) break;
-  } while (*pcVar1 != '\0');
-  return (int)pcVar1 - (int)param_1;
-}
-
-
-// 0x020859b4  arm_entry_for_bounded_string_length
-
-int arm_thumb_veneer_for_bounded_string_length(char *param_1,int param_2)
+int strnlen(char *param_1,int param_2)
 
 {
   char *pcVar1;
@@ -581,9 +562,28 @@ int arm_thumb_veneer_for_bounded_string_length(char *param_1,int param_2)
 }
 
 
-// 0x020859d8  thumb_veneer_for_uppercase_string_in_place_using_ctype_table
+// 0x020859b4  strnlen_arm_veneer
 
-void arm_thumb_veneer_for_uppercase_string_in_place_using_ctype_table(byte *param_1)
+int strnlen(char *param_1,int param_2)
+
+{
+  char *pcVar1;
+  
+  if ((param_2 == 0) || (*param_1 == '\0')) {
+    return 0;
+  }
+  pcVar1 = param_1;
+  do {
+    pcVar1 = pcVar1 + 1;
+    if (pcVar1 == param_1 + param_2) break;
+  } while (*pcVar1 != '\0');
+  return (int)pcVar1 - (int)param_1;
+}
+
+
+// 0x020859d8  strupr_thumb_veneer
+
+void strupr(byte *param_1)
 
 {
   byte bVar1;
@@ -600,9 +600,9 @@ void arm_thumb_veneer_for_uppercase_string_in_place_using_ctype_table(byte *para
 }
 
 
-// 0x020859dc  arm_entry_for_uppercase_string_in_place_using_ctype_table
+// 0x020859dc  strupr_arm_veneer
 
-void arm_thumb_veneer_for_uppercase_string_in_place_using_ctype_table(byte *param_1)
+void strupr(byte *param_1)
 
 {
   byte bVar1;

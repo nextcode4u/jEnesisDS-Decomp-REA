@@ -1,0 +1,71 @@
+{
+  "defaults": {
+    "__divsi3": "thunk_FUN_038019ec",
+    "_call_via_r3": "thunk_FUN_03801b40",
+    "irqEnable": "thunk_FUN_038016d8",
+    "irqInit": "thunk_FUN_038015d0",
+    "irqSet": "thunk_FUN_03801564",
+    "rtcReset": "thunk_FUN_03801200",
+    "swiWaitForVBlank": "thunk_FUN_0380178c",
+    "touchReadXY": "thunk_FUN_03801360"
+  },
+  "routines": {
+    "0x03801200": {
+      "rtcReset": [
+        "FUN_03801200"
+      ]
+    },
+    "0x03801360": {
+      "touchReadXY": [
+        "FUN_03801360"
+      ]
+    },
+    "0x03801564": {
+      "irqSet": [
+        "FUN_03801564"
+      ]
+    },
+    "0x038015d0": {
+      "irqInit": [
+        "FUN_038015d0"
+      ]
+    },
+    "0x038016d8": {
+      "irqEnable": [
+        "FUN_038016d8"
+      ]
+    },
+    "0x0380178c": {
+      "swiWaitForVBlank": [
+        "FUN_0380178c"
+      ]
+    },
+    "0x038019ec": {
+      "__divsi3": [
+        "FUN_038019ec"
+      ]
+    },
+    "0x03801b18": {
+      "__divsi3": [
+        "FUN_038019ec"
+      ]
+    },
+    "0x03801b40": {
+      "_call_via_r3": [
+        "FUN_03801b40"
+      ]
+    },
+    "0x037fb9fc": {
+      "__divsi3": [
+        "FUN_038019ec",
+        "FUN_038019ec",
+        "FUN_038019ec"
+      ]
+    },
+    "0x037f8a30": {
+      "__divsi3": [
+        "FUN_038019ec"
+      ]
+    }
+  }
+}

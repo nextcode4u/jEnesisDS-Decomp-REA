@@ -48,7 +48,7 @@ void copy_sprite_attribute_buffer_to_ds_oam(uint sprite_count)
   }
   attribute_bytes = previous_oam_sprite_count << 3;
   previous_oam_sprite_count = sprite_count;
-  clean_and_invalidate_arm9_data_cache_range(&ds_oam_staging_attr0,attribute_bytes);
+  DC_FlushRange(&ds_oam_staging_attr0,attribute_bytes);
   do {
   } while( true );
 }
@@ -267,7 +267,7 @@ void initialize_ds_sprite_attribute_buffer(void)
   *(undefined2 *)((int)puVar2 + -0x392) = 0xff06;
   *(undefined2 *)((int)puVar2 + -0x38a) = 0;
   *(undefined2 *)((int)puVar2 + -0x382) = 0;
-  clean_and_invalidate_arm9_data_cache_range(&ds_oam_staging_attr0,0x400);
+  DC_FlushRange(&ds_oam_staging_attr0,0x400);
   do {
   } while( true );
 }

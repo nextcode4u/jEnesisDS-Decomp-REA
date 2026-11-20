@@ -122,10 +122,10 @@ char read_gameplay_menu_and_touch_actions(void)
   undefined1 auStack_28 [16];
   
   bVar6 = DAT_0208f347 == '\x01';
-  arm_veneer_for_sample_ds_keys_and_update_repeat_state();
-  uVar2 = arm_veneer_for_read_latched_ds_key_state();
-  arm_veneer_for_read_shared_arm7_touch_sample(auStack_28);
-  newlib_memcpy(&DAT_023cb618,auStack_28,0xc);
+  scanKeys();
+  uVar2 = keysHeld();
+  touchReadXY(auStack_28);
+  memcpy(&DAT_023cb618,auStack_28,0xc);
   if ((DAT_023cb61e == 0) || (DAT_023cb61c == 0)) {
     DAT_02098fec = '\0';
   }
@@ -190,10 +190,10 @@ char read_gameplay_menu_and_touch_actions(void)
     else {
       DAT_0208f347 = '\x06';
     }
-    arm_veneer_for_nds_swiwaitforvblank();
-    arm_veneer_for_nds_swiwaitforvblank();
-    arm_veneer_for_nds_swiwaitforvblank();
-    arm_veneer_for_nds_swiwaitforvblank();
+    swiWaitForVBlank();
+    swiWaitForVBlank();
+    swiWaitForVBlank();
+    swiWaitForVBlank();
     arm_tail_branch_to_load_subscreen_palette_tiles_and_map();
     cVar1 = DAT_0208f347;
   }
@@ -202,20 +202,20 @@ char read_gameplay_menu_and_touch_actions(void)
 }
 
 
-// 0x0207fb70  read_latched_ds_key_state
+// 0x0207fb70  keysHeld
 
-undefined2 read_latched_ds_key_state(void)
+undefined2 keysHeld(void)
 
 {
   return DAT_020b4ca0;
 }
 
 
-// 0x0207fb90  sample_ds_keys_and_update_repeat_state
+// 0x0207fb90  scanKeys
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void sample_ds_keys_and_update_repeat_state(void)
+void scanKeys(void)
 
 {
   ushort uVar1;
@@ -228,7 +228,7 @@ void sample_ds_keys_and_update_repeat_state(void)
   DAT_020b4ca0 = uVar1;
   if (bVar2) {
     DAT_0208f392 = '<';
-    DAT_020b4ca4 = read_newly_pressed_ds_keys();
+    DAT_020b4ca4 = keysDown();
   }
   DAT_0208f392 = DAT_0208f392 + -1;
   if (DAT_0208f392 == '\0') {
@@ -239,11 +239,11 @@ void sample_ds_keys_and_update_repeat_state(void)
 }
 
 
-// 0x0207fc70  read_shared_arm7_touch_sample
+// 0x0207fc70  touchReadXY
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined2 * read_shared_arm7_touch_sample(undefined2 *param_1)
+undefined2 * touchReadXY(undefined2 *param_1)
 
 {
   undefined2 uVar1;

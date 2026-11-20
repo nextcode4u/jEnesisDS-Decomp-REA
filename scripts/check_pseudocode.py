@@ -5,7 +5,13 @@ import hashlib
 from collections import defaultdict
 from pathlib import Path
 
-from pseudocode_names import identifier_maps, read_names, replace_identifiers
+from pseudocode_names import (
+    identifier_maps,
+    read_names,
+    read_symbol_aliases,
+    replace_identifiers,
+    restore_identifiers,
+)
 
 
 def check_processor(directory):
@@ -16,7 +22,8 @@ def check_processor(directory):
         raise ValueError(f"{directory.name}: expected unique, ascending addresses")
 
     names, locals_by_address = read_names(directory, rows)
-    default_maps = identifier_maps(names, {})
+    alias_defaults, alias_routines = read_symbol_aliases(directory, rows)
+    default_maps = identifier_maps(names, {}, alias_defaults)
     modules = defaultdict(list)
     for row in rows:
         modules[row["module"]].append(row)
@@ -38,8 +45,8 @@ def check_processor(directory):
                 raise ValueError(f"{location}: invalid body length")
             body = b"".join(lines[start:end])
             local_names = locals_by_address[row["address"]]
-            forward, reverse = identifier_maps(names, local_names) if local_names else default_maps
-            original = replace_identifiers(body, reverse)
+            forward, reverse = identifier_maps(names, local_names, alias_defaults) if local_names else default_maps
+            original = restore_identifiers(body, reverse, alias_routines.get(row["address"], {}))
             if hashlib.sha256(original).hexdigest() != row["body_sha256"]:
                 raise ValueError(f"{location}: restored pseudocode differs from the REA body checksum")
             if replace_identifiers(original, forward) != body:

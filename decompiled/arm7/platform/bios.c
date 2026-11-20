@@ -2,9 +2,9 @@
  * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x037f812c  arm_veneer_for_bios_wait_for_vblank
+// 0x037f812c  swiWaitForVBlank_arm_veneer
 
-void arm_veneer_for_bios_wait_for_vblank(void)
+void swiWaitForVBlank(void)
 
 {
   software_interrupt(5);
@@ -12,9 +12,9 @@ void arm_veneer_for_bios_wait_for_vblank(void)
 }
 
 
-// 0x03801784  bios_delay_cycles
+// 0x03801784  swiDelay
 
-void bios_delay_cycles(void)
+void swiDelay(void)
 
 {
   software_interrupt(3);
@@ -22,9 +22,9 @@ void bios_delay_cycles(void)
 }
 
 
-// 0x0380178c  bios_wait_for_vblank
+// 0x0380178c  swiWaitForVBlank
 
-void bios_wait_for_vblank(void)
+void swiWaitForVBlank(void)
 
 {
   software_interrupt(5);
@@ -32,9 +32,9 @@ void bios_wait_for_vblank(void)
 }
 
 
-// 0x038017a2  bios_divide_with_remainder
+// 0x038017a2  swiDivMod
 
-void bios_divide_with_remainder(undefined4 param_1,undefined4 param_2,undefined4 *param_3,undefined4 *param_4)
+void swiDivMod(undefined4 param_1,undefined4 param_2,undefined4 *param_3,undefined4 *param_4)
 
 {
   software_interrupt(9);

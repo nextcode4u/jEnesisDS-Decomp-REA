@@ -11,8 +11,8 @@ void start_arm7_audio_processor(undefined4 param_1,undefined4 param_2,undefined4
 {
   _DAT_04000208 = 0x4000000;
   clear_aligned_words_to_zero(&DAT_03806d94,0x5138);
-  call_via_r3_interworking_veneer();
-  call_via_r3_interworking_veneer(0,0,param_3,run_arm7_audio_service);
+  _call_via_r3();
+  _call_via_r3(0,0,param_3,run_arm7_audio_service);
   (*(code *)&LAB_08000000)();
   return;
 }
@@ -38,18 +38,18 @@ void clear_aligned_words_to_zero(undefined4 *param_1,int param_2)
 }
 
 
-// 0x037f80d0  arm7_empty_runtime_initializer
+// 0x037f80d0  _init
 
-void arm7_empty_runtime_initializer(void)
+void _init(void)
 
 {
   return;
 }
 
 
-// 0x037f80f0  call_via_r3_interworking_veneer
+// 0x037f80f0  _call_via_r3_arm_veneer
 
-void call_via_r3_interworking_veneer(void)
+void _call_via_r3(void)
 
 {
   code *UNRECOVERED_JUMPTABLE;
@@ -75,18 +75,18 @@ void run_once_initialization_guard(void)
 }
 
 
-// 0x03802524  run_arm7_c_runtime_initializers
+// 0x03802524  __libc_init_array
 
 /* WARNING: Removing unreachable block (ram,0x0380253c) */
 /* WARNING: Removing unreachable block (ram,0x03802544) */
 
-void run_arm7_c_runtime_initializers(void)
+void __libc_init_array(void)
 
 {
   int iVar1;
   undefined4 *puVar2;
   
-  arm7_empty_runtime_initializer();
+  _init();
   iVar1 = 0;
   puVar2 = &DAT_03806d34;
   do {

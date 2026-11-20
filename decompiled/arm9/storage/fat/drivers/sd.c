@@ -2,9 +2,9 @@
  * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x02074b2c  fat_sd_crc7
+// 0x02074b2c  _SD_CRC7
 
-uint fat_sd_crc7(int param_1,int param_2)
+uint _SD_CRC7(int param_1,int param_2)
 
 {
   uint uVar1;
@@ -38,9 +38,9 @@ uint fat_sd_crc7(int param_1,int param_2)
 }
 
 
-// 0x02074b88  fat_sd_crc16
+// 0x02074b88  _SD_CRC16
 
-void fat_sd_crc16(byte *param_1,int param_2,undefined1 *param_3)
+void _SD_CRC16(byte *param_1,int param_2,undefined1 *param_3)
 
 {
   uint uVar1;
@@ -123,9 +123,9 @@ void fat_sd_crc16(byte *param_1,int param_2,undefined1 *param_3)
 }
 
 
-// 0x02074c84  fat_sd_initcard
+// 0x02074c84  _SD_InitCard
 
-undefined4 fat_sd_initcard(code *param_1,code *param_2,int param_3,uint *param_4)
+undefined4 _SD_InitCard(code *param_1,code *param_2,int param_3,uint *param_4)
 
 {
   int iVar1;
@@ -136,7 +136,7 @@ undefined4 fat_sd_initcard(code *param_1,code *param_2,int param_3,uint *param_4
   byte local_2f;
   byte local_2e;
   
-  arm_thumb_veneer_for_newlib_memset(&local_31,0,0x11);
+  memset(&local_31,0,0x11);
   iVar2 = 0;
   while( true ) {
     (*param_1)(&local_31,0x37,0);

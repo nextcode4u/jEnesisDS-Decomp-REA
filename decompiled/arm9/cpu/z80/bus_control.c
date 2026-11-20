@@ -320,7 +320,7 @@ void set_or_clear_z80_pending_interrupt_bits(int z80_state,uint interrupt_bits,i
 void initialize_z80_state_and_dispatch_pointers(int z80_state)
 
 {
-  newlib_memset(z80_state,0,0x4c4);
+  memset(z80_state,0,0x4c4);
   *(undefined ***)(z80_state + 0x494) = &z80_arm_base_opcode_table;
   *(undefined ***)(z80_state + 0x498) = &z80_dispatch;
   *(undefined ***)(z80_state + 0x49c) = &PTR_z80_dispatch_01002e00_02015430;

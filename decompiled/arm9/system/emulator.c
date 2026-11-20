@@ -164,11 +164,11 @@ void reset_emulation_for_cartridge(void)
   clear_z80_work_ram();
   reset_vdp_memory_and_renderer_state();
   request_arm7_audio_stop();
-  arm_veneer_for_nds_swiwaitforvblank();
-  arm_veneer_for_nds_swiwaitforvblank();
+  swiWaitForVBlank();
+  swiWaitForVBlank();
   clear_audio_queues_and_reset_or_stop_arm7_audio(1);
-  arm_veneer_for_nds_swiwaitforvblank();
-  arm_veneer_for_nds_swiwaitforvblank();
+  swiWaitForVBlank();
+  swiWaitForVBlank();
   request_arm7_audio_start();
   if ((emulator_option_flags & 4) == 0) {
     record_vdp_scanline_state = record_unscaled_scanline_scroll_and_backdrop;
@@ -249,13 +249,13 @@ void initialize_emulator_state_and_shared_audio(void)
   if (DAT_02099070 == 0) {
     initialize_arm9_fifo_receive_interrupt(1);
     set_arm9_fifo_receive_callback(&LAB_020059a4);
-    uVar5 = newlib_memalign_global_reent_wrapper(0x20,0x400);
+    uVar5 = memalign(0x20,0x400);
     dac_write_buffer = uVar5 | 0x400000;
-    uVar5 = newlib_memalign_global_reent_wrapper(0x20,0x400);
+    uVar5 = memalign(0x20,0x400);
     DAT_023db644 = uVar5 | 0x400000;
-    uVar5 = newlib_memalign_global_reent_wrapper(0x20,0x400);
+    uVar5 = memalign(0x20,0x400);
     ym2612_bank_1_write_buffer = uVar5 | 0x400000;
-    uVar5 = newlib_memalign_global_reent_wrapper(0x20,0x100);
+    uVar5 = memalign(0x20,0x100);
     DAT_023db648 = dac_write_buffer | 0x400000;
     DAT_023db66c = DAT_023db644 | 0x400000;
     DAT_023db634 = ym2612_bank_1_write_buffer | 0x400000;
@@ -309,13 +309,13 @@ void initialize_emulator_state_and_shared_audio(void)
     iVar2 = 0;
     do {
       iVar7 = iVar2;
-      uVar11 = compiler_floatsidf(iVar7);
+      uVar11 = __floatsidf(iVar7);
       if (iVar7 < 0) {
-        uVar11 = compiler_adddf3((int)uVar11,(int)((ulonglong)uVar11 >> 0x20),0,0x41f00000);
+        uVar11 = __adddf3((int)uVar11,(int)((ulonglong)uVar11 >> 0x20),0,0x41f00000);
       }
-      uVar11 = compiler_subdf3(0,0x40900000,(int)uVar11,(int)((ulonglong)uVar11 >> 0x20));
-      compiler_muldf3((int)uVar11,(int)((ulonglong)uVar11 >> 0x20),0xc669057d,0x40401ba2);
-      uVar3 = compiler_fixunsdfsi();
+      uVar11 = __subdf3(0,0x40900000,(int)uVar11,(int)((ulonglong)uVar11 >> 0x20));
+      __muldf3((int)uVar11,(int)((ulonglong)uVar11 >> 0x20),0xc669057d,0x40401ba2);
+      uVar3 = __fixunsdfsi();
       *(undefined2 *)(puVar8 + 8) = uVar3;
       puVar8 = (undefined4 *)((int)puVar8 + 2);
       iVar2 = iVar7 + 1;
@@ -323,15 +323,15 @@ void initialize_emulator_state_and_shared_audio(void)
     iVar7 = iVar7 + -0x3ff;
     puVar9 = &DAT_023dbf98;
     do {
-      uVar11 = compiler_floatsidf(iVar7);
+      uVar11 = __floatsidf(iVar7);
       bVar10 = iVar7 < 0;
       iVar7 = iVar7 + 1;
       if (bVar10) {
-        uVar11 = compiler_adddf3((int)uVar11,(int)((ulonglong)uVar11 >> 0x20),0,0x41f00000);
+        uVar11 = __adddf3((int)uVar11,(int)((ulonglong)uVar11 >> 0x20),0,0x41f00000);
       }
-      uVar11 = compiler_subdf3(0,0x40700000,(int)uVar11,(int)((ulonglong)uVar11 >> 0x20));
-      compiler_muldf3((int)uVar11,(int)((ulonglong)uVar11 >> 0x20),0xc669057d,0x40401ba2);
-      uVar3 = compiler_fixunsdfsi();
+      uVar11 = __subdf3(0,0x40700000,(int)uVar11,(int)((ulonglong)uVar11 >> 0x20));
+      __muldf3((int)uVar11,(int)((ulonglong)uVar11 >> 0x20),0xc669057d,0x40401ba2);
+      uVar3 = __fixunsdfsi();
       *puVar9 = uVar3;
       puVar9 = puVar9 + 1;
     } while (iVar7 != 0x100);
@@ -355,8 +355,8 @@ void run_emulator_and_file_menu(void)
   do {
   } while ((ds_ipc_sync & 0xf) == 0);
   arm_tail_branch_to_load_subscreen_palette_tiles_and_map();
-  arm_veneer_for_nds_swiwaitforvblank();
-  arm_veneer_for_nds_swiwaitforvblank();
+  swiWaitForVBlank();
+  swiWaitForVBlank();
   iVar1 = run_rom_browser_event_loop((undefined1)DAT_02098fb0);
 joined_r0x02001238:
   if (iVar1 == 1) {
@@ -395,7 +395,7 @@ LAB_02001288:
       uVar2 = read_gameplay_menu_and_touch_actions();
       switch(uVar2) {
       case 1:
-        arm_veneer_for_nds_swiwaitforvblank();
+        swiWaitForVBlank();
         arm_tail_branch_to_load_subscreen_palette_tiles_and_map();
         draw_current_rom_information();
         display_fps_count(DAT_02098fc0);
@@ -417,8 +417,8 @@ LAB_02001288:
         DAT_02098fa8 = 1;
         set_arm7_audio_muted(1);
         arm_tail_branch_to_load_subscreen_palette_tiles_and_map();
-        arm_veneer_for_nds_swiwaitforvblank();
-        arm_veneer_for_nds_swiwaitforvblank();
+        swiWaitForVBlank();
+        swiWaitForVBlank();
         iVar1 = run_rom_browser_event_loop((undefined1)DAT_02098fb0);
         goto joined_r0x02001238;
       case 8:
@@ -444,10 +444,10 @@ LAB_02001288:
         goto LAB_020013bc;
       }
       adjust_paused_viewport();
-      arm_veneer_for_nds_swiwaitforvblank();
+      swiWaitForVBlank();
       set_arm7_audio_muted(1);
-      arm_veneer_for_nds_swiwaitforvblank();
-      arm_veneer_for_nds_swiwaitforvblank();
+      swiWaitForVBlank();
+      swiWaitForVBlank();
       (*DAT_0b00003c)();
     } while( true );
   }
@@ -462,7 +462,7 @@ LAB_020013bc:
   (*DAT_0b000038)();
   update_genesis_controller_state();
   if (((emulator_option_flags & 0x40) != 0) && (DAT_02098fa4 < DAT_02098fa0)) {
-    arm_veneer_for_nds_swiwaitforvblank();
+    swiWaitForVBlank();
   }
   (*DAT_0b00003c)();
   DAT_02098fbc = DAT_02098fbc + 1;
@@ -490,8 +490,8 @@ void adjust_paused_viewport(void)
   uint uVar2;
   int iVar3;
   
-  arm_veneer_for_sample_ds_keys_and_update_repeat_state();
-  uVar2 = arm_veneer_for_read_latched_ds_key_state();
+  scanKeys();
+  uVar2 = keysHeld();
   if ((uVar2 & 1) == 0) {
     iVar3 = 1;
   }
@@ -531,8 +531,8 @@ void update_genesis_controller_state(void)
   int previous_viewport_x;
   uint ds_keys;
   
-  arm_veneer_for_sample_ds_keys_and_update_repeat_state();
-  ds_keys = arm_veneer_for_read_latched_ds_key_state();
+  scanKeys();
+  ds_keys = keysHeld();
   *(byte *)(controller_port_1_state + 0x20) = ((byte)(ds_keys >> 0xb) ^ 1) & 1;
   *(byte *)(controller_port_1_state + 0x21) = ((byte)(ds_keys >> 1) ^ 1) & 1;
   *(byte *)(controller_port_1_state + 0x22) = (byte)ds_keys & 1 ^ 1;

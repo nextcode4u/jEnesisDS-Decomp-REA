@@ -2,30 +2,30 @@
  * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x020737b8  fat_mpcf_startup
+// 0x020737b8  _MPCF_startup
 
-void fat_mpcf_startup(void)
+void _MPCF_startup(void)
 
 {
-  fat_cf_startup(&mpcf_ata_register_map);
+  _CF_startup(&mpcf_ata_register_map);
   return;
 }
 
 
-// 0x0207478c  fat_sccf_startup
+// 0x0207478c  _SCCF_startup
 
-void fat_sccf_startup(void)
+void _SCCF_startup(void)
 
 {
   write_supercard_mode_register(3);
-  fat_cf_startup(&sccf_ata_register_map);
+  _CF_startup(&sccf_ata_register_map);
   return;
 }
 
 
-// 0x0207e8e4  fat_cf_isinserted
+// 0x0207e8e4  _CF_isInserted
 
-bool fat_cf_isinserted(void)
+bool _CF_isInserted(void)
 
 {
   ushort *puVar1;
@@ -36,9 +36,9 @@ bool fat_cf_isinserted(void)
 }
 
 
-// 0x0207e904  fat_cf_clearstatus
+// 0x0207e904  _CF_clearStatus
 
-bool fat_cf_clearstatus(void)
+bool _CF_clearStatus(void)
 
 {
   bool bVar1;
@@ -68,9 +68,9 @@ bool fat_cf_clearstatus(void)
 }
 
 
-// 0x0207e96c  fat_cf_readsectors
+// 0x0207e96c  _CF_readSectors
 
-undefined4 fat_cf_readsectors(undefined4 param_1,uint param_2,undefined2 *param_3)
+undefined4 _CF_readSectors(undefined4 param_1,uint param_2,undefined2 *param_3)
 
 {
   ushort *puVar1;
@@ -156,9 +156,9 @@ LAB_0207e9b8:
 }
 
 
-// 0x0207ea78  fat_cf_writesectors
+// 0x0207ea78  _CF_writeSectors
 
-undefined4 fat_cf_writesectors(undefined4 param_1,uint param_2,undefined2 *param_3)
+undefined4 _CF_writeSectors(undefined4 param_1,uint param_2,undefined2 *param_3)
 
 {
   undefined2 *puVar1;
@@ -246,19 +246,19 @@ LAB_0207eac6:
 }
 
 
-// 0x0207eb94  fat_cf_shutdown
+// 0x0207eb94  _CF_shutdown
 
-void fat_cf_shutdown(void)
+void _CF_shutdown(void)
 
 {
-  fat_cf_clearstatus();
+  _CF_clearStatus();
   return;
 }
 
 
-// 0x0207eba0  fat_cf_startup
+// 0x0207eba0  _CF_startup
 
-bool fat_cf_startup(undefined4 *param_1)
+bool _CF_startup(undefined4 *param_1)
 
 {
   ushort uVar1;

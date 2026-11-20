@@ -58,8 +58,8 @@ undefined4 parse_cartridge_header(int rom_header_bytes)
   if (rom_header_bytes == 0) {
     return 0;
   }
-  newlib_memset(loaded_cartridge_metadata + 0x200,0,0x20);
-  newlib_memset(loaded_cartridge_metadata + 0x220,0,0x20);
+  memset(loaded_cartridge_metadata + 0x200,0,0x20);
+  memset(loaded_cartridge_metadata + 0x220,0,0x20);
   iVar3 = loaded_cartridge_metadata;
   title_source_offset = 0x120;
   iVar2 = 0;
@@ -174,13 +174,13 @@ bool rom_header_lacks_sega_signature(int param_1)
   char local_11;
   
   local_11 = '\0';
-  newlib_fseek(param_1,0x100,0);
-  newlib_fread(&local_11,1,1,param_1);
+  fseek(param_1,0x100,0);
+  fread(&local_11,1,1,param_1);
   if ((local_11 == ' ') &&
      (uVar1 = *(ushort *)(param_1 + 0xc) & 0x20, (*(ushort *)(param_1 + 0xc) & 0x20) == 0)) {
     do {
       uVar3 = uVar1;
-      newlib_fread(&local_11,1,1,param_1);
+      fread(&local_11,1,1,param_1);
       if (local_11 != ' ') break;
       uVar1 = uVar3 + 1;
     } while ((*(ushort *)(param_1 + 0xc) & 0x20) == 0);
@@ -189,22 +189,22 @@ bool rom_header_lacks_sega_signature(int param_1)
   else {
     iVar2 = 0x100;
   }
-  newlib_fseek(param_1,iVar2,0);
-  newlib_fread(&local_11,1,1,param_1);
+  fseek(param_1,iVar2,0);
+  fread(&local_11,1,1,param_1);
   cVar4 = local_11 == 'S';
-  newlib_fread(&local_11,1,1,param_1);
+  fread(&local_11,1,1,param_1);
   if (local_11 == 'E') {
     cVar4 = cVar4 + '\x01';
   }
-  newlib_fread(&local_11,1,1,param_1);
+  fread(&local_11,1,1,param_1);
   if (local_11 == 'G') {
     cVar4 = cVar4 + '\x01';
   }
-  newlib_fread(&local_11,1,1,param_1);
+  fread(&local_11,1,1,param_1);
   if (local_11 == 'A') {
     cVar4 = cVar4 + '\x01';
   }
-  newlib_fseek(param_1,0,0);
+  fseek(param_1,0,0);
   return cVar4 != '\x04';
 }
 
@@ -223,14 +223,14 @@ void deinterleave_smd_rom_blocks(int param_1,uint param_2)
   if (param_1 == 0 || param_2 < 0x200) {
     return;
   }
-  DAT_023bb4ec = newlib_malloc_global_reent_wrapper(0x4000);
+  DAT_023bb4ec = malloc(0x4000);
   if (param_2 >> 0xe != 0) {
     uVar3 = 1;
     uVar2 = 0;
     uVar5 = 0;
     iVar4 = param_1;
     do {
-      newlib_memcpy(DAT_023bb4ec,iVar4);
+      memcpy(DAT_023bb4ec,iVar4);
       uVar1 = 0;
       do {
         while (uVar1 < 0x2000) {
@@ -252,7 +252,7 @@ LAB_02001d14:
       iVar4 = iVar4 + 0x4000;
     } while (param_2 >> 0xe != uVar5);
   }
-  newlib_free_r(&DAT_0208f3a0,DAT_023bb4ec);
+  _free_r(&DAT_0208f3a0,DAT_023bb4ec);
   return;
 }
 
@@ -275,16 +275,16 @@ undefined4 load_genesis_rom_from_stream(int rom_stream,undefined4 rom_path)
   undefined4 load_succeeded;
   char preferred_region_code;
   
-  newlib_memset(&cartridge_rom_bytes,0,0x306800);
+  memset(&cartridge_rom_bytes,0,0x306800);
   if (loaded_cartridge_metadata == 0) {
-    loaded_cartridge_metadata = newlib_malloc_global_reent_wrapper(0x268);
+    loaded_cartridge_metadata = malloc(0x268);
   }
-  newlib_strncpy(loaded_cartridge_metadata,rom_path,0x100);
+  strncpy(loaded_cartridge_metadata,rom_path,0x100);
   *(undefined4 *)(loaded_cartridge_metadata + 600) = 0;
   if (rom_stream != 0) {
-    newlib_fseek(rom_stream,0,2);
-    rom_size = newlib_ftell(rom_stream);
-    newlib_fseek(rom_stream,0,0);
+    fseek(rom_stream,0,2);
+    rom_size = ftell(rom_stream);
+    fseek(rom_stream,0,0);
     if (0x306800 < rom_size) {
       *(uint *)(loaded_cartridge_metadata + 600) = *(uint *)(loaded_cartridge_metadata + 600) | 6;
       return 0;
@@ -292,13 +292,13 @@ undefined4 load_genesis_rom_from_stream(int rom_stream,undefined4 rom_path)
     if (rom_size != 0) {
       iVar7 = rom_header_lacks_sega_signature(rom_stream);
       if (iVar7 == 0) {
-        newlib_fread(&cartridge_rom_bytes,1,rom_size,rom_stream);
+        fread(&cartridge_rom_bytes,1,rom_size,rom_stream);
         *(undefined1 *)(loaded_cartridge_metadata + 0x260) = 0;
       }
       else {
         rom_size = rom_size - 0x200;
-        newlib_fseek(rom_stream,0x200,0);
-        newlib_fread(&cartridge_rom_bytes,1,rom_size,rom_stream);
+        fseek(rom_stream,0x200,0);
+        fread(&cartridge_rom_bytes,1,rom_size,rom_stream);
         deinterleave_smd_rom_blocks(&cartridge_rom_bytes,rom_size);
         *(undefined1 *)(loaded_cartridge_metadata + 0x260) = 1;
       }
@@ -399,11 +399,11 @@ undefined1 open_rom_from_browser_selection(uint selected_row)
     }
     if (entry_or_filename[2] != 2) {
       entry_or_filename = entry_or_filename + 3;
-      arm_veneer_for_nds_swiwaitforvblank();
+      swiWaitForVBlank();
       draw_loading_message(entry_or_filename);
-      rom_stream = newlib_fopen(entry_or_filename,&binary_read_mode);
+      rom_stream = fopen(entry_or_filename,&binary_read_mode);
       rom_loaded = load_genesis_rom_from_stream(rom_stream,entry_or_filename);
-      newlib_fclose(rom_stream);
+      fclose(rom_stream);
       if (*(char *)(loaded_cartridge_metadata + 0x265) != '\0') {
         configure_cartridge_save_ram(loaded_cartridge_metadata,*(undefined4 *)(loaded_cartridge_metadata + 0x248),
                      *(undefined4 *)(loaded_cartridge_metadata + 0x244));
@@ -411,7 +411,7 @@ undefined1 open_rom_from_browser_selection(uint selected_row)
       DAT_02098ff8 = 0;
       return rom_loaded;
     }
-    change_working_directory_on_device(entry_or_filename + 3);
+    chdir(entry_or_filename + 3);
     enumerate_rom_browser_directory();
   }
   return 0;

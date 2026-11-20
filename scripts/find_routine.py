@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 import sys
 
-from pseudocode_names import identifier_maps, read_names, replace_identifiers
+from pseudocode_names import identifier_maps, read_names, read_symbol_aliases, restore_identifiers
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -53,6 +53,10 @@ def main():
         parser.error("provide a routine query and a positive result limit")
 
     matches = find_routines(query, args.cpu)
+    if args.show:
+        exact_matches = [match for match in matches if match[0] == 0]
+        if exact_matches:
+            matches = exact_matches
     if not matches:
         print(f"No routines match {query!r}.", file=sys.stderr)
         return 1
@@ -68,9 +72,12 @@ def main():
             if args.raw:
                 directory = ROOT / "decompiled" / cpu
                 with (directory / "functions.tsv").open(newline="", encoding="utf-8") as index:
-                    names, locals_by_address = read_names(directory, list(csv.DictReader(index, delimiter="\t")))
-                _, reverse = identifier_maps(names, locals_by_address[row["address"]])
-                body = replace_identifiers(body, reverse)
+                    rows = list(csv.DictReader(index, delimiter="\t"))
+                names, locals_by_address = read_names(directory, rows)
+                defaults, routines = read_symbol_aliases(directory, rows)
+                address = row["address"]
+                _, reverse = identifier_maps(names, locals_by_address[address], defaults)
+                body = restore_identifiers(body, reverse, routines.get(address, {}))
             print(body.decode("utf-8"), end="")
     if len(matches) > args.limit:
         print(f"Showing {args.limit} of {len(matches)} results.")

@@ -160,7 +160,7 @@ void handle_arm9_audio_command(undefined4 command_id,undefined4 *payload)
     audio_refills_enabled = 1;
     break;
   case 0xc:
-    arm_veneer_for_bios_wait_for_vblank(command_id,*payload);
+    swiWaitForVBlank(command_id,*payload);
     break;
   case 0xe:
     _DAT_04000500 = 0x8000;
@@ -246,8 +246,8 @@ void enable_fifo_receive_interrupt(void)
 
 {
   ds_ipc_fifo_control = 0x8008;
-  arm_veneer_for_install_interrupt_callback(0x40000,dispatch_fifo_receive_interrupt);
-  arm_veneer_for_enable_interrupt_sources(0x40000);
+  irqSet(0x40000,dispatch_fifo_receive_interrupt);
+  irqEnable(0x40000);
   ds_ipc_fifo_control = 0x8408;
   ds_ipc_sync = 0;
   return;
