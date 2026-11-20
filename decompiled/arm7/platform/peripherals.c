@@ -148,9 +148,9 @@ undefined4 rtcTransaction(byte *param_1,int param_2,undefined1 *param_3,int para
   uint uVar4;
   undefined4 in_lr;
   
-  DAT_04000138 = 0x73;
+  RTC_CR8 = 0x73;
   swiDelay(0x30);
-  DAT_04000138 = 0x77;
+  RTC_CR8 = 0x77;
   swiDelay(0x30);
   for (; param_2 != 0; param_2 = param_2 + -1) {
     uVar2 = (uint)*param_1;
@@ -158,9 +158,9 @@ undefined4 rtcTransaction(byte *param_1,int param_2,undefined1 *param_3,int para
     iVar3 = 0;
     do {
       bVar1 = (byte)(uVar2 >> 7);
-      DAT_04000138 = bVar1 | 0x74;
+      RTC_CR8 = bVar1 | 0x74;
       swiDelay(0x30);
-      DAT_04000138 = bVar1 | 0x76;
+      RTC_CR8 = bVar1 | 0x76;
       swiDelay(0x30);
       iVar3 = iVar3 + 1;
       uVar2 = (uVar2 & 0x7f) << 1;
@@ -171,11 +171,11 @@ undefined4 rtcTransaction(byte *param_1,int param_2,undefined1 *param_3,int para
       uVar2 = 0;
       uVar4 = 0;
       do {
-        DAT_04000138 = 100;
+        RTC_CR8 = 100;
         swiDelay(0x30);
-        DAT_04000138 = 0x66;
+        RTC_CR8 = 0x66;
         swiDelay(0x30);
-        if ((DAT_04000138 & 1) != 0) {
+        if ((RTC_CR8 & 1) != 0) {
           uVar4 = 1 << (uVar2 & 0xff) & 0xffU | uVar4;
         }
         uVar2 = uVar2 + 1;
@@ -186,7 +186,7 @@ undefined4 rtcTransaction(byte *param_1,int param_2,undefined1 *param_3,int para
       param_3 = param_3 + 1;
     }
   }
-  DAT_04000138 = 0x62;
+  RTC_CR8 = 0x62;
   swiDelay(0x30);
   return in_lr;
 }
@@ -229,16 +229,16 @@ longlong touchRead(void)
   undefined2 uVar1;
   uint in_lr;
   
-  uVar1 = _DAT_04000208;
-  _DAT_04000208 = 0;
-  if ((int)((uint)_DAT_040001c0 << 0x18) < 0) {
+  uVar1 = REG_IME;
+  REG_IME = 0;
+  if ((int)((uint)REG_SPICNT << 0x18) < 0) {
     do {
       swiDelay(1);
-    } while ((_DAT_040001c0 & 0x80) != 0);
+    } while ((REG_SPICNT & 0x80) != 0);
   }
-  _DAT_040001c2 = 0;
-  _DAT_040001c0 = 0x8201;
-  _DAT_04000208 = uVar1;
+  REG_SPIDATA = 0;
+  REG_SPICNT = 0x8201;
+  REG_IME = uVar1;
   return (ulonglong)in_lr << 0x20;
 }
 

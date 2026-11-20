@@ -222,7 +222,7 @@ void scanKeys(void)
   bool bVar2;
   
   keysold = keys;
-  uVar1 = (~REG_KEYINPUT & 0x3ff | (~_DAT_027ff018 & 3) << 10 | (~_DAT_027ff018 & 0xc0) << 6) ^
+  uVar1 = (~REG_KEYINPUT & 0x3ff | (~IPC->buttons & 3) << 10 | (~IPC->buttons & 0xc0) << 6) ^
           0x2000;
   bVar2 = keys != uVar1;
   keys = uVar1;
@@ -250,12 +250,12 @@ undefined2 * touchReadXY(undefined2 *param_1)
   undefined2 uVar2;
   undefined2 uVar3;
   
-  uVar3 = _DAT_027ff00a;
-  uVar2 = _DAT_027ff008;
-  uVar1 = _DAT_027ff006;
+  uVar3 = IPC->touchZ2;
+  uVar2 = IPC->touchZ1;
+  uVar1 = IPC->touchYpx;
   do {
-  } while (DAT_027ff035 != '\0');
-  *param_1 = _DAT_027ff004;
+  } while (IPC->mailBusy != '\0');
+  *param_1 = IPC->touchXpx;
   param_1[3] = uVar3;
   param_1[2] = uVar2;
   param_1[1] = uVar1;

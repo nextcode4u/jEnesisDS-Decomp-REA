@@ -28,10 +28,6 @@ processor	DAT_03806d4c	psg_attenuation_table	The PSG renderer flips tone polarit
 processor	DAT_0380bb04	ipc_received_command	FIFO receive decodes the high command byte and 24-bit payload and invokes the installed callback.
 processor	DAT_0380bb08	ipc_received_payload	FIFO receive decodes the high command byte and 24-bit payload and invokes the installed callback.
 processor	DAT_0380be00	ipc_receive_callback	FIFO receive decodes the high command byte and 24-bit payload and invokes the installed callback.
-processor	_DAT_04000180	ds_ipc_sync	FIFO receive decodes the high command byte and 24-bit payload and invokes the installed callback.
-processor	_DAT_04000184	ds_ipc_fifo_control	FIFO receive decodes the high command byte and 24-bit payload and invokes the installed callback.
-processor	_DAT_04000188	ds_ipc_fifo_send	FIFO receive decodes the high command byte and 24-bit payload and invokes the installed callback.
-processor	_DAT_04100000	ds_ipc_fifo_receive	FIFO receive decodes the high command byte and 24-bit payload and invokes the installed callback.
 0x037f8504	param_1	write_bytes	Walks a buffer of PSG latch and data writes.
 0x037f8504	param_2	byte_count	Walks a buffer of PSG latch and data writes.
 0x037f8504	bVar1	write_byte	Walks a buffer of PSG latch and data writes.
@@ -73,7 +69,6 @@ processor	_DAT_04100000	ds_ipc_fifo_receive	FIFO receive decodes the high comman
 0x037fc504	param_1	callback	Stores the function pointer used by the FIFO receive IRQ.
 0x037fc514	param_1	command_id	Packs the command in the high byte and the payload in the low 24 bits.
 0x037fc514	param_2	payload	Packs the command in the high byte and the payload in the low 24 bits.
-processor	_DAT_027ff028	shared_audio_descriptor	ARM9 publishes this pointer at the same shared address ARM7 reads before processing audio buffers.
 processor	DAT_0380bb38	chip_write_staging_buffer	ARM7 copies chip writes to a reusable staging buffer. DAC command 0x10 has separate byte storage and count.
 processor	DAT_0380b8a0	dac_staged_byte_count	ARM7 copies chip writes to a reusable staging buffer. DAC command 0x10 has separate byte storage and count.
 processor	DAT_0380b8a4	dac_staged_bytes	ARM7 copies chip writes to a reusable staging buffer. DAC command 0x10 has separate byte storage and count.
@@ -93,8 +88,6 @@ processor	DAT_0380bdc0	fm_pcm_write_cursor	The timer audio service wraps the FM 
 processor	DAT_0380bdcc	dac_pcm_base	The timer audio service wraps the FM and PSG cursor at the end of one channel ring. The DAC PCM ring has its own bounds and cursor.
 processor	DAT_0380bdd0	dac_pcm_write_cursor	The timer audio service wraps the FM and PSG cursor at the end of one channel ring. The DAC PCM ring has its own bounds and cursor.
 processor	DAT_0380bdd4	dac_pcm_end	The timer audio service wraps the FM and PSG cursor at the end of one channel ring. The DAC PCM ring has its own bounds and cursor.
-processor	_DAT_04000104	ds_timer_1_count	Timer 1 drives FM and PSG refills. Timer 3 drives DAC refills. Each elapsed count is clamped to its own limit.
-processor	_DAT_0400010c	ds_timer_3_count	Timer 1 drives FM and PSG refills. Timer 3 drives DAC refills. Each elapsed count is clamped to its own limit.
 processor	DAT_0380bdec	fm_psg_previous_timer_count	Timer 1 drives FM and PSG refills. Timer 3 drives DAC refills. Each elapsed count is clamped to its own limit.
 processor	DAT_0380bdf0	dac_previous_timer_count	Timer 1 drives FM and PSG refills. Timer 3 drives DAC refills. Each elapsed count is clamped to its own limit.
 processor	DAT_0380b870	fm_psg_refill_limit	Timer 1 drives FM and PSG refills. Timer 3 drives DAC refills. Each elapsed count is clamped to its own limit.
@@ -124,3 +117,67 @@ processor	DAT_0380bdf8	audio_reset_requested	Timer 1 drives FM and PSG refills. 
 0x037fbda8	param_1	output_sample_count	Limits the requested output samples, emits DAC values when enabled, or clears the ring range.
 0x037fbda8	bVar1	render_dac_audio	Limits the requested output samples, emits DAC values when enabled, or clears the ring range.
 0x037fbda8	puVar4	pcm_clear_cursor	Limits the requested output samples, emits DAC values when enabled, or clears the ring range.
+processor	DAT_03801561	irqDummy	October 2007 interrupts.c installs irqDummy in the ARM7 table. The odd pointer selects its Thumb entry.
+processor	DAT_03801800	IntrMain	Period libnds interrupt dispatcher at the address installed by irqInit.
+processor	DAT_0380be04	irq_table_first_handler	October 2007 interrupts.c uses irqTable[0].handler at the ARM7 table base.
+processor	DAT_0380be08	irq_table_first_mask	October 2007 interrupts.c uses irqTable[0].mask at offset four.
+processor	DAT_04000138	RTC_CR8	Period libnds nds/arm7/serial.h register definition.
+processor	DAT_04000400	sound_channel_register_base	Byte address used with a 16-byte channel stride. The SDK expresses the word access as SCHANNEL_CR(channel).
+processor	_DAT_027ff028	IPC->soundData	nds/ipc.h places soundData at offset 0x28. jEnesisDS stores its own audio descriptor in this shared slot.
+processor	_DAT_0380fffc	IRQ_HANDLER	nds/interrupts.h exposes the ARM7 BIOS vector through IRQ_HANDLER at 0x0380fffc.
+processor	_DAT_04000004	REG_DISPSTAT	Period libnds nds/system.h register definition.
+processor	_DAT_04000100	TIMER0_DATA	Period libnds nds/timers.h register definition.
+processor	_DAT_04000102	TIMER0_CR	Period libnds nds/timers.h register definition.
+processor	_DAT_04000104	TIMER1_DATA	Period libnds nds/timers.h register definition.
+processor	_DAT_04000106	TIMER1_CR	Period libnds nds/timers.h register definition.
+processor	_DAT_04000108	TIMER2_DATA	Period libnds nds/timers.h register definition.
+processor	_DAT_0400010a	TIMER2_CR	Period libnds nds/timers.h register definition.
+processor	_DAT_0400010c	TIMER3_DATA	Period libnds nds/timers.h register definition.
+processor	_DAT_0400010e	TIMER3_CR	Period libnds nds/timers.h register definition.
+processor	_DAT_04000180	REG_IPC_SYNC	Period libnds nds/ipc.h register definition.
+processor	_DAT_04000184	REG_IPC_FIFO_CR	Period libnds nds/ipc.h register definition.
+processor	_DAT_04000188	REG_IPC_FIFO_TX	Period libnds nds/ipc.h register definition.
+processor	_DAT_040001c0	REG_SPICNT	Period libnds nds/arm7/serial.h register definition.
+processor	_DAT_040001c2	REG_SPIDATA	Period libnds nds/arm7/serial.h register definition.
+processor	_DAT_04000208	REG_IME	Period libnds nds/interrupts.h register definition.
+processor	_DAT_04000210	REG_IE	Period libnds nds/interrupts.h register definition.
+processor	_DAT_04000214	REG_IF	Period libnds nds/interrupts.h register definition.
+processor	_DAT_04000304	REG_POWERCNT	Period libnds nds/system.h register definition.
+processor	_DAT_04000400	SCHANNEL_CR(0)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_04000410	SCHANNEL_CR(1)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_04000420	SCHANNEL_CR(2)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_04000430	SCHANNEL_CR(3)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_04000440	SCHANNEL_CR(4)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_04000450	SCHANNEL_CR(5)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_04000460	SCHANNEL_CR(6)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_04000470	SCHANNEL_CR(7)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_04000480	SCHANNEL_CR(8)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_04000490	SCHANNEL_CR(9)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_040004a0	SCHANNEL_CR(10)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_040004b0	SCHANNEL_CR(11)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_040004c0	SCHANNEL_CR(12)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_040004c4	SCHANNEL_SOURCE(12)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_040004c8	SCHANNEL_TIMER(12)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_040004cc	SCHANNEL_LENGTH(12)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_040004d0	SCHANNEL_CR(13)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_040004d4	SCHANNEL_SOURCE(13)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_040004d8	SCHANNEL_TIMER(13)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_040004dc	SCHANNEL_LENGTH(13)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_040004e0	SCHANNEL_CR(14)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_040004e4	SCHANNEL_SOURCE(14)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_040004e8	SCHANNEL_TIMER(14)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_040004ec	SCHANNEL_LENGTH(14)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_040004f0	SCHANNEL_CR(15)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_040004f4	SCHANNEL_SOURCE(15)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_040004f8	SCHANNEL_TIMER(15)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_040004fc	SCHANNEL_LENGTH(15)	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_04000500	SOUND_CR	Period libnds nds/arm7/audio.h register definition.
+processor	_DAT_04100000	REG_IPC_FIFO_RX	Period libnds nds/ipc.h register definition.
+0x037fb9fc	*(undefined2 *)(iVar4 * 0x10 + 0x4000408)	SCHANNEL_TIMER(iVar4)	nds/arm7/audio.h defines the sound channel register and 16-byte channel stride.
+0x037fb9fc	*(undefined4 *)(iVar4 * 0x10 + 0x4000404)	SCHANNEL_SOURCE(iVar4)	nds/arm7/audio.h defines the sound channel register and 16-byte channel stride.
+0x037fb9fc	*(int *)(iVar4 * 0x10 + 0x400040c)	SCHANNEL_LENGTH(iVar4)	nds/arm7/audio.h defines the sound channel register and 16-byte channel stride.
+0x037fb9fc	*(undefined4 *)(&DAT_04000400 + iVar4 * 0x10)	SCHANNEL_CR(iVar4)	nds/arm7/audio.h defines the sound channel register and 16-byte channel stride.
+0x037fb9fc	*(undefined2 *)(iVar2 * 0x10 + 0x4000408)	SCHANNEL_TIMER(paired_ds_channel)	nds/arm7/audio.h defines the sound channel register and 16-byte channel stride.
+0x037fb9fc	*(undefined4 *)(iVar2 * 0x10 + 0x4000404)	SCHANNEL_SOURCE(paired_ds_channel)	nds/arm7/audio.h defines the sound channel register and 16-byte channel stride.
+0x037fb9fc	*(int *)(iVar2 * 0x10 + 0x400040c)	SCHANNEL_LENGTH(paired_ds_channel)	nds/arm7/audio.h defines the sound channel register and 16-byte channel stride.
+0x037fb9fc	*(undefined4 *)(&DAT_04000400 + iVar2 * 0x10)	SCHANNEL_CR(paired_ds_channel)	nds/arm7/audio.h defines the sound channel register and 16-byte channel stride.

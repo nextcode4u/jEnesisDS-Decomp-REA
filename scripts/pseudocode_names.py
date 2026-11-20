@@ -3,6 +3,7 @@ import csv
 import json
 import re
 from collections import defaultdict, deque
+from functools import lru_cache
 
 
 # Consume comments and literals as whole tokens so their contents stay byte-for-byte.
@@ -10,6 +11,24 @@ TOKEN = re.compile(
     rb"""//[^\n]*|/\*.*?\*/|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b[A-Za-z_][A-Za-z_0-9]*(?:::[A-Za-z_][A-Za-z_0-9]*)*\b""",
     re.DOTALL,
 )
+SDK_ACCESS = re.compile(
+    rb"[A-Za-z_]\w*(?:\([\w /+]+\)|\[\d+\]|->[A-Za-z_]\w*)"
+)
+
+
+@lru_cache(maxsize=64)
+def token_pattern(accesses):
+    if not accesses:
+        return TOKEN
+    alternatives = b"|".join(re.escape(access) for access in sorted(accesses, key=len, reverse=True))
+    return re.compile(rb"(?<!\w)(?:" + alternatives + rb")(?!\w)|" + TOKEN.pattern, TOKEN.flags)
+
+
+def tokens_for(mapping):
+    # SDK lvalues may replace a single label or a complete REA pointer expression.
+    return token_pattern(frozenset(
+        token for token in mapping if SDK_ACCESS.fullmatch(token) or token.startswith(b"*(")
+    ))
 
 
 def read_names(directory, rows):
@@ -80,7 +99,7 @@ def identifier_maps(names, local_names, alias_defaults=None):
 
 
 def replace_identifiers(body, mapping):
-    return TOKEN.sub(lambda match: mapping.get(match[0], match[0]), body)
+    return tokens_for(mapping).sub(lambda match: mapping.get(match[0], match[0]), body)
 
 
 def restore_identifiers(body, mapping, alias_choices):
@@ -98,7 +117,7 @@ def restore_identifiers(body, mapping, alias_choices):
             raise ValueError(f"Unexpected extra occurrence of {token.decode()}")
         return pending[token].popleft()
 
-    original = TOKEN.sub(restore, body)
+    original = tokens_for(mapping).sub(restore, body)
     if any(pending.values()):
         raise ValueError("Unused raw symbol aliases for routine")
     return original

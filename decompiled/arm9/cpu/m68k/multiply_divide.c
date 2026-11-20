@@ -612,18 +612,18 @@ int m68k_divu_word_02025048(void)
     }
   }
   else {
-    _DAT_04000280 = _DAT_04000280 & 0xffff0000;
-    _DAT_04000290 = *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
-    _DAT_04000298 = uVar3;
-    if (_DAT_040002a0 >> 0x10 == 0) {
+    div_control_word = div_control_word & 0xffff0000;
+    DIV_NUMERATOR32 = *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
+    DIV_DENOMINATOR32 = uVar3;
+    if (DIV_RESULT32 >> 0x10 == 0) {
       uVar3 = unaff_r7 & 0xfffffff0;
-      if (_DAT_040002a0 == 0) {
+      if (DIV_RESULT32 == 0) {
         uVar3 = uVar3 | 4;
       }
-      if ((_DAT_040002a0 & 0x8000) != 0) {
+      if ((DIV_RESULT32 & 0x8000) != 0) {
         uVar3 = uVar3 | 8;
       }
-      *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = _DAT_040002a0 | _DAT_040002a8 << 0x10;
+      *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = DIV_RESULT32 | DIV_REMAINDER32 << 0x10;
       unaff_r7 = uVar3 - 0x8c0000;
       if (unaff_r7 != 0 && 0x8bffff < (int)uVar3) {
                     /* WARNING: Could not recover jumptable at 0x020250c8. Too many branches */
@@ -711,18 +711,18 @@ int m68k_divu_word_020250f4(void)
     }
   }
   else {
-    _DAT_04000280 = _DAT_04000280 & 0xffff0000;
-    _DAT_04000290 = *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
-    _DAT_04000298 = iVar3;
-    if (_DAT_040002a0 >> 0x10 == 0) {
+    div_control_word = div_control_word & 0xffff0000;
+    DIV_NUMERATOR32 = *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
+    DIV_DENOMINATOR32 = iVar3;
+    if (DIV_RESULT32 >> 0x10 == 0) {
       uVar6 = unaff_r7 & 0xfffffff0;
-      if (_DAT_040002a0 == 0) {
+      if (DIV_RESULT32 == 0) {
         uVar6 = uVar6 | 4;
       }
-      if ((_DAT_040002a0 & 0x8000) != 0) {
+      if ((DIV_RESULT32 & 0x8000) != 0) {
         uVar6 = uVar6 | 8;
       }
-      *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = _DAT_040002a0 | _DAT_040002a8 << 0x10;
+      *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = DIV_RESULT32 | DIV_REMAINDER32 << 0x10;
       unaff_r7 = uVar6 - 0x8c0000;
       if (unaff_r7 != 0 && 0x8bffff < (int)uVar6) {
                     /* WARNING: Could not recover jumptable at 0x02025178. Too many branches */
@@ -813,18 +813,18 @@ int m68k_divu_word_020251a4(void)
     }
   }
   else {
-    _DAT_04000280 = _DAT_04000280 & 0xffff0000;
-    _DAT_04000290 = *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
-    _DAT_04000298 = iVar3;
-    if (_DAT_040002a0 >> 0x10 == 0) {
+    div_control_word = div_control_word & 0xffff0000;
+    DIV_NUMERATOR32 = *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
+    DIV_DENOMINATOR32 = iVar3;
+    if (DIV_RESULT32 >> 0x10 == 0) {
       uVar7 = unaff_r7 & 0xfffffff0;
-      if (_DAT_040002a0 == 0) {
+      if (DIV_RESULT32 == 0) {
         uVar7 = uVar7 | 4;
       }
-      if ((_DAT_040002a0 & 0x8000) != 0) {
+      if ((DIV_RESULT32 & 0x8000) != 0) {
         uVar7 = uVar7 | 8;
       }
-      *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = _DAT_040002a0 | _DAT_040002a8 << 0x10;
+      *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = DIV_RESULT32 | DIV_REMAINDER32 << 0x10;
       unaff_r7 = uVar7 - 0x8c0000;
       if (unaff_r7 != 0 && 0x8bffff < (int)uVar7) {
                     /* WARNING: Could not recover jumptable at 0x02025234. Too many branches */
@@ -915,18 +915,18 @@ int m68k_divu_word_02025260(void)
     }
   }
   else {
-    _DAT_04000280 = _DAT_04000280 & 0xffff0000;
-    _DAT_04000290 = *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
-    _DAT_04000298 = iVar3;
-    if (_DAT_040002a0 >> 0x10 == 0) {
+    div_control_word = div_control_word & 0xffff0000;
+    DIV_NUMERATOR32 = *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
+    DIV_DENOMINATOR32 = iVar3;
+    if (DIV_RESULT32 >> 0x10 == 0) {
       uVar7 = unaff_r7 & 0xfffffff0;
-      if (_DAT_040002a0 == 0) {
+      if (DIV_RESULT32 == 0) {
         uVar7 = uVar7 | 4;
       }
-      if ((_DAT_040002a0 & 0x8000) != 0) {
+      if ((DIV_RESULT32 & 0x8000) != 0) {
         uVar7 = uVar7 | 8;
       }
-      *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = _DAT_040002a0 | _DAT_040002a8 << 0x10;
+      *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = DIV_RESULT32 | DIV_REMAINDER32 << 0x10;
       unaff_r7 = uVar7 - 0x8c0000;
       if (unaff_r7 != 0 && 0x8bffff < (int)uVar7) {
                     /* WARNING: Could not recover jumptable at 0x020252f0. Too many branches */
@@ -1016,18 +1016,18 @@ int m68k_divu_word_0202531c(void)
     }
   }
   else {
-    _DAT_04000280 = _DAT_04000280 & 0xffff0000;
-    _DAT_04000290 = *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
-    _DAT_04000298 = iVar3;
-    if (_DAT_040002a0 >> 0x10 == 0) {
+    div_control_word = div_control_word & 0xffff0000;
+    DIV_NUMERATOR32 = *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
+    DIV_DENOMINATOR32 = iVar3;
+    if (DIV_RESULT32 >> 0x10 == 0) {
       uVar6 = unaff_r7 & 0xfffffff0;
-      if (_DAT_040002a0 == 0) {
+      if (DIV_RESULT32 == 0) {
         uVar6 = uVar6 | 4;
       }
-      if ((_DAT_040002a0 & 0x8000) != 0) {
+      if ((DIV_RESULT32 & 0x8000) != 0) {
         uVar6 = uVar6 | 8;
       }
-      *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = _DAT_040002a0 | _DAT_040002a8 << 0x10;
+      *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = DIV_RESULT32 | DIV_REMAINDER32 << 0x10;
       unaff_r7 = uVar6 - 0x8c0000;
       if (unaff_r7 != 0 && 0x8bffff < (int)uVar6) {
                     /* WARNING: Could not recover jumptable at 0x020253a8. Too many branches */
@@ -1129,18 +1129,18 @@ int m68k_divu_word_020253d4(void)
     }
   }
   else {
-    _DAT_04000280 = _DAT_04000280 & 0xffff0000;
-    _DAT_04000290 = *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
-    _DAT_04000298 = iVar3;
-    if (_DAT_040002a0 >> 0x10 == 0) {
+    div_control_word = div_control_word & 0xffff0000;
+    DIV_NUMERATOR32 = *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
+    DIV_DENOMINATOR32 = iVar3;
+    if (DIV_RESULT32 >> 0x10 == 0) {
       uVar6 = unaff_r7 & 0xfffffff0;
-      if (_DAT_040002a0 == 0) {
+      if (DIV_RESULT32 == 0) {
         uVar6 = uVar6 | 4;
       }
-      if ((_DAT_040002a0 & 0x8000) != 0) {
+      if ((DIV_RESULT32 & 0x8000) != 0) {
         uVar6 = uVar6 | 8;
       }
-      *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = _DAT_040002a0 | _DAT_040002a8 << 0x10;
+      *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = DIV_RESULT32 | DIV_REMAINDER32 << 0x10;
       unaff_r7 = uVar6 - 0x8c0000;
       if (unaff_r7 != 0 && 0x8bffff < (int)uVar6) {
                     /* WARNING: Could not recover jumptable at 0x02025484. Too many branches */
@@ -1230,18 +1230,18 @@ int m68k_divu_word_020254b0(void)
     }
   }
   else {
-    _DAT_04000280 = _DAT_04000280 & 0xffff0000;
-    _DAT_04000290 = *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
-    _DAT_04000298 = iVar3;
-    if (_DAT_040002a0 >> 0x10 == 0) {
+    div_control_word = div_control_word & 0xffff0000;
+    DIV_NUMERATOR32 = *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
+    DIV_DENOMINATOR32 = iVar3;
+    if (DIV_RESULT32 >> 0x10 == 0) {
       uVar6 = unaff_r7 & 0xfffffff0;
-      if (_DAT_040002a0 == 0) {
+      if (DIV_RESULT32 == 0) {
         uVar6 = uVar6 | 4;
       }
-      if ((_DAT_040002a0 & 0x8000) != 0) {
+      if ((DIV_RESULT32 & 0x8000) != 0) {
         uVar6 = uVar6 | 8;
       }
-      *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = _DAT_040002a0 | _DAT_040002a8 << 0x10;
+      *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = DIV_RESULT32 | DIV_REMAINDER32 << 0x10;
       unaff_r7 = uVar6 - 0x8c0000;
       if (unaff_r7 != 0 && 0x8bffff < (int)uVar6) {
                     /* WARNING: Could not recover jumptable at 0x0202552c. Too many branches */
@@ -1331,18 +1331,18 @@ int m68k_divu_word_02025558(void)
     }
   }
   else {
-    _DAT_04000280 = _DAT_04000280 & 0xffff0000;
-    _DAT_04000290 = *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
-    _DAT_04000298 = iVar3;
-    if (_DAT_040002a0 >> 0x10 == 0) {
+    div_control_word = div_control_word & 0xffff0000;
+    DIV_NUMERATOR32 = *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
+    DIV_DENOMINATOR32 = iVar3;
+    if (DIV_RESULT32 >> 0x10 == 0) {
       uVar6 = unaff_r7 & 0xfffffff0;
-      if (_DAT_040002a0 == 0) {
+      if (DIV_RESULT32 == 0) {
         uVar6 = uVar6 | 4;
       }
-      if ((_DAT_040002a0 & 0x8000) != 0) {
+      if ((DIV_RESULT32 & 0x8000) != 0) {
         uVar6 = uVar6 | 8;
       }
-      *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = _DAT_040002a0 | _DAT_040002a8 << 0x10;
+      *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = DIV_RESULT32 | DIV_REMAINDER32 << 0x10;
       unaff_r7 = uVar6 - 0x8c0000;
       if (unaff_r7 != 0 && 0x8bffff < (int)uVar6) {
                     /* WARNING: Could not recover jumptable at 0x020255dc. Too many branches */
@@ -1433,18 +1433,18 @@ int m68k_divu_word_02025608(void)
     }
   }
   else {
-    _DAT_04000280 = _DAT_04000280 & 0xffff0000;
-    _DAT_04000290 = *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
-    _DAT_04000298 = iVar3;
-    if (_DAT_040002a0 >> 0x10 == 0) {
+    div_control_word = div_control_word & 0xffff0000;
+    DIV_NUMERATOR32 = *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
+    DIV_DENOMINATOR32 = iVar3;
+    if (DIV_RESULT32 >> 0x10 == 0) {
       uVar6 = unaff_r7 & 0xfffffff0;
-      if (_DAT_040002a0 == 0) {
+      if (DIV_RESULT32 == 0) {
         uVar6 = uVar6 | 4;
       }
-      if ((_DAT_040002a0 & 0x8000) != 0) {
+      if ((DIV_RESULT32 & 0x8000) != 0) {
         uVar6 = uVar6 | 8;
       }
-      *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = _DAT_040002a0 | _DAT_040002a8 << 0x10;
+      *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = DIV_RESULT32 | DIV_REMAINDER32 << 0x10;
       unaff_r7 = uVar6 - 0x8c0000;
       if (unaff_r7 != 0 && 0x8bffff < (int)uVar6) {
                     /* WARNING: Could not recover jumptable at 0x02025698. Too many branches */
@@ -1547,18 +1547,18 @@ int m68k_divu_word_020256c4(void)
     }
   }
   else {
-    _DAT_04000280 = _DAT_04000280 & 0xffff0000;
-    _DAT_04000290 = *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
-    _DAT_04000298 = iVar3;
-    if (_DAT_040002a0 >> 0x10 == 0) {
+    div_control_word = div_control_word & 0xffff0000;
+    DIV_NUMERATOR32 = *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
+    DIV_DENOMINATOR32 = iVar3;
+    if (DIV_RESULT32 >> 0x10 == 0) {
       uVar6 = unaff_r7 & 0xfffffff0;
-      if (_DAT_040002a0 == 0) {
+      if (DIV_RESULT32 == 0) {
         uVar6 = uVar6 | 4;
       }
-      if ((_DAT_040002a0 & 0x8000) != 0) {
+      if ((DIV_RESULT32 & 0x8000) != 0) {
         uVar6 = uVar6 | 8;
       }
-      *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = _DAT_040002a0 | _DAT_040002a8 << 0x10;
+      *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = DIV_RESULT32 | DIV_REMAINDER32 << 0x10;
       unaff_r7 = uVar6 - 0x8c0000;
       if (unaff_r7 != 0 && 0x8bffff < (int)uVar6) {
                     /* WARNING: Could not recover jumptable at 0x0202577c. Too many branches */
@@ -1648,18 +1648,18 @@ int m68k_divu_word_020257a8(void)
     }
   }
   else {
-    _DAT_04000280 = _DAT_04000280 & 0xffff0000;
-    _DAT_04000290 = *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
-    _DAT_04000298 = uVar3;
-    if (_DAT_040002a0 >> 0x10 == 0) {
+    div_control_word = div_control_word & 0xffff0000;
+    DIV_NUMERATOR32 = *(undefined4 *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7));
+    DIV_DENOMINATOR32 = uVar3;
+    if (DIV_RESULT32 >> 0x10 == 0) {
       uVar3 = unaff_r7 & 0xfffffff0;
-      if (_DAT_040002a0 == 0) {
+      if (DIV_RESULT32 == 0) {
         uVar3 = uVar3 | 4;
       }
-      if ((_DAT_040002a0 & 0x8000) != 0) {
+      if ((DIV_RESULT32 & 0x8000) != 0) {
         uVar3 = uVar3 | 8;
       }
-      *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = _DAT_040002a0 | _DAT_040002a8 << 0x10;
+      *(uint *)(unaff_r6 + ((unaff_r11 & 0xe00) >> 7)) = DIV_RESULT32 | DIV_REMAINDER32 << 0x10;
       unaff_r7 = uVar3 - 0x8c0000;
       if (unaff_r7 != 0 && 0x8bffff < (int)uVar3) {
                     /* WARNING: Could not recover jumptable at 0x02025820. Too many branches */
@@ -1762,18 +1762,18 @@ int m68k_divs_word_02025850(void)
       }
     }
     else {
-      _DAT_04000280 = _DAT_04000280 & 0xffff0000;
-      _DAT_04000290 = iVar4;
-      _DAT_04000298 = iVar3;
-      if (((int)_DAT_040002a0 < 0x8000) && (-0x8001 < (int)_DAT_040002a0)) {
+      div_control_word = div_control_word & 0xffff0000;
+      DIV_NUMERATOR32 = iVar4;
+      DIV_DENOMINATOR32 = iVar3;
+      if (((int)DIV_RESULT32 < 0x8000) && (-0x8001 < (int)DIV_RESULT32)) {
         uVar7 = unaff_r7 & 0xfffffff0;
-        if (_DAT_040002a0 == 0) {
+        if (DIV_RESULT32 == 0) {
           uVar7 = uVar7 | 4;
         }
-        if ((int)(_DAT_040002a0 << 0x10) < 0) {
+        if ((int)(DIV_RESULT32 << 0x10) < 0) {
           uVar7 = uVar7 | 8;
         }
-        *(uint *)(unaff_r6 + (uVar5 >> 7)) = _DAT_040002a0 & 0xffff | _DAT_040002a8 << 0x10;
+        *(uint *)(unaff_r6 + (uVar5 >> 7)) = DIV_RESULT32 & 0xffff | DIV_REMAINDER32 << 0x10;
         unaff_r7 = uVar7 - 0x9e0000;
         if (unaff_r7 != 0 && 0x9dffff < (int)uVar7) {
                     /* WARNING: Could not recover jumptable at 0x020258e8. Too many branches */
@@ -1879,18 +1879,18 @@ int m68k_divs_word_02025934(void)
       }
     }
     else {
-      _DAT_04000280 = _DAT_04000280 & 0xffff0000;
-      _DAT_04000290 = iVar5;
-      _DAT_04000298 = iVar4;
-      if (((int)_DAT_040002a0 < 0x8000) && (-0x8001 < (int)_DAT_040002a0)) {
+      div_control_word = div_control_word & 0xffff0000;
+      DIV_NUMERATOR32 = iVar5;
+      DIV_DENOMINATOR32 = iVar4;
+      if (((int)DIV_RESULT32 < 0x8000) && (-0x8001 < (int)DIV_RESULT32)) {
         uVar8 = unaff_r7 & 0xfffffff0;
-        if (_DAT_040002a0 == 0) {
+        if (DIV_RESULT32 == 0) {
           uVar8 = uVar8 | 4;
         }
-        if ((int)(_DAT_040002a0 << 0x10) < 0) {
+        if ((int)(DIV_RESULT32 << 0x10) < 0) {
           uVar8 = uVar8 | 8;
         }
-        *(uint *)(unaff_r6 + (uVar6 >> 7)) = _DAT_040002a0 & 0xffff | _DAT_040002a8 << 0x10;
+        *(uint *)(unaff_r6 + (uVar6 >> 7)) = DIV_RESULT32 & 0xffff | DIV_REMAINDER32 << 0x10;
         unaff_r7 = uVar8 - 0x9e0000;
         if (unaff_r7 != 0 && 0x9dffff < (int)uVar8) {
                     /* WARNING: Could not recover jumptable at 0x020259d8. Too many branches */
@@ -1999,18 +1999,18 @@ int m68k_divs_word_02025a24(void)
       }
     }
     else {
-      _DAT_04000280 = _DAT_04000280 & 0xffff0000;
-      _DAT_04000290 = iVar5;
-      _DAT_04000298 = iVar4;
-      if (((int)_DAT_040002a0 < 0x8000) && (-0x8001 < (int)_DAT_040002a0)) {
+      div_control_word = div_control_word & 0xffff0000;
+      DIV_NUMERATOR32 = iVar5;
+      DIV_DENOMINATOR32 = iVar4;
+      if (((int)DIV_RESULT32 < 0x8000) && (-0x8001 < (int)DIV_RESULT32)) {
         uVar9 = unaff_r7 & 0xfffffff0;
-        if (_DAT_040002a0 == 0) {
+        if (DIV_RESULT32 == 0) {
           uVar9 = uVar9 | 4;
         }
-        if ((int)(_DAT_040002a0 << 0x10) < 0) {
+        if ((int)(DIV_RESULT32 << 0x10) < 0) {
           uVar9 = uVar9 | 8;
         }
-        *(uint *)(unaff_r6 + (uVar7 >> 7)) = _DAT_040002a0 & 0xffff | _DAT_040002a8 << 0x10;
+        *(uint *)(unaff_r6 + (uVar7 >> 7)) = DIV_RESULT32 & 0xffff | DIV_REMAINDER32 << 0x10;
         unaff_r7 = uVar9 - 0x9e0000;
         if (unaff_r7 != 0 && 0x9dffff < (int)uVar9) {
                     /* WARNING: Could not recover jumptable at 0x02025ad4. Too many branches */
@@ -2119,18 +2119,18 @@ int m68k_divs_word_02025b20(void)
       }
     }
     else {
-      _DAT_04000280 = _DAT_04000280 & 0xffff0000;
-      _DAT_04000290 = iVar5;
-      _DAT_04000298 = iVar4;
-      if (((int)_DAT_040002a0 < 0x8000) && (-0x8001 < (int)_DAT_040002a0)) {
+      div_control_word = div_control_word & 0xffff0000;
+      DIV_NUMERATOR32 = iVar5;
+      DIV_DENOMINATOR32 = iVar4;
+      if (((int)DIV_RESULT32 < 0x8000) && (-0x8001 < (int)DIV_RESULT32)) {
         uVar9 = unaff_r7 & 0xfffffff0;
-        if (_DAT_040002a0 == 0) {
+        if (DIV_RESULT32 == 0) {
           uVar9 = uVar9 | 4;
         }
-        if ((int)(_DAT_040002a0 << 0x10) < 0) {
+        if ((int)(DIV_RESULT32 << 0x10) < 0) {
           uVar9 = uVar9 | 8;
         }
-        *(uint *)(unaff_r6 + (uVar7 >> 7)) = _DAT_040002a0 & 0xffff | _DAT_040002a8 << 0x10;
+        *(uint *)(unaff_r6 + (uVar7 >> 7)) = DIV_RESULT32 & 0xffff | DIV_REMAINDER32 << 0x10;
         unaff_r7 = uVar9 - 0x9e0000;
         if (unaff_r7 != 0 && 0x9dffff < (int)uVar9) {
                     /* WARNING: Could not recover jumptable at 0x02025bd0. Too many branches */
@@ -2238,18 +2238,18 @@ int m68k_divs_word_02025c1c(void)
       }
     }
     else {
-      _DAT_04000280 = _DAT_04000280 & 0xffff0000;
-      _DAT_04000290 = iVar5;
-      _DAT_04000298 = iVar4;
-      if (((int)_DAT_040002a0 < 0x8000) && (-0x8001 < (int)_DAT_040002a0)) {
+      div_control_word = div_control_word & 0xffff0000;
+      DIV_NUMERATOR32 = iVar5;
+      DIV_DENOMINATOR32 = iVar4;
+      if (((int)DIV_RESULT32 < 0x8000) && (-0x8001 < (int)DIV_RESULT32)) {
         uVar8 = unaff_r7 & 0xfffffff0;
-        if (_DAT_040002a0 == 0) {
+        if (DIV_RESULT32 == 0) {
           uVar8 = uVar8 | 4;
         }
-        if ((int)(_DAT_040002a0 << 0x10) < 0) {
+        if ((int)(DIV_RESULT32 << 0x10) < 0) {
           uVar8 = uVar8 | 8;
         }
-        *(uint *)(unaff_r6 + (uVar6 >> 7)) = _DAT_040002a0 & 0xffff | _DAT_040002a8 << 0x10;
+        *(uint *)(unaff_r6 + (uVar6 >> 7)) = DIV_RESULT32 & 0xffff | DIV_REMAINDER32 << 0x10;
         unaff_r7 = uVar8 - 0x9e0000;
         if (unaff_r7 != 0 && 0x9dffff < (int)uVar8) {
                     /* WARNING: Could not recover jumptable at 0x02025cc8. Too many branches */
@@ -2369,18 +2369,18 @@ int m68k_divs_word_02025d14(void)
       }
     }
     else {
-      _DAT_04000280 = _DAT_04000280 & 0xffff0000;
-      _DAT_04000290 = iVar5;
-      _DAT_04000298 = iVar4;
-      if (((int)_DAT_040002a0 < 0x8000) && (-0x8001 < (int)_DAT_040002a0)) {
+      div_control_word = div_control_word & 0xffff0000;
+      DIV_NUMERATOR32 = iVar5;
+      DIV_DENOMINATOR32 = iVar4;
+      if (((int)DIV_RESULT32 < 0x8000) && (-0x8001 < (int)DIV_RESULT32)) {
         uVar8 = unaff_r7 & 0xfffffff0;
-        if (_DAT_040002a0 == 0) {
+        if (DIV_RESULT32 == 0) {
           uVar8 = uVar8 | 4;
         }
-        if ((int)(_DAT_040002a0 << 0x10) < 0) {
+        if ((int)(DIV_RESULT32 << 0x10) < 0) {
           uVar8 = uVar8 | 8;
         }
-        *(uint *)(unaff_r6 + (uVar6 >> 7)) = _DAT_040002a0 & 0xffff | _DAT_040002a8 << 0x10;
+        *(uint *)(unaff_r6 + (uVar6 >> 7)) = DIV_RESULT32 & 0xffff | DIV_REMAINDER32 << 0x10;
         unaff_r7 = uVar8 - 0x9e0000;
         if (unaff_r7 != 0 && 0x9dffff < (int)uVar8) {
                     /* WARNING: Could not recover jumptable at 0x02025de4. Too many branches */
@@ -2488,18 +2488,18 @@ int m68k_divs_word_02025e30(void)
       }
     }
     else {
-      _DAT_04000280 = _DAT_04000280 & 0xffff0000;
-      _DAT_04000290 = iVar5;
-      _DAT_04000298 = iVar4;
-      if (((int)_DAT_040002a0 < 0x8000) && (-0x8001 < (int)_DAT_040002a0)) {
+      div_control_word = div_control_word & 0xffff0000;
+      DIV_NUMERATOR32 = iVar5;
+      DIV_DENOMINATOR32 = iVar4;
+      if (((int)DIV_RESULT32 < 0x8000) && (-0x8001 < (int)DIV_RESULT32)) {
         uVar8 = unaff_r7 & 0xfffffff0;
-        if (_DAT_040002a0 == 0) {
+        if (DIV_RESULT32 == 0) {
           uVar8 = uVar8 | 4;
         }
-        if ((int)(_DAT_040002a0 << 0x10) < 0) {
+        if ((int)(DIV_RESULT32 << 0x10) < 0) {
           uVar8 = uVar8 | 8;
         }
-        *(uint *)(unaff_r6 + (uVar6 >> 7)) = _DAT_040002a0 & 0xffff | _DAT_040002a8 << 0x10;
+        *(uint *)(unaff_r6 + (uVar6 >> 7)) = DIV_RESULT32 & 0xffff | DIV_REMAINDER32 << 0x10;
         unaff_r7 = uVar8 - 0x9e0000;
         if (unaff_r7 != 0 && 0x9dffff < (int)uVar8) {
                     /* WARNING: Could not recover jumptable at 0x02025ecc. Too many branches */
@@ -2607,18 +2607,18 @@ int m68k_divs_word_02025f18(void)
       }
     }
     else {
-      _DAT_04000280 = _DAT_04000280 & 0xffff0000;
-      _DAT_04000290 = iVar5;
-      _DAT_04000298 = iVar4;
-      if (((int)_DAT_040002a0 < 0x8000) && (-0x8001 < (int)_DAT_040002a0)) {
+      div_control_word = div_control_word & 0xffff0000;
+      DIV_NUMERATOR32 = iVar5;
+      DIV_DENOMINATOR32 = iVar4;
+      if (((int)DIV_RESULT32 < 0x8000) && (-0x8001 < (int)DIV_RESULT32)) {
         uVar8 = unaff_r7 & 0xfffffff0;
-        if (_DAT_040002a0 == 0) {
+        if (DIV_RESULT32 == 0) {
           uVar8 = uVar8 | 4;
         }
-        if ((int)(_DAT_040002a0 << 0x10) < 0) {
+        if ((int)(DIV_RESULT32 << 0x10) < 0) {
           uVar8 = uVar8 | 8;
         }
-        *(uint *)(unaff_r6 + (uVar6 >> 7)) = _DAT_040002a0 & 0xffff | _DAT_040002a8 << 0x10;
+        *(uint *)(unaff_r6 + (uVar6 >> 7)) = DIV_RESULT32 & 0xffff | DIV_REMAINDER32 << 0x10;
         unaff_r7 = uVar8 - 0x9e0000;
         if (unaff_r7 != 0 && 0x9dffff < (int)uVar8) {
                     /* WARNING: Could not recover jumptable at 0x02025fbc. Too many branches */
@@ -2727,18 +2727,18 @@ int m68k_divs_word_02026008(void)
       }
     }
     else {
-      _DAT_04000280 = _DAT_04000280 & 0xffff0000;
-      _DAT_04000290 = iVar5;
-      _DAT_04000298 = iVar4;
-      if (((int)_DAT_040002a0 < 0x8000) && (-0x8001 < (int)_DAT_040002a0)) {
+      div_control_word = div_control_word & 0xffff0000;
+      DIV_NUMERATOR32 = iVar5;
+      DIV_DENOMINATOR32 = iVar4;
+      if (((int)DIV_RESULT32 < 0x8000) && (-0x8001 < (int)DIV_RESULT32)) {
         uVar8 = unaff_r7 & 0xfffffff0;
-        if (_DAT_040002a0 == 0) {
+        if (DIV_RESULT32 == 0) {
           uVar8 = uVar8 | 4;
         }
-        if ((int)(_DAT_040002a0 << 0x10) < 0) {
+        if ((int)(DIV_RESULT32 << 0x10) < 0) {
           uVar8 = uVar8 | 8;
         }
-        *(uint *)(unaff_r6 + (uVar6 >> 7)) = _DAT_040002a0 & 0xffff | _DAT_040002a8 << 0x10;
+        *(uint *)(unaff_r6 + (uVar6 >> 7)) = DIV_RESULT32 & 0xffff | DIV_REMAINDER32 << 0x10;
         unaff_r7 = uVar8 - 0x9e0000;
         if (unaff_r7 != 0 && 0x9dffff < (int)uVar8) {
                     /* WARNING: Could not recover jumptable at 0x020260b8. Too many branches */
@@ -2859,18 +2859,18 @@ int m68k_divs_word_02026104(void)
       }
     }
     else {
-      _DAT_04000280 = _DAT_04000280 & 0xffff0000;
-      _DAT_04000290 = iVar5;
-      _DAT_04000298 = iVar4;
-      if (((int)_DAT_040002a0 < 0x8000) && (-0x8001 < (int)_DAT_040002a0)) {
+      div_control_word = div_control_word & 0xffff0000;
+      DIV_NUMERATOR32 = iVar5;
+      DIV_DENOMINATOR32 = iVar4;
+      if (((int)DIV_RESULT32 < 0x8000) && (-0x8001 < (int)DIV_RESULT32)) {
         uVar8 = unaff_r7 & 0xfffffff0;
-        if (_DAT_040002a0 == 0) {
+        if (DIV_RESULT32 == 0) {
           uVar8 = uVar8 | 4;
         }
-        if ((int)(_DAT_040002a0 << 0x10) < 0) {
+        if ((int)(DIV_RESULT32 << 0x10) < 0) {
           uVar8 = uVar8 | 8;
         }
-        *(uint *)(unaff_r6 + (uVar6 >> 7)) = _DAT_040002a0 & 0xffff | _DAT_040002a8 << 0x10;
+        *(uint *)(unaff_r6 + (uVar6 >> 7)) = DIV_RESULT32 & 0xffff | DIV_REMAINDER32 << 0x10;
         unaff_r7 = uVar8 - 0x9e0000;
         if (unaff_r7 != 0 && 0x9dffff < (int)uVar8) {
                     /* WARNING: Could not recover jumptable at 0x020261dc. Too many branches */
@@ -2976,18 +2976,18 @@ int m68k_divs_word_02026228(void)
       }
     }
     else {
-      _DAT_04000280 = _DAT_04000280 & 0xffff0000;
-      _DAT_04000290 = iVar4;
-      _DAT_04000298 = iVar3;
-      if (((int)_DAT_040002a0 < 0x8000) && (-0x8001 < (int)_DAT_040002a0)) {
+      div_control_word = div_control_word & 0xffff0000;
+      DIV_NUMERATOR32 = iVar4;
+      DIV_DENOMINATOR32 = iVar3;
+      if (((int)DIV_RESULT32 < 0x8000) && (-0x8001 < (int)DIV_RESULT32)) {
         uVar7 = unaff_r7 & 0xfffffff0;
-        if (_DAT_040002a0 == 0) {
+        if (DIV_RESULT32 == 0) {
           uVar7 = uVar7 | 4;
         }
-        if ((int)(_DAT_040002a0 << 0x10) < 0) {
+        if ((int)(DIV_RESULT32 << 0x10) < 0) {
           uVar7 = uVar7 | 8;
         }
-        *(uint *)(unaff_r6 + (uVar5 >> 7)) = _DAT_040002a0 & 0xffff | _DAT_040002a8 << 0x10;
+        *(uint *)(unaff_r6 + (uVar5 >> 7)) = DIV_RESULT32 & 0xffff | DIV_REMAINDER32 << 0x10;
         unaff_r7 = uVar7 - 0x9e0000;
         if (unaff_r7 != 0 && 0x9dffff < (int)uVar7) {
                     /* WARNING: Could not recover jumptable at 0x020262b8. Too many branches */

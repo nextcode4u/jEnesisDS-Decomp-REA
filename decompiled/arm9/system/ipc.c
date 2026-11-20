@@ -30,7 +30,7 @@ void queue_ym2612_register_or_dac_write(uint port_address,uint write_value)
   iVar1 = ym2612_bank_0_register;
   uVar6 = ym2612_bank_1_queue_bytes;
   do {
-  } while ((ds_ipc_sync & 0xf) == 0);
+  } while ((REG_IPC_SYNC & 0xf) == 0);
   write_byte = (undefined1)write_value;
   switch(port_address & 3) {
   case 0:
@@ -179,26 +179,26 @@ bool submit_arm7_dac_sample_buffer(void)
   bool bVar2;
   
   do {
-  } while ((ds_ipc_sync & 0xf) == 0);
+  } while ((REG_IPC_SYNC & 0xf) == 0);
   if (DAT_0209904c == 0) {
-    *(undefined4 *)(shared_audio_descriptor + 4) = 0;
+    *(undefined4 *)(IPC->soundData + 4) = 0;
   }
   else {
-    *(undefined4 *)(shared_audio_descriptor + 4) = dac_queue_bytes;
+    *(undefined4 *)(IPC->soundData + 4) = dac_queue_bytes;
   }
   DAT_0209904c = 0;
   dac_queue_bytes = 0;
-  DC_FlushRange(shared_audio_descriptor,0x104);
-  bVar2 = (ds_ipc_fifo_control & 2) != 0;
-  uVar1 = ds_ipc_fifo_control;
+  DC_FlushRange(IPC->soundData,0x104);
+  bVar2 = (REG_IPC_FIFO_CR & 2) != 0;
+  uVar1 = REG_IPC_FIFO_CR;
   if (bVar2) {
     uVar1 = 0x8408;
   }
   if (!bVar2) {
-    ds_ipc_fifo_send = 0x10000000;
-    uVar1 = ds_ipc_fifo_control;
+    REG_IPC_FIFO_TX = 0x10000000;
+    uVar1 = REG_IPC_FIFO_CR;
   }
-  ds_ipc_fifo_control = uVar1;
+  REG_IPC_FIFO_CR = uVar1;
   return !bVar2;
 }
 
@@ -213,11 +213,11 @@ void submit_fm_and_psg_write_buffers_to_arm7(void)
   int iVar1;
   int iVar2;
   
-  iVar1 = shared_audio_descriptor;
+  iVar1 = IPC->soundData;
   do {
-  } while ((ds_ipc_sync & 0xf) == 0);
-  *(undefined4 *)(shared_audio_descriptor + 0x14) = ym2612_bank_0_queue_bytes;
-  iVar2 = shared_audio_descriptor;
+  } while ((REG_IPC_SYNC & 0xf) == 0);
+  *(undefined4 *)(IPC->soundData + 0x14) = ym2612_bank_0_queue_bytes;
+  iVar2 = IPC->soundData;
   *(undefined4 *)(iVar1 + 0x24) = ym2612_bank_1_queue_bytes;
   *(undefined4 *)(iVar1 + 0x34) = psg_queue_bytes;
   ym2612_bank_0_queue_bytes = 0;
@@ -240,16 +240,16 @@ bool request_arm7_audio_stop(void)
   ushort uVar1;
   bool bVar2;
   
-  bVar2 = (ds_ipc_fifo_control & 2) != 0;
-  uVar1 = ds_ipc_fifo_control;
+  bVar2 = (REG_IPC_FIFO_CR & 2) != 0;
+  uVar1 = REG_IPC_FIFO_CR;
   if (bVar2) {
     uVar1 = 0x8408;
   }
   if (!bVar2) {
-    ds_ipc_fifo_send = 0x6000000;
-    uVar1 = ds_ipc_fifo_control;
+    REG_IPC_FIFO_TX = 0x6000000;
+    uVar1 = REG_IPC_FIFO_CR;
   }
-  ds_ipc_fifo_control = uVar1;
+  REG_IPC_FIFO_CR = uVar1;
   return !bVar2;
 }
 
@@ -314,17 +314,17 @@ bool set_arm7_audio_muted(int param_1)
   if (param_1 == 0) {
     iVar2 = 0xf;
   }
-  bVar3 = (ds_ipc_fifo_control & 2) != 0;
-  uVar1 = ds_ipc_fifo_control;
+  bVar3 = (REG_IPC_FIFO_CR & 2) != 0;
+  uVar1 = REG_IPC_FIFO_CR;
   if (bVar3) {
     uVar1 = 0x8408;
   }
   iVar2 = iVar2 << 0x18;
   if (bVar3) {
-    ds_ipc_fifo_control = uVar1;
-    iVar2 = ds_ipc_fifo_send;
+    REG_IPC_FIFO_CR = uVar1;
+    iVar2 = REG_IPC_FIFO_TX;
   }
-  ds_ipc_fifo_send = iVar2;
+  REG_IPC_FIFO_TX = iVar2;
   return !bVar3;
 }
 
@@ -357,16 +357,16 @@ uint clear_audio_queues_and_reset_or_stop_arm7_audio(int param_1)
   DAT_023db790 = 0;
   DAT_023db788 = 0;
   if (param_1 == 0) {
-    bVar3 = (ds_ipc_fifo_control & 2) != 0;
-    uVar1 = ds_ipc_fifo_control;
+    bVar3 = (REG_IPC_FIFO_CR & 2) != 0;
+    uVar1 = REG_IPC_FIFO_CR;
     if (bVar3) {
       uVar1 = 0x8408;
     }
     if (!bVar3) {
-      ds_ipc_fifo_send = 0x6000000;
-      uVar1 = ds_ipc_fifo_control;
+      REG_IPC_FIFO_TX = 0x6000000;
+      uVar1 = REG_IPC_FIFO_CR;
     }
-    ds_ipc_fifo_control = uVar1;
+    REG_IPC_FIFO_CR = uVar1;
     return (uint)!bVar3;
   }
   uVar2 = send_arm9_fifo_command_and_payload(1,0);
@@ -386,16 +386,16 @@ bool request_arm7_audio_start(void)
   ushort uVar1;
   bool bVar2;
   
-  bVar2 = (ds_ipc_fifo_control & 2) != 0;
-  uVar1 = ds_ipc_fifo_control;
+  bVar2 = (REG_IPC_FIFO_CR & 2) != 0;
+  uVar1 = REG_IPC_FIFO_CR;
   if (bVar2) {
     uVar1 = 0x8408;
   }
   if (!bVar2) {
-    ds_ipc_fifo_send = &DAT_05000000;
-    uVar1 = ds_ipc_fifo_control;
+    REG_IPC_FIFO_TX = &DAT_05000000;
+    uVar1 = REG_IPC_FIFO_CR;
   }
-  ds_ipc_fifo_control = uVar1;
+  REG_IPC_FIFO_CR = uVar1;
   return !bVar2;
 }
 
@@ -432,16 +432,16 @@ bool restart_arm7_audio_and_replay_fm_registers(void)
   irqEnable(1);
   swiWaitForVBlank();
   swiWaitForVBlank();
-  bVar4 = (ds_ipc_fifo_control & 2) != 0;
-  uVar2 = ds_ipc_fifo_control;
+  bVar4 = (REG_IPC_FIFO_CR & 2) != 0;
+  uVar2 = REG_IPC_FIFO_CR;
   if (bVar4) {
     uVar2 = 0x8408;
   }
   if (!bVar4) {
-    ds_ipc_fifo_send = &DAT_05000000;
-    uVar2 = ds_ipc_fifo_control;
+    REG_IPC_FIFO_TX = &DAT_05000000;
+    uVar2 = REG_IPC_FIFO_CR;
   }
-  ds_ipc_fifo_control = uVar2;
+  REG_IPC_FIFO_CR = uVar2;
   return !bVar4;
 }
 
@@ -454,15 +454,15 @@ void dispatch_arm9_fifo_receive_interrupt(void)
 
 {
   do {
-    if ((ds_ipc_fifo_control & 0x100) != 0) {
+    if ((REG_IPC_FIFO_CR & 0x100) != 0) {
       return;
     }
     while( true ) {
-      ipc_received_payload = ds_ipc_fifo_receive & 0xffffff;
-      ipc_received_command = ds_ipc_fifo_receive >> 0x18;
+      ipc_received_payload = REG_IPC_FIFO_RX & 0xffffff;
+      ipc_received_command = REG_IPC_FIFO_RX >> 0x18;
       if (ipc_receive_callback == (code *)0x0) break;
       (*ipc_receive_callback)(ipc_received_command,&ipc_received_payload);
-      if ((ds_ipc_fifo_control & 0x100) != 0) {
+      if ((REG_IPC_FIFO_CR & 0x100) != 0) {
         return;
       }
     }
@@ -491,17 +491,17 @@ bool send_arm9_fifo_command_and_payload(int command_id,uint payload)
   uint fifo_word;
   bool send_fifo_full;
   
-  send_fifo_full = (ds_ipc_fifo_control & 2) != 0;
-  uVar1 = ds_ipc_fifo_control;
+  send_fifo_full = (REG_IPC_FIFO_CR & 2) != 0;
+  uVar1 = REG_IPC_FIFO_CR;
   if (send_fifo_full) {
     uVar1 = 0x8408;
   }
   fifo_word = payload & 0xffffff | command_id << 0x18;
   if (send_fifo_full) {
-    ds_ipc_fifo_control = uVar1;
-    fifo_word = ds_ipc_fifo_send;
+    REG_IPC_FIFO_CR = uVar1;
+    fifo_word = REG_IPC_FIFO_TX;
   }
-  ds_ipc_fifo_send = fifo_word;
+  REG_IPC_FIFO_TX = fifo_word;
   return !send_fifo_full;
 }
 
@@ -515,7 +515,7 @@ void initialize_arm9_fifo_receive_interrupt(void)
 {
   irqSet(0x40000,dispatch_arm9_fifo_receive_interrupt);
   irqEnable(0x40000);
-  ds_ipc_fifo_control = 0x8408;
+  REG_IPC_FIFO_CR = 0x8408;
   return;
 }
 

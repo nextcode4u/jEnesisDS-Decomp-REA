@@ -149,11 +149,11 @@ undefined4 write_ym2612_channel_or_operator_register(uint register_with_bank,uin
       if (uVar11 == 1) {
         iVar6 = (int)(register_value & 0xc0) >> 6;
         DAT_038072f4 = DAT_038072f4 & ~(3 << uVar8 * 2) | iVar6 << uVar8 * 2;
-        if (*(int *)(&DAT_04000400 + uVar8 * 0x10) < 0) {
+        if (*(int *)(&sound_channel_register_base + uVar8 * 0x10) < 0) {
           uVar4 = *(uint *)(&DAT_03806b18 + iVar6 * 4) | 0xa8000000 |
                   *(int *)(&DAT_03806b08 + iVar6 * 4) << 0x10;
-          *(uint *)(&DAT_04000400 + uVar8 * 0x10) = uVar4;
-          *(uint *)(&DAT_04000400 + (uVar8 + 6) * 0x10) = uVar4;
+          *(uint *)(&sound_channel_register_base + uVar8 * 0x10) = uVar4;
+          *(uint *)(&sound_channel_register_base + (uVar8 + 6) * 0x10) = uVar4;
           return 1;
         }
         goto LAB_037f90d8;

@@ -78,7 +78,7 @@ void cardWriteCommand(int command)
     command_byte = (undefined1 *)(command + index);
     offset_from_last_byte = -index;
     index = index + 1;
-    (&card_command_last_byte)[offset_from_last_byte] = *command_byte;
+    (&CARD_COMMAND[7])[offset_from_last_byte] = *command_byte;
   } while (index != 8);
   return;
 }
@@ -117,9 +117,9 @@ void cardStartTransfer(undefined4 command,undefined4 destination,int channel_off
 {
   cardWriteCommand();
   channel_offset = channel_offset * 0xc;
-  *(undefined1 **)(channel_offset + 0x40000b0) = &CARD_DATA_RD;
-  *(undefined4 *)(channel_offset + 0x40000b4) = destination;
-  *(undefined4 *)(channel_offset + 0x40000b8) = 0xaf000001;
+  DMA_SRC(channel_offset / 12) = &CARD_DATA_RD;
+  DMA_DEST(channel_offset / 12) = destination;
+  DMA_CR(channel_offset / 12) = 0xaf000001;
   CARD_CR2 = flags;
   return;
 }

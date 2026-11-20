@@ -10,22 +10,22 @@ void _Neo_SendMMCCommand(void)
 
 {
   do {
-  } while ((_DAT_040001a0 & 0x80) != 0);
+  } while ((CARD_CR1 & 0x80) != 0);
   do {
-  } while ((_DAT_040001a0 & 0x80) != 0);
+  } while ((CARD_CR1 & 0x80) != 0);
   do {
-  } while ((_DAT_040001a0 & 0x80) != 0);
+  } while ((CARD_CR1 & 0x80) != 0);
   do {
-  } while ((_DAT_040001a0 & 0x80) != 0);
+  } while ((CARD_CR1 & 0x80) != 0);
   do {
-  } while ((_DAT_040001a0 & 0x80) != 0);
+  } while ((CARD_CR1 & 0x80) != 0);
   do {
-  } while ((_DAT_040001a0 & 0x80) != 0);
+  } while ((CARD_CR1 & 0x80) != 0);
   do {
-  } while ((_DAT_040001a0 & 0x80) != 0);
-  DAT_040001a2 = 0xff;
+  } while ((CARD_CR1 & 0x80) != 0);
+  CARD_EEPDATA = 0xff;
   do {
-  } while ((_DAT_040001a0 & 0x80) != 0);
+  } while ((CARD_CR1 & 0x80) != 0);
   return;
 }
 
@@ -41,16 +41,16 @@ undefined4 _Neo_CheckMMCResponse(uint param_1,uint param_2)
   
   iVar1 = 0;
   while( true ) {
-    DAT_040001a2 = 0xff;
+    CARD_EEPDATA = 0xff;
     do {
-    } while ((_DAT_040001a0 & 0x80) != 0);
+    } while ((CARD_CR1 & 0x80) != 0);
     if ((param_2 & 0xff) == param_1) break;
     iVar1 = iVar1 + 1;
     if (iVar1 == 0x100) {
       return 0;
     }
   }
-  DAT_040001a2 = 0xff;
+  CARD_EEPDATA = 0xff;
   return 1;
 }
 
@@ -78,14 +78,14 @@ void _Neo_EnableMMC(int param_1)
 
 {
   if (param_1 == 0) {
-    _DAT_040001a0 = 0;
+    CARD_CR1 = 0;
     _Neo_SelectMMC();
     _Neo_SelectMMC(0);
   }
   else {
     _Neo_SelectMMC(1);
     _Neo_SelectMMC(1);
-    _DAT_040001a0 = (byte)DAT_0208f384 | 0xa040;
+    CARD_CR1 = (byte)DAT_0208f384 | 0xa040;
   }
   return;
 }
@@ -104,9 +104,9 @@ undefined4 _NMMC_clearStatus(void)
   _Neo_EnableMMC(1);
   iVar1 = 0;
   do {
-    DAT_040001a2 = 0xff;
+    CARD_EEPDATA = 0xff;
     do {
-    } while ((_DAT_040001a0 & 0x80) != 0);
+    } while ((CARD_CR1 & 0x80) != 0);
     iVar1 = iVar1 + 1;
   } while (iVar1 != 10);
   _Neo_SendMMCCommand(0,0,0x80,0xff);
@@ -158,9 +158,9 @@ undefined4 _NMMC_isInserted(void)
   else {
     iVar1 = 0;
     do {
-      DAT_040001a2 = 0xff;
+      CARD_EEPDATA = 0xff;
       do {
-      } while ((_DAT_040001a0 & 0x80) != 0);
+      } while ((CARD_CR1 & 0x80) != 0);
       iVar1 = iVar1 + 1;
     } while (iVar1 != 0x1c);
     uVar2 = 1;
@@ -197,17 +197,17 @@ LAB_02074400:
       puVar2 = param_3;
       do {
         do {
-        } while ((_DAT_040001a0 & 0x80) != 0);
+        } while ((CARD_CR1 & 0x80) != 0);
         iVar1 = iVar1 + 1;
         *puVar2 = 0xff;
         puVar2 = puVar2 + 1;
       } while (iVar1 != 0x200);
       param_3 = param_3 + 0x200;
       do {
-      } while ((_DAT_040001a0 & 0x80) != 0);
-      DAT_040001a2 = 0xff;
+      } while ((CARD_CR1 & 0x80) != 0);
+      CARD_EEPDATA = 0xff;
       do {
-      } while ((_DAT_040001a0 & 0x80) != 0);
+      } while ((CARD_CR1 & 0x80) != 0);
       if (param_2 == 0) goto LAB_02074400;
       param_1 = param_1 + 0x200;
     }
@@ -237,46 +237,46 @@ undefined4 _NMMC_writeSectors(int param_1,int param_2)
   if (iVar1 != 0) {
     if (param_2 == 0) {
       do {
-      } while ((_DAT_040001a0 & 0x80) != 0);
+      } while ((CARD_CR1 & 0x80) != 0);
       iVar1 = 0;
       do {
         do {
-        } while ((_DAT_040001a0 & 0x80) != 0);
+        } while ((CARD_CR1 & 0x80) != 0);
         iVar1 = iVar1 + 1;
       } while (iVar1 != 0x200);
       do {
-      } while ((_DAT_040001a0 & 0x80) != 0);
+      } while ((CARD_CR1 & 0x80) != 0);
       do {
-      } while ((_DAT_040001a0 & 0x80) != 0);
+      } while ((CARD_CR1 & 0x80) != 0);
       do {
-      } while ((_DAT_040001a0 & 0x80) != 0);
+      } while ((CARD_CR1 & 0x80) != 0);
       do {
-      } while ((_DAT_040001a0 & 0x80) != 0);
+      } while ((CARD_CR1 & 0x80) != 0);
       iVar1 = 0;
       do {
-        DAT_040001a2 = 0xff;
+        CARD_EEPDATA = 0xff;
         do {
-        } while ((_DAT_040001a0 & 0x80) != 0);
+        } while ((CARD_CR1 & 0x80) != 0);
         iVar1 = iVar1 + 1;
       } while (iVar1 != 0x10);
-      _Neo_EnableMMC(0,&DAT_040001a0,0x80,0xff);
+      _Neo_EnableMMC(0,&card_control_port,0x80,0xff);
       return 1;
     }
     do {
-    } while ((_DAT_040001a0 & 0x80) != 0);
+    } while ((CARD_CR1 & 0x80) != 0);
     iVar1 = 0;
     do {
       do {
-      } while ((_DAT_040001a0 & 0x80) != 0);
+      } while ((CARD_CR1 & 0x80) != 0);
       iVar1 = iVar1 + 1;
     } while (iVar1 != 0x200);
     do {
-    } while ((_DAT_040001a0 & 0x80) != 0);
+    } while ((CARD_CR1 & 0x80) != 0);
     do {
-    } while ((_DAT_040001a0 & 0x80) != 0);
-    DAT_040001a2 = 0xff;
+    } while ((CARD_CR1 & 0x80) != 0);
+    CARD_EEPDATA = 0xff;
     do {
-    } while ((_DAT_040001a0 & 0x80) != 0);
+    } while ((CARD_CR1 & 0x80) != 0);
   }
   _Neo_EnableMMC(0);
   return 0;
@@ -312,9 +312,9 @@ undefined4 _NMMC_startUp(void)
   } while ((DAT_0208f384 & 0x80) != 0);
   do {
   } while ((DAT_0208f384 & 0x80) != 0);
-  DAT_040001a2 = 0xe;
+  CARD_EEPDATA = 0xe;
   do {
-    _DAT_040001a0 = (byte)DAT_0208f384 & 0x80;
+    CARD_CR1 = (byte)DAT_0208f384 & 0x80;
   } while ((DAT_0208f384 & 0x80) != 0);
   if ((((byte)DAT_0208f384 & 0x80) == 0x31) && (iVar1 = _NMMC_clearStatus(), iVar1 != 0)) {
     _Neo_EnableMMC(1);
@@ -327,17 +327,17 @@ undefined4 _NMMC_startUp(void)
         iVar1 = 0;
         do {
           do {
-          } while ((_DAT_040001a0 & 0x80) != 0);
+          } while ((CARD_CR1 & 0x80) != 0);
           iVar1 = iVar1 + 1;
         } while (iVar1 != 3);
         do {
-        } while ((_DAT_040001a0 & 0x80) != 0);
+        } while ((CARD_CR1 & 0x80) != 0);
         iVar1 = 0;
         do {
-          DAT_040001a2 = 0xff;
+          CARD_EEPDATA = 0xff;
           do {
-            DAT_0208f384 = _DAT_040001a0 & 0x80;
-          } while ((_DAT_040001a0 & 0x80) != 0);
+            DAT_0208f384 = CARD_CR1 & 0x80;
+          } while ((CARD_CR1 & 0x80) != 0);
           iVar1 = iVar1 + 1;
         } while (iVar1 != 0x18);
         _Neo_EnableMMC(0);

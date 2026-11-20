@@ -10,11 +10,11 @@ void run_arm7_audio_service(void)
 
 {
   rtcReset();
-  _DAT_04000304 = _DAT_04000304 | 1;
-  _DAT_04000500 = 0x807f;
-  shared_audio_descriptor = 0;
+  REG_POWERCNT = REG_POWERCNT | 1;
+  SOUND_CR = 0x807f;
+  IPC->soundData = 0;
   irqInit();
-  _DAT_04000004 = _DAT_04000004 & 0x7f | 0x5000;
+  REG_DISPSTAT = REG_DISPSTAT & 0x7f | 0x5000;
   irqSet(4,&LAB_037f831c);
   irqEnable(4);
   initialize_audio_buffers_and_clocks();
@@ -22,7 +22,7 @@ void run_arm7_audio_service(void)
   reset_audio_buffers_and_chips(1);
   irqSet(1,0);
   irqEnable(1);
-  ds_ipc_sync = 0x100;
+  REG_IPC_SYNC = 0x100;
   while (audio_refills_enabled == 0) {
     if (audio_reset_requested != 0) {
       reset_audio_buffers_and_chips();
@@ -65,44 +65,44 @@ void configure_ds_audio_channels_and_timers(void)
   do {
     uVar1 = __divsi3(0xff000000,fm_psg_sample_rate_hz);
     fm_channel_pcm_base = *fm_buffer_pointer_cursor;
-    *(undefined2 *)(iVar4 * 0x10 + 0x4000408) = uVar1;
-    *(undefined4 *)(iVar4 * 0x10 + 0x4000404) = fm_channel_pcm_base;
-    *(int *)(iVar4 * 0x10 + 0x400040c) = fm_psg_ring_samples >> 1;
-    *(undefined4 *)(&DAT_04000400 + iVar4 * 0x10) = 0xa83f007f;
+    SCHANNEL_TIMER(iVar4) = uVar1;
+    SCHANNEL_SOURCE(iVar4) = fm_channel_pcm_base;
+    SCHANNEL_LENGTH(iVar4) = fm_psg_ring_samples >> 1;
+    SCHANNEL_CR(iVar4) = 0xa83f007f;
     uVar1 = __divsi3(0xff000000,fm_psg_sample_rate_hz);
     paired_ds_channel = iVar4 + 6;
-    *(undefined2 *)(paired_ds_channel * 0x10 + 0x4000408) = uVar1;
-    *(undefined4 *)(paired_ds_channel * 0x10 + 0x4000404) = fm_channel_pcm_base;
+    SCHANNEL_TIMER(paired_ds_channel) = uVar1;
+    SCHANNEL_SOURCE(paired_ds_channel) = fm_channel_pcm_base;
     iVar4 = iVar4 + 1;
-    *(int *)(paired_ds_channel * 0x10 + 0x400040c) = fm_psg_ring_samples >> 1;
-    *(undefined4 *)(&DAT_04000400 + paired_ds_channel * 0x10) = 0xa83f007f;
+    SCHANNEL_LENGTH(paired_ds_channel) = fm_psg_ring_samples >> 1;
+    SCHANNEL_CR(paired_ds_channel) = 0xa83f007f;
     fm_buffer_pointer_cursor = fm_buffer_pointer_cursor + 1;
   } while (iVar4 != 6);
   iVar4 = __divsi3(0xff000000,fm_psg_sample_rate_hz);
-  _DAT_040004c8 = (short)iVar4;
-  _DAT_040004c4 = psg_pcm_base;
-  _DAT_040004cc = fm_psg_ring_samples >> 1;
-  _DAT_040004c0 = 0xa800007f;
-  _DAT_040004d8 = (short)iVar4;
-  _DAT_040004d4 = psg_pcm_base;
-  _DAT_040004dc = fm_psg_ring_samples >> 1;
-  _DAT_040004d0 = 0xa87f007f;
-  _DAT_040004e8 = 0xfdf4;
-  _DAT_040004e4 = dac_pcm_base;
-  _DAT_040004ec = 0x800;
-  _DAT_040004e0 = 0xa800007f;
-  _DAT_040004f8 = 0xfdf4;
-  _DAT_040004f4 = dac_pcm_base;
-  _DAT_040004fc = 0x800;
-  _DAT_040004f0 = 0xa87f007f;
-  _DAT_04000100 = (short)((uint)(iVar4 << 0x11) >> 0x10);
-  _DAT_04000102 = 0x80;
-  ds_timer_1_count = 0;
-  _DAT_04000106 = 0x84;
-  _DAT_04000108 = 0xfbe8;
-  _DAT_0400010a = 0x80;
-  ds_timer_3_count = 0;
-  _DAT_0400010e = 0x84;
+  SCHANNEL_TIMER(12) = (short)iVar4;
+  SCHANNEL_SOURCE(12) = psg_pcm_base;
+  SCHANNEL_LENGTH(12) = fm_psg_ring_samples >> 1;
+  SCHANNEL_CR(12) = 0xa800007f;
+  SCHANNEL_TIMER(13) = (short)iVar4;
+  SCHANNEL_SOURCE(13) = psg_pcm_base;
+  SCHANNEL_LENGTH(13) = fm_psg_ring_samples >> 1;
+  SCHANNEL_CR(13) = 0xa87f007f;
+  SCHANNEL_TIMER(14) = 0xfdf4;
+  SCHANNEL_SOURCE(14) = dac_pcm_base;
+  SCHANNEL_LENGTH(14) = 0x800;
+  SCHANNEL_CR(14) = 0xa800007f;
+  SCHANNEL_TIMER(15) = 0xfdf4;
+  SCHANNEL_SOURCE(15) = dac_pcm_base;
+  SCHANNEL_LENGTH(15) = 0x800;
+  SCHANNEL_CR(15) = 0xa87f007f;
+  TIMER0_DATA = (short)((uint)(iVar4 << 0x11) >> 0x10);
+  TIMER0_CR = 0x80;
+  TIMER1_DATA = 0;
+  TIMER1_CR = 0x84;
+  TIMER2_DATA = 0xfbe8;
+  TIMER2_CR = 0x80;
+  TIMER3_DATA = 0;
+  TIMER3_CR = 0x84;
   return;
 }
 
@@ -119,22 +119,22 @@ void update_audio_from_hardware_timers(void)
   uint fm_psg_elapsed_samples;
   int pcm_byte_count;
   
-  fm_psg_elapsed_samples = ds_timer_1_count - fm_psg_previous_timer_count;
+  fm_psg_elapsed_samples = TIMER1_DATA - fm_psg_previous_timer_count;
   if ((int)fm_psg_elapsed_samples < 0) {
     fm_psg_elapsed_samples = fm_psg_elapsed_samples + 0x10000;
   }
   if (fm_psg_refill_limit <= fm_psg_elapsed_samples) {
     fm_psg_elapsed_samples = fm_psg_refill_limit;
   }
-  dac_or_fm_psg_sample_count = ds_timer_3_count - dac_previous_timer_count;
+  dac_or_fm_psg_sample_count = TIMER3_DATA - dac_previous_timer_count;
   if ((int)dac_or_fm_psg_sample_count < 0) {
     dac_or_fm_psg_sample_count = dac_or_fm_psg_sample_count + 0x10000;
   }
   if (dac_refill_limit <= dac_or_fm_psg_sample_count) {
     dac_or_fm_psg_sample_count = dac_refill_limit;
   }
-  fm_psg_previous_timer_count = (uint)ds_timer_1_count;
-  dac_previous_timer_count = (uint)ds_timer_3_count;
+  fm_psg_previous_timer_count = (uint)TIMER1_DATA;
+  dac_previous_timer_count = (uint)TIMER3_DATA;
   service_dac_buffer(dac_or_fm_psg_sample_count);
   dac_or_fm_psg_sample_count = fm_psg_ring_samples;
   if ((int)fm_psg_elapsed_samples <= (int)fm_psg_ring_samples) {

@@ -460,7 +460,7 @@ undefined4 _FAT_disc_gbaSlotFindInterface(void)
   undefined4 *puVar4;
   
   piVar2 = &DAT_0208f364;
-  _DAT_04000204 = _DAT_04000204 & 0xff7f;
+  REG_EXMEMCNT = REG_EXMEMCNT & 0xff7f;
   iVar3 = 0;
   puVar4 = &DAT_0208f364;
   while ((-1 < *(int *)(*piVar2 + 4) << 0x1b || (iVar1 = (**(code **)(*piVar2 + 8))(), iVar1 == 0)))
@@ -489,7 +489,7 @@ undefined4 _FAT_disc_dsSlotFindInterface(void)
   undefined4 *puVar4;
   
   piVar2 = &DAT_0208f364;
-  _DAT_04000204 = _DAT_04000204 & 0xf7ff;
+  REG_EXMEMCNT = REG_EXMEMCNT & 0xf7ff;
   iVar3 = 0;
   puVar4 = &DAT_0208f364;
   while ((-1 < *(int *)(*piVar2 + 4) << 0x1a || (iVar1 = (**(code **)(*piVar2 + 8))(), iVar1 == 0)))
@@ -518,7 +518,7 @@ undefined4 _FAT_disc_findInterface(void)
   undefined4 *puVar4;
   
   piVar2 = &DAT_0208f364;
-  _DAT_04000204 = _DAT_04000204 & 0xf77f;
+  REG_EXMEMCNT = REG_EXMEMCNT & 0xf77f;
   iVar3 = 0;
   puVar4 = &DAT_0208f364;
   do {

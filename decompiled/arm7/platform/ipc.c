@@ -26,7 +26,7 @@ void handle_arm9_audio_command(undefined4 command_id,undefined4 *payload)
   undefined2 *source_or_pcm_cursor;
   undefined4 *puVar3;
   
-  puVar2 = shared_audio_descriptor;
+  puVar2 = IPC->soundData;
   switch(command_id) {
   case 0:
     source_or_pcm_cursor = (undefined2 *)&DAT_06000000;
@@ -83,41 +83,41 @@ void handle_arm9_audio_command(undefined4 command_id,undefined4 *payload)
     reset_ym2612_registers();
     break;
   case 5:
-    _DAT_04000500 = 0x807f;
+    SOUND_CR = 0x807f;
     configure_ds_audio_channels_and_timers();
     audio_refills_enabled = 1;
     break;
   case 6:
-    _DAT_04000500 = 0x8000;
+    SOUND_CR = 0x8000;
     audio_refills_enabled = 0;
-    _DAT_04000400 = 0;
-    _DAT_04000410 = 0;
-    _DAT_04000420 = 0;
-    _DAT_04000430 = 0;
-    _DAT_04000440 = 0;
-    _DAT_04000450 = 0;
-    _DAT_04000460 = 0;
-    _DAT_04000470 = 0;
-    _DAT_04000480 = 0;
-    _DAT_04000490 = 0;
-    _DAT_040004a0 = 0;
-    _DAT_040004b0 = 0;
-    _DAT_040004c0 = 0;
-    _DAT_040004d0 = 0;
-    _DAT_040004e0 = 0;
-    _DAT_040004f0 = 0;
-    _DAT_04000102 = 0;
-    _DAT_04000106 = 0;
-    _DAT_0400010a = 0;
-    _DAT_0400010e = 0;
+    SCHANNEL_CR(0) = 0;
+    SCHANNEL_CR(1) = 0;
+    SCHANNEL_CR(2) = 0;
+    SCHANNEL_CR(3) = 0;
+    SCHANNEL_CR(4) = 0;
+    SCHANNEL_CR(5) = 0;
+    SCHANNEL_CR(6) = 0;
+    SCHANNEL_CR(7) = 0;
+    SCHANNEL_CR(8) = 0;
+    SCHANNEL_CR(9) = 0;
+    SCHANNEL_CR(10) = 0;
+    SCHANNEL_CR(11) = 0;
+    SCHANNEL_CR(12) = 0;
+    SCHANNEL_CR(13) = 0;
+    SCHANNEL_CR(14) = 0;
+    SCHANNEL_CR(15) = 0;
+    TIMER0_CR = 0;
+    TIMER1_CR = 0;
+    TIMER2_CR = 0;
+    TIMER3_CR = 0;
     return;
   case 0xb:
-    bytes_or_halfwords_remaining = shared_audio_descriptor[5];
+    bytes_or_halfwords_remaining = IPC->soundData[5];
     if (bytes_or_halfwords_remaining != 0) {
       if (0 < bytes_or_halfwords_remaining) {
         bytes_or_halfwords_remaining = bytes_or_halfwords_remaining + 1 >> 1;
         destination_halfword_cursor = &chip_write_staging_buffer;
-        source_or_pcm_cursor = (undefined2 *)shared_audio_descriptor[4];
+        source_or_pcm_cursor = (undefined2 *)IPC->soundData[4];
         do {
           bytes_or_halfwords_remaining = bytes_or_halfwords_remaining + -1;
           *destination_halfword_cursor = *source_or_pcm_cursor;
@@ -127,12 +127,12 @@ void handle_arm9_audio_command(undefined4 command_id,undefined4 *payload)
       }
       apply_ym2612_bank0_writes(&chip_write_staging_buffer);
     }
-    bytes_or_halfwords_remaining = shared_audio_descriptor[9];
+    bytes_or_halfwords_remaining = IPC->soundData[9];
     if (bytes_or_halfwords_remaining != 0) {
       if (0 < bytes_or_halfwords_remaining) {
         bytes_or_halfwords_remaining = bytes_or_halfwords_remaining + 1 >> 1;
         destination_halfword_cursor = &chip_write_staging_buffer;
-        source_or_pcm_cursor = (undefined2 *)shared_audio_descriptor[8];
+        source_or_pcm_cursor = (undefined2 *)IPC->soundData[8];
         do {
           bytes_or_halfwords_remaining = bytes_or_halfwords_remaining + -1;
           *destination_halfword_cursor = *source_or_pcm_cursor;
@@ -142,12 +142,12 @@ void handle_arm9_audio_command(undefined4 command_id,undefined4 *payload)
       }
       apply_ym2612_bank1_writes(&chip_write_staging_buffer);
     }
-    bytes_or_halfwords_remaining = shared_audio_descriptor[0xd];
+    bytes_or_halfwords_remaining = IPC->soundData[0xd];
     if (bytes_or_halfwords_remaining != 0) {
       if (0 < bytes_or_halfwords_remaining) {
         bytes_or_halfwords_remaining = bytes_or_halfwords_remaining + 1 >> 1;
         destination_halfword_cursor = &chip_write_staging_buffer;
-        source_or_pcm_cursor = (undefined2 *)shared_audio_descriptor[0xc];
+        source_or_pcm_cursor = (undefined2 *)IPC->soundData[0xc];
         do {
           bytes_or_halfwords_remaining = bytes_or_halfwords_remaining + -1;
           *destination_halfword_cursor = *source_or_pcm_cursor;
@@ -163,17 +163,17 @@ void handle_arm9_audio_command(undefined4 command_id,undefined4 *payload)
     swiWaitForVBlank(command_id,*payload);
     break;
   case 0xe:
-    _DAT_04000500 = 0x8000;
+    SOUND_CR = 0x8000;
     break;
   case 0xf:
-    _DAT_04000500 = 0x807f;
+    SOUND_CR = 0x807f;
     break;
   case 0x10:
-    dac_staged_byte_count = shared_audio_descriptor[1];
+    dac_staged_byte_count = IPC->soundData[1];
     if ((dac_staged_byte_count != 0) && (0 < dac_staged_byte_count)) {
       bytes_or_halfwords_remaining = dac_staged_byte_count + 1 >> 1;
       destination_halfword_cursor = &dac_staged_bytes;
-      source_or_pcm_cursor = (undefined2 *)*shared_audio_descriptor;
+      source_or_pcm_cursor = (undefined2 *)*IPC->soundData;
       do {
         bytes_or_halfwords_remaining = bytes_or_halfwords_remaining + -1;
         *destination_halfword_cursor = *source_or_pcm_cursor;
@@ -194,19 +194,19 @@ void handle_arm9_audio_command(undefined4 command_id,undefined4 *payload)
 void dispatch_fifo_receive_interrupt(void)
 
 {
-  ds_ipc_sync = 0;
+  REG_IPC_SYNC = 0;
   do {
-    if ((ds_ipc_fifo_control & 0x100) != 0) {
-      ds_ipc_sync = 0x100;
+    if ((REG_IPC_FIFO_CR & 0x100) != 0) {
+      REG_IPC_SYNC = 0x100;
       return;
     }
     while( true ) {
-      ipc_received_payload = ds_ipc_fifo_receive & 0xffffff;
-      ipc_received_command = ds_ipc_fifo_receive >> 0x18;
+      ipc_received_payload = REG_IPC_FIFO_RX & 0xffffff;
+      ipc_received_command = REG_IPC_FIFO_RX >> 0x18;
       if (ipc_receive_callback == (code *)0x0) break;
       (*ipc_receive_callback)(ipc_received_command,&ipc_received_payload);
-      if ((ds_ipc_fifo_control & 0x100) != 0) {
-        ds_ipc_sync = 0x100;
+      if ((REG_IPC_FIFO_CR & 0x100) != 0) {
+        REG_IPC_SYNC = 0x100;
         return;
       }
     }
@@ -232,8 +232,8 @@ void send_fifo_command_and_payload(int command_id,uint payload)
 
 {
   do {
-  } while ((ds_ipc_fifo_control & 2) != 0);
-  ds_ipc_fifo_send = payload & 0xffffff | command_id << 0x18;
+  } while ((REG_IPC_FIFO_CR & 2) != 0);
+  REG_IPC_FIFO_TX = payload & 0xffffff | command_id << 0x18;
   return;
 }
 
@@ -245,11 +245,11 @@ void send_fifo_command_and_payload(int command_id,uint payload)
 void enable_fifo_receive_interrupt(void)
 
 {
-  ds_ipc_fifo_control = 0x8008;
+  REG_IPC_FIFO_CR = 0x8008;
   irqSet(0x40000,dispatch_fifo_receive_interrupt);
   irqEnable(0x40000);
-  ds_ipc_fifo_control = 0x8408;
-  ds_ipc_sync = 0;
+  REG_IPC_FIFO_CR = 0x8408;
+  REG_IPC_SYNC = 0;
   return;
 }
 

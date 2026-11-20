@@ -12,16 +12,16 @@ undefined4 irqInit(void)
   undefined4 *puVar1;
   undefined4 in_lr;
   
-  puVar1 = &DAT_0380be04;
+  puVar1 = &irq_table_first_handler;
   do {
-    *puVar1 = &DAT_03801561;
+    *puVar1 = &irqDummy;
     puVar1[1] = 0;
     puVar1 = puVar1 + 2;
   } while (puVar1 != (undefined4 *)0x380becc);
-  _DAT_0380fffc = &DAT_03801800;
-  _DAT_04000210 = 0;
-  _DAT_04000214 = 0xffffffff;
-  _DAT_04000208 = 1;
+  IRQ_HANDLER = &IntrMain;
+  REG_IE = 0;
+  REG_IF = 0xffffffff;
+  REG_IME = 1;
   return in_lr;
 }
 
@@ -38,19 +38,19 @@ undefined4 irqSet(uint param_1,undefined4 param_2)
   undefined4 in_lr;
   
   if (param_1 != 0) {
-    puVar2 = &DAT_0380be08;
+    puVar2 = &irq_table_first_mask;
     iVar1 = 0;
     do {
       if ((*puVar2 == 0) || (param_1 == *puVar2)) {
-        (&DAT_0380be04)[iVar1 * 2] = param_2;
-        (&DAT_0380be08)[iVar1 * 2] = param_1;
+        (&irq_table_first_handler)[iVar1 * 2] = param_2;
+        (&irq_table_first_mask)[iVar1 * 2] = param_1;
         if ((int)(param_1 << 0x1f) < 0) {
-          _DAT_04000004 = _DAT_04000004 | 8;
+          REG_DISPSTAT = REG_DISPSTAT | 8;
         }
         if ((int)(param_1 << 0x1e) < 0) {
-          _DAT_04000004 = _DAT_04000004 | 0x10;
+          REG_DISPSTAT = REG_DISPSTAT | 0x10;
         }
-        _DAT_04000210 = _DAT_04000210 | param_1;
+        REG_IE = REG_IE | param_1;
         return in_lr;
       }
       iVar1 = iVar1 + 1;
@@ -71,16 +71,16 @@ undefined4 irqEnable(uint param_1)
   undefined4 in_lr;
   
   if ((param_1 & 1) != 0) {
-    _DAT_04000004 = _DAT_04000004 | 8;
+    REG_DISPSTAT = REG_DISPSTAT | 8;
   }
   if ((int)(param_1 << 0x1e) < 0) {
-    _DAT_04000004 = _DAT_04000004 | 0x10;
+    REG_DISPSTAT = REG_DISPSTAT | 0x10;
   }
   if ((int)(param_1 << 0x1d) < 0) {
-    _DAT_04000004 = _DAT_04000004 | 0x20;
+    REG_DISPSTAT = REG_DISPSTAT | 0x20;
   }
-  _DAT_04000210 = _DAT_04000210 | param_1;
-  _DAT_04000208 = 1;
+  REG_IE = REG_IE | param_1;
+  REG_IME = 1;
   return in_lr;
 }
 
@@ -97,19 +97,19 @@ undefined4 irqSet(uint param_1,undefined4 param_2)
   undefined4 in_lr;
   
   if (param_1 != 0) {
-    puVar2 = &DAT_0380be08;
+    puVar2 = &irq_table_first_mask;
     iVar1 = 0;
     do {
       if ((*puVar2 == 0) || (param_1 == *puVar2)) {
-        (&DAT_0380be04)[iVar1 * 2] = param_2;
-        (&DAT_0380be08)[iVar1 * 2] = param_1;
+        (&irq_table_first_handler)[iVar1 * 2] = param_2;
+        (&irq_table_first_mask)[iVar1 * 2] = param_1;
         if ((int)(param_1 << 0x1f) < 0) {
-          _DAT_04000004 = _DAT_04000004 | 8;
+          REG_DISPSTAT = REG_DISPSTAT | 8;
         }
         if ((int)(param_1 << 0x1e) < 0) {
-          _DAT_04000004 = _DAT_04000004 | 0x10;
+          REG_DISPSTAT = REG_DISPSTAT | 0x10;
         }
-        _DAT_04000210 = _DAT_04000210 | param_1;
+        REG_IE = REG_IE | param_1;
         return in_lr;
       }
       iVar1 = iVar1 + 1;
@@ -130,16 +130,16 @@ undefined4 irqInit(void)
   undefined4 *puVar1;
   undefined4 in_lr;
   
-  puVar1 = &DAT_0380be04;
+  puVar1 = &irq_table_first_handler;
   do {
-    *puVar1 = &DAT_03801561;
+    *puVar1 = &irqDummy;
     puVar1[1] = 0;
     puVar1 = puVar1 + 2;
   } while (puVar1 != (undefined4 *)0x380becc);
-  _DAT_0380fffc = &DAT_03801800;
-  _DAT_04000210 = 0;
-  _DAT_04000214 = 0xffffffff;
-  _DAT_04000208 = 1;
+  IRQ_HANDLER = &IntrMain;
+  REG_IE = 0;
+  REG_IF = 0xffffffff;
+  REG_IME = 1;
   return in_lr;
 }
 
@@ -155,21 +155,21 @@ undefined4 irqClear(uint param_1)
   int iVar2;
   undefined4 in_lr;
   
-  puVar1 = &DAT_0380be08;
+  puVar1 = &irq_table_first_mask;
   iVar2 = 0;
   do {
     if (param_1 == *puVar1) {
-      (&DAT_0380be04)[iVar2 * 2] = &DAT_03801561;
+      (&irq_table_first_handler)[iVar2 * 2] = &irqDummy;
       if ((int)(param_1 << 0x1f) < 0) {
-        _DAT_04000004 = _DAT_04000004 & 0xfff7;
+        REG_DISPSTAT = REG_DISPSTAT & 0xfff7;
       }
       if ((int)(param_1 << 0x1e) < 0) {
-        _DAT_04000004 = _DAT_04000004 & 0xffef;
+        REG_DISPSTAT = REG_DISPSTAT & 0xffef;
       }
       if ((int)(param_1 << 0x1d) < 0) {
-        _DAT_04000004 = _DAT_04000004 & 0xffdf;
+        REG_DISPSTAT = REG_DISPSTAT & 0xffdf;
       }
-      _DAT_04000210 = _DAT_04000210 & ~param_1;
+      REG_IE = REG_IE & ~param_1;
       return in_lr;
     }
     iVar2 = iVar2 + 1;
@@ -188,10 +188,10 @@ undefined4 irqInitHandler(undefined4 param_1)
 {
   undefined4 in_lr;
   
-  _DAT_04000214 = 0xffffffff;
-  _DAT_04000210 = 0;
-  _DAT_0380fffc = param_1;
-  _DAT_04000208 = 1;
+  REG_IF = 0xffffffff;
+  REG_IE = 0;
+  IRQ_HANDLER = param_1;
+  REG_IME = 1;
   return in_lr;
 }
 
@@ -206,16 +206,16 @@ undefined4 irqEnable(uint param_1)
   undefined4 in_lr;
   
   if ((param_1 & 1) != 0) {
-    _DAT_04000004 = _DAT_04000004 | 8;
+    REG_DISPSTAT = REG_DISPSTAT | 8;
   }
   if ((int)(param_1 << 0x1e) < 0) {
-    _DAT_04000004 = _DAT_04000004 | 0x10;
+    REG_DISPSTAT = REG_DISPSTAT | 0x10;
   }
   if ((int)(param_1 << 0x1d) < 0) {
-    _DAT_04000004 = _DAT_04000004 | 0x20;
+    REG_DISPSTAT = REG_DISPSTAT | 0x20;
   }
-  _DAT_04000210 = _DAT_04000210 | param_1;
-  _DAT_04000208 = 1;
+  REG_IE = REG_IE | param_1;
+  REG_IME = 1;
   return in_lr;
 }
 

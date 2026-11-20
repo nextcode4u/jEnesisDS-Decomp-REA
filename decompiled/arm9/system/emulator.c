@@ -276,7 +276,7 @@ void initialize_emulator_state_and_shared_audio(void)
     DAT_023db690 = 0;
     DAT_023db694 = DAT_023dc1a0;
     DAT_023db698 = DAT_023dc1a4;
-    shared_audio_descriptor = &DAT_023db65c;
+    IPC->soundData = &DAT_023db65c;
     DAT_023db75c = 4;
     puVar1 = &DAT_0209927c;
     DAT_023db65c = DAT_023db648;
@@ -353,7 +353,7 @@ void run_emulator_and_file_menu(void)
   initialize_default_emulator_options();
   initialize_ds_display_and_overlay();
   do {
-  } while ((ds_ipc_sync & 0xf) == 0);
+  } while ((REG_IPC_SYNC & 0xf) == 0);
   arm_tail_branch_to_load_subscreen_palette_tiles_and_map();
   swiWaitForVBlank();
   swiWaitForVBlank();

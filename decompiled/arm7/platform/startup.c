@@ -9,7 +9,7 @@
 void start_arm7_audio_processor(undefined4 param_1,undefined4 param_2,undefined4 param_3)
 
 {
-  _DAT_04000208 = 0x4000000;
+  REG_IME = 0x4000000;
   clear_aligned_words_to_zero(&DAT_03806d94,0x5138);
   _call_via_r3();
   _call_via_r3(0,0,param_3,run_arm7_audio_service);

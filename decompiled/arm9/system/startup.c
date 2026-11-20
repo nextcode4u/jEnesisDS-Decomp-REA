@@ -21,8 +21,8 @@ void start_arm9_and_map_tcm(void)
   undefined4 in_cr7;
   undefined4 in_cr9;
   
-  _DAT_04000208 = 0x4000000;
-  _DAT_04000304 = 0x8203;
+  REG_IME = 0x4000000;
+  REG_POWERCNT = 0x8203;
   coproc_moveto_Control(0x2078);
   coproc_moveto_Invalidate_Entire_Instruction(0);
   coproc_moveto_Invalidate_Entire_Data_cache(0);
@@ -121,18 +121,18 @@ void initialize_ds_display_and_overlay(void)
   undefined2 *puVar2;
   
   configure_menu_vblank_interrupt();
-  _DAT_04000304 = _DAT_04000304 | 0x20f;
+  REG_POWERCNT = REG_POWERCNT | 0x20f;
   show_startup_graphics_and_run_scanline_transition();
   swiWaitForVBlank();
-  _DAT_04000000 = 0x113f10;
+  DISPLAY_CR = 0x113f10;
   select_background_tilemap_layout(0);
   initialize_ds_sprite_attribute_buffer();
-  _DAT_04000000 = _DAT_04000000 | 0x20;
-  _DAT_04001000 = 0x10300;
+  DISPLAY_CR = DISPLAY_CR | 0x20;
+  SUB_DISPLAY_CR = 0x10300;
   vramSetMainBanks(1,9,4,2);
   vramSetBankE(2);
-  _DAT_0400100a = 0x288;
-  _DAT_04001008 = 0x1f90;
+  SUB_BG1_CR = 0x288;
+  SUB_BG0_CR = 0x1f90;
   initialize_text_overlay_tiles(&DAT_02085aa8,0x6210000,0x620f800,0x5f,0xf);
   load_subscreen_palette_tiles_and_map();
   adjust_overlay_tile_palette_indices();

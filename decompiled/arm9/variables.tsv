@@ -38,9 +38,6 @@ processor	DAT_0b00061c	m68k_byte_read_handlers	The 68000 page selectors install 
 processor	DAT_0b000a1c	m68k_word_read_handlers	The 68000 page selectors install byte and word handlers. The bus helpers index them by the top byte of the 24-bit address.
 processor	DAT_0b000e1c	m68k_byte_write_handlers	The 68000 page selectors install byte and word handlers. The bus helpers index them by the top byte of the 24-bit address.
 processor	DAT_0b00121c	m68k_word_write_handlers	The 68000 page selectors install byte and word handlers. The bus helpers index them by the top byte of the 24-bit address.
-processor	_DAT_040000d4	ds_dma3_source	DS DMA3 hardware register addresses used in OAM and palette transfers.
-processor	_DAT_040000d8	ds_dma3_destination	DS DMA3 hardware register addresses used in OAM and palette transfers.
-processor	_DAT_040000dc	ds_dma3_control	DS DMA3 hardware register addresses used in OAM and palette transfers.
 0x020003f4	param_1	io_address	Switch masks the guest address and selects one port's state. The bit temporaries supply individual output lines.
 0x020003f4	iVar7	port_state	Switch masks the guest address and selects one port's state. The bit temporaries supply individual output lines.
 0x020003f4	bVar1	pin_4_in	Switch masks the guest address and selects one port's state. The bit temporaries supply individual output lines.
@@ -113,11 +110,6 @@ processor	_DAT_040000dc	ds_dma3_control	DS DMA3 hardware register addresses used
 0x020033a4	uVar4	row_index	Indexes the browser list, opens the selected entry name and returns the ROM load result.
 0x020033a4	uVar3	rom_stream	Indexes the browser list, opens the selected entry name and returns the ROM load result.
 0x020033a4	uVar1	rom_loaded	Indexes the browser list, opens the selected entry name and returns the ROM load result.
-processor	_DAT_027ff028	shared_audio_descriptor	ARM9 publishes this pointer at the same shared address ARM7 reads before processing audio buffers.
-processor	_DAT_04000180	ds_ipc_sync	The send and receive paths use the DS IPC register addresses to exchange command words with ARM7.
-processor	_DAT_04000184	ds_ipc_fifo_control	The send and receive paths use the DS IPC register addresses to exchange command words with ARM7.
-processor	_DAT_04000188	ds_ipc_fifo_send	The send and receive paths use the DS IPC register addresses to exchange command words with ARM7.
-processor	_DAT_04100000	ds_ipc_fifo_receive	The send and receive paths use the DS IPC register addresses to exchange command words with ARM7.
 processor	DAT_020b4c38	ipc_received_command	The send and receive paths use the DS IPC register addresses to exchange command words with ARM7.
 processor	DAT_020b4c3c	ipc_received_payload	The send and receive paths use the DS IPC register addresses to exchange command words with ARM7.
 processor	DAT_023ddeb8	ipc_receive_callback	The send and receive paths use the DS IPC register addresses to exchange command words with ARM7.
@@ -527,98 +519,59 @@ processor	DAT_023ddec0	lzss_ring_buffer	LZSS fills the 4096-byte ring with space
 0x0207fb90	DAT_020b4ca2	keysold	October 2007 keys.c names the previous key latch keysold.
 0x0207fb90	DAT_020b4ca4	keysrepeat	October 2007 keys.c calls the repeat latch keysrepeat.
 0x0207fb90	DAT_0208f392	count	October 2007 keys.c calls the key-repeat countdown count.
-0x0207fb90	_DAT_04000130	REG_KEYINPUT	nds/system.h defines the 16-bit DS key input register at 0x04000130.
-0x0207fc98	_DAT_04000240	VRAM_CR	nds/arm9/video.h defines the combined bank A-D read at 0x04000240. Native code writes the four byte registers separately.
 0x0207fc98	param_1	bank_a	Matched period libnds implementation or native argument and register use for vramSetMainBanks.
 0x0207fc98	param_2	bank_b	Matched period libnds implementation or native argument and register use for vramSetMainBanks.
 0x0207fc98	param_3	bank_c	Matched period libnds implementation or native argument and register use for vramSetMainBanks.
 0x0207fc98	param_4	bank_d	Matched period libnds implementation or native argument and register use for vramSetMainBanks.
 0x0207fc98	uVar1	vramTemp	Matched period libnds implementation or native argument and register use for vramSetMainBanks.
-0x0207fd44	DAT_04000244	VRAM_E_CR	nds/arm9/video.h defines the byte-wide bank E control at 0x04000244.
 0x0207fd44	param_1	bank_e	Matched period libnds implementation or native argument and register use for vramSetBankE.
-0x0207fda8	DAT_040001a1	CARD_CR1H	nds/card.h defines the high byte of card control at 0x040001a1.
-0x0207fda8	DAT_040001af	card_command_last_byte	April 2006 cardWriteCommand indexes backward from CARD_COMMAND[7], at 0x040001af.
 0x0207fda8	param_1	command	Matched period libnds implementation or native argument and register use for cardWriteCommand.
 0x0207fda8	iVar3	index	Matched period libnds implementation or native argument and register use for cardWriteCommand.
 0x0207fda8	iVar2	offset_from_last_byte	Matched period libnds implementation or native argument and register use for cardWriteCommand.
 0x0207fda8	puVar1	command_byte	Matched period libnds implementation or native argument and register use for cardWriteCommand.
-0x0207fdcc	_DAT_040001a4	CARD_CR2	nds/card.h defines the 32-bit card transfer control at 0x040001a4.
-0x0207fdcc	_DAT_04100010	CARD_DATA_RD	nds/card.h defines the 32-bit Slot-1 data port at 0x04100010.
 0x0207fdcc	param_1	flags	Matched period libnds implementation or native argument and register use for cardPolledTransfer.
 0x0207fdcc	param_2	destination	Matched period libnds implementation or native argument and register use for cardPolledTransfer.
 0x0207fdcc	param_3	length	Matched period libnds implementation or native argument and register use for cardPolledTransfer.
 0x0207fdcc	param_4	command	Matched period libnds implementation or native argument and register use for cardPolledTransfer.
 0x0207fdcc	puVar1	target	Matched period libnds implementation or native argument and register use for cardPolledTransfer.
-0x0207fe0c	_DAT_040001a4	CARD_CR2	nds/card.h defines the 32-bit card transfer control at 0x040001a4.
-0x0207fe0c	DAT_04100010	CARD_DATA_RD	The DMA source is the address of CARD_DATA_RD from nds/card.h at 0x04100010.
 0x0207fe0c	param_1	command	Matched period libnds implementation or native argument and register use for cardStartTransfer.
 0x0207fe0c	param_2	destination	Matched period libnds implementation or native argument and register use for cardStartTransfer.
 0x0207fe0c	param_3	channel_offset	Matched period libnds implementation or native argument and register use for cardStartTransfer.
 0x0207fe0c	param_4	flags	Matched period libnds implementation or native argument and register use for cardStartTransfer.
-0x02080098	_DAT_04000004	REG_DISPSTAT	nds/system.h defines the 16-bit display status register at 0x04000004.
-0x02080098	_DAT_04000210	REG_IE	nds/interrupts.h defines the 32-bit interrupt enable at 0x04000210.
 0x02080098	DAT_010056e0	irq_table_first_handler	October 2007 interrupts.c uses irqTable[0].handler at the table base. REA flattens the entries to words.
 0x02080098	DAT_010056e4	irq_table_first_mask	October 2007 interrupts.c uses irqTable[0].mask at offset four of the first entry.
 0x02080098	param_1	mask	Matched period libnds implementation or native argument and register use for irqSet.
 0x02080098	param_2	handler	Matched period libnds implementation or native argument and register use for irqSet.
 0x02080098	iVar1	i	Matched period libnds implementation or native argument and register use for irqSet.
 0x02080098	puVar2	entry_mask	Matched period libnds implementation or native argument and register use for irqSet.
-0x02080100	_DAT_04000208	REG_IME	nds/interrupts.h defines the 16-bit master interrupt enable at 0x04000208.
-0x02080100	_DAT_04000210	REG_IE	nds/interrupts.h defines the 32-bit interrupt enable at 0x04000210.
-0x02080100	_DAT_04000214	REG_IF	nds/interrupts.h defines the 32-bit interrupt flags at 0x04000214.
-0x02080100	_DAT_0b003ffc	IRQ_HANDLER	nds/interrupts.h exposes the ARM9 DTCM IRQ vector slot through IRQ_HANDLER.
 0x02080100	DAT_010056e0	irq_table_first_handler	October 2007 interrupts.c uses irqTable[0].handler at the table base. REA flattens the entries to words.
 0x02080100	DAT_010057a8	IntrMain	The end of the 25-entry IRQ table coincides with the IntrMain dispatcher in ITCM.
 0x02080100	DAT_02080095	irqDummy	October 2007 interrupts.c installs irqDummy in the handler table. The odd pointer selects its Thumb entry.
 0x02080100	puVar1	entry	Matched period libnds implementation or native argument and register use for irqInit.
-0x0208014c	_DAT_04000004	REG_DISPSTAT	nds/system.h defines the 16-bit display status register at 0x04000004.
-0x0208014c	_DAT_04000210	REG_IE	nds/interrupts.h defines the 32-bit interrupt enable at 0x04000210.
 0x0208014c	DAT_010056e0	irq_table_first_handler	October 2007 interrupts.c uses irqTable[0].handler at the table base. REA flattens the entries to words.
 0x0208014c	DAT_010056e4	irq_table_first_mask	October 2007 interrupts.c uses irqTable[0].mask at offset four of the first entry.
 0x0208014c	DAT_02080095	irqDummy	October 2007 interrupts.c installs irqDummy in the handler table. The odd pointer selects its Thumb entry.
 0x0208014c	param_1	mask	Matched period libnds implementation or native argument and register use for irqClear.
 0x0208014c	iVar2	i	Matched period libnds implementation or native argument and register use for irqClear.
 0x0208014c	puVar1	entry_mask	Matched period libnds implementation or native argument and register use for irqClear.
-0x020801cc	_DAT_04000208	REG_IME	nds/interrupts.h defines the 16-bit master interrupt enable at 0x04000208.
-0x020801cc	_DAT_04000210	REG_IE	nds/interrupts.h defines the 32-bit interrupt enable at 0x04000210.
-0x020801cc	_DAT_04000214	REG_IF	nds/interrupts.h defines the 32-bit interrupt flags at 0x04000214.
-0x020801cc	_DAT_0b003ffc	IRQ_HANDLER	nds/interrupts.h exposes the ARM9 DTCM IRQ vector slot through IRQ_HANDLER.
 0x020801cc	param_1	handler	Matched period libnds implementation or native argument and register use for irqInitHandler.
-0x020801fc	_DAT_04000004	REG_DISPSTAT	nds/system.h defines the 16-bit display status register at 0x04000004.
-0x020801fc	_DAT_04000208	REG_IME	nds/interrupts.h defines the 16-bit master interrupt enable at 0x04000208.
-0x020801fc	_DAT_04000210	REG_IE	nds/interrupts.h defines the 32-bit interrupt enable at 0x04000210.
 0x020801fc	param_1	irq	Matched period libnds implementation or native argument and register use for irqEnable.
-0x0208024c	_DAT_04000004	REG_DISPSTAT	nds/system.h defines the 16-bit display status register at 0x04000004.
-0x0208024c	_DAT_04000210	REG_IE	nds/interrupts.h defines the 32-bit interrupt enable at 0x04000210.
 0x0208024c	param_1	irq	Matched period libnds implementation or native argument and register use for irqDisable.
 0x020802c4	param_1	base	Matched period libnds implementation or native argument and register use for DC_FlushRange.
 0x020802c4	param_2	size	Matched period libnds implementation or native argument and register use for DC_FlushRange.
 0x020802c4	uVar1	cache_line	Matched period libnds implementation or native argument and register use for DC_FlushRange.
-0x020858b0	_DAT_04000004	REG_DISPSTAT	nds/system.h defines the 16-bit display status register at 0x04000004.
-0x020858b0	_DAT_04000210	REG_IE	nds/interrupts.h defines the 32-bit interrupt enable at 0x04000210.
 0x020858b0	param_1	irq	Matched period libnds implementation or native argument and register use for irqDisable.
-0x020858bc	_DAT_04000004	REG_DISPSTAT	nds/system.h defines the 16-bit display status register at 0x04000004.
-0x020858bc	_DAT_04000208	REG_IME	nds/interrupts.h defines the 16-bit master interrupt enable at 0x04000208.
-0x020858bc	_DAT_04000210	REG_IE	nds/interrupts.h defines the 32-bit interrupt enable at 0x04000210.
 0x020858bc	param_1	irq	Matched period libnds implementation or native argument and register use for irqEnable.
-0x020858c8	_DAT_04000004	REG_DISPSTAT	nds/system.h defines the 16-bit display status register at 0x04000004.
-0x020858c8	_DAT_04000210	REG_IE	nds/interrupts.h defines the 32-bit interrupt enable at 0x04000210.
 0x020858c8	DAT_010056e0	irq_table_first_handler	October 2007 interrupts.c uses irqTable[0].handler at the table base. REA flattens the entries to words.
 0x020858c8	DAT_010056e4	irq_table_first_mask	October 2007 interrupts.c uses irqTable[0].mask at offset four of the first entry.
 0x020858c8	param_1	mask	Matched period libnds implementation or native argument and register use for irqSet.
 0x020858c8	param_2	handler	Matched period libnds implementation or native argument and register use for irqSet.
 0x020858c8	iVar1	i	Matched period libnds implementation or native argument and register use for irqSet.
 0x020858c8	puVar2	entry_mask	Matched period libnds implementation or native argument and register use for irqSet.
-0x020858d4	_DAT_04000208	REG_IME	nds/interrupts.h defines the 16-bit master interrupt enable at 0x04000208.
-0x020858d4	_DAT_04000210	REG_IE	nds/interrupts.h defines the 32-bit interrupt enable at 0x04000210.
-0x020858d4	_DAT_04000214	REG_IF	nds/interrupts.h defines the 32-bit interrupt flags at 0x04000214.
-0x020858d4	_DAT_0b003ffc	IRQ_HANDLER	nds/interrupts.h exposes the ARM9 DTCM IRQ vector slot through IRQ_HANDLER.
 0x020858d4	DAT_010056e0	irq_table_first_handler	October 2007 interrupts.c uses irqTable[0].handler at the table base. REA flattens the entries to words.
 0x020858d4	DAT_010057a8	IntrMain	The end of the 25-entry IRQ table coincides with the IntrMain dispatcher in ITCM.
 0x020858d4	DAT_02080095	irqDummy	October 2007 interrupts.c installs irqDummy in the handler table. The odd pointer selects its Thumb entry.
 0x020858d4	puVar1	entry	Matched period libnds implementation or native argument and register use for irqInit.
-0x020858e0	_DAT_04000004	REG_DISPSTAT	nds/system.h defines the 16-bit display status register at 0x04000004.
-0x020858e0	_DAT_04000210	REG_IE	nds/interrupts.h defines the 32-bit interrupt enable at 0x04000210.
 0x020858e0	DAT_010056e0	irq_table_first_handler	October 2007 interrupts.c uses irqTable[0].handler at the table base. REA flattens the entries to words.
 0x020858e0	DAT_010056e4	irq_table_first_mask	October 2007 interrupts.c uses irqTable[0].mask at offset four of the first entry.
 0x020858e0	DAT_02080095	irqDummy	October 2007 interrupts.c installs irqDummy in the handler table. The odd pointer selects its Thumb entry.
@@ -629,13 +582,88 @@ processor	DAT_023ddec0	lzss_ring_buffer	LZSS fills the 4096-byte ring with space
 0x020858ec	DAT_020b4ca2	keysold	October 2007 keys.c names the previous key latch keysold.
 0x020858ec	DAT_020b4ca4	keysrepeat	October 2007 keys.c calls the repeat latch keysrepeat.
 0x020858ec	DAT_0208f392	count	October 2007 keys.c calls the key-repeat countdown count.
-0x020858ec	_DAT_04000130	REG_KEYINPUT	nds/system.h defines the 16-bit DS key input register at 0x04000130.
 0x020858f8	DAT_020b4ca0	keys	October 2007 keys.c names the current key latch keys.
-0x02085928	_DAT_04000240	VRAM_CR	nds/arm9/video.h defines the combined bank A-D read at 0x04000240. Native code writes the four byte registers separately.
 0x02085928	param_1	bank_a	Matched period libnds implementation or native argument and register use for vramSetMainBanks.
 0x02085928	param_2	bank_b	Matched period libnds implementation or native argument and register use for vramSetMainBanks.
 0x02085928	param_3	bank_c	Matched period libnds implementation or native argument and register use for vramSetMainBanks.
 0x02085928	param_4	bank_d	Matched period libnds implementation or native argument and register use for vramSetMainBanks.
 0x02085928	uVar1	vramTemp	Matched period libnds implementation or native argument and register use for vramSetMainBanks.
-0x02085934	DAT_04000244	VRAM_E_CR	nds/arm9/video.h defines the byte-wide bank E control at 0x04000244.
 0x02085934	param_1	bank_e	Matched period libnds implementation or native argument and register use for vramSetBankE.
+processor	DAT_027ff035	IPC->mailBusy	April 2006 touchReadXY waits on IPC->mailBusy at offset 0x35.
+processor	DAT_04000040	WIN0_X1	Period libnds nds/arm9/video.h register definition.
+processor	DAT_04000041	WIN0_X0	Period libnds nds/arm9/video.h register definition.
+processor	DAT_04000044	WIN0_Y1	Period libnds nds/arm9/video.h register definition.
+processor	DAT_04000045	WIN0_Y0	Period libnds nds/arm9/video.h register definition.
+processor	DAT_040001a1	CARD_CR1H	Period libnds nds/card.h register definition.
+processor	DAT_040001a2	CARD_EEPDATA	Period libnds nds/card.h register definition.
+processor	DAT_040001a8	CARD_COMMAND[0]	Period libnds nds/card.h register definition.
+processor	DAT_040001a9	CARD_COMMAND[1]	Period libnds nds/card.h register definition.
+processor	DAT_040001aa	CARD_COMMAND[2]	Period libnds nds/card.h register definition.
+processor	DAT_040001ab	CARD_COMMAND[3]	Period libnds nds/card.h register definition.
+processor	DAT_040001ac	CARD_COMMAND[4]	Period libnds nds/card.h register definition.
+processor	DAT_040001ad	CARD_COMMAND[5]	Period libnds nds/card.h register definition.
+processor	DAT_040001ae	CARD_COMMAND[6]	Period libnds nds/card.h register definition.
+processor	DAT_040001af	CARD_COMMAND[7]	Period libnds nds/card.h register definition.
+processor	DAT_04000244	VRAM_E_CR	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_027ff004	IPC->touchXpx	nds/ipc.h identifies the horizontal pixel coordinate at offset 4.
+processor	_DAT_027ff006	IPC->touchYpx	nds/ipc.h identifies the vertical pixel coordinate at offset 6.
+processor	_DAT_027ff008	IPC->touchZ1	nds/ipc.h identifies the first touchscreen pressure sample at offset 8.
+processor	_DAT_027ff00a	IPC->touchZ2	nds/ipc.h identifies the second touchscreen pressure sample at offset 10.
+processor	_DAT_027ff028	IPC->soundData	nds/ipc.h places soundData at offset 0x28. jEnesisDS stores its own audio descriptor in this shared slot.
+processor	_DAT_04000000	DISPLAY_CR	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_04000004	REG_DISPSTAT	Period libnds nds/system.h register definition.
+processor	_DAT_04000006	REG_VCOUNT	Period libnds nds/system.h register definition.
+processor	_DAT_04000008	BG0_CR	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_0400000a	BG1_CR	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_0400000c	BG2_CR	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_0400000e	BG3_CR	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_04000010	BG0_X0	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_04000012	BG0_Y0	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_04000014	BG1_X0	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_04000016	BG1_Y0	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_04000018	BG2_X0	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_0400001a	BG2_Y0	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_0400001c	BG3_X0	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_0400001e	BG3_Y0	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_04000030	BG3_XDX	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_04000036	BG3_YDY	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_04000038	BG3_CX	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_0400003c	BG3_CY	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_04000048	WIN_IN	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_0400004a	WIN_OUT	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_04000050	BLEND_CR	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_04000054	BLEND_Y	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_040000d4	DMA3_SRC	Period libnds nds/dma.h register definition.
+processor	_DAT_040000d8	DMA3_DEST	Period libnds nds/dma.h register definition.
+processor	_DAT_040000dc	DMA3_CR	Period libnds nds/dma.h register definition.
+processor	_DAT_04000130	REG_KEYINPUT	Period libnds nds/system.h register definition.
+processor	_DAT_04000180	REG_IPC_SYNC	Period libnds nds/ipc.h register definition.
+processor	_DAT_04000184	REG_IPC_FIFO_CR	Period libnds nds/ipc.h register definition.
+processor	_DAT_04000188	REG_IPC_FIFO_TX	Period libnds nds/ipc.h register definition.
+processor	_DAT_040001a0	CARD_CR1	Period libnds nds/card.h register definition.
+processor	_DAT_040001a4	CARD_CR2	Period libnds nds/card.h register definition.
+processor	_DAT_04000204	REG_EXMEMCNT	Period libnds nds/memory.h register definition.
+processor	_DAT_04000208	REG_IME	Period libnds nds/interrupts.h register definition.
+processor	_DAT_04000210	REG_IE	Period libnds nds/interrupts.h register definition.
+processor	_DAT_04000214	REG_IF	Period libnds nds/interrupts.h register definition.
+processor	_DAT_04000240	VRAM_CR	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_04000280	div_control_word	The native handlers store DIV_CR as a halfword and poll it with a word load. REA combines these widths under one identifier.
+processor	_DAT_04000290	DIV_NUMERATOR32	Period libnds nds/arm9/math.h register definition.
+processor	_DAT_04000298	DIV_DENOMINATOR32	Period libnds nds/arm9/math.h register definition.
+processor	_DAT_040002a0	DIV_RESULT32	Period libnds nds/arm9/math.h register definition.
+processor	_DAT_040002a8	DIV_REMAINDER32	Period libnds nds/arm9/math.h register definition.
+processor	_DAT_04000304	REG_POWERCNT	Period libnds nds/system.h register definition.
+processor	_DAT_04001000	SUB_DISPLAY_CR	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_04001008	SUB_BG0_CR	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_0400100a	SUB_BG1_CR	Period libnds nds/arm9/video.h register definition.
+processor	_DAT_04100000	REG_IPC_FIFO_RX	Period libnds nds/ipc.h register definition.
+processor	_DAT_0b003ffc	IRQ_HANDLER	nds/interrupts.h exposes the ARM9 BIOS vector through IRQ_HANDLER at DTCM offset 0x3ffc.
+0x0207fe0c	DAT_04100010	CARD_DATA_RD	nds/card.h defines the 32-bit Slot-1 data port at 0x04100010.
+0x0207fb90	_DAT_027ff018	IPC->buttons	The linked scanKeys uses the IPC buttons field at release offset 0x18. The October 2007 header uses 0x14.
+0x020858ec	_DAT_027ff018	IPC->buttons	The linked scanKeys uses the IPC buttons field at release offset 0x18. The October 2007 header uses 0x14.
+0x0207383c	_DAT_04100010	CARD_DATA_RD	nds/card.h defines the 32-bit Slot-1 data port at 0x04100010.
+0x0207fdcc	_DAT_04100010	CARD_DATA_RD	nds/card.h defines the 32-bit Slot-1 data port at 0x04100010.
+processor	DAT_040001a0	card_control_port	Byte-address reference passed to _Neo_EnableMMC. The register lvalue at the same address is CARD_CR1 from nds/card.h.
+0x0207fe0c	*(undefined1 **)(param_3 + 0x40000b0)	DMA_SRC(channel_offset / 12)	April 2006 cardStartTransfer uses the matching nds/dma.h macro. The REA channel offset is already scaled by 12.
+0x0207fe0c	*(undefined4 *)(param_3 + 0x40000b4)	DMA_DEST(channel_offset / 12)	April 2006 cardStartTransfer uses the matching nds/dma.h macro. The REA channel offset is already scaled by 12.
+0x0207fe0c	*(undefined4 *)(param_3 + 0x40000b8)	DMA_CR(channel_offset / 12)	April 2006 cardStartTransfer uses the matching nds/dma.h macro. The REA channel offset is already scaled by 12.

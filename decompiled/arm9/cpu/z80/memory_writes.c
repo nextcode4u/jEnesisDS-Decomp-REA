@@ -49,7 +49,7 @@ void write_z80_mapped_byte(uint guest_address,uint write_value)
   case 2:
     uVar17 = write_value & 0xff;
     do {
-    } while ((ds_ipc_sync & 0xf) == 0);
+    } while ((REG_IPC_SYNC & 0xf) == 0);
     switch(guest_address & 3) {
     case 0:
       ym2612_selected_bank = 0;
@@ -96,7 +96,7 @@ void write_z80_mapped_byte(uint guest_address,uint write_value)
     write_value = write_value & 0xff;
 LAB_02005adc:
     do {
-    } while ((ds_ipc_sync & 0xf) == 0);
+    } while ((REG_IPC_SYNC & 0xf) == 0);
     if (psg_queue_bytes < 0x100) {
       *(char *)(psg_queue_bytes + psg_write_buffer) = (char)write_value;
       psg_queue_bytes = psg_queue_bytes + 1;
@@ -1178,7 +1178,7 @@ void write_z80_mapped_little_endian_word(int guest_address,uint write_value)
     return;
   case 2:
     do {
-    } while ((ds_ipc_sync & 0xf) == 0);
+    } while ((REG_IPC_SYNC & 0xf) == 0);
     switch(uVar9 & 3) {
     case 0:
       ym2612_selected_bank = 0;
@@ -1224,7 +1224,7 @@ void write_z80_mapped_little_endian_word(int guest_address,uint write_value)
     }
 LAB_02005adc:
     do {
-    } while ((ds_ipc_sync & 0xf) == 0);
+    } while ((REG_IPC_SYNC & 0xf) == 0);
     if (psg_queue_bytes < 0x100) {
       *(byte *)(psg_queue_bytes + psg_write_buffer) = bVar15;
       psg_queue_bytes = psg_queue_bytes + 1;

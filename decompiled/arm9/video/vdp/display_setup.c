@@ -21,8 +21,8 @@ void advance_ds_display_compare_irq_phase(void)
     irqDisable(2);
     DAT_020b4ce8 = 1;
   }
-  _DAT_04000004 =
-       _DAT_04000004 & 0x7f | (&DAT_02085a08)[DAT_020b4ce8] << 8 |
+  REG_DISPSTAT =
+       REG_DISPSTAT & 0x7f | (&DAT_02085a08)[DAT_020b4ce8] << 8 |
        (ushort)(((ushort)(&DAT_02085a08)[DAT_020b4ce8] & 0x100) >> 1);
   return;
 }
@@ -44,13 +44,13 @@ void configure_gameplay_display_interrupts(void)
   }
   DAT_02098fc4 = 2;
   irqSet(2,&LAB_02000f1c);
-  _DAT_04000004 = _DAT_04000004 & 0x7f | 0xc000;
+  REG_DISPSTAT = REG_DISPSTAT & 0x7f | 0xc000;
   DAT_020b4ce8 = 0;
   irqSet(4,advance_ds_display_compare_irq_phase);
   irqSet(1,&LAB_02000fdc);
-  _DAT_04000004 = _DAT_04000004 | 0x38;
-  _DAT_04000210 = _DAT_04000210 | 7;
-  _DAT_04000208 = 1;
+  REG_DISPSTAT = REG_DISPSTAT | 0x38;
+  REG_IE = REG_IE | 7;
+  REG_IME = 1;
   return;
 }
 
@@ -73,9 +73,9 @@ void configure_menu_vblank_interrupt(void)
   }
   DAT_02098fc4 = 1;
   irqSet(1,&DAT_02000f18);
-  _DAT_04000004 = _DAT_04000004 | 8;
-  _DAT_04000210 = _DAT_04000210 | 1;
-  _DAT_04000208 = 1;
+  REG_DISPSTAT = REG_DISPSTAT | 8;
+  REG_IE = REG_IE | 1;
+  REG_IME = 1;
   return;
 }
 
@@ -97,15 +97,15 @@ void show_startup_graphics_and_run_scanline_transition(void)
   int iVar6;
   
   swiWaitForVBlank();
-  _DAT_04000000 = 0x10801;
+  DISPLAY_CR = 0x10801;
   vramSetMainBanks(1,9,4,2);
-  _DAT_0400000e = 0x42c8;
-  _DAT_04000030 = 0x100;
-  _DAT_04000036 = 0x100;
-  _DAT_04000038 = 0;
-  _DAT_0400003c = 0;
-  _DAT_04000050 = 200;
-  _DAT_04001000 = 0x10100;
+  BG3_CR = 0x42c8;
+  BG3_XDX = 0x100;
+  BG3_YDY = 0x100;
+  BG3_CX = 0;
+  BG3_CY = 0;
+  BLEND_CR = 200;
+  SUB_DISPLAY_CR = 0x10100;
   puVar2 = &DAT_0208a1a8;
   puVar3 = (undefined2 *)&DAT_05000000;
   do {
@@ -126,11 +126,11 @@ void show_startup_graphics_and_run_scanline_transition(void)
   uVar8 = uVar7;
   while( true ) {
     do {
-      uVar1 = _DAT_04000006 & 0x1ff;
-    } while ((_DAT_04000006 & 0x1ff) != 0);
+      uVar1 = REG_VCOUNT & 0x1ff;
+    } while ((REG_VCOUNT & 0x1ff) != 0);
     do {
       if ((uVar8 & 1) == 0) {
-        _DAT_04000038 = 0;
+        BG3_CX = 0;
       }
       else {
         iVar5 = uVar1 - 0x60;
@@ -139,17 +139,17 @@ void show_startup_graphics_and_run_scanline_transition(void)
         }
         iVar5 = (iVar5 / 10) * (iVar5 / 10);
         if ((uVar1 & 1) == 0) {
-          _DAT_04000038 = (-iVar5 - uVar7) * 0x80;
+          BG3_CX = (-iVar5 - uVar7) * 0x80;
         }
         else {
-          _DAT_04000038 = (iVar5 + uVar7) * 0x80;
+          BG3_CX = (iVar5 + uVar7) * 0x80;
         }
       }
       do {
-      } while (uVar1 == (_DAT_04000006 & 0x1ff));
+      } while (uVar1 == (REG_VCOUNT & 0x1ff));
       uVar1 = uVar1 + 1;
     } while (uVar1 != 0xc0);
-    _DAT_04000054 = (undefined2)uVar8;
+    BLEND_Y = (undefined2)uVar8;
     if (0x1f < uVar8 + 1) break;
     uVar7 = uVar7 + 3;
     uVar8 = uVar8 + 1;
@@ -173,8 +173,8 @@ void show_startup_graphics_and_run_scanline_transition(void)
     *puVar2 = 0;
     puVar2 = puVar3;
   } while (puVar3 != (undefined2 *)0x6001300);
-  _DAT_04000054 = 0;
-  _DAT_04000050 = 0;
+  BLEND_Y = 0;
+  BLEND_CR = 0;
   return;
 }
 
@@ -193,24 +193,24 @@ void select_background_tilemap_layout(int layout_code)
       write_ds_background_tilemap_word = write_linear_background_tilemap_entry;
       transfer_vdp_words_to_ds_background_0 = transfer_vdp_words_to_background_0_tilemap_linear;
       transfer_vdp_words_to_ds_background_1 = transfer_vdp_words_to_background_1_tilemap_linear;
-      _DAT_04000008 = 0x820;
-      _DAT_0400000a = 0xc29;
-      _DAT_0400000c = 0x22;
+      BG0_CR = 0x820;
+      BG1_CR = 0xc29;
+      BG2_CR = 0x22;
       DAT_023dc6a4 = 0x22;
       DAT_023dc6a8 = 0x820;
-      _DAT_0400000e = 0x42b;
+      BG3_CR = 0x42b;
       break;
     case 1:
     case 3:
       DAT_023dc6a8 = 0x8820;
       write_ds_background_tilemap_word = write_linear_background_tilemap_entry;
       transfer_vdp_words_to_ds_background_0 = transfer_vdp_words_to_background_0_tilemap_linear;
-      _DAT_04000008 = 0x8820;
+      BG0_CR = 0x8820;
       transfer_vdp_words_to_ds_background_1 = transfer_vdp_words_to_background_1_tilemap_linear;
-      _DAT_0400000a = 0x8c29;
+      BG1_CR = 0x8c29;
       DAT_023dc6a4 = 0x8022;
-      _DAT_0400000c = 0x8022;
-      _DAT_0400000e = 0x842b;
+      BG2_CR = 0x8022;
+      BG3_CR = 0x842b;
       break;
     default:
       write_ds_background_tilemap_word = write_linear_background_tilemap_entry;
@@ -221,12 +221,12 @@ void select_background_tilemap_layout(int layout_code)
       write_ds_background_tilemap_word = write_background_tilemap_entry_64_columns;
       transfer_vdp_words_to_ds_background_0 = transfer_vdp_words_to_background_0_tilemap_64_columns;
       transfer_vdp_words_to_ds_background_1 = transfer_vdp_words_to_background_1_tilemap_64_columns;
-      _DAT_04000008 = 0x4820;
-      _DAT_0400000a = 0x4c29;
-      _DAT_0400000c = 0x4022;
+      BG0_CR = 0x4820;
+      BG1_CR = 0x4c29;
+      BG2_CR = 0x4022;
       DAT_023dc6a4 = 0x4022;
       DAT_023dc6a8 = 0x4820;
-      _DAT_0400000e = 0x442b;
+      BG3_CR = 0x442b;
       break;
     case 0x11:
     case 0x13:
@@ -237,10 +237,10 @@ void select_background_tilemap_layout(int layout_code)
       DAT_023dc6a4 = 0xc022;
                     /* WARNING: Read-only address (ram,0x0208f350) is written */
       DAT_0208f350 = layout_code;
-      _DAT_0400000e = 0xc42b;
-      _DAT_04000008 = 0xc820;
-      _DAT_0400000a = 0xcc29;
-      _DAT_0400000c = 0xc022;
+      BG3_CR = 0xc42b;
+      BG0_CR = 0xc820;
+      BG1_CR = 0xcc29;
+      BG2_CR = 0xc022;
       return;
     case 0x30:
     case 0x31:
@@ -252,10 +252,10 @@ void select_background_tilemap_layout(int layout_code)
       DAT_023dc6a4 = 0x4022;
                     /* WARNING: Read-only address (ram,0x0208f350) is written */
       DAT_0208f350 = layout_code;
-      _DAT_04000008 = 0x4820;
-      _DAT_0400000a = 0x4c29;
-      _DAT_0400000c = 0x4022;
-      _DAT_0400000e = 0x442b;
+      BG0_CR = 0x4820;
+      BG1_CR = 0x4c29;
+      BG2_CR = 0x4022;
+      BG3_CR = 0x442b;
       return;
     }
                     /* WARNING (jumptable): Read-only address (ram,0x0208f350) is written */
@@ -348,35 +348,35 @@ void apply_prepared_scanline_display_state(int scanline)
   scanline = scanline + viewport_offset_y + 1;
   _DAT_05000000 = (&scanline_backdrop_color)[scanline];
   if ((&scanline_display_blanked)[scanline] != '\0') {
-    _DAT_04000000 = _DAT_04000000 & 0xe0ff;
+    DISPLAY_CR = DISPLAY_CR & 0xe0ff;
     return;
   }
-  _DAT_04000014 =
+  BG1_X0 =
        (undefined2)(((uint)(ushort)(&scanline_plane_b_hscroll)[scanline] + viewport_offset_x) * 0x10000 >> 0x10);
-  _DAT_0400001c = _DAT_04000014;
-  _DAT_04000016 =
+  BG3_X0 = BG1_X0;
+  BG1_Y0 =
        (undefined2)((viewport_offset_y + (uint)(ushort)(&scanline_plane_b_vscroll)[scanline]) * 0x10000 >> 0x10);
-  _DAT_0400001e = _DAT_04000016;
+  BG3_Y0 = BG1_Y0;
   if ((&scanline_window_selected)[scanline] == '\x01') {
     background_control = &DAT_023dc5ac;
   }
   else {
     background_control = &DAT_023dc6a4;
   }
-  _DAT_04000008 = (undefined2)background_control[1];
-  _DAT_0400000c = (undefined2)*background_control;
-  _DAT_04000010 =
+  BG0_CR = (undefined2)background_control[1];
+  BG2_CR = (undefined2)*background_control;
+  BG0_X0 =
        (undefined2)((viewport_offset_x + (uint)(ushort)(&scanline_plane_a_hscroll)[scanline]) * 0x10000 >> 0x10);
-  _DAT_04000018 = _DAT_04000010;
-  _DAT_04000012 =
+  BG2_X0 = BG0_X0;
+  BG0_Y0 =
        (undefined2)((viewport_offset_y + (uint)(ushort)(&scanline_plane_a_vscroll)[scanline]) * 0x10000 >> 0x10);
-  _DAT_0400001a = _DAT_04000012;
-  _DAT_04000000 = _DAT_04000000 | 0x1f00;
+  BG2_Y0 = BG0_Y0;
+  DISPLAY_CR = DISPLAY_CR | 0x1f00;
   if ((&sprite_line_mask_tags)[scanline] == sprite_line_mask_generation) {
-    _DAT_04000048 = 0xf;
+    WIN_IN = 0xf;
   }
   else {
-    _DAT_04000048 = 0x1f;
+    WIN_IN = 0x1f;
   }
   queued_colors = (short *)(&scanline_pending_palette_changes)[scanline];
   if (queued_colors != (short *)0x0) {
@@ -411,12 +411,12 @@ undefined4 configure_ds_display_windows(void)
   select_window_tilemap_layout(0);
   puVar3 = &background_pattern_tile_map;
   clear_and_initialize_renderer_vram();
-  DAT_04000041 = 0;
-  DAT_04000040 = 0xff;
-  DAT_04000045 = 0;
-  DAT_04000044 = 0xc4;
-  _DAT_04000048 = 0x1f;
-  _DAT_0400004a = 0x1f;
+  WIN0_X0 = 0;
+  WIN0_X1 = 0xff;
+  WIN0_Y0 = 0;
+  WIN0_Y1 = 0xc4;
+  WIN_IN = 0x1f;
+  WIN_OUT = 0x1f;
   do {
     puVar3[1] = 0x2000;
     puVar3[0x801] = 0x2000;
