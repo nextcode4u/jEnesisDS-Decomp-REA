@@ -70,11 +70,14 @@ void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum ge
 
 static ITCM_CODE __attribute__((noinline)) unsigned run_cpu_until(struct megadrive *md, unsigned cycles, unsigned end)
 {
+    enum { Z80_SYNC_CYCLES = 128 };
+    unsigned next_sync = md->z80_synced_cycle + Z80_SYNC_CYCLES;
+    bool hint_pending = md->hint_pending;
     while (cycles < end && !md->cpu.stopped) {
-        if ((md->vdp_registers[0] & 0x10) && md->hint_pending && (md->cpu.sr & 0x0700) < 0x0400) {
+        if (hint_pending && (md->vdp_registers[0] & 0x10) && (md->cpu.sr & 0x0700) < 0x0400) {
             unsigned elapsed = m68k_interrupt(&md->cpu, md, 4);
             if (elapsed) {
-                md->hint_pending = false;
+                hint_pending = md->hint_pending = false;
                 cycles += elapsed;
                 continue;
             }
@@ -89,8 +92,12 @@ static ITCM_CODE __attribute__((noinline)) unsigned run_cpu_until(struct megadri
             ((op & 0xfff8) == 0x51c8 || op == 0x66fa || op == 0x67fa))
             elapsed += m68k_skip_idle(&md->cpu, md, end - cycles - elapsed);
         cycles += elapsed;
-        if (cycles - md->z80_synced_cycle >= 128)
-            genesis_z80_sync(md, cycles);
+        if (cycles >= next_sync) {
+            // I/O can have synchronized the sound CPU inside an instruction.
+            if (cycles - md->z80_synced_cycle >= Z80_SYNC_CYCLES)
+                genesis_z80_sync(md, cycles);
+            next_sync = md->z80_synced_cycle + Z80_SYNC_CYCLES;
+        }
     }
     genesis_z80_sync(md, cycles < end ? end : cycles);
     return cycles;

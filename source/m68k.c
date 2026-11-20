@@ -181,7 +181,7 @@ static unsigned memory_cycles(unsigned mode, unsigned reg, unsigned size)
     return overhead + (size == 4 ? 8 : 4);
 }
 
-static unsigned move(struct m68k *cpu, struct megadrive *md, uint16_t op)
+static __attribute__((noinline)) unsigned move(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
     unsigned type = op >> 12;
     unsigned size = type == 1 ? 1 : type == 2 ? 4 : 2;
@@ -425,7 +425,7 @@ static uint32_t arithmetic_flags(struct m68k *cpu, unsigned size, uint32_t left,
     return result;
 }
 
-static unsigned extend_arithmetic(struct m68k *cpu, struct megadrive *md, uint16_t op)
+static __attribute__((noinline)) unsigned extend_arithmetic(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
     unsigned size = 1U << ((op >> 6) & 3);
     unsigned src = op & 7, dst = (op >> 9) & 7;
@@ -466,7 +466,7 @@ static unsigned extend_arithmetic(struct m68k *cpu, struct megadrive *md, uint16
     return memory ? (size == 4 ? 30 : 18) : (size == 4 ? 8 : 4);
 }
 
-static unsigned quick_arithmetic(struct m68k *cpu, struct megadrive *md, uint16_t op)
+static __attribute__((noinline)) unsigned quick_arithmetic(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
     unsigned mode = (op >> 3) & 7, reg = op & 7;
     unsigned size = 1U << ((op >> 6) & 3);
@@ -573,7 +573,7 @@ static ITCM_CODE unsigned data_alu(struct m68k *cpu, struct megadrive *md, uint1
     return (size != 4 ? 4 : compare || (extra && mode != 7) ? 6 : 8) + extra;
 }
 
-static unsigned exclusive_or(struct m68k *cpu, struct megadrive *md, uint16_t op)
+static __attribute__((noinline)) unsigned exclusive_or(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
     unsigned size = 1U << ((op >> 6) & 3);
     unsigned mode = (op >> 3) & 7, reg = op & 7;
@@ -596,7 +596,7 @@ static unsigned exclusive_or(struct m68k *cpu, struct megadrive *md, uint16_t op
     return cycles;
 }
 
-static unsigned multiply_or_divide(struct m68k *cpu, struct megadrive *md, uint16_t op)
+static __attribute__((noinline)) unsigned multiply_or_divide(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
     unsigned mode = (op >> 3) & 7, reg = op & 7, dest = (op >> 9) & 7;
     unsigned extra = 0;
@@ -747,7 +747,7 @@ static uint32_t shift_value(struct m68k *cpu, uint32_t value, unsigned size,
     return value;
 }
 
-static unsigned shift_register(struct m68k *cpu, uint16_t op)
+static __attribute__((noinline)) unsigned shift_register(struct m68k *cpu, uint16_t op)
 {
     unsigned size = 1U << ((op >> 6) & 3), reg = op & 7;
     unsigned kind = (op >> 3) & 3, count_field = (op >> 9) & 7;
@@ -757,7 +757,7 @@ static unsigned shift_register(struct m68k *cpu, uint16_t op)
     return (size == 4 ? 8 : 6) + count * 2;
 }
 
-static unsigned shift_memory(struct m68k *cpu, struct megadrive *md, uint16_t op)
+static __attribute__((noinline)) unsigned shift_memory(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
     unsigned mode = (op >> 3) & 7, reg = op & 7;
     uint32_t address;
@@ -769,7 +769,7 @@ static unsigned shift_memory(struct m68k *cpu, struct megadrive *md, uint16_t op
     return write_memory(md, address, 2, result) ? 8 + memory_cycles(mode, reg, 2) : 0;
 }
 
-static unsigned execute_misc(struct m68k *cpu, struct megadrive *md, uint16_t op)
+static __attribute__((noinline)) unsigned execute_misc(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
     if ((op & 0xf1c0) == 0x41c0) {
         unsigned mode = (op >> 3) & 7, reg = op & 7;
@@ -965,7 +965,7 @@ static unsigned compare_memory(struct m68k *cpu, struct megadrive *md, uint16_t 
     return size == 4 ? 20 : 12;
 }
 
-static unsigned execute_immediate(struct m68k *cpu, struct megadrive *md, uint16_t op)
+static __attribute__((noinline)) unsigned execute_immediate(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
     if ((op & 0xf138) == 0x0108)
         return move_peripheral(cpu, md, op);
@@ -978,7 +978,7 @@ static unsigned execute_immediate(struct m68k *cpu, struct megadrive *md, uint16
     return 0;
 }
 
-static unsigned execute_branch(struct m68k *cpu, struct megadrive *md, uint16_t op)
+static __attribute__((noinline)) unsigned execute_branch(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
     unsigned condition = (op >> 8) & 15;
     uint32_t base = cpu->pc;
@@ -996,6 +996,8 @@ static unsigned execute_branch(struct m68k *cpu, struct megadrive *md, uint16_t 
     return condition == 1 ? 18 : 10;
 }
 
+// Keeping the larger opcode families out of line lets the ARM9 dispatch
+// common instructions without reserving a stack frame for every family.
 static unsigned execute(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
     switch (op >> 12) {
