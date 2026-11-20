@@ -42,9 +42,11 @@ _start:
     mov r0, r0
 .size _start, . - _start
 
+.ifndef use_recovered_c
 .section .text.payload, "ax", %progbits
 .global arm7_call_via_r3
     .incbin "arm7-main.bin", 0, 0x20
 .type arm7_call_via_r3, %function
 arm7_call_via_r3:
     .incbin "arm7-main.bin", 0x20
+.endif

@@ -9,7 +9,7 @@ import subprocess
 from tempfile import TemporaryDirectory
 
 from r20 import EXPECTED_ROM_SHA256, check_match, compile_c, compiler_command, run, tool
-from recovered import RECOVERED_REGIONS, SOURCE, compile_arm9_source
+from recovered import ARM7_REGIONS, RECOVERED_REGIONS, SOURCE, compile_arm9_source
 from sdk_source import (LIBNDS_ITCM_APR_2006, LIBNDS_OCT_2007, assemble_sdk_irq,
                         compile_sdk_keys, snapshot)
 
@@ -54,9 +54,11 @@ ARM7_IRQ_FUNCTIONS = {
     "irqInitHandler": 0x038016A4,
     "irqEnable": 0x038016D8,
 }
-def rom_images(path):
+
+
+def rom_images(path, *, verify_release=True):
     rom = path.read_bytes()
-    if sha256(rom).hexdigest() != EXPECTED_ROM_SHA256:
+    if verify_release and sha256(rom).hexdigest() != EXPECTED_ROM_SHA256:
         raise ValueError("Expected the original jEnesisDS 0.7.4 ROM")
     images = {}
     for cpu, header in ((9, 0x20), (7, 0x30)):
@@ -118,11 +120,14 @@ def compare(object_path, symbols, image):
     return exact
 
 
-def check_recovered_regions(compiler, prefix, work, arm9):
+def check_recovered_regions(compiler, prefix, work, image, cpu, regions):
     linker, objcopy = (tool(prefix, name) for name in ("ld", "objcopy"))
-    base, memory = arm9
-    for label, filename, entry, start, end, symbols in RECOVERED_REGIONS:
-        obj = compile_arm9_source(compiler, work, filename)
+    base, memory = image
+    for label, filename, entry, start, end, symbols in regions:
+        if cpu == 9:
+            obj = compile_arm9_source(compiler, work, filename)
+        else:
+            obj = compile_c(compiler, work, Path(filename), cpu, "-O2", "-marm")
         elf, binary = (obj.with_suffix(ext).name for ext in (".elf", ".bin"))
         definitions = [f"--defsym={name}={address:#x}" for name, address in symbols.items()]
         run(work, linker, "-Ttext", f"{start:#x}", "-e", entry, *definitions, "-o", elf, obj.name)
@@ -221,7 +226,9 @@ def main():
             work = Path(directory)
             shutil.copytree(SOURCE / "source", work, dirs_exist_ok=True)
             print("Reconstructed C / ARM9 -O2")
-            check_recovered_regions(compiler, prefix, work, images[9])
+            check_recovered_regions(compiler, prefix, work, images[9], 9, RECOVERED_REGIONS)
+            print("Reconstructed C / ARM7 -O2")
+            check_recovered_regions(compiler, prefix, work, images[7], 7, ARM7_REGIONS)
             if args.libnds_repo:
                 check_sdk(compiler, prefix, work, images, args.libnds_repo, args.ndslib_repo)
     except (OSError, ValueError, subprocess.CalledProcessError) as error:

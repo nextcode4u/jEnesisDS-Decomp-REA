@@ -4,7 +4,8 @@
 #include <string.h>
 #include "lzss.h"
 
-static inline void copy_prefix(unsigned char *output, const unsigned char *input, unsigned prefix_length)
+static inline __attribute__((always_inline))
+void copy_prefix(unsigned char *output, const unsigned char *input, unsigned prefix_length)
 {
     BoundedStream *input_stream, *output_stream;
 

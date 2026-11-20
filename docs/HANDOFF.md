@@ -63,6 +63,7 @@ Run `make check-c` with the complete r20 toolchain and the original 0.7.4 ROM. T
 | Area | Address range (end exclusive) | Verified C |
 | --- | --- | --- |
 | Cartridge region and byte order | `0x020002e4–0x0200030c`, `0x0200157c–0x020015c0` | Set the Genesis version register and NTSC flag, and swap adjacent bytes while preserving an odd trailing byte. [Region](../rebuild/source/cartridge_region.c) · [Byte order](../rebuild/source/cartridge_byte_order.c) |
+| 68000 timing | `0x020004e0–0x02000538` | Queue an interrupt level, return the current cycle counter, and calculate cycles per scanline. Before the first completed frame, the average-cycle routine returns the startup setting. [Source](../rebuild/source/m68k_timing.c) |
 | Z80 RAM and bank latch | `0x02004438–0x02004458`, `0x02004c18–0x02004c44` | Save and restore the bank latch and read or write Z80 work RAM. [Bank latch](../rebuild/source/z80_bank_state.c) · [Work RAM](../rebuild/source/z80_work_ram.c) |
 | Z80 and sound save-state fields | `0x02004f70–0x020050a8`, `0x02005aac–0x02005ad0` | Convert packed Z80 PC and SP fields between host addresses and serialized offsets. Return the FM and PSG mirror pointers. [Z80 pointers](../rebuild/source/savestate_z80_pointers.c) · [Sound mirrors](../rebuild/source/sound_state.c) |
 | VDP timing and serialization | `0x020090e8–0x02009214`, `0x02009cb0–0x02009cf0` | Tick and reload H-INT, enter vertical blanking, and bind the four VDP save-state memory regions. [Scanline timing](../rebuild/source/vdp_interrupts.c) · [Region binding](../rebuild/source/savestate_vdp.c) |
@@ -74,9 +75,13 @@ Run `make check-c` with the complete r20 toolchain and the original 0.7.4 ROM. T
 | Cartridge bus | `0x02003ca4–0x02003cf8` | Return the ROM, work RAM, and Z80 bank-latch addresses, and select backing storage for VDP DMA. [Source](../rebuild/source/cartridge_bus.c) |
 | Save-state setup | `0x0200d03c–0x0200d13c` | Populate the version 3 region table and build the numbered `.jst` path. [Source](../rebuild/source/savestate_layout.c) |
 
-Run `make reference-c` to link the 15 C regions into the ARM9 image. The linker map in `build/reference-c/arm9.map` records the input objects and original addresses. The target compares the complete ROM with the release and uses the original ROM bytes for the remaining code and data. [Build setup](../README.md#compile-recovered-c-with-devkitarm-r20)
+Run `make reference-c` to link all verified C regions into their processor images. The linker maps in `build/reference-c/` record the input objects and original addresses. The target compares the complete ROM with the release and uses the original ROM bytes for the remaining code and data. [Build setup](../README.md#compile-recovered-c-with-devkitarm-r20)
 
 The FIFO receive ISR reads `REG_IPC_FIFO_RX` once per message and splits that word into a command and a payload. The nonblocking sender clears the send FIFO and returns zero when full. The waiting sender at `0x0200c530` was identified from ARM instructions between the indexed callback setter and nonblocking sender. [Indexed pseudocode](../decompiled/arm9/system/ipc.c#L449) · [Verified C](../rebuild/source/arm9_fifo.c)
+
+### ARM7 and runtime initialization
+
+The ARM7 PSG clock and ring setup at `0x037f8a30–0x037f8a88` matches all 88 bytes. It calculates the fixed-point clock step, calls the channel reset, and records the ring length. The matched builds also link the `.init` sections from r20's own `crti.o` and `crtn.o` at ARM9 `0x02000220` and ARM7 `0x037f80d0`. [ARM7 source](../rebuild/source/arm7_psg_clock.c)
 
 ## Verify LZSS behavior
 
@@ -90,6 +95,18 @@ make check-lzss R20_ROOT=/mnt/d/tools/devkitARM
 ```
 
 The check links all recovered codec routines together and executes the resulting ARM code and the released routines on the same inputs. It compares output bytes, stream state, dictionary state, and counters. The file tests also compare call order, output written, and return values using simulated stdio calls. Cases include ring wraparound, output exhaustion, truncated input, and failed file operations. [Behavior checker](../rebuild/check_lzss.py)
+
+```sh
+make check-codec-rom R20_ROOT=/mnt/d/tools/devkitARM
+```
+
+The codec ROM uses `-Os` for the encoder and both file wrappers so their C objects fit at the original ARM9 entry addresses. The build checks that every other byte in the ARM9 and ARM7 images matches the release. `check-codec-rom` runs the 135 comparisons with those entries in place. The ROM booted Sonic into Green Hill Zone Act 1 in melonDS 1.1. Moving after saving and loading slot 1 restored Sonic's earlier position and timer. The original emulator's save-state UI uses the uncompressed version 3 format. The codec itself is exercised by the Unicorn checks. [Codec entry locations](../rebuild/recovered.py)
+
+```sh
+make check-lzss-standalone
+```
+
+The standalone check links the same codec sources with definitions for the streams, dictionary arrays, and counters. It uses a C99 host compiler and the host C library. The tests cover a known encoded literal, an overlapping back-reference, and an 8 KiB file round trip with its prefix intact. It runs without a DS ROM or the r20 toolchain. [Storage definitions](../rebuild/source/lzss_state.c) · [Host tests](../rebuild/check_lzss_host.c)
 
 ## Reproduce the SDK comparison
 

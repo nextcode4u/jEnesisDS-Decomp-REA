@@ -1,12 +1,7 @@
 /* Binary search trees for the ARM9 LZSS encoder’s sliding window. */
 #include "lzss.h"
 
-enum { ALPHABET_SIZE = 256, NO_NODE = WINDOW_SIZE };
-
-/* The comparison linker binds these arrays and results to their ARM9 addresses. */
-extern int lzss_parent[WINDOW_SIZE + 1];
-extern int lzss_left_child[WINDOW_SIZE + 1];
-extern int lzss_right_child[WINDOW_SIZE + 1 + ALPHABET_SIZE];
+enum { NO_NODE = WINDOW_SIZE };
 
 void initialize_lzss_match_trees(void)
 {

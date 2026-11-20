@@ -10,7 +10,9 @@ from tempfile import TemporaryDirectory
 
 from check_c import rom_images
 from r20 import compiler_command, run, tool
-from recovered import LZSS_STREAMS, LZSS_TREES, SOURCE, compile_arm9_source
+from recovered import (LZSS_ENCODER_GLOBALS, LZSS_OPEN_MODES, LZSS_STDIO,
+                        LZSS_STREAMS, LZSS_TREES, SOURCE, check_codec_image,
+                        compile_arm9_source)
 
 
 ORIGINAL = {
@@ -25,16 +27,7 @@ FUNCTIONS = {
     "load": "load_file_and_decode_lzss_with_prefix",
     "write": "write_file_and_encode_lzss_with_prefix",
 }
-LIBC = {
-    "fclose": 0x02081020,
-    "fopen": 0x02081588,
-    "fread": 0x02081788,
-    "fseek": 0x02081FF0,
-    "ftell": 0x0208212C,
-    "fwrite": 0x020822E0,
-    "memcpy": 0x02082EC0,
-}
-COUNTERS = 0x020B4C40
+COUNTERS = LZSS_ENCODER_GLOBALS["lzss_bytes_read"]
 CODE = 0x02100000
 RETURN = 0x021FFFF0
 INPUT = 0x02200000
@@ -54,13 +47,7 @@ def compile_codec(r20, work):
         for name in ("bounded_stream", "lzss_match_tree", "lzss_encode", "lzss_decode",
                      "lzss_memory", "lzss_buffers")
     ]
-    addresses = {
-        **LZSS_TREES, **LZSS_STREAMS, **LIBC,
-        "lzss_bytes_read": COUNTERS,
-        "lzss_bytes_written": COUNTERS + 4,
-        "binary_read_mode": 0x0208F074,
-        "binary_write_mode": 0x0208F070,
-    }
+    addresses = {**LZSS_TREES, **LZSS_STREAMS, **LZSS_STDIO, **LZSS_OPEN_MODES, **LZSS_ENCODER_GLOBALS}
     definitions = [f"--defsym={name}={address:#x}" for name, address in addresses.items()]
     run(work, tool(prefix, "ld"), "-Ttext", f"{CODE:#x}",
         "-e", FUNCTIONS["encode"], *definitions, "-o", "codec.elf", *objects)
@@ -142,7 +129,7 @@ def execute(image, codec, entry, role, data, capacity, prefix=0, *,
         for register, value in zip(registers, arguments):
             cpu.reg_write(register, value)
     if role in ("load", "write"):
-        for operation, address in LIBC.items():
+        for operation, address in LZSS_STDIO.items():
             if operation != "memcpy":
                 cpu.hook_add(UC_HOOK_CODE, file_call, operation, begin=address, end=address)
 
@@ -161,14 +148,14 @@ def execute(image, codec, entry, role, data, capacity, prefix=0, *,
     }
 
 
-def compare_codec(image, codec, entries):
+def compare_codec(image, recovered_image, codec, entries):
     random = Random(20)
     case_count = 0
 
     def compare(role, data, capacity, *args, **kwargs):
         nonlocal case_count
         expected = execute(image, None, ORIGINAL[role], role, data, capacity, *args, **kwargs)
-        recovered = execute(image, codec, entries[role], role, data, capacity, *args, **kwargs)
+        recovered = execute(recovered_image, codec, entries[role], role, data, capacity, *args, **kwargs)
         differences = [field for field in expected if expected[field] != recovered[field]]
         if differences:
             raise ValueError(f"{role}, input {len(data)}, capacity {capacity}, prefix {args}: "
@@ -213,17 +200,27 @@ def compare_codec(image, codec, entries):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--r20-root", required=True, type=Path)
+    parser.add_argument("--r20-root", type=Path)
     parser.add_argument("--rom", required=True, type=Path)
-    parser.add_argument("--build-dir", required=True, type=Path)
+    parser.add_argument("--build-dir", default=Path("build"), type=Path)
+    parser.add_argument("--codec-rom", type=Path, help="Execute routines at their addresses in the linked test ROM")
     args = parser.parse_args()
+    if not (args.r20_root or args.codec_rom):
+        parser.error("supply --r20-root to compile the codec or --codec-rom to test a linked ROM")
     try:
         image = rom_images(args.rom)[9]
+        if args.codec_rom:
+            candidate = rom_images(args.codec_rom, verify_release=False)[9]
+            if candidate[0] != image[0]:
+                raise ValueError("Codec ROM has an unexpected ARM9 image layout")
+            check_codec_image(image[1], candidate[1], image[0])
+            compare_codec(image, candidate, None, ORIGINAL)
+            return
         build = args.build_dir.resolve()
         build.mkdir(parents=True, exist_ok=True)
         with TemporaryDirectory(prefix="r20-lzss-", dir=build) as directory:
             codec, entries = compile_codec(args.r20_root.resolve(), Path(directory))
-            compare_codec(image, codec, entries)
+            compare_codec(image, image, codec, entries)
     except ModuleNotFoundError as error:
         if error.name != "unicorn":
             raise

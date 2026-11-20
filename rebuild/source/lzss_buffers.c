@@ -12,6 +12,7 @@ int load_file_and_decode_lzss_with_prefix(unsigned char *input, unsigned char *o
 {
     FILE *file;
     BoundedStream *input_stream, *output_stream;
+    size_t bytes_read;
 
     /* The original leaves the path argument in the return register on this path. */
     if (!output || !input || !capacity || !path || prefix_length >= capacity)
@@ -30,7 +31,9 @@ int load_file_and_decode_lzss_with_prefix(unsigned char *input, unsigned char *o
     if (capacity < lzss_input_stream->capacity || lzss_input_stream->capacity < prefix_length)
         return fclose(file);
 
-    fread(input, 1, capacity, file);
+    bytes_read = fread(input, 1, capacity, file);
+    /* The original uses the size from ftell even after a short read. */
+    (void)bytes_read;
     fclose(file);
     output_stream = lzss_output_stream;
     input_stream = lzss_input_stream;

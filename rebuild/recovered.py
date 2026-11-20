@@ -1,8 +1,8 @@
-"""Recovered ARM9 regions and the ROM addresses of their external symbols."""
+"""Recovered sections and the ROM addresses of their external symbols."""
 from pathlib import Path
 import shutil
 
-from r20 import compile_c
+from r20 import check_match, compile_c, run
 from sdk_source import stage_sdk_for_reference
 
 
@@ -27,9 +27,55 @@ LZSS_STREAMS = {
     "lzss_output": 0x023EB2FC,
     "lzss_output_stream": 0x023EB2F8,
 }
+LZSS_ENCODER_GLOBALS = {
+    "lzss_bytes_read": 0x020B4C40,
+    "lzss_bytes_written": 0x020B4C44,
+}
+LZSS_STDIO = {
+    "fclose": 0x02081020,
+    "fopen": 0x02081588,
+    "fread": 0x02081788,
+    "fseek": 0x02081FF0,
+    "ftell": 0x0208212C,
+    "fwrite": 0x020822E0,
+    "memcpy": 0x02082EC0,
+}
+LZSS_OPEN_MODES = {
+    "binary_read_mode": 0x0208F074,
+    "binary_write_mode": 0x0208F070,
+}
+CODEC_REPLACEMENTS = (
+    (0x0200C87C, 0x0200CB78, "encode_lzss_stream", "lzss_encode.c"),
+    (0x0200CDA4, 0x0200CF28, "load_file_and_decode_lzss_with_prefix", "lzss_buffers.c"),
+    (0x0200CF28, 0x0200D03C, "write_file_and_encode_lzss_with_prefix", "lzss_buffers.c"),
+)
+
+
+def check_codec_image(original, rebuilt, base):
+    if len(rebuilt) != len(original):
+        raise ValueError("Codec ROM has an unexpected ARM9 image length")
+    unchanged = bytearray(rebuilt)
+    for start, end, name, _ in CODEC_REPLACEMENTS:
+        first, stop = start - base, end - base
+        if not 0 <= first < stop <= len(original):
+            raise ValueError(f"Codec region for {name} is outside the ARM9 image")
+        if rebuilt[first:stop] == original[first:stop]:
+            raise ValueError(f"Expected replacement instructions for {name}")
+        unchanged[first:stop] = original[first:stop]
+    check_match(original, unchanged, "ARM9 image outside codec replacements")
+
+
 RECOVERED_REGIONS = (
     ("Cartridge region", "cartridge_region.c", "set_genesis_region_and_version_register",
      0x020002E4, 0x0200030C, {"genesis_region": 0x0B000000}),
+    ("68000 interrupt and cycle wrappers", "m68k_timing.c", "queue_m68k_interrupt_level",
+     0x020004E0, 0x02000538, {
+         "__aeabi_uidiv": 0x02080380,
+         "frame_timing": 0x0B000000,
+         "get_m68k_cycle_counter_field": 0x02005144,
+         "m68k_context": 0x0B0000AC,
+         "set_m68k_interrupt_level": 0x020050CC,
+     }),
     ("Cartridge byte order", "cartridge_byte_order.c", "swap_adjacent_bytes_in_backing_buffer",
      0x0200157C, 0x020015C0, {}),
     ("Z80 bank latch save state", "z80_bank_state.c", "get_z80_bank_latch_for_savestate",
@@ -112,20 +158,45 @@ RECOVERED_REGIONS = (
 )
 
 
+ARM7_REGIONS = (
+    ("ARM7 PSG clock and ring setup", "arm7_psg_clock.c", "initialize_psg_clock_and_state",
+     0x037F8A30, 0x037F8A88, {
+         "__aeabi_idiv": 0x038019EC,
+         "psg_ticks_per_sample_q12": 0x03806DBC,
+         "psg_ring_samples": 0x03806DB8,
+         "reset_psg_channel_state": 0x037F89BC,
+     }),
+)
+
+
 def compile_arm9_source(compiler, work, filename):
     # Keep the last stream read in r0 on decoder exit, as in the release.
     flags = ("-fno-tree-vrp",) if filename == "lzss_decode.c" else ()
     return compile_c([*compiler, *flags], work, Path(filename), 9, "-O2", "-marm")
 
 
-def prepare_reference_arm9(work, compiler, image, base, libnds=None):
-    """Generate ROM gaps and link input for rebuilding with matched C objects."""
-    shutil.copytree(SOURCE / "source", work, dirs_exist_ok=True)
-    regions = []
+def stage_c_runtime_init(work, r20, objcopy):
+    lib = r20 / "lib/gcc/arm-eabi/4.1.1"
     objects = []
-    assembly = []
+    for part in ("crti", "crtn"):
+        source = f"{part}.o"
+        output = f"{part}-init.o"
+        shutil.copyfile(lib / source, work / source)
+        run(work, objcopy, "--only-section=.init", source, output)
+        objects.append(output)
+    return objects
+
+
+def init_region(base, offset, runtime):
+    sections = " ".join(f'"{obj}"(.init)' for obj in runtime)
+    return base + offset, base + offset + 0x20, f"{sections} . = {offset + 0x20:#x};"
+
+
+def write_payload_layout(work, core, image, base, begin, end, veneer, regions, *, assembly=None):
+    if assembly is None:
+        assembly = []
     layout = []
-    externals = {}
+    veneer_name = f"{core}_call_via_r3"
 
     def add_gap(start, end):
         if start >= end:
@@ -133,24 +204,75 @@ def prepare_reference_arm9(work, compiler, image, base, libnds=None):
         gap = f"rom-gap-{start:08x}"
         (work / f"{gap}.bin").write_bytes(image[start - base:end - base])
         assembly.append(f'.section .text.{gap}, "ax", %progbits')
-        if start < 0x02085898 < end:
-            veneer_offset = 0x02085898 - start
+        if start <= veneer < end:
+            veneer_offset = veneer - start
+            if veneer_offset:
+                assembly.append(f'.incbin "{gap}.bin", 0, {veneer_offset:#x}')
             assembly.extend([
-                f'.incbin "{gap}.bin", 0, {veneer_offset:#x}',
-                ".global arm9_call_via_r3",
-                ".type arm9_call_via_r3, %function",
-                "arm9_call_via_r3:",
+                f".global {veneer_name}",
+                f".type {veneer_name}, %function",
+                f"{veneer_name}:",
                 f'.incbin "{gap}.bin", {veneer_offset:#x}',
             ])
         else:
             assembly.append(f'.incbin "{gap}.bin"')
         layout.append(f"*(.text.{gap})")
 
+    offset = base + begin
+    for start, stop, section in sorted(regions):
+        if not offset <= start < stop <= base + end:
+            raise ValueError(f"{core} replacement {start:#x}–{stop:#x} overlaps or is out of range")
+        add_gap(offset, start)
+        layout.append(section)
+        offset = stop
+    add_gap(offset, base + end)
+    (work / f"{core}-rom-gaps.s").write_text("\n".join(assembly) + "\n")
+    return "\n        ".join(layout)
+
+
+def prepare_reference_arm7(work, compiler, image, base, runtime):
+    regions = [init_region(base, 0xd0, runtime)]
+    objects = list(runtime)
+    externals = {}
+    for _, filename, _, start, end, symbols in ARM7_REGIONS:
+        obj = compile_c(compiler, work, Path(filename), 7, "-O2", "-marm").name
+        objects.append(obj)
+        regions.append((start, end, f'"{obj}"(.text)'))
+        externals.update(symbols)
+    layout = write_payload_layout(work, "arm7", image, base, 0xd0, len(image), 0x037f80f0, regions)
+    script = work / "arm7.ld"
+    definitions = "".join(f"PROVIDE({name} = {address:#x});\n" for name, address in externals.items())
+    script.write_text(script.read_text().replace("*(.text.payload)", layout) + definitions)
+    return objects
+
+
+def prepare_reference_arm9(work, compiler, image, base, runtime, libnds=None, *, replace_codec=False):
+    """Generate ROM gaps and link input for rebuilding with matched C objects."""
+    shutil.copytree(SOURCE / "source", work, dirs_exist_ok=True)
+    regions = [init_region(base, 0x220, runtime)]
+    objects = list(runtime)
+    assembly = []
+    externals = {}
+
     for _, filename, _, start, end, symbols in RECOVERED_REGIONS:
         obj = compile_arm9_source(compiler, work, filename).name
         objects.append(obj)
         regions.append((start, end, f'"{obj}"(.text)'))
         externals.update(symbols)
+
+    if replace_codec:
+        codec_objects = {}
+        for start, end, entry, filename in CODEC_REPLACEMENTS:
+            if filename not in codec_objects:
+                options = [*compiler, "-ffunction-sections"]
+                obj = compile_c(options, work, Path(filename), 9, "-Os", "-marm").name
+                codec_objects[filename] = obj
+                objects.append(obj)
+            section = f'"{codec_objects[filename]}"(.text.{entry}) . = {end - base:#x};'
+            regions.append((start, end, section))
+        externals.update(LZSS_ENCODER_GLOBALS)
+        externals.update(LZSS_STDIO)
+        externals.update(LZSS_OPEN_MODES)
 
     script = work / "arm9.ld"
     source = script.read_text()
@@ -177,13 +299,8 @@ def prepare_reference_arm9(work, compiler, image, base, libnds=None):
         source = source.replace("    arm9_main =", f'    /DISCARD/ : {{ "{keys}"(.text.*) }}\n    arm9_main =')
         externals.update(irqTable=0x010056E0, __irq_flags=0x0B003FF8)
 
-    offset = base + 0x220
-    for start, end, section in sorted(regions):
-        add_gap(offset, start)
-        layout.append(section)
-        offset = end
-    add_gap(offset, base + 0x90004)
-    (work / "arm9-rom-gaps.s").write_text("\n".join(assembly) + "\n")
+    layout = write_payload_layout(work, "arm9", image, base, 0x220, 0x90004,
+                                  0x02085898, regions, assembly=assembly)
     definitions = "".join(f"PROVIDE({name} = {address:#x});\n" for name, address in externals.items())
-    script.write_text(source.replace("*(.text.payload)", "\n        ".join(layout)) + definitions)
+    script.write_text(source.replace("*(.text.payload)", layout) + definitions)
     return objects

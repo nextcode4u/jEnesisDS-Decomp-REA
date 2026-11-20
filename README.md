@@ -37,11 +37,15 @@ make reference-c R20_ROOT=/mnt/d/tools/devkitARM
 make check-pseudocode
 ```
 
-`check-c` compares all 2,772 bytes of 34 recovered ARM9 routines with the original ROM. `reference-c` links those C objects at their original addresses and verifies the entire result at `build/reference-c/jEnesisDS-0.7.4-rebuilt.nds`. It uses the original ROM for the remaining payload. Use `ROM=/path/to/jEnesisDS.nds` if the input is stored elsewhere. [Recovered C](rebuild/source) · [Verified ranges](docs/HANDOFF.md#compile-the-recovered-arm9-c)
+`check-c` compares all 2,948 bytes of 38 recovered ARM9 and ARM7 routines with the original ROM. `reference-c` links those C objects and the r20 runtime initialization sections at their original addresses. It verifies the entire result at `build/reference-c/jEnesisDS-0.7.4-rebuilt.nds` and uses the original ROM for the remaining payload. Use `ROM=/path/to/jEnesisDS.nds` if the input is stored elsewhere. [Recovered C](rebuild/source) · [Verified ranges](docs/HANDOFF.md#compile-the-recovered-arm9-c)
 
 `make check-lzss` uses Python Unicorn to compare the recovered compression and file-entry code with the original ARM9 routines. `make check-sdk` recompiles and compares selected period ndslib and libnds sources. [Test setup](docs/HANDOFF.md#verify-lzss-behavior) · [SDK comparison](docs/HANDOFF.md#reproduce-the-sdk-comparison)
 
 Use `make reference-c-sdk` with the same `R20_ROOT` and a `LIBNDS_REPO` history checkout to also link the period libnds key routines and ITCM interrupt dispatcher into the full ROM. [SDK source build](docs/HANDOFF.md#link-the-period-libnds-sources)
+
+`make check-codec-rom` builds a ROM with the full recovered LZSS codec in place and runs the 135 Unicorn comparisons against its linked entries. It writes `build/reference-c-codec/jEnesisDS-codec-test.nds`. [Codec ROM verification](docs/HANDOFF.md#verify-lzss-behavior)
+
+`make check-lzss-standalone` compiles and runs the codec with its own storage and the host C library. That check needs only a C99 compiler and the checkout. [Standalone codec storage](rebuild/source/lzss_state.c)
 
 ## Matching ROM rebuild in WSL
 
