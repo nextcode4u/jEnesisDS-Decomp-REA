@@ -8,9 +8,10 @@
 #include <stdio.h>
 #include <string.h>
 
-static uint8_t rom[0x26a] = {
+static uint8_t rom[0x27c] = {
     0x00, 0xff, 0xfe, 0x00,  // Initial supervisor stack at $fffe00.
     0x00, 0x00, 0x02, 0x00,  // Reset PC at $200.
+    [0x70] = 0x00, 0x00, 0x02, 0x76,            // Level 4 autovector.
     [0x78] = 0x00, 0x00, 0x02, 0x48,            // Level 6 autovector.
     [0x200] =
     0x46, 0xfc, 0x27, 0x00,                    // move.w #$2700,sr
@@ -43,6 +44,13 @@ static uint8_t rom[0x26a] = {
     0x66, 0xfa,                                // bne.s to the TST
     0xc1, 0x41,                                // exg d0,d1
     0xe0, 0xe8, 0x00, 0x10,                    // asr.w $10(a0)
+    0x40, 0xe7,                                // move.w sr,-(sp)
+    0x46, 0xdf,                                // move.w (sp)+,sr
+    0x56, 0xf9, 0x00, 0xff, 0x00, 0x11,        // sne $ff0011
+    0x50, 0xc1,                                // st d1
+    0x52, 0x02,                                // addq.b #1,d2
+    0x4e, 0x73,                                // rte
+    0x60, 0xfe,                                // bra.s to self
 };
 
 static void vdp_register(struct megadrive *md, unsigned reg, unsigned value)
@@ -164,14 +172,17 @@ static void test_savestate(struct megadrive *md)
     const uint32_t pc = md->cpu.pc;
     md->ram[75] = 0x81;
     md->vram[5] = 0x93;
+    md->hint_pending = true;
     assert(savestate_save(path, identity, md));
     assert(savestate_exists(path));
     md->ram[75] = md->vram[5] = 0;
     md->cpu.pc = 0;
+    md->hint_pending = false;
     assert(!savestate_load(path, identity ^ 1, md));
     assert(md->cpu.pc == 0 && md->ram[75] == 0);
     assert(savestate_load(path, identity, md));
     assert(md->cpu.pc == pc && md->ram[75] == 0x81 && md->vram[5] == 0x93);
+    assert(md->hint_pending);
     FILE *file = fopen(path, "ab");
     assert(file && fputc(0xff, file) != EOF && fclose(file) == 0);
     assert(!savestate_load(path, identity, md));
@@ -258,6 +269,29 @@ int main(void)
     assert(megadrive_write_word(&md, 0xff0010, 0x8001));
     assert(m68k_step(&md.cpu, &md) == 16);
     assert(megadrive_read_word(&md, 0xff0010) == 0xc000 && (md.cpu.sr & 31) == 25);
+    md.cpu.sr = 0x2704;
+    uint32_t stack = md.cpu.a[7];
+    assert(m68k_step(&md.cpu, &md) == 14 && md.cpu.a[7] == stack - 2);
+    assert(megadrive_read_word(&md, stack - 2) == 0x2704);
+    md.cpu.sr = 0x2300;
+    assert(m68k_step(&md.cpu, &md) == 16 && md.cpu.a[7] == stack && md.cpu.sr == 0x2704);
+    assert(megadrive_write_byte(&md, 0xff0011, 0x55));
+    assert(m68k_step(&md.cpu, &md) == 20 && megadrive_read_byte(&md, 0xff0011) == 0);
+    assert(m68k_step(&md.cpu, &md) == 6 && md.cpu.d[1] == 0x123456ff && md.cpu.sr == 0x2704);
     test_savestate(&md);
     test_psg();
+
+    megadrive_reset(&md, &cartridge, GENESIS_REGION_USA);
+    md.cpu.pc = 0x27a;
+    vdp_register(&md, 0, 0x14);
+    vdp_register(&md, 10, 55);
+    megadrive_run_frame(&md);
+    assert(md.hint_pending && md.cpu.d[2] == 0);
+    md.cpu.sr = 0x2300;
+    megadrive_run_frame(&md);
+    assert(!md.hint_pending && !md.cpu.stopped && md.cpu.d[2] == 5);
+    md.frame_cycle = 50;
+    assert(megadrive_read_word(&md, 0xc00004) & 4);
+    md.frame_cycle = 150;
+    assert(!(megadrive_read_word(&md, 0xc00004) & 4));
 }

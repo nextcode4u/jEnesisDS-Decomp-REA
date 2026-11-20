@@ -48,6 +48,7 @@ struct megadrive {
     bool vdp_command_pending;
     bool vdp_fill_pending;
     bool vblank;
+    bool hint_pending;
     uint8_t psg_latch;
     uint16_t psg_registers[8];
     uint8_t ym_address[2];
@@ -56,6 +57,7 @@ struct megadrive {
     uint8_t version;
     unsigned frame_cycles;
     unsigned cycle_carry;
+    unsigned frame_cycle;
 };
 
 void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum genesis_region region);

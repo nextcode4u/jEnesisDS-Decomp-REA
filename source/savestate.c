@@ -7,7 +7,7 @@
 
 enum { FNV_PRIME = 16777619 };
 static const uint32_t fnv_start = UINT32_C(2166136261);
-static const uint8_t magic[4] = {'J', 'S', 'C', 1};
+static const uint8_t magic[4] = {'J', 'S', 'C', 2};
 
 struct state_io {
     FILE *file;
@@ -46,7 +46,7 @@ static uint32_t transfer_u32(struct state_io *io, uint32_t value)
     return bytes[0] | (uint32_t)bytes[1] << 8 | (uint32_t)bytes[2] << 16 | (uint32_t)bytes[3] << 24;
 }
 
-static void transfer_state(struct state_io *io, struct megadrive *md)
+static void transfer_state(struct state_io *io, struct megadrive *md, unsigned version)
 {
     // Keep the on-disk format independent of pointers, padding, and host byte order.
 #define SCALAR(field) do { (field) = transfer_u32(io, (field)); } while (0)
@@ -88,6 +88,10 @@ static void transfer_state(struct state_io *io, struct megadrive *md)
     SCALAR(md->version);
     SCALAR(md->frame_cycles);
     SCALAR(md->cycle_carry);
+    if (version >= 2)
+        SCALAR(md->hint_pending);
+    else
+        md->hint_pending = false;
 #undef SCALAR
 #undef ARRAY_BYTES
 }
@@ -100,10 +104,11 @@ static bool transfer_file(FILE *file, uint32_t identity, struct megadrive *md, b
     transfer(&io, header, sizeof(header));
     uint32_t rom_size = transfer_u32(&io, md->rom_size);
     uint32_t stored_identity = transfer_u32(&io, identity);
-    if (!io.ok || memcmp(header, magic, sizeof(header)) ||
+    if (!io.ok || memcmp(header, magic, sizeof(header) - 1) ||
+        (header[3] != 1 && header[3] != magic[3]) ||
         rom_size != md->rom_size || stored_identity != identity)
         return false;
-    transfer_state(&io, md);
+    transfer_state(&io, md, header[3]);
     uint32_t expected = io.hash;
     uint32_t checksum = transfer_u32(&io, expected);
     return io.ok && checksum == expected && (writing || (fgetc(file) == EOF && !ferror(file)));

@@ -47,6 +47,18 @@ void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum ge
 static unsigned run_cpu_until(struct megadrive *md, unsigned cycles, unsigned end)
 {
     while (cycles < end && !md->cpu.stopped) {
+        if ((md->vdp_registers[0] & 0x10) && md->hint_pending && (md->cpu.sr & 0x0700) < 0x0400) {
+            unsigned elapsed = m68k_interrupt(&md->cpu, md, 4);
+            if (elapsed) {
+                md->hint_pending = false;
+                md->ym_busy_cycles = md->ym_busy_cycles > elapsed ? md->ym_busy_cycles - elapsed : 0;
+                cycles += elapsed;
+                continue;
+            }
+            if (md->cpu.stopped)
+                break;
+        }
+        md->frame_cycle = cycles;
         unsigned elapsed = m68k_step(&md->cpu, md);
         uint16_t op = md->cpu.opcode;
         if (elapsed == 10 && md->cpu.pc <= md->cpu.instruction_address &&
@@ -62,9 +74,17 @@ static unsigned run_cpu_until(struct megadrive *md, unsigned cycles, unsigned en
 void megadrive_run_frame(struct megadrive *md)
 {
     unsigned cycles = md->cycle_carry;
-    unsigned active_cycles = 3420 * ((md->vdp_registers[1] & 8) ? 240 : 224) / 7;
+    unsigned active_lines = (md->vdp_registers[1] & 8) ? 240 : 224;
     md->vblank = false;
-    cycles = run_cpu_until(md, cycles, active_cycles);
+    // Run to each counter expiration. Reload from R10 at the start of
+    // active display and when it expires, so writes take effect on reload.
+    unsigned hint_line = md->vdp_registers[10];
+    while (hint_line <= active_lines && !md->cpu.stopped) {
+        cycles = run_cpu_until(md, cycles, 3420 * hint_line / 7);
+        md->hint_pending = true;
+        hint_line += md->vdp_registers[10] + 1;
+    }
+    cycles = run_cpu_until(md, cycles, 3420 * active_lines / 7);
     md->vblank = true;
     if (!md->cpu.stopped && (md->vdp_registers[1] & 0x20))
         cycles += m68k_interrupt(&md->cpu, md, 6);
@@ -128,8 +148,11 @@ uint16_t megadrive_read_word(struct megadrive *md, uint32_t address)
         return (uint16_t)md->ram[address & 0xffff] << 8 | md->ram[(address + 1) & 0xffff];
     if (address == 0xc00004 || address == 0xc00006) {
         md->vdp_command_pending = false;
+        unsigned clocks = (md->frame_cycle * 7) % 3420;
+        bool wide = (md->vdp_registers[12] & 1) != 0;
+        bool hblank = wide ? clocks >= 228 && clocks < 872 : clocks >= 280 && clocks < 860;
         // Synchronous transfers leave the FIFO empty and DMA idle.
-        return 0x0200 | (md->vblank ? 8 : 0) | ((md->version & 0x40) ? 1 : 0);
+        return 0x0200 | (md->vblank ? 8 : 0) | (hblank ? 4 : 0) | ((md->version & 0x40) ? 1 : 0);
     }
     if (address == 0xa11100)
         return (uint16_t)megadrive_read_byte(md, address) << 8;

@@ -711,13 +711,42 @@ static unsigned execute_misc(struct m68k *cpu, struct megadrive *md, uint16_t op
         set_logic_flags(cpu, 4, cpu->d[reg]);
         return 4;
     }
-    if ((op & 0xfff8) == 0x40c0) {
-        set_data(cpu, op & 7, 2, cpu->sr);
-        return 6;
+    if ((op & 0xffc0) == 0x40c0) {
+        unsigned mode = (op >> 3) & 7, reg = op & 7;
+        if (mode == 0) {
+            set_data(cpu, reg, 2, cpu->sr);
+            return 6;
+        }
+        uint32_t address;
+        if ((mode == 7 && reg > 1) || !address_operand(cpu, md, mode, reg, 2, &address) ||
+            !write_memory(md, address, 2, cpu->sr))
+            return 0;
+        return 8 + memory_cycles(mode, reg, 2);
     }
-    if ((op & 0xfff8) == 0x44c0) {
-        cpu->sr = (cpu->sr & ~31) | (cpu->d[op & 7] & 31);
-        return 12;
+    if ((op & 0xffc0) == 0x44c0 || (op & 0xffc0) == 0x46c0) {
+        bool whole_status = (op & 0x200) != 0;
+        if (whole_status && !(cpu->sr & SR_SUPERVISOR))
+            return 0;
+        unsigned mode = (op >> 3) & 7, reg = op & 7;
+        unsigned cycles = 12;
+        uint16_t value;
+        if (mode == 0) {
+            value = cpu->d[reg];
+        } else if (mode == 7 && reg == 4) {
+            value = fetch(cpu, md, 2);
+            cycles += 4;
+        } else {
+            uint32_t address;
+            if (!address_operand(cpu, md, mode, reg, 2, &address) || (address & 1))
+                return 0;
+            value = read_memory(md, address, 2);
+            cycles += memory_cycles(mode, reg, 2);
+        }
+        if (whole_status)
+            set_status(cpu, value);
+        else
+            cpu->sr = (cpu->sr & ~31) | (value & 31);
+        return cycles;
     }
     if ((op & 0xfff0) == 0x4e60) {
         if (!(cpu->sr & SR_SUPERVISOR))
@@ -729,11 +758,6 @@ static unsigned execute_misc(struct m68k *cpu, struct megadrive *md, uint16_t op
         return 4;
     }
     switch (op) {
-    case 0x46fc:
-        if (!(cpu->sr & SR_SUPERVISOR))
-            return 0;
-        set_status(cpu, fetch(cpu, md, 2));
-        return 16;
     case 0x4e71:
         return 4;
     case 0x4e73: {
@@ -796,7 +820,7 @@ static unsigned execute(struct m68k *cpu, struct megadrive *md, uint16_t op)
         return move(cpu, md, op);
     case 4:
         return execute_misc(cpu, md, op);
-    case 5:
+    case 5: {
         if ((op & 0x00f8) == 0x00c8) {
             uint32_t base = cpu->pc;
             int16_t displacement = fetch(cpu, md, 2);
@@ -810,7 +834,20 @@ static unsigned execute(struct m68k *cpu, struct megadrive *md, uint16_t op)
             cpu->pc = base + displacement;
             return 10;
         }
-        return (op & 0xc0) != 0xc0 ? quick_arithmetic(cpu, md, op) : 0;
+        if ((op & 0xc0) != 0xc0)
+            return quick_arithmetic(cpu, md, op);
+        unsigned mode = (op >> 3) & 7, reg = op & 7;
+        uint8_t value = condition_true(cpu->sr, (op >> 8) & 15) ? 0xff : 0;
+        if (mode == 0) {
+            set_data(cpu, reg, 1, value);
+            return value ? 6 : 4;
+        }
+        uint32_t address;
+        if ((mode == 7 && reg > 1) || !address_operand(cpu, md, mode, reg, 1, &address) ||
+            !write_memory(md, address, 1, value))
+            return 0;
+        return 8 + memory_cycles(mode, reg, 1);
+    }
     case 6:
         return execute_branch(cpu, md, op);
     case 7:
