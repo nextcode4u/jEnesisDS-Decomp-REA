@@ -1,9 +1,11 @@
 #include "cartridge.h"
 #include "megadrive.h"
+#include "vdp_render.h"
 
 #include <assert.h>
+#include <string.h>
 
-static uint8_t rom[0x250] = {
+static uint8_t rom[0x254] = {
     0x00, 0xff, 0xfe, 0x00,  // Initial supervisor stack at $fffe00.
     0x00, 0x00, 0x02, 0x00,  // Reset PC at $200.
     [0x78] = 0x00, 0x00, 0x02, 0x48,            // Level 6 autovector.
@@ -29,6 +31,8 @@ static uint8_t rom[0x250] = {
     [0x248] =
     0x72, 0x07,                                // moveq #7,d1
     0x4e, 0x73,                                // rte
+    0xc3, 0xfc, 0xff, 0xfd,                    // muls #-3,d1
+    0x83, 0xfc, 0x00, 0x04,                    // divs #4,d1
 };
 
 static void vdp_register(struct megadrive *md, unsigned reg, unsigned value)
@@ -77,6 +81,44 @@ static void test_vdp_dma(struct megadrive *md)
     assert(!md->vdp_fill_pending && md->vdp_address == 0x104);
 }
 
+static void set_vram_word(struct megadrive *md, unsigned address, uint16_t word)
+{
+    md->vram[address] = word >> 8;
+    md->vram[address + 1] = word;
+}
+
+static void test_vdp_render(struct megadrive *md)
+{
+    static uint16_t bitmap[VDP_VIEW_WIDTH * VDP_VIEW_HEIGHT / 2];
+    vdp_register(md, 1, 0x44);
+    vdp_register(md, 2, 0x30);
+    vdp_register(md, 4, 7);
+    vdp_register(md, 5, 0x78);
+    vdp_register(md, 13, 0x3f);
+    vdp_register(md, 16, 0);
+    memset(md->vram, 0, sizeof(md->vram));
+    memset(&md->vram[32], 0x11, 32);
+    memset(&md->vram[64], 0x22, 32);
+    memset(&md->vram[96], 0x33, 32);
+    set_vram_word(md, 0xc080, 0x2001);
+    set_vram_word(md, 0xe080, 0x8002);
+    // First sprite: 8x8, low priority, starting at viewport x=0 and y=0.
+    set_vram_word(md, 0xf000, 16 + 128);
+    set_vram_word(md, 0xf004, 3);
+    set_vram_word(md, 0xf006, 128);
+    vdp_render_frame(md, bitmap);
+    assert(bitmap[0] == 0x0202 && bitmap[4] == 0);
+    set_vram_word(md, 0xe080, 0x0002);
+    vdp_render_frame(md, bitmap);
+    assert(bitmap[0] == 0x0303);
+    set_vram_word(md, 0xc080, 0xa001);
+    vdp_render_frame(md, bitmap);
+    assert(bitmap[0] == 0x1111);
+    vdp_register(md, 1, 4);
+    vdp_render_frame(md, bitmap);
+    assert(bitmap[0] == 0);
+}
+
 int main(void)
 {
     static struct megadrive md;
@@ -115,6 +157,7 @@ int main(void)
     assert(md.frame_cycles > 150000 && !md.cpu.stopped);
     test_startup_bus(&md);
     test_vdp_dma(&md);
+    test_vdp_render(&md);
 
     assert(m68k_interrupt(&md.cpu, &md, 6) == 0);  // Reset masks level 6.
     md.cpu.sr = 0x2304;
@@ -123,4 +166,7 @@ int main(void)
     assert(m68k_step(&md.cpu, &md) == 4 && md.cpu.d[1] == 7);
     assert(m68k_step(&md.cpu, &md) == 20);
     assert(md.cpu.sr == 0x2304 && md.cpu.pc == 0x200 && md.cpu.a[7] == 0xfffe00);
+    md.cpu.pc = 0x24c;
+    assert(m68k_step(&md.cpu, &md) != 0 && md.cpu.d[1] == 0xffffffeb);
+    assert(m68k_step(&md.cpu, &md) != 0 && md.cpu.d[1] == 0xfffffffb);
 }

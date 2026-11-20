@@ -40,6 +40,7 @@ struct megadrive {
     uint8_t vram[0x10000];
     uint16_t cram[64];
     uint16_t vsram[40];
+    uint32_t video_revision;
     uint8_t vdp_registers[24];
     uint16_t vdp_address;
     uint8_t vdp_code;

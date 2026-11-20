@@ -44,6 +44,21 @@ static uint32_t fetch(struct m68k *cpu, struct megadrive *md, unsigned size)
     return value;
 }
 
+static bool enter_exception(struct m68k *cpu, struct megadrive *md, unsigned vector,
+                            uint16_t status)
+{
+    uint16_t old_status = cpu->sr;
+    set_status(cpu, (status & ~0x8000) | SR_SUPERVISOR);
+    cpu->a[7] -= 6;
+    if (!write_memory(md, cpu->a[7], 2, old_status) ||
+        !write_memory(md, cpu->a[7] + 2, 4, cpu->pc)) {
+        cpu->stopped = true;
+        return false;
+    }
+    cpu->pc = read_memory(md, vector * 4, 4);
+    return true;
+}
+
 static uint32_t size_mask(unsigned size)
 {
     return UINT32_MAX >> (32 - size * 8);
@@ -468,6 +483,62 @@ static unsigned exclusive_or(struct m68k *cpu, struct megadrive *md, uint16_t op
     return cycles;
 }
 
+static unsigned multiply_or_divide(struct m68k *cpu, struct megadrive *md, uint16_t op)
+{
+    unsigned mode = (op >> 3) & 7, reg = op & 7, dest = (op >> 9) & 7;
+    unsigned extra = 0;
+    bool signed_operand = (op & 0x100) != 0;
+    uint16_t source;
+    if (mode == 0) {
+        source = cpu->d[reg];
+    } else if (mode == 7 && reg == 4) {
+        source = fetch(cpu, md, 2);
+        extra = 4;
+    } else {
+        uint32_t address;
+        if (!address_operand(cpu, md, mode, reg, 2, &address) || (address & 1))
+            return 0;
+        source = read_memory(md, address, 2);
+        extra = memory_cycles(mode, reg, 2);
+    }
+    if (op >> 12 == 0xc) {
+        cpu->d[dest] = signed_operand ? (uint32_t)((int16_t)source * (int16_t)cpu->d[dest]) :
+                       (uint32_t)source * (uint16_t)cpu->d[dest];
+        set_logic_flags(cpu, 4, cpu->d[dest]);
+        uint16_t transitions = signed_operand ? source ^ (source << 1) : source;
+        return 38 + 2 * __builtin_popcount((unsigned)transitions) + extra;
+    }
+    if (!source)
+        return enter_exception(cpu, md, 5, cpu->sr) ? 38 + extra : 0;
+
+    uint32_t dividend = cpu->d[dest];
+    uint32_t quotient = 0, remainder = 0;
+    bool overflow;
+    if (signed_operand) {
+        int32_t d = (int32_t)dividend;
+        int16_t s = (int16_t)source;
+        overflow = d == INT32_MIN && s == -1;
+        if (!overflow) {
+            int32_t q = d / s;
+            overflow = q < INT16_MIN || q > INT16_MAX;
+            quotient = q;
+            remainder = d % s;
+        }
+    } else {
+        quotient = dividend / source;
+        remainder = dividend % source;
+        overflow = quotient > UINT16_MAX;
+    }
+    if (overflow) {
+        cpu->sr = (cpu->sr & ~CCR_C) | CCR_V;
+    } else {
+        cpu->d[dest] = (remainder << 16) | (quotient & 0xffff);
+        set_logic_flags(cpu, 2, quotient);
+    }
+    // The 68000's divider has data-dependent timing.
+    return (signed_operand ? 158 : 140) + extra;
+}
+
 static unsigned bit_operation(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
     bool immediate = (op & 0xff00) == 0x0800;
@@ -541,6 +612,8 @@ static unsigned execute(struct m68k *cpu, struct megadrive *md, uint16_t op)
     if (op >= 0x1000 && op < 0x4000)
         return move(cpu, md, op);
     unsigned top = op >> 12;
+    if ((op & 0xb0c0) == 0x80c0)
+        return multiply_or_divide(cpu, md, op);
     if (top == 0xb && (op & 0x100) && (op & 0xc0) != 0xc0)
         return exclusive_or(cpu, md, op);
     if (top == 8 || top == 9 || top == 0xb || top == 0xc || top == 0xd)
@@ -687,15 +760,7 @@ unsigned m68k_interrupt(struct m68k *cpu, struct megadrive *md, unsigned level)
     uint16_t old_status = cpu->sr;
     if (level == 0 || level > 7 || (level != 7 && level <= ((old_status >> 8) & 7)))
         return 0;
-    set_status(cpu, (old_status & 31) | SR_SUPERVISOR | (level << 8));
-    cpu->a[7] -= 6;
-    if (!write_memory(md, cpu->a[7], 2, old_status) ||
-        !write_memory(md, cpu->a[7] + 2, 4, cpu->pc)) {
-        cpu->stopped = true;
-        return 0;
-    }
-    cpu->pc = read_memory(md, (24 + level) * 4, 4);
-    return 44;
+    return enter_exception(cpu, md, 24 + level, (old_status & 31) | (level << 8)) ? 44 : 0;
 }
 
 void m68k_reset(struct m68k *cpu, struct megadrive *md)

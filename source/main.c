@@ -1,6 +1,7 @@
 #include "cartridge.h"
 #include "frontend.h"
 #include "megadrive.h"
+#include "vdp_render.h"
 
 #include <dirent.h>
 #include <errno.h>
@@ -105,6 +106,38 @@ struct application {
     enum frontend_view before_settings;
     enum genesis_region region;
 };
+
+static int display_bg;
+static unsigned display_page;
+static uint32_t display_revision;
+static bool display_visible;
+
+static void init_game_display(void)
+{
+    videoSetMode(MODE_5_2D);
+    vramSetBankA(VRAM_A_MAIN_BG);
+    display_bg = bgInit(2, BgType_Bmp8, BgSize_B8_256x256, 0, 0);
+    bgHide(display_bg);
+    BG_PALETTE[0] = 0;
+}
+
+static void draw_game_frame(const struct megadrive *md)
+{
+    BG_PALETTE[0] = megadrive_backdrop(md);
+    for (unsigned i = 1; i < 64; ++i)
+        BG_PALETTE[i] = vdp_ds_color(md->cram[i]);
+    if (!display_visible || display_revision != md->video_revision) {
+        // Render into the other 64 KiB bitmap before switching the visible page.
+        unsigned next_page = display_page ^ 4;
+        uint16_t *bitmap = (uint16_t *)BG_GFX + next_page * (0x4000 / sizeof(uint16_t));
+        vdp_render_frame(md, bitmap);
+        bgSetMapBase(display_bg, next_page);
+        display_page = next_page;
+        display_revision = md->video_revision;
+        display_visible = true;
+        bgShow(display_bg);
+    }
+}
 
 static void draw_browser(const struct browser *browser)
 {
@@ -219,6 +252,8 @@ static const char *open_selection(struct application *app)
 
     // Keep one cartridge in memory so a large ROM can replace another.
     cartridge_unload(&app->cart);
+    bgHide(display_bg);
+    display_visible = false;
     BG_PALETTE[0] = 0;
     const char *error = cartridge_load(&app->cart, entry->name);
     if (!error) {
@@ -314,6 +349,7 @@ static uint8_t genesis_buttons(uint32_t keys)
 int main(void)
 {
     frontend_init();
+    init_game_display();
     if (!fatInitDefault()) {
         frontend_draw(VIEW_BROWSER, -1);
         frontend_cursor(2, MENU_FIRST_ROW);
@@ -340,7 +376,7 @@ int main(void)
         if (app.view == VIEW_CARTRIDGE && !app.md.cpu.stopped) {
             app.md.pad1_pressed = genesis_buttons(keysHeld());
             megadrive_run_frame(&app.md);
-            BG_PALETTE[0] = megadrive_backdrop(&app.md);
+            draw_game_frame(&app.md);
             if (app.md.cpu.stopped)
                 draw_screen(&app, NULL);
         }

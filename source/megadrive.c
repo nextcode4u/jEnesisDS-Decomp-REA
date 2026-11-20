@@ -1,5 +1,6 @@
 #include "megadrive.h"
 #include "cartridge.h"
+#include "vdp_render.h"
 
 #include <string.h>
 
@@ -66,9 +67,7 @@ void megadrive_run_frame(struct megadrive *md)
 
 uint16_t megadrive_backdrop(const struct megadrive *md)
 {
-    const uint16_t color = md->cram[md->vdp_registers[7] & 0x3f];
-    // Expand the VDP's three-bit channels to the original DS palette levels.
-    return ((color & 0x00e) << 1) | ((color & 0x0e0) << 2) | ((color & 0xe00) << 3);
+    return vdp_ds_color(md->cram[md->vdp_registers[7] & 0x3f]);
 }
 
 static uint8_t read_port(const struct megadrive *md, unsigned port)
@@ -179,21 +178,32 @@ bool megadrive_write_byte(struct megadrive *md, uint32_t address, uint8_t value)
     return address >= 0xa14000 && address <= 0xa14003;
 }
 
+static void store_vram_byte(struct megadrive *md, uint16_t address, uint8_t value)
+{
+    if (md->vram[address] != value) {
+        md->vram[address] = value;
+        ++md->video_revision;
+    }
+}
+
 static bool vdp_store(struct megadrive *md, uint16_t value)
 {
     uint16_t address = md->vdp_address;
     unsigned word = (address >> 1) & 0x3f;
     switch (md->vdp_code & 0xf) {
     case 1:
-        md->vram[address] = value >> 8;
-        md->vram[address ^ 1] = value;
+        store_vram_byte(md, address, value >> 8);
+        store_vram_byte(md, address ^ 1, value);
         break;
     case 3:
         md->cram[word] = value & 0x0eee;
         break;
     case 5:
-        if (word < 40)
-            md->vsram[word] = value & 0x07ff;
+        value &= 0x07ff;
+        if (word < 40 && md->vsram[word] != value) {
+            md->vsram[word] = value;
+            ++md->video_revision;
+        }
         break;
     default:
         return false;
@@ -228,7 +238,7 @@ static bool vdp_dma(struct megadrive *md)
         if (!(md->vdp_code & 0x10))
             return false;
         for (unsigned i = 0; i < length; ++i) {
-            md->vram[md->vdp_address ^ 1] = md->vram[(uint16_t)offset ^ 1];
+            store_vram_byte(md, md->vdp_address ^ 1, md->vram[(uint16_t)offset ^ 1]);
             md->vdp_address += md->vdp_registers[15];
             ++offset;
         }
@@ -257,7 +267,7 @@ static bool vdp_write_data(struct megadrive *md, uint16_t value)
             return false;
         unsigned length = dma_length(md);
         for (unsigned i = 0; i < length; ++i) {
-            md->vram[md->vdp_address ^ 1] = value >> 8;
+            store_vram_byte(md, md->vdp_address ^ 1, value >> 8);
             md->vdp_address += md->vdp_registers[15];
         }
         dma_complete(md);
@@ -273,7 +283,11 @@ static bool vdp_write_control(struct megadrive *md, uint16_t value)
             unsigned reg = (value >> 8) & 0x1f;
             if (reg >= sizeof(md->vdp_registers))
                 return false;
-            md->vdp_registers[reg] = (uint8_t)value;
+            if (md->vdp_registers[reg] != (uint8_t)value) {
+                md->vdp_registers[reg] = (uint8_t)value;
+                if (reg <= 18)
+                    ++md->video_revision;
+            }
             md->vdp_code = 0;
         } else {
             md->vdp_address = (md->vdp_address & 0xc000) | (value & 0x3fff);
