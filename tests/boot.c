@@ -1,5 +1,6 @@
 #include "cartridge.h"
 #include "megadrive.h"
+#include "psg.h"
 #include "savestate.h"
 #include "vdp_render.h"
 
@@ -175,6 +176,25 @@ static void test_savestate(struct megadrive *md)
     assert(remove(path) == 0);
 }
 
+static void test_psg(void)
+{
+    struct psg chip;
+    int16_t samples[512];
+    psg_reset(&chip, false);
+    psg_render(&chip, samples, 512);
+    for (unsigned i = 0; i < 512; ++i)
+        assert(samples[i] == 0);
+    const uint16_t tone[8] = {0x122, 0, 0, 15, 0, 15, 0, 15};
+    psg_update(&chip, tone);
+    psg_render(&chip, samples, 512);
+    unsigned transitions = 0;
+    for (unsigned i = 1; i < 512; ++i) {
+        assert((samples[i] == 3276 || samples[i] == -3276));
+        transitions += samples[i] != samples[i - 1];
+    }
+    assert(transitions >= 13 && transitions <= 15);
+}
+
 int main(void)
 {
     static struct megadrive md;
@@ -236,4 +256,5 @@ int main(void)
     assert(m68k_step(&md.cpu, &md) == 16);
     assert(megadrive_read_word(&md, 0xff0010) == 0xc000 && (md.cpu.sr & 31) == 25);
     test_savestate(&md);
+    test_psg();
 }

@@ -11,7 +11,7 @@ ARM9_FLAGS := -specs="$(BLOCKSDS)/sys/crts/ds_arm9.specs" -mthumb -mcpu=arm946e-
 C_FLAGS := -I"$(LIBNDS)/include" -Wall -Wextra -O2 -ffunction-sections -fdata-sections -MMD -MP
 # The emulator hot paths benefit from ARM's predication and register set.
 build/c/m68k.o build/c/vdp_render.o build/c/vdp_ds.o build/c/megadrive.o: C_FLAGS += -marm -O3
-ARM7_OBJ := build/c/arm7/main.o
+ARM7_OBJ := build/c/arm7/main.o build/c/arm7/psg.o
 ARM9_OBJ := build/c/main.o build/c/frontend.o build/c/cartridge.o build/c/m68k.o build/c/megadrive.o build/c/vdp_render.o build/c/vdp_ds.o build/c/savestate.o
 ARM7_ELF := build/c/arm7.elf
 ARM9_ELF := build/c/arm9.elf
@@ -23,14 +23,14 @@ all: $(ROM)
 check:
 	@mkdir -p build/c
 	"$(HOST_CC)" -std=c11 -Wall -Wextra -Werror -Isource \
-		tests/boot.c source/m68k.c source/megadrive.c source/vdp_render.c source/savestate.c -o build/c/boot-test
+		tests/boot.c source/m68k.c source/megadrive.c source/vdp_render.c source/savestate.c source/arm7/psg.c -o build/c/boot-test
 	build/c/boot-test
 
 build/c/%.o: source/%.c Makefile
 	@mkdir -p "$(@D)"
 	"$(CC_ARM)" $(ARM9_FLAGS) $(C_FLAGS) -c "$<" -o "$@"
 
-$(ARM7_OBJ): source/arm7/main.c Makefile
+build/c/arm7/%.o: source/arm7/%.c Makefile
 	@mkdir -p "$(@D)"
 	"$(CC_ARM)" $(ARM7_FLAGS) $(C_FLAGS) -c "$<" -o "$@"
 

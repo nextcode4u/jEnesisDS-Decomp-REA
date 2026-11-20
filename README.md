@@ -1,6 +1,6 @@
 # jEnesisDS BlocksDS C port
 
-The port compiles the project's ARM7 and ARM9 programs from C with Wonderful's compiler. It links against libnds and uses the standard BlocksDS startup code. The C core runs the 68000 and VDP diagnostic and boots Sonic the Hedgehog into Green Hill Zone Act 1 in melonDS. The touch menu provides two save slots. Broader game compatibility, sustained full-speed emulation, and audio are still pending.
+The port compiles the project's ARM7 and ARM9 programs from C with Wonderful's compiler. It links against libnds and uses the standard BlocksDS startup code. The C core runs the 68000 and VDP diagnostic and boots Sonic the Hedgehog into Green Hill Zone Act 1 in melonDS. The touch menu provides two save slots, and ARM7 synthesizes PSG audio. Broader game compatibility, sustained full-speed emulation, Z80 execution, and FM audio are still pending.
 
 ## Build on Linux or WSL
 
@@ -31,10 +31,11 @@ In melonDS, enable a virtual DLDI SD card and add Genesis ROMs to it. The bottom
 - [Genesis bus and VDP](source/megadrive.c) map the cartridge and mirrored RAM, handle three-button input and Z80 bus requests, and write VRAM, CRAM, and VSRAM through the VDP.
 - [DS renderer](source/vdp_ds.c) uses tiled backgrounds and hardware sprites for supported modes. The [bitmap renderer](source/vdp_render.c) handles the remaining modes. Both renderers center the viewport on the Genesis picture.
 - [Save states](source/savestate.c) serialize the emulated hardware state, verify the cartridge identity, and reject invalid files before restoring the running state.
+- [PSG mixer](source/arm7/psg.c) synthesizes tone and noise on the ARM7 and plays 16-bit PCM at approximately 28 kHz.
 
 The C ROM booted in melonDS 1.1 and loaded Sonic the Hedgehog in both BIN and SMD formats from a subdirectory on the virtual SD card. A host check verified that the loader decoded a cartridge from BIN and SMD into identical bytes and rejected truncated and invalid files.
 
-The C build runs the Genesis backdrop diagnostic in melonDS 1.1. Both captured top-screen colors match the original jEnesisDS 0.7.4 frames pixel for pixel. Sonic's intro, title screen, movement, jumping, and both save slots were tested in melonDS. A restored Green Hill Zone frame matched the frame at the time of saving and matched across both renderers. The renderer samples video state once per frame. Mid-frame palette effects and interlace are pending. The VDP uses synchronous DMA, and the sound-chip interfaces accept startup writes while awaiting synthesis and Z80 execution. Run `make check` for host checks covering the CPU, idle-loop scheduling, controller port, Z80 bus access, VDP DMA, tile and sprite priority, and save-file validation.
+The C build runs the Genesis backdrop diagnostic in melonDS 1.1. Both captured top-screen colors match the original jEnesisDS 0.7.4 frames pixel for pixel. Sonic's intro, title screen, movement, jumping, and both save slots were tested in melonDS. A restored Green Hill Zone frame matched the frame at the time of saving and matched across both renderers. A separate PSG diagnostic produced audio and muted when paused. The renderer samples video state once per frame, the VDP uses synchronous DMA, and PSG registers are sent to the mixer at frame granularity. Mid-frame palette effects, interlace, and Sonic's soundtrack remain pending. Run `make check` for host checks covering the CPU, idle-loop scheduling, controller port, Z80 bus access, VDP DMA, tile and sprite priority, save-file validation, and PSG synthesis.
 
 ## Gameplay reference
 

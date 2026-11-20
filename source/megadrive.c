@@ -29,6 +29,8 @@ void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum ge
     md->rom = cart->data;
     md->rom_size = cart->size;
     md->z80_reset = true;
+    for (unsigned i = 1; i < 8; i += 2)
+        md->psg_registers[i] = 15;
     md->version = detect_region(cart->region);
     if (region == GENESIS_REGION_USA)
         md->version = 0xa1;

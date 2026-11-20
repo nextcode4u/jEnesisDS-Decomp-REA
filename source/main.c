@@ -1,6 +1,7 @@
 #include "cartridge.h"
 #include "frontend.h"
 #include "megadrive.h"
+#include "psg.h"
 #include "savestate.h"
 #include "vdp_ds.h"
 #include "vdp_render.h"
@@ -106,6 +107,7 @@ struct application {
     char filename[29];
     char *save_path;
     uint32_t save_identity;
+    uint16_t sound_generation;
     unsigned save_slot;
     int save_line;
     bool slots[2];
@@ -387,6 +389,7 @@ static const char *open_selection(struct application *app)
     if (!error) {
         snprintf(app->filename, sizeof(app->filename), "%.28s", entry->name);
         megadrive_reset(&app->md, &app->cart, app->region);
+        ++app->sound_generation;
         setup_savestates(app, entry->name);
         app->view = VIEW_CARTRIDGE;
     }
@@ -421,8 +424,10 @@ static bool handle_save_menu(struct application *app, uint32_t keys, const char 
         select_save_path(app, app->save_slot);
         if (app->save_line == 16) {
             bool loaded = savestate_load(app->save_path, app->save_identity, &app->md);
-            if (loaded)
+            if (loaded) {
+                ++app->sound_generation;
                 draw_game_frame(&app->md);
+            }
             *message = loaded ? "State loaded" : "Unable to load state";
         } else if (app->save_line == 17) {
             bool saved = savestate_save(app->save_path, app->save_identity, &app->md);
@@ -513,6 +518,20 @@ static uint8_t genesis_buttons(uint32_t keys)
            ((keys & KEY_START) ? GENESIS_START : 0);
 }
 
+static void send_audio(const struct application *app)
+{
+    static struct psg_message last;
+    struct psg_message msg = {
+        .generation = app->sound_generation,
+        .enabled = app->view == VIEW_CARTRIDGE && !app->md.cpu.stopped,
+        .pal = (app->md.version & 0x40) != 0,
+    };
+    memcpy(msg.registers, app->md.psg_registers, sizeof(msg.registers));
+    if (memcmp(&last, &msg, sizeof(msg)) &&
+        fifoSendDatamsg(FIFO_USER_01, sizeof(msg), (uint8_t *)&msg))
+        last = msg;
+}
+
 int main(void)
 {
     frontend_init();
@@ -551,5 +570,6 @@ int main(void)
             if (app.md.cpu.stopped)
                 draw_screen(&app, NULL);
         }
+        send_audio(&app);
     }
 }
