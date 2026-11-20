@@ -1,5 +1,5 @@
 /* ARM9 emulator — grouped REA pseudocode.
- * Cartridge reset, frame schedulers, main loop and controller sampling.
+ * Use functions.tsv for addresses, names and analysis notes.
  */
 
 // 0x02000868  run_frame_h_int_off
@@ -1434,7 +1434,7 @@ LAB_020053c0:
 }
 
 
-// 0x020054d4  emulator_iterate_and_store_values
+// 0x020054d4  reset_m68k_registers_and_load_vectors
 
 void FUN_020054d4(int param_1)
 

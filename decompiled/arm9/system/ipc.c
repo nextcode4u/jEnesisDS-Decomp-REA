@@ -1,5 +1,5 @@
 /* ARM9 ipc — grouped REA pseudocode.
- * ARM9 messages to ARM7, including audio control and shared-buffer notifications.
+ * Use functions.tsv for addresses, names and analysis notes.
  */
 
 // 0x02005ba0  poll_ipc_sync
@@ -245,6 +245,51 @@ bool FUN_020062c4(void)
 }
 
 
+// 0x020062d0  reset_fm_and_clear_queued_sound_writes
+
+void FUN_020062d0(void)
+
+{
+  undefined1 *puVar1;
+  undefined1 *puVar2;
+  undefined1 *puVar3;
+  
+  FUN_0200c55c(2,0);
+  DAT_02099048 = 0;
+  puVar3 = &DAT_0209917c;
+  DAT_02099054 = 0;
+  DAT_023db788 = 0;
+  DAT_02099050 = 0;
+  DAT_02099230 = 0xc0;
+  DAT_023db778 = 0;
+  DAT_023db784 = 0;
+  DAT_023db77c = 0;
+  DAT_023db790 = 0;
+  DAT_02099132 = 0xc0;
+  DAT_02099232 = 0xc0;
+  DAT_02099131 = 0xc0;
+  DAT_02099231 = 0xc0;
+  DAT_02099130 = 0xc0;
+  puVar1 = &DAT_0209907c;
+  do {
+    puVar2 = puVar1;
+    puVar2[0xb2] = 0;
+    puVar3[0xb2] = 0;
+    puVar3 = puVar3 + -1;
+    puVar1 = puVar2 + -1;
+  } while (puVar2 + -1 != (undefined1 *)0x2098ff9);
+  puVar2[0xad] = 0;
+  puVar2[0xa8] = 0;
+  puVar2[0xa7] = 0;
+  puVar2[0xa6] = 0;
+  puVar2[0xa5] = 0;
+  puVar2[0xa4] = 0;
+  puVar2[0xa3] = 0;
+  puVar2[0xa2] = 0;
+  return;
+}
+
+
 // 0x020062f0  set_arm7_audio_muted
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
@@ -413,6 +458,16 @@ void FUN_0200c4a8(void)
       }
     }
   } while( true );
+}
+
+
+// 0x0200c520  set_arm9_fifo_receive_callback
+
+void FUN_0200c520(undefined4 param_1)
+
+{
+  DAT_023ddeb8 = param_1;
+  return;
 }
 
 

@@ -1,5 +1,5 @@
 /* ARM7 runtime — grouped REA pseudocode.
- * Use the processor functions.tsv for names, descriptions and source hashes.
+ * Use functions.tsv for addresses, names and analysis notes.
  */
 
 // 0x037f8144  veneer_to_compiler_divsi3
@@ -229,6 +229,19 @@ uint thunk_FUN_038019ec(uint param_1,uint param_2)
     uVar1 = -uVar1;
   }
   return uVar1;
+}
+
+
+// 0x037f8190  call_optional_arm7_registration_hooks
+
+/* WARNING: Removing unreachable block (ram,0x037f81a8) */
+/* WARNING: Removing unreachable block (ram,0x037f81c8) */
+/* WARNING: Removing unreachable block (ram,0x037f81c4) */
+
+void FUN_037f8190(void)
+
+{
+  return;
 }
 
 

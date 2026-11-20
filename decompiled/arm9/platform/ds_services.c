@@ -1,5 +1,5 @@
 /* ARM9 ds services — grouped REA pseudocode.
- * DS service helpers used by application code.
+ * Use functions.tsv for addresses, names and analysis notes.
  */
 
 // 0x02001180  helper_calls_nds_swiwaitforvblank
@@ -17,6 +17,15 @@ void FUN_02001180(int param_1)
     } while (iVar1 != param_1 * 6);
   }
   return;
+}
+
+
+// 0x02074e40  default_dldi_operation_returns_false
+
+undefined4 FUN_02074e40(void)
+
+{
+  return 0;
 }
 
 

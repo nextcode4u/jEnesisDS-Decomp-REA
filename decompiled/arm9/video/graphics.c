@@ -1,6 +1,16 @@
 /* ARM9 graphics — grouped REA pseudocode.
- * Viewport offsets and routines that convert graphics data for the DS.
+ * Use functions.tsv for addresses, names and analysis notes.
  */
+
+// 0x02006a44  invalidate_viewport_mode_cache
+
+void FUN_02006a44(void)
+
+{
+  DAT_020993a0 = 0xff;
+  return;
+}
+
 
 // 0x02007358  adjust_horizontal_viewport_offset
 
@@ -1012,7 +1022,7 @@ void FUN_020085b4(ushort *param_1,int param_2)
 }
 
 
-// 0x020086d8  graphics_dispatch_selector_cases
+// 0x020086d8  copy_sprite_tiles_for_sprite_shape
 
 void FUN_020086d8(ushort *param_1,int param_2,int param_3)
 

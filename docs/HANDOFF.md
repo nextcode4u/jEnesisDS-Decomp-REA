@@ -10,13 +10,13 @@ For a first pass, follow the [reading guide](READING-GUIDE.md) from ROM selectio
 decompiled/
   arm9/
     cpu/
-      m68k/        Instruction families and MOVE source/destination modes
-      z80/         Instruction families, CB and ED groups, and indexed forms
+      m68k/        Instruction families, addressing modes, and bus access
+      z80/         Base and prefixed instructions, bus control, and timing
+        indexed_bit_set_and_reset/  SET and RES folders with a file per bit
     frontend/      ROM browser, settings, UI, and input
     platform/      DS services, runtime, and interworking veneers
-    storage/       Cartridge loading, FAT, SRAM, and save states
+    storage/       Cartridge loading, FAT, SRAM, save states, and LZSS
     system/        Startup, emulator control, and IPC
-    unresolved/    Routines with provisional or unknown roles
     video/         VDP registers, timing, and DS graphics
       vdp/         Display setup, updates, palette paths, and overlay
   arm7/
@@ -24,10 +24,11 @@ decompiled/
       ym2612/
         render/    One file per FM algorithm, including its silent variants
     platform/      Startup, IPC, interrupts, BIOS, runtime, and peripherals
-    unresolved/    Routines with provisional or unknown roles
 ```
 
-The 126 module files group routines by processor and subsystem. The largest 68000 word and long MOVE groups also use the destination addressing mode from a representative opcode. Z80 modules use instruction families and operand types. Routines are in ascending address order within each module. The branch keeps working names in short headers and detailed annotations in two processor indexes.
+The 237 module files group routines by processor and subsystem. The largest 68000 word and long MOVE groups also use the destination addressing mode from a representative opcode. Z80 modules use instruction family and operand type. Routines are in ascending address order within each module. The branch keeps working names in short headers and detailed annotations in two processor indexes.
+
+The 40 routines previously in the unresolved folders were traced to CPU bus and state helpers, sprite tile copies, audio and FIFO control, LZSS, and platform startup or storage stubs. Some other index entries still have provisional names. The standalone 68000 PC accessor has a confirmed operation and no identified caller. [Reading guide and evidence](READING-GUIDE.md#read-a-large-export)
 
 ## Trace a routine
 
