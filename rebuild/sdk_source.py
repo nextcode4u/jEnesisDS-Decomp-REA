@@ -78,10 +78,10 @@ def stage_sdk_irq_setup(work, compiler, r20, repository, cpu):
     enable = compile_c(opts, sdk, source, cpu, "-Os", "-mthumb")
     setup_name, enable_name = f"irq-setup-arm{cpu}.o", f"irq-enable-arm{cpu}.o"
     run(sdk, objcopy, "--remove-section=.text.irqEnable", "--weaken-symbol=irqDummy",
-        *(["--redefine-sym", "irqSet=arm9_thumb_irqSet"] if cpu == 9 else ()),
+        "--redefine-sym", f"irqSet=arm{cpu}_thumb_irqSet",
         setup.name, setup_name)
     run(sdk, objcopy, "--only-section=.text.irqEnable",
-        *(["--redefine-sym", "irqEnable=arm9_thumb_irqEnable"] if cpu == 9 else ()),
+        "--redefine-sym", f"irqEnable=arm{cpu}_thumb_irqEnable",
         enable.name, enable_name)
     for output in (setup_name, enable_name):
         shutil.copyfile(sdk / output, work / output)

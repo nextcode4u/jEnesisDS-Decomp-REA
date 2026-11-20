@@ -318,8 +318,20 @@ RECOVERED_REGIONS = (
          "ym2612_bank_1_mirror": 0x0209917C,
          "psg_register_mirror": 0x0209937C,
      }),
+    ("ARM9 PSG write queue", "psg_queue.c", "queue_psg_register_write",
+     0x02005AD0, 0x02005B7C, {
+         "psg_queue_bytes": 0x02099058,
+         "psg_write_buffer": 0x023DB658,
+         "psg_register_mirror": 0x0209937C,
+         "psg_latched_register": 0x0209939C,
+     }),
     ("YM2612 timer status", "ym2612_status.c", "read_ym2612_timer_status",
      0x02005B7C, 0x02005B94, {"sound_context": 0x0B000000}),
+    ("ARM9 audio controls", "arm9_audio_controls.c", "request_arm7_audio_stop",
+     0x020062C4, 0x02006308, {
+         "send_arm9_fifo_command_and_payload": 0x0200C55C,
+         "clear_sound_mirrors_before_state_load": 0x020059F0,
+     }),
     ("VDP interrupts", "vdp_interrupts.c", "tick_vdp_horizontal_interrupt_counter",
      0x020090E8, 0x02009214, {
          "vdp_timing": 0x0B000000,
@@ -447,6 +459,20 @@ ARM7_REGIONS = (
      }),
     ("ARM7 FM reset entry", "arm7_fm_reset.c", "reset_fm_register_state",
      0x037FBF44, 0x037FBF5C, {"reset_ym2612_registers": 0x037F9238}),
+    ("ARM7 audio FIFO setup", "arm7_ipc_init.c", "initialize_sound_message_handler",
+     0x037FC0CC, 0x037FC0F0, {
+         "enable_fifo_receive_interrupt": 0x037FC544,
+         "set_fifo_message_callback": 0x037FC504,
+         "handle_arm9_audio_command": 0x037FC218,
+     }),
+    ("ARM7 audio FIFO", "arm7_ipc_fifo.c", "dispatch_fifo_receive_interrupt",
+     0x037FC468, 0x037FC590, {
+         "arm7_ipc_receive_callback": 0x0380BE00,
+         "arm7_ipc_received_command": 0x0380BB04,
+         "arm7_ipc_received_payload": 0x0380BB08,
+         "irqSet": 0x037F8114,
+         "irqEnable": 0x037F8120,
+     }),
     ("ARM7 YM2612 lookup tables", YM2612_TABLE_SOURCE, None,
      0x038026F8, 0x03806D34, {}),
     ("ARM7 PSG attenuation table", "arm7_psg_attenuation.c", None,
@@ -475,6 +501,7 @@ def compile_arm9_source(compiler, work, filename):
     flags = {
         # Keep the last stream read in r0 on decoder exit.
         "lzss_decode.c": ("-fno-tree-vrp",),
+        "arm9_audio_controls.c": ("-fno-unit-at-a-time",),
         "controller_io_write.c": ("-fno-unit-at-a-time",),
         "controller_write.c": ("-fno-unit-at-a-time",),
         # Preserve the wrapper calls and their original function order.
@@ -487,6 +514,7 @@ def compile_arm9_source(compiler, work, filename):
         "m68k_page_defaults.c": ("-fno-unit-at-a-time",),
         # Keep ARM post-indexed stores for the cartridge page refresh.
         "m68k_refresh_pages.c": ("-fno-tree-loop-optimize",),
+        "psg_queue.c": ("-fno-strict-aliasing",),
         # Preserve the original write-then-read function order.
         "z80_bus_lines.c": ("-fno-unit-at-a-time",),
         "z80_memory.c": ("-fno-unit-at-a-time",),
@@ -501,6 +529,8 @@ def compile_arm7_source(compiler, work, filename):
     flags = {
         "arm7_ym2612_bank1.c": ("-fno-reorder-blocks",),
         "arm7_fm_reset.c": ("-fno-optimize-sibling-calls",),
+        "arm7_ipc_init.c": ("-fno-optimize-sibling-calls",),
+        "arm7_ipc_fifo.c": ("-fno-unit-at-a-time",),
     }.get(filename, ())
     return compile_c([*compiler, *flags], work, Path(filename), 7, "-O2", "-marm")
 
@@ -586,8 +616,9 @@ def prepare_reference_arm7(work, compiler, image, base, runtime, r20, libnds=Non
     regions, externals = runtime_layout(
         base, 0x037F80D0, 0x038026E0, 0x037F814C, 0x038024D8, 0x03806D34)
     objects = list(runtime)
+    recovered_compiler = with_libnds_headers(compiler, r20)
     for _, filename, entry, start, end, symbols in ARM7_REGIONS:
-        obj = compile_arm7_source(compiler, work, filename).name
+        obj = compile_arm7_source(recovered_compiler, work, filename).name
         objects.append(obj)
         section = region_section(entry)
         regions.append((start, end, f'"{obj}"({section})'))
