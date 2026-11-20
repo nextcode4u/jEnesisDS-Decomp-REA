@@ -98,9 +98,6 @@ def main():
         else:
             (work / "arm9-main.bin").write_bytes(arm9[0x220:0x90004])
             (work / "arm7-main.bin").write_bytes(arm7[0xd0:])
-        if args.libnds_repo:
-            options[9].extend(["--defsym", "use_sdk_irq=1"])
-        else:
             (work / "arm9-itcm.bin").write_bytes(arm9[0x936f0:])
         for processor, cpu in ((9, "arm946e-s"), (7, "arm7tdmi")):
             core = f"arm{processor}"

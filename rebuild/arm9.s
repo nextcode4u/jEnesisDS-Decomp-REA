@@ -142,9 +142,6 @@ _start:
 .type arm9_call_via_r3, %function
 arm9_call_via_r3:
     .incbin "arm9-main.bin", 0x85678
-.endif
-
-.ifndef use_sdk_irq
 .section .itcm, "ax", %progbits
     .incbin "arm9-itcm.bin"
 .endif

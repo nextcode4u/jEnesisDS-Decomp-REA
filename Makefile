@@ -10,7 +10,7 @@ NDSLIB_REPO ?= build/sdk-sources/ndslib-archive
 
 LZSS_SOURCES = bounded_stream lzss_match_tree lzss_encode lzss_decode lzss_memory lzss_buffers lzss_state
 
-.PHONY: r20-homebrew recovered-c compare-recovered-c check-c check-lzss check-lzss-standalone check-codec-rom check-sdk check-pseudocode arm7-sdk check-arm7-sdk \
+.PHONY: r20-homebrew recovered-c compare-recovered-c recovered-native compare-recovered-native check-c check-lzss check-lzss-standalone check-codec-rom check-sdk check-pseudocode arm7-sdk check-arm7-sdk \
 	reference reference-c reference-c-sdk reference-c-codec
 
 r20-homebrew:
@@ -21,6 +21,12 @@ recovered-c:
 
 compare-recovered-c:
 	$(PYTHON) rebuild/check_c.py --build-dir "$(R20_BUILD_DIR)" --rom "$(ROM)" --compare-only
+
+recovered-native:
+	$(PYTHON) rebuild/check_native.py --r20-root "$(R20_ROOT)" --build-dir "$(R20_BUILD_DIR)"
+
+compare-recovered-native:
+	$(PYTHON) rebuild/check_native.py --build-dir "$(R20_BUILD_DIR)" --rom "$(ROM)"
 
 check-c:
 	$(PYTHON) rebuild/check_c.py --r20-root "$(R20_ROOT)" --build-dir "$(R20_BUILD_DIR)" --rom "$(ROM)"

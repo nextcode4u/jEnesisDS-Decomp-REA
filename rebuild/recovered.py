@@ -20,6 +20,7 @@ from generate_z80_dispatch import (
 from generate_vdp_timing_tables import (
     OUTPUT_NAME as VDP_TIMING_SOURCE, TABLES as VDP_TIMING_TABLES, write_source as write_vdp_timing_tables,
 )
+from native import ARM9_ITCM, NATIVE_REGIONS, assemble_native, native_imports, selector
 from r20 import check_match, compile_c, run, tool
 from sdk_arm7 import (ARM7_IRQ_TABLE, ARM7_SDK_EXTERNALS, ARM7_SDK_REGIONS, DIVISION_OBJECTS, TOUCH_BSS,
                       stage_arm7_sdk)
@@ -825,7 +826,8 @@ def prepare_reference_arm7(work, compiler, image, base, runtime, r20, libnds=Non
     regions, externals = runtime_layout(
         base, 0x037F80D0, 0x038026E0, 0x037F814C, 0x038024D8, 0x03806D34)
     regions.extend(ARM7_ALIGNMENT)
-    objects = list(runtime)
+    objects = [*runtime, *assemble_native(work, r20 / "bin/arm-eabi-", 7)]
+    regions.extend((region.start, region.end, selector(region)) for region in NATIVE_REGIONS[7])
     recovered_compiler = with_libnds_headers(compiler, r20)
     for _, filename, entry, start, end, symbols in ARM7_REGIONS:
         obj = compile_arm7_source(recovered_compiler, work, filename).name
@@ -848,7 +850,7 @@ def prepare_reference_arm7(work, compiler, image, base, runtime, r20, libnds=Non
         source = source.replace("    arm7_main =", "    /DISCARD/ : { irq-setup-arm7.o(.text.irqDummy) }\n    arm7_main =")
     layout = write_payload_layout(work, "arm7", image, base, 0xd0, len(image), 0x037f80f0, regions)
     definitions = "".join(f"PROVIDE({name} = {address:#x});\n" for name, address in externals.items())
-    script.write_text(source.replace("*(.text.payload)", layout) + definitions)
+    script.write_text(source.replace("*(.text.payload)", layout) + definitions + native_imports(work, 7))
     return objects
 
 
@@ -858,7 +860,11 @@ def prepare_reference_arm9(work, compiler, image, base, runtime, r20, libnds=Non
     regions, externals = runtime_layout(
         base, 0x02000220, 0x020859F0, 0x02000240, 0x02082324, 0x0208F330)
     regions.extend(ARM9_ALIGNMENT)
-    objects = list(runtime)
+    objects = [*runtime, *assemble_native(work, r20 / "bin/arm-eabi-", 9)]
+    regions.extend(
+        (region.start, region.end, selector(region)) for region in NATIVE_REGIONS[9]
+        if region != ARM9_ITCM
+    )
     assembly = []
 
     compiled = {}
@@ -908,14 +914,7 @@ def prepare_reference_arm9(work, compiler, image, base, runtime, r20, libnds=Non
             (0x02080380, 0x020805DC, " ".join(f'"{obj}"(.text)' for obj in DIVISION_OBJECTS)),
             (0x0208F390, 0x0208F393, f'"{keys}"(.data)'),
         ))
-        # IntrMain runs in ITCM, whose load image begins at 0x020936f0.
-        itcm = image[0x936F0:]
-        (work / "itcm-before-irq.bin").write_bytes(itcm[:0x56E0])
-        (work / "itcm-after-irq.bin").write_bytes(itcm[0x5880:])
-        for side in ("before", "after"):
-            assembly.extend([f'.section .itcm.{side}, "ax", %progbits',
-                             f'.incbin "itcm-{side}-irq.bin"'])
-        source = source.replace("*(.itcm)", f'*(.itcm.before) irq-setup-arm9.o(.itcm) "{irq}"(.itcm) *(.itcm.after)')
+        itcm_irq = f'irq-setup-arm9.o(.itcm) "{irq}"(.itcm)'
         fat_bss = "".join(f". = {address:#x} - 0x02098f70;\n        fat-{member}.o(.bss)\n        "
                           for address, member in LIBFAT_BSS) if libfat else ""
         source = source.replace(". = 0x023eb350 - 0x02098f70;",
@@ -929,9 +928,17 @@ def prepare_reference_arm9(work, compiler, image, base, runtime, r20, libnds=Non
                                 "        . = 0x023eb350 - 0x02098f70;")
         source = source.replace("    arm9_main =", f'    /DISCARD/ : {{ "{keys}"(.text.*) irq-setup-arm9.o(.text.irqDummy) }}\n    arm9_main =')
         externals.update(__irq_flags=0x0B003FF8, __irq_vector=0x0B003FFC)
+    else:
+        # The non-SDK reference keeps the IRQ table and IntrMain from the release.
+        irq_offset = ARM9_ITCM.rom_address - base + ARM9_ITCM.end - ARM9_ITCM.start
+        (work / "itcm-reference-irq.bin").write_bytes(image[irq_offset:])
+        assembly.extend(['.section .itcm.reference_irq, "ax", %progbits',
+                         '.incbin "itcm-reference-irq.bin"'])
+        itcm_irq = "*(.itcm.reference_irq)"
 
+    source = source.replace("*(.itcm)", f"{selector(ARM9_ITCM)} {itcm_irq}")
     layout = write_payload_layout(work, "arm9", image, base, 0x220, 0x90004,
                                   0x02085898, regions, assembly=assembly)
     definitions = "".join(f"PROVIDE({name} = {address:#x});\n" for name, address in externals.items())
-    script.write_text(source.replace("*(.text.payload)", layout) + definitions)
+    script.write_text(source.replace("*(.text.payload)", layout) + definitions + native_imports(work, 9))
     return objects
