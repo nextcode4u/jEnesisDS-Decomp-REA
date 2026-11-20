@@ -23,7 +23,10 @@ def main():
     )
     parser.add_argument("--rom", type=Path, default=WORKSPACE / "input/jEnesisDS.nds")
     parser.add_argument("--r20-root", type=Path, help="Compile and link the matched ARM9 C regions")
+    parser.add_argument("--libnds-repo", type=Path, help="Also build matched keys and IntrMain from libnds history")
     args = parser.parse_args()
+    if args.libnds_repo and not args.r20_root:
+        parser.error("--libnds-repo requires --r20-root")
     r20 = args.r20_root.expanduser().resolve() if args.r20_root else None
     prefix = r20 / "bin/arm-eabi-" if r20 else args.tool_prefix.expanduser().absolute()
     assembler, linker, objcopy = (tool(prefix, name) for name in ("as", "ld", "objcopy"))
@@ -46,14 +49,17 @@ def main():
         extra_arm9_objects = []
         if r20:
             compiler = compiler_command(r20)
-            extra_arm9_objects = prepare_reference_arm9(work, compiler, arm9, arm9_base)
+            extra_arm9_objects = prepare_reference_arm9(work, compiler, arm9, arm9_base, args.libnds_repo)
             run(work, assembler, "-mcpu=arm946e-s", "-o", "arm9-rom-gaps.o", "arm9-rom-gaps.s")
             extra_arm9_objects.insert(0, "arm9-rom-gaps.o")
             arm9_options = ["--defsym", "use_recovered_c=1"]
         else:
             (work / "arm9-main.bin").write_bytes(arm9[0x220:0x90004])
         (work / "arm9-dtcm.bin").write_bytes(arm9[0x90004:0x936f0])
-        (work / "arm9-itcm.bin").write_bytes(arm9[0x936f0:])
+        if args.libnds_repo:
+            arm9_options.extend(["--defsym", "use_sdk_irq=1"])
+        else:
+            (work / "arm9-itcm.bin").write_bytes(arm9[0x936f0:])
         (work / "arm7-main.bin").write_bytes(arm7[0xd0:])
 
         for core, cpu in (("arm9", "arm946e-s"), ("arm7", "arm7tdmi")):
@@ -77,7 +83,7 @@ def main():
 
         output = WORKSPACE / "build"
         if r20:
-            output /= "reference-c"
+            output /= "reference-c-sdk" if args.libnds_repo else "reference-c"
         output.mkdir(parents=True, exist_ok=True)
         for name in ("arm9.elf", "arm9.map", "arm7.elf", "arm7.map"):
             shutil.copyfile(work / name, output / name)

@@ -1,49 +1,10 @@
-/* Buffer and file entry points around the ARM9 LZSS streams. */
+/* File entry points around the ARM9 LZSS streams. */
 #include <stdint.h>
 #include <stdio.h>
-#include <string.h>
-#include "lzss.h"
+#include "lzss_prefix.h"
 
 extern const char binary_read_mode[];
 extern const char binary_write_mode[];
-
-static inline void copy_prefix(unsigned char *output, const unsigned char *input, unsigned prefix_length)
-{
-    BoundedStream *input_stream, *output_stream;
-
-    memcpy(output, input, prefix_length);
-    input_stream = lzss_input_stream;
-    output_stream = lzss_output_stream;
-    input_stream->position += prefix_length;
-    input_stream->cursor += prefix_length;
-    output_stream->position += prefix_length;
-    output_stream->cursor += prefix_length;
-}
-
-void decode_lzss_from_memory_with_prefix(unsigned char *input, unsigned char *output,
-                                        unsigned input_size, unsigned output_capacity,
-                                        unsigned prefix_length)
-{
-    if (!output || !input || !output_capacity || !input_size || prefix_length >= input_size)
-        return;
-
-    lzss_input_stream = &lzss_input;
-    lzss_output_stream = &lzss_output;
-    lzss_input.capacity = input_size;
-    if (input_size > output_capacity)
-        return;
-
-    lzss_output.position = 0;
-    lzss_input.position = 0;
-    lzss_output.capacity = output_capacity;
-    lzss_input.cursor = input;
-    lzss_input.start = input;
-    lzss_output.cursor = output;
-    lzss_output.start = output;
-    if (prefix_length)
-        copy_prefix(output, input, prefix_length);
-    decode_lzss_stream();
-}
 
 int load_file_and_decode_lzss_with_prefix(unsigned char *input, unsigned char *output,
                                          const char *path, unsigned capacity,
@@ -82,10 +43,7 @@ int load_file_and_decode_lzss_with_prefix(unsigned char *input, unsigned char *o
     output_stream->start = output;
     if (prefix_length)
         copy_prefix(output, input_stream->start, prefix_length);
-    decode_lzss_stream();
-
-    /* Every exit from the original decoder leaves its EOF value in r0. */
-    return -1;
+    return decode_lzss_stream();
 }
 
 /* The file-writing counterpart at 0x0200cf28. */

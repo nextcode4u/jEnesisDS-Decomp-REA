@@ -37,9 +37,11 @@ make reference-c R20_ROOT=/mnt/d/tools/devkitARM
 make check-pseudocode
 ```
 
-`check-c` compares all 1,636 bytes of 17 recovered ARM9 routines with the original ROM. `reference-c` links those C objects at their original addresses and verifies the entire result at `build/reference-c/jEnesisDS-0.7.4-rebuilt.nds`. It uses the original ROM for the remaining payload. Use `ROM=/path/to/jEnesisDS.nds` if the input is stored elsewhere. [Recovered C](rebuild/source) · [Verified ranges](docs/HANDOFF.md#compile-the-recovered-arm9-c)
+`check-c` compares all 2,772 bytes of 34 recovered ARM9 routines with the original ROM. `reference-c` links those C objects at their original addresses and verifies the entire result at `build/reference-c/jEnesisDS-0.7.4-rebuilt.nds`. It uses the original ROM for the remaining payload. Use `ROM=/path/to/jEnesisDS.nds` if the input is stored elsewhere. [Recovered C](rebuild/source) · [Verified ranges](docs/HANDOFF.md#compile-the-recovered-arm9-c)
 
 `make check-lzss` uses Python Unicorn to compare the recovered compression and file-entry code with the original ARM9 routines. `make check-sdk` recompiles and compares selected period ndslib and libnds sources. [Test setup](docs/HANDOFF.md#verify-lzss-behavior) · [SDK comparison](docs/HANDOFF.md#reproduce-the-sdk-comparison)
+
+Use `make reference-c-sdk` with the same `R20_ROOT` and a `LIBNDS_REPO` history checkout to also link the period libnds key routines and ITCM interrupt dispatcher into the full ROM. [SDK source build](docs/HANDOFF.md#link-the-period-libnds-sources)
 
 ## Matching ROM rebuild in WSL
 

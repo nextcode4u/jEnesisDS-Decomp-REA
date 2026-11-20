@@ -1,6 +1,7 @@
 /* ARM9 save-state slot naming and version 3 region setup. */
 #include <stdlib.h>
 #include <string.h>
+#include "savestate_regions.h"
 
 typedef struct {
     /* The two CPU pointers follow ten words of emulator state in DTCM. */
@@ -9,27 +10,15 @@ typedef struct {
     void *z80;
 } EmulatorCpuPointers;
 
-typedef struct {
-    unsigned header;
-    void *m68k_context;
-    unsigned char *m68k_ram;
-    void *vdp_registers, *vdp_cram, *vdp_vsram, *vdp_vram;
-    void *z80_context;
-    unsigned z80_bank;
-    void *z80_ram, *ym2612_bank_0, *ym2612_bank_1, *psg_registers;
-} SaveStateRegions;
-
 extern EmulatorCpuPointers emulator_cpu_pointers;
 extern unsigned char genesis_work_ram_bytes[];
-extern SaveStateRegions savestate_regions;
-extern SaveStateRegions *savestate_region_table;
 extern int savestate_regions_initialized;
 extern char *loaded_cartridge_metadata;
 
-void *get_z80_work_ram_buffer(void);
-void *get_ym2612_bank_0_mirror_for_savestate(void);
-void *get_ym2612_bank_1_mirror_for_savestate(void);
-void *get_psg_mirror_for_savestate(void);
+unsigned char *get_z80_work_ram_buffer(void);
+unsigned char *get_ym2612_bank_0_mirror_for_savestate(void);
+unsigned char *get_ym2612_bank_1_mirror_for_savestate(void);
+unsigned char *get_psg_mirror_for_savestate(void);
 void bind_vdp_memory_regions_for_savestate(void);
 
 char *make_savestate_slot_path(unsigned char slot_number)

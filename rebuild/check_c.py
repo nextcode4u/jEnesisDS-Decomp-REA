@@ -2,22 +2,20 @@
 """Compile reconstructed and historical C with devkitARM r20 and check ROM bytes."""
 import argparse
 from hashlib import sha256
-import io
 import shutil
 from pathlib import Path
 import struct
 import subprocess
-import tarfile
 from tempfile import TemporaryDirectory
 
 from r20 import EXPECTED_ROM_SHA256, check_match, compile_c, compiler_command, run, tool
-from recovered import RECOVERED_REGIONS, SOURCE
+from recovered import RECOVERED_REGIONS, SOURCE, compile_arm9_source
+from sdk_source import (LIBNDS_ITCM_APR_2006, LIBNDS_OCT_2007, assemble_sdk_irq,
+                        compile_sdk_keys, snapshot)
 
 
 NDSLIB_2005 = "eafb2703db6e2b6b414a2fa15107212522666bff"
 LIBNDS_APR_2006 = "79e4f563e2ed88f404b72e0d8a4f8b079b2abe2a"
-LIBNDS_ITCM_APR_2006 = "544a72e71ac59ef7a593d72096a8d62d12d464dd"
-LIBNDS_OCT_2007 = "8ea06b95fe716cfceff0bce34232217a61e0e6c9"
 
 TOUCH_FUNCTIONS = {
     "touchRead": 0x03801244,
@@ -124,7 +122,7 @@ def check_recovered_regions(compiler, prefix, work, arm9):
     linker, objcopy = (tool(prefix, name) for name in ("ld", "objcopy"))
     base, memory = arm9
     for label, filename, entry, start, end, symbols in RECOVERED_REGIONS:
-        obj = compile_c(compiler, work, Path(filename), 9, "-O2", "-marm")
+        obj = compile_arm9_source(compiler, work, filename)
         elf, binary = (obj.with_suffix(ext).name for ext in (".elf", ".bin"))
         definitions = [f"--defsym={name}={address:#x}" for name, address in symbols.items()]
         run(work, linker, "-Ttext", f"{start:#x}", "-e", entry, *definitions, "-o", elf, obj.name)
@@ -135,23 +133,9 @@ def check_recovered_regions(compiler, prefix, work, arm9):
               f" {len(expected)}/{len(expected)} bytes (including linked addresses)")
 
 
-def snapshot(repository, revision, directory, paths):
-    directory.mkdir()
-    archive = subprocess.check_output(["git", "-C", str(repository), "archive", revision, *paths])
-    with tarfile.open(fileobj=io.BytesIO(archive)) as tree:
-        tree.extractall(directory, filter="data")
-
-
 def check_sdk_keys(compiler, linker, objcopy, sdk, arm9):
-    header = sdk / "include/nds/ipc.h"
-    contents = header.read_bytes()
-    buttons = b"\tuint16 buttons;"
-    if contents.count(buttons) != 1:
-        raise ValueError("Expected one buttons field in the October 2007 IPC header")
-    header.write_bytes(contents.replace(buttons, b"\tuint32 reserved_before_buttons;\n" + buttons))
+    obj = compile_sdk_keys(compiler, sdk)
     shutil.copyfile(SOURCE / "sdk_keys.ld", sdk / "sdk_keys.ld")
-    obj = compile_c([*compiler, "-ffunction-sections"], sdk,
-                    Path("source/arm9/keys.c"), 9, "-O2", "-mthumb")
     run(sdk, linker, "-T", "sdk_keys.ld", "-o", "keys.elf", obj.name)
     base, memory = arm9
     for section, address, length in ((".text", 0x0207FB70, 180), (".data", 0x0208F390, 3)):
@@ -163,11 +147,10 @@ def check_sdk_keys(compiler, linker, objcopy, sdk, arm9):
 
 
 def check_sdk_irq(compiler, linker, objcopy, sdk, arm9):
-    run(sdk, *compiler, "-DARM9", "-mcpu=arm946e-s", "-x", "assembler-with-cpp",
-        "-c", "source/common/interruptDispatcher.s", "-o", "intr-main.o")
+    obj = assemble_sdk_irq(compiler, sdk)
     run(sdk, linker, "--section-start=.itcm=0x010057a8", "-e", "IntrMain",
         "--defsym=irqTable=0x010056e0", "--defsym=__irq_flags=0x0b003ff8",
-        "-o", "intr-main.elf", "intr-main.o")
+        "-o", "intr-main.elf", obj.name)
     run(sdk, objcopy, "-O", "binary", "--only-section=.itcm", "intr-main.elf", "intr-main.bin")
     base, memory = arm9
     start = 0x020936F0 - base + 0x57A8

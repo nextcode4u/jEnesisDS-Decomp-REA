@@ -58,24 +58,30 @@ The r20 startup objects also close two runtime symbol questions. The bytes at AR
 
 ## Compile the recovered ARM9 C
 
-Run `make check-c` with the complete r20 toolchain and the original 0.7.4 ROM. The checker builds these sources in ARM mode with `-O2`, places each linked region at its original ARM9 address, and compares the full bytes, including address literals and branch destinations. [Build setup](../README.md#compile-recovered-c-with-devkitarm-r20)
+Run `make check-c` with the complete r20 toolchain and the original 0.7.4 ROM. The checker builds these sources in ARM mode with `-O2`, places each linked region at its original ARM9 address, and compares the full bytes, including address literals and branch destinations. The stream decoder uses `-fno-tree-vrp` to return the last read value in r0 with the original instructions. [Build setup](../README.md#compile-recovered-c-with-devkitarm-r20)
 
 | Area | Address range (end exclusive) | Verified C |
 | --- | --- | --- |
+| Cartridge region and byte order | `0x020002e4–0x0200030c`, `0x0200157c–0x020015c0` | Set the Genesis version register and NTSC flag, and swap adjacent bytes while preserving an odd trailing byte. [Region](../rebuild/source/cartridge_region.c) · [Byte order](../rebuild/source/cartridge_byte_order.c) |
+| Z80 RAM and bank latch | `0x02004438–0x02004458`, `0x02004c18–0x02004c44` | Save and restore the bank latch and read or write Z80 work RAM. [Bank latch](../rebuild/source/z80_bank_state.c) · [Work RAM](../rebuild/source/z80_work_ram.c) |
+| Z80 and sound save-state fields | `0x02004f70–0x020050a8`, `0x02005aac–0x02005ad0` | Convert packed Z80 PC and SP fields between host addresses and serialized offsets. Return the FM and PSG mirror pointers. [Z80 pointers](../rebuild/source/savestate_z80_pointers.c) · [Sound mirrors](../rebuild/source/sound_state.c) |
+| VDP timing and serialization | `0x020090e8–0x02009214`, `0x02009cb0–0x02009cf0` | Tick and reload H-INT, enter vertical blanking, and bind the four VDP save-state memory regions. [Scanline timing](../rebuild/source/vdp_interrupts.c) · [Region binding](../rebuild/source/savestate_vdp.c) |
 | ARM9 IPC FIFO | `0x0200c4a8–0x0200c5d8` | Receive and dispatch messages, send with or without waiting, and initialize the interrupt through `irqSet` and `irqEnable`. [Source](../rebuild/source/arm9_fifo.c) |
 | LZSS match tree | `0x0200c5d8–0x0200c82c` | Initialize the first-byte roots, insert and record the longest prefix, and remove outgoing window entries. [Source](../rebuild/source/lzss_match_tree.c) |
 | Bounded streams | `0x0200c82c–0x0200c87c` | Read and write without advancing past stream capacity. [Source](../rebuild/source/bounded_stream.c) |
 | LZSS stream decoder | `0x0200cb78–0x0200ccb4` | Decode literal bytes and overlapping ring-buffer matches using the bounded streams. [Source](../rebuild/source/lzss_decode.c) |
+| LZSS memory decoder | `0x0200ccb4–0x0200cda4` | Initialize input and output streams, copy any literal prefix, and enter the shared decoder. [Source](../rebuild/source/lzss_memory.c) |
 | Cartridge bus | `0x02003ca4–0x02003cf8` | Return the ROM, work RAM, and Z80 bank-latch addresses, and select backing storage for VDP DMA. [Source](../rebuild/source/cartridge_bus.c) |
 | Save-state setup | `0x0200d03c–0x0200d13c` | Populate the version 3 region table and build the numbered `.jst` path. [Source](../rebuild/source/savestate_layout.c) |
 
-Run `make reference-c` to link the six C regions into the actual ARM9 image. The linker map in `build/reference-c/arm9.map` records the input objects and original addresses. The target compares the complete ROM with the release and uses the original ROM bytes for the remaining code and data. [Build setup](../README.md#compile-recovered-c-with-devkitarm-r20)
+Run `make reference-c` to link the 15 C regions into the ARM9 image. The linker map in `build/reference-c/arm9.map` records the input objects and original addresses. The target compares the complete ROM with the release and uses the original ROM bytes for the remaining code and data. [Build setup](../README.md#compile-recovered-c-with-devkitarm-r20)
 
 The FIFO receive ISR reads `REG_IPC_FIFO_RX` once per message and splits that word into a command and a payload. The nonblocking sender clears the send FIFO and returns zero when full. The waiting sender at `0x0200c530` was identified from ARM instructions between the indexed callback setter and nonblocking sender. [Indexed pseudocode](../decompiled/arm9/system/ipc.c#L449) · [Verified C](../rebuild/source/arm9_fifo.c)
 
 ## Verify LZSS behavior
 
-The recovered encoder at `0x0200c87c` and buffer and file entries at `0x0200ccb4`, `0x0200cda4`, and `0x0200cf28` compile and pass 135 behavioral comparisons against the original ARM9 code. These four entries still generate different instructions with r20. Both prefix-aware read paths transfer control to the shared stream decoder at `0x0200cb78`. The nearby file writer at `0x0200cf28` copies the prefix, encodes the remainder, and writes the output stream to a file. [Encoder source](../rebuild/source/lzss_encode.c) · [Buffer and file entry points](../rebuild/source/lzss_buffers.c)
+The encoder and buffer and file entries pass 135 behavioral comparisons against the original ARM9 code. The memory entry now matches the ROM bytes. The encoder at `0x0200c87c` and the file entries at `0x0200cda4` and `0x0200cf28` still generate different instructions with r20. Both prefix-aware read paths transfer control to the shared stream decoder at `0x0200cb78`. The file writer copies the prefix, encodes the remainder, and writes the output stream to a file. [Encoder](../rebuild/source/lzss_encode.c) · [Memory decoder](../rebuild/source/lzss_memory.c) · [File entry points](../rebuild/source/lzss_buffers.c)
+
 
 Install the Python `unicorn` package in the interpreter used for this check, then run:
 
@@ -99,6 +105,14 @@ make check-sdk R20_ROOT=/mnt/d/tools/devkitARM
 ```
 
 The Codeberg mirror keeps its CVS import on the `history` branch. The July 2005 checkout matches `keysHeld`, `keysDown`, and `touchReadTemperature`. April 2006 reproduces all four tested ARM7 touch routines and the tested RTC and Slot-1 routines. October 2007 reproduces the IRQ setup functions, including `irqEnable` with `-Os`. The unmodified October 2007 `scanKeys` differs by four instruction bytes at the two shared button reads. [SourceForge ndslib project](https://sourceforge.net/projects/ndslib/) · [CVS mirror snapshot](https://codeberg.org/SkyLyrac/ndslib-archive/src/commit/eafb2703db6e2b6b414a2fa15107212522666bff) · [April 2006 libnds](https://github.com/devkitPro/libnds/tree/79e4f563e2ed88f404b72e0d8a4f8b079b2abe2a) · [October 2007 libnds](https://github.com/devkitPro/libnds/tree/8ea06b95fe716cfceff0bce34232217a61e0e6c9)
+
+### Link the period libnds sources
+
+```sh
+make reference-c-sdk R20_ROOT=/mnt/d/tools/devkitARM LIBNDS_REPO=build/sdk-sources/libnds
+```
+
+This target adds the 180 bytes of libnds key code, its three initialized repeat bytes, and the 216-byte ITCM dispatcher to the recovered code linked from source. It reads the pinned libnds revisions from the local history checkout. The output ROM and linker map are under `build/reference-c-sdk/`. The ROM input still supplies the remaining regions. [SDK source staging](../rebuild/sdk_source.py)
 
 Compiler selection, source revision, and per-file optimization can each affect a match. The ROM's libnds routines have matching code from different points in SDK history. The reconstructed C check isolates functions so each match demonstrates what the compiler produced from source.
 

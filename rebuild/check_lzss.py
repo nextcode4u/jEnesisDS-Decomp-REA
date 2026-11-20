@@ -9,8 +9,8 @@ import subprocess
 from tempfile import TemporaryDirectory
 
 from check_c import rom_images
-from r20 import compile_c, compiler_command, run, tool
-from recovered import LZSS_STREAMS, LZSS_TREES, SOURCE
+from r20 import compiler_command, run, tool
+from recovered import LZSS_STREAMS, LZSS_TREES, SOURCE, compile_arm9_source
 
 
 ORIGINAL = {
@@ -50,8 +50,9 @@ def compile_codec(r20, work):
     prefix = r20 / "bin/arm-eabi-"
     shutil.copytree(SOURCE / "source", work, dirs_exist_ok=True)
     objects = [
-        compile_c(compiler, work, Path(name + ".c"), 9, "-O2", "-marm").name
-        for name in ("bounded_stream", "lzss_match_tree", "lzss_encode", "lzss_decode", "lzss_buffers")
+        compile_arm9_source(compiler, work, name + ".c").name
+        for name in ("bounded_stream", "lzss_match_tree", "lzss_encode", "lzss_decode",
+                     "lzss_memory", "lzss_buffers")
     ]
     addresses = {
         **LZSS_TREES, **LZSS_STREAMS, **LIBC,

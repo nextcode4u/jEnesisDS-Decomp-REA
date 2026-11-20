@@ -147,5 +147,7 @@ arm9_call_via_r3:
 .section .dtcm, "aw", %progbits
     .incbin "arm9-dtcm.bin"
 
+.ifndef use_sdk_irq
 .section .itcm, "ax", %progbits
     .incbin "arm9-itcm.bin"
+.endif

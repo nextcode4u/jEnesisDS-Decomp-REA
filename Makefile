@@ -5,7 +5,7 @@ ROM ?= input/jEnesisDS.nds
 LIBNDS_REPO ?= build/sdk-sources/libnds
 NDSLIB_REPO ?= build/sdk-sources/ndslib-archive
 
-.PHONY: check-c check-lzss check-sdk check-pseudocode reference reference-c
+.PHONY: check-c check-lzss check-sdk check-pseudocode reference reference-c reference-c-sdk
 
 check-c:
 	$(PYTHON) rebuild/check_c.py --r20-root "$(R20_ROOT)" --build-dir "$(R20_BUILD_DIR)" --rom "$(ROM)"
@@ -25,3 +25,6 @@ reference:
 
 reference-c:
 	$(PYTHON) rebuild/build.py --rom "$(ROM)" --r20-root "$(R20_ROOT)"
+
+reference-c-sdk:
+	$(PYTHON) rebuild/build.py --rom "$(ROM)" --r20-root "$(R20_ROOT)" --libnds-repo "$(LIBNDS_REPO)"

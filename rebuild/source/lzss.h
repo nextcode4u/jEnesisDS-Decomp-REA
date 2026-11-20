@@ -23,6 +23,6 @@ void initialize_lzss_match_trees(void);
 void insert_lzss_match_tree_node(int node);
 void remove_lzss_match_tree_node(int node);
 void encode_lzss_stream(void);
-void decode_lzss_stream(void);
+int decode_lzss_stream(void);
 
 #endif
