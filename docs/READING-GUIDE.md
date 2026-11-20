@@ -32,7 +32,7 @@ The result gives a file and the line with its address label. The final bracketed
 | PSG | PicoDrive and Genesis Plus GX interpret bit 7 as a register latch, track the tone periods and attenuation, and advance a noise shift register. jEnesisDS uses the same register roles. ARM7's fixed-point tick accumulator controls when it updates the channel outputs. [jEnesisDS PSG](../decompiled/arm7/audio/psg.c) · [PicoDrive PSG](https://github.com/notaz/picodrive/blob/26ecb2b6358fefba24e3d68b9eb2efba7f10d5ee/pico/sound/sn76496.c) · [Genesis Plus GX PSG](https://github.com/ekeeke/Genesis-Plus-GX/blob/2499cd3e3d1d8b7d0130d8b2825adb4cc608b2c0/core/sound/psg.c) |
 | YM2612 envelope | PicoDrive takes the rate shift from the high byte of a packed word, selects one of eight three-bit fields with the shifted tick counter, and derives the attenuation step from that field. jEnesisDS uses the same calculation in its per-operator envelope routine, with a loop that advances to `end_tick`. [jEnesisDS envelope](../decompiled/arm7/audio/ym2612/channel_rendering.c#L5) · [PicoDrive YM2612](https://github.com/notaz/picodrive/blob/26ecb2b6358fefba24e3d68b9eb2efba7f10d5ee/pico/sound/ym2612.c) |
 
-The name tables cite jEnesisDS addresses and operations. These comparisons establish hardware roles and an arithmetic resemblance. The source history of the jEnesisDS routines remains open. [ARM9 variable evidence](../decompiled/arm9/variables.tsv) · [ARM7 variable evidence](../decompiled/arm7/variables.tsv)
+The name tables cite jEnesisDS addresses and operations. These comparisons establish hardware roles and an arithmetic resemblance. Stephan Dittrich's readme in the original archive describes the emulator source as original and closed. The comparisons here establish common hardware behavior and code structure. [ARM9 variable evidence](../decompiled/arm9/variables.tsv) · [ARM7 variable evidence](../decompiled/arm7/variables.tsv)
 
 ## Start a game from the ROM browser
 
@@ -191,6 +191,8 @@ The jEnesisDS 0.7.4 writer starts with the little-endian word `0x4a530003`. The 
 | `0x222b8` | `0x100` | YM2612 bank 1 register mirror |
 | `0x223b8` | `0x20` | PSG state block |
 | `0x223d8` | `0x0c` | Packed Z80 bus state, bank latch, and pending interrupts |
+
+A Sonic save captured in melonDS 1.1 with the original jEnesisDS 0.7.4 ROM had the expected length and header. The captured file held guest 68000 PC `0x0001ae22` at `0x48`, Z80 PC `0x99` at `0x22178`, Z80 SP `0x1ffc` at `0x2217c`, and Z80 bank latch `0x78000` at `0x223dc`. The captured save's SHA-256 is `9f85c46edddee381efd21bd5f8fa40a5aef7f48b3713283273c82c29734794a6`.
 
 To verify offsets in the original ARM9 ELF, find the calls to `0x020822e0` and multiply the values loaded into `r1` and `r2` before each call. These are the element size and count. For example, the write at `0x0200d6c4` takes size 2 and count 64 for CRAM. Build the ELF with the reference rebuild instructions. [Reference rebuild](../README.md#matching-rom-rebuild-in-wsl)
 
