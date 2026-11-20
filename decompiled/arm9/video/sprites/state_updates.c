@@ -12,11 +12,11 @@ void update_ds_sprite_position_from_genesis_attributes(ushort *genesis_sprite_wo
   ushort ds_sprite_x;
   uint uVar3;
   
-  viewport_relative_x = (genesis_sprite_words[3] & 0x1ff) - (short)DAT_020993a4;
+  viewport_relative_x = (genesis_sprite_words[3] & 0x1ff) - (short)viewport_offset_x;
   ds_sprite_x = viewport_relative_x - 0x80;
-  uVar3 = ((*genesis_sprite_words & 0xffff01ff) - DAT_020993a8) - 0x80 & 0xffff;
+  uVar3 = ((*genesis_sprite_words & 0xffff01ff) - viewport_offset_y) - 0x80 & 0xffff;
   if (((emulator_option_flags & 4) != 0) && ((uVar3 - 1) * 0x10000 < 0xee0001)) {
-    uVar3 = uVar3 - (byte)(&DAT_023dcdb4)[uVar3] & 0xffff;
+    uVar3 = uVar3 - (byte)(&sprite_y_scale_adjustments)[uVar3] & 0xffff;
   }
   ds_sprite_y = (ushort)uVar3;
   if (((genesis_sprite_words[1] >> 10 & 3) == 2) && ((genesis_sprite_words[2] & 0x800) != 0)) {
@@ -25,10 +25,10 @@ void update_ds_sprite_position_from_genesis_attributes(ushort *genesis_sprite_wo
   if (((genesis_sprite_words[1] >> 8 & 3) == 2) && ((genesis_sprite_words[2] & 0x1000) != 0)) {
     ds_sprite_y = ds_sprite_y - 8;
   }
-  (&DAT_023dc1a8)[ds_sprite_index * 4] = (&DAT_023dc1a8)[ds_sprite_index * 4] & 0xff00;
-  (&DAT_023dc1aa)[ds_sprite_index * 4] = (&DAT_023dc1aa)[ds_sprite_index * 4] & 0xfe00;
-  (&DAT_023dc1a8)[ds_sprite_index * 4] = (&DAT_023dc1a8)[ds_sprite_index * 4] | ds_sprite_y & 0xff;
-  (&DAT_023dc1aa)[ds_sprite_index * 4] = (&DAT_023dc1aa)[ds_sprite_index * 4] | ds_sprite_x & 0x1ff;
+  (&ds_oam_staging_attr0)[ds_sprite_index * 4] = (&ds_oam_staging_attr0)[ds_sprite_index * 4] & 0xff00;
+  (&ds_oam_staging_attr1)[ds_sprite_index * 4] = (&ds_oam_staging_attr1)[ds_sprite_index * 4] & 0xfe00;
+  (&ds_oam_staging_attr0)[ds_sprite_index * 4] = (&ds_oam_staging_attr0)[ds_sprite_index * 4] | ds_sprite_y & 0xff;
+  (&ds_oam_staging_attr1)[ds_sprite_index * 4] = (&ds_oam_staging_attr1)[ds_sprite_index * 4] | ds_sprite_x & 0x1ff;
   return;
 }
 
@@ -43,12 +43,12 @@ void copy_sprite_attribute_buffer_to_ds_oam(uint sprite_count)
 {
   int attribute_bytes;
   
-  if (DAT_020993c0 <= sprite_count) {
-    DAT_020993c0 = sprite_count;
+  if (previous_oam_sprite_count <= sprite_count) {
+    previous_oam_sprite_count = sprite_count;
   }
-  attribute_bytes = DAT_020993c0 << 3;
-  DAT_020993c0 = sprite_count;
-  clean_and_invalidate_arm9_data_cache_range(&DAT_023dc1a8,attribute_bytes);
+  attribute_bytes = previous_oam_sprite_count << 3;
+  previous_oam_sprite_count = sprite_count;
+  clean_and_invalidate_arm9_data_cache_range(&ds_oam_staging_attr0,attribute_bytes);
   do {
   } while( true );
 }
@@ -56,7 +56,7 @@ void copy_sprite_attribute_buffer_to_ds_oam(uint sprite_count)
 
 // 0x02008984  build_ds_sprite_attributes_from_genesis_sprite_table
 
-void build_ds_sprite_attributes_from_genesis_sprite_table(undefined4 param_1,uint param_2)
+void build_ds_sprite_attributes_from_genesis_sprite_table(undefined4 genesis_vram_base,uint sprite_limit)
 
 {
   int iVar1;
@@ -67,43 +67,43 @@ void build_ds_sprite_attributes_from_genesis_sprite_table(undefined4 param_1,uin
   undefined *puVar6;
   uint uVar7;
   char *pcVar8;
-  undefined1 *puVar9;
-  undefined2 *puVar11;
+  undefined1 *next_dirty_flag;
+  undefined2 *stale_oam_attr0_cursor;
   undefined *puVar12;
   ushort uVar13;
   uint uVar14;
-  ushort *puVar15;
-  ushort *puVar16;
-  uint uVar17;
-  ushort *puVar18;
+  ushort *genesis_sprite_words;
+  ushort *cached_sprite_words;
+  uint ds_sprite_index;
+  ushort *oam_attr1_cursor;
   uint uVar19;
   uint uVar20;
   bool bVar21;
-  undefined1 *puVar10;
+  undefined1 *dirty_flag_cursor;
   
-  uVar17 = 0;
-  puVar18 = &DAT_023dc1aa;
-  cVar4 = DAT_023dc5b4 + '\x01';
-  if ((char)(DAT_023dc5b4 + '\x01') == '\0') {
-    cVar4 = DAT_023dc5b4 + '\x02';
+  ds_sprite_index = 0;
+  oam_attr1_cursor = &ds_oam_staging_attr1;
+  cVar4 = sprite_line_mask_generation + '\x01';
+  if ((char)(sprite_line_mask_generation + '\x01') == '\0') {
+    cVar4 = sprite_line_mask_generation + '\x02';
   }
-  DAT_023dc5b4 = cVar4;
+  sprite_line_mask_generation = cVar4;
   uVar14 = 0;
   do {
-    puVar15 = (ushort *)(DAT_023dcdac + uVar14 * 8);
-    uVar3 = puVar15[1];
+    genesis_sprite_words = (ushort *)(vdp_sat_host_pointer + uVar14 * 8);
+    uVar3 = genesis_sprite_words[1];
     uVar20 = (uint)uVar3;
-    uVar2 = puVar15[2] & 0x7ff;
-    puVar16 = &DAT_023dcfb0 + uVar14 * 6;
+    uVar2 = genesis_sprite_words[2] & 0x7ff;
+    cached_sprite_words = &sprite_cache_word_0 + uVar14 * 6;
     uVar19 = uVar2 + (byte)(&UNK_0208e528)[(uVar3 >> 8 & 3) + (uVar3 >> 8 & 0xc)];
-    if (DAT_020993bc == 0) {
-      if ((uVar20 & 0x7f) != ((ushort)(&DAT_023dcfb2)[uVar14 * 6] & 0x7f)) {
-        DAT_020993bc = 1;
+    if (sprite_cache_rebuild_pending == 0) {
+      if ((uVar20 & 0x7f) != ((ushort)(&sprite_cache_size_and_link)[uVar14 * 6] & 0x7f)) {
+        sprite_cache_rebuild_pending = 1;
       }
-      if (uVar17 != (ushort)(&DAT_023dcfb8)[uVar14 * 6]) goto LAB_02008a40;
+      if (ds_sprite_index != (ushort)(&sprite_cache_oam_slot)[uVar14 * 6]) goto LAB_02008a40;
       if (uVar2 < uVar19) {
-        if ((&DAT_0209c3e0)[uVar2] == '\0') {
-          pcVar8 = &DAT_0209c3e0 + uVar2;
+        if ((&sprite_pattern_dirty_flags)[uVar2] == '\0') {
+          pcVar8 = &sprite_pattern_dirty_flags + uVar2;
           do {
             if (pcVar8 == (char *)((int)&DAT_0209c3dc + uVar19 + 3)) goto LAB_02008d14;
             pcVar8 = pcVar8 + 1;
@@ -112,77 +112,77 @@ void build_ds_sprite_attributes_from_genesis_sprite_table(undefined4 param_1,uin
         goto LAB_02008a40;
       }
 LAB_02008d14:
-      if ((*(int *)puVar15 != *(int *)puVar16) ||
-         (*(int *)(puVar15 + 2) != *(int *)(&DAT_023dcfb4 + uVar14 * 6))) {
-        if (((&DAT_023dcfba)[uVar14 * 6] == 0) ||
-           ((uVar20 != (ushort)(&DAT_023dcfb2)[uVar14 * 6] ||
-            ((uint)(ushort)(&DAT_023dcfb4)[uVar14 * 6] != (uint)puVar15[2])))) goto LAB_02008a40;
-        *puVar16 = *puVar15;
-        (&DAT_023dcfb6)[uVar14 * 6] = puVar15[3];
-        if ((((int)((puVar15[3] & 0x1ff) - 0x80) < (int)(uint)DAT_023dc8b2) &&
-            ((((puVar15[3] & 0xffff01ff) + ((puVar15[1] >> 10 & 3) + 1) * 8) - 0x80 & 0x8000) == 0))
-           && (((int)((*puVar15 & 0x1ff) - 0x80) < (int)(uint)DAT_023dc8ac &&
-               ((((*puVar15 & 0xffff01ff) + ((puVar15[1] >> 8 & 3) + 1) * 8) - 0x80 & 0x8000) == 0))
+      if ((*(int *)genesis_sprite_words != *(int *)cached_sprite_words) ||
+         (*(int *)(genesis_sprite_words + 2) != *(int *)(&sprite_cache_tile_and_flags + uVar14 * 6))) {
+        if (((&sprite_cache_visible_flag)[uVar14 * 6] == 0) ||
+           ((uVar20 != (ushort)(&sprite_cache_size_and_link)[uVar14 * 6] ||
+            ((uint)(ushort)(&sprite_cache_tile_and_flags)[uVar14 * 6] != (uint)genesis_sprite_words[2])))) goto LAB_02008a40;
+        *cached_sprite_words = *genesis_sprite_words;
+        (&sprite_cache_x_word)[uVar14 * 6] = genesis_sprite_words[3];
+        if ((((int)((genesis_sprite_words[3] & 0x1ff) - 0x80) < (int)(uint)frame_active_width_pixels) &&
+            ((((genesis_sprite_words[3] & 0xffff01ff) + ((genesis_sprite_words[1] >> 10 & 3) + 1) * 8) - 0x80 & 0x8000) == 0))
+           && (((int)((*genesis_sprite_words & 0x1ff) - 0x80) < (int)(uint)frame_active_height_pixels &&
+               ((((*genesis_sprite_words & 0xffff01ff) + ((genesis_sprite_words[1] >> 8 & 3) + 1) * 8) - 0x80 & 0x8000) == 0))
               )) {
-          update_ds_sprite_position_from_genesis_attributes(puVar15,uVar17);
-          uVar20 = (uint)puVar15[1];
+          update_ds_sprite_position_from_genesis_attributes(genesis_sprite_words,ds_sprite_index);
+          uVar20 = (uint)genesis_sprite_words[1];
         }
         else {
-          (&DAT_023dcfba)[uVar14 * 6] = 0;
-          puVar18[-1] = 0x200;
-          uVar20 = (uint)puVar15[1];
+          (&sprite_cache_visible_flag)[uVar14 * 6] = 0;
+          oam_attr1_cursor[-1] = 0x200;
+          uVar20 = (uint)genesis_sprite_words[1];
         }
       }
     }
     else {
 LAB_02008a40:
-      *puVar16 = *puVar15;
-      (&DAT_023dcfb2)[uVar14 * 6] = puVar15[1];
-      (&DAT_023dcfb4)[uVar14 * 6] = puVar15[2];
-      uVar3 = puVar15[3];
-      (&DAT_023dcfb8)[uVar14 * 6] = (short)uVar17;
-      (&DAT_023dcfb6)[uVar14 * 6] = uVar3;
+      *cached_sprite_words = *genesis_sprite_words;
+      (&sprite_cache_size_and_link)[uVar14 * 6] = genesis_sprite_words[1];
+      (&sprite_cache_tile_and_flags)[uVar14 * 6] = genesis_sprite_words[2];
+      uVar3 = genesis_sprite_words[3];
+      (&sprite_cache_oam_slot)[uVar14 * 6] = (short)ds_sprite_index;
+      (&sprite_cache_x_word)[uVar14 * 6] = uVar3;
       uVar2 = emulator_option_flags;
-      if ((int)((puVar15[3] & 0x1ff) - 0x80) < (int)(uint)DAT_023dc8b2) {
-        uVar20 = puVar15[1] >> 10 & 3;
-        if ((((((puVar15[3] & 0xffff01ff) + (uVar20 + 1) * 8) - 0x80 & 0x8000) == 0) &&
-            ((int)((*puVar15 & 0x1ff) - 0x80) < (int)(uint)DAT_023dc8ac)) &&
-           (uVar7 = puVar15[1] >> 8 & 3,
-           (((*puVar15 & 0xffff01ff) + (uVar7 + 1) * 8) - 0x80 & 0x8000) == 0)) {
+      if ((int)((genesis_sprite_words[3] & 0x1ff) - 0x80) < (int)(uint)frame_active_width_pixels) {
+        uVar20 = genesis_sprite_words[1] >> 10 & 3;
+        if ((((((genesis_sprite_words[3] & 0xffff01ff) + (uVar20 + 1) * 8) - 0x80 & 0x8000) == 0) &&
+            ((int)((*genesis_sprite_words & 0x1ff) - 0x80) < (int)(uint)frame_active_height_pixels)) &&
+           (uVar7 = genesis_sprite_words[1] >> 8 & 3,
+           (((*genesis_sprite_words & 0xffff01ff) + (uVar7 + 1) * 8) - 0x80 & 0x8000) == 0)) {
           iVar1 = (uVar7 + uVar20 * 4) * 2;
-          puVar18[-1] = *(ushort *)(&DAT_0208e538 + iVar1);
-          uVar3 = puVar15[2];
+          oam_attr1_cursor[-1] = *(ushort *)(&DAT_0208e538 + iVar1);
+          uVar3 = genesis_sprite_words[2];
           if ((uVar3 & 0x8000) == 0) {
             uVar13 = 0x800;
           }
           else {
             uVar13 = 0;
           }
-          *puVar18 = (ushort)((uVar3 & 0x1800) << 1) ^ 0x1000 | *(ushort *)(&DAT_0208e558 + iVar1);
-          puVar18[1] = uVar13 | (ushort)((uVar3 & 0x6000) >> 1) | (ushort)((uVar17 & 0xffff) << 3);
-          copy_sprite_tiles_for_sprite_shape(puVar15,param_1,uVar17);
-          if ((puVar15[2] & 0x7ff) < uVar19) {
-            puVar10 = &DAT_0209c3e0 + (puVar15[2] & 0x7ff);
+          *oam_attr1_cursor = (ushort)((uVar3 & 0x1800) << 1) ^ 0x1000 | *(ushort *)(&DAT_0208e558 + iVar1);
+          oam_attr1_cursor[1] = uVar13 | (ushort)((uVar3 & 0x6000) >> 1) | (ushort)((ds_sprite_index & 0xffff) << 3);
+          copy_sprite_tiles_for_sprite_shape(genesis_sprite_words,genesis_vram_base,ds_sprite_index);
+          if ((genesis_sprite_words[2] & 0x7ff) < uVar19) {
+            dirty_flag_cursor = &sprite_pattern_dirty_flags + (genesis_sprite_words[2] & 0x7ff);
             do {
-              puVar9 = puVar10 + 1;
-              *puVar10 = 0;
-              puVar10 = puVar9;
-            } while (puVar9 != &DAT_0209c3e0 + uVar19);
+              next_dirty_flag = dirty_flag_cursor + 1;
+              *dirty_flag_cursor = 0;
+              dirty_flag_cursor = next_dirty_flag;
+            } while (next_dirty_flag != &sprite_pattern_dirty_flags + uVar19);
           }
-          (&DAT_023dcfba)[uVar14 * 6] = 1;
-          uVar20 = (uint)puVar15[1];
+          (&sprite_cache_visible_flag)[uVar14 * 6] = 1;
+          uVar20 = (uint)genesis_sprite_words[1];
           goto LAB_02008b90;
         }
       }
       uVar19 = emulator_option_flags & 0x100;
-      (&DAT_023dcfba)[uVar14 * 6] = 0;
-      puVar18[-1] = 0x200;
-      cVar4 = DAT_023dc5b4;
-      if (((uVar19 != 0) && (uVar17 < 0xc)) &&
-         (((puVar15[3] & 0x1ff) == 0 && (uVar14 = *puVar15 & 0x1ff, uVar14 - 0x80 < 0xe0)))) {
-        uVar20 = (uint)puVar15[1];
+      (&sprite_cache_visible_flag)[uVar14 * 6] = 0;
+      oam_attr1_cursor[-1] = 0x200;
+      cVar4 = sprite_line_mask_generation;
+      if (((uVar19 != 0) && (ds_sprite_index < 0xc)) &&
+         (((genesis_sprite_words[3] & 0x1ff) == 0 && (uVar14 = *genesis_sprite_words & 0x1ff, uVar14 - 0x80 < 0xe0)))) {
+        uVar20 = (uint)genesis_sprite_words[1];
         puVar5 = (undefined *)(uint)(byte)(&DAT_0208eb30)[uVar14];
-        iVar1 = ((puVar15[1] >> 8 & 3) + 1) * 8;
+        iVar1 = ((genesis_sprite_words[1] >> 8 & 3) + 1) * 8;
         if (puVar5 == (undefined *)0xc8) {
           puVar5 = (undefined *)(uint)(byte)(&DAT_0208eb2f)[uVar14];
         }
@@ -199,32 +199,32 @@ LAB_02008a40:
           puVar6 = (undefined *)0xbf;
         }
         if (puVar6 <= puVar5) goto LAB_02008b90;
-        pcVar8 = &DAT_023dc5bc + (int)puVar5;
+        pcVar8 = &sprite_line_mask_tags + (int)puVar5;
         do {
           puVar5 = puVar5 + 1;
           *pcVar8 = cVar4;
           pcVar8 = pcVar8 + 1;
         } while (puVar5 < puVar6);
       }
-      uVar20 = (uint)puVar15[1];
+      uVar20 = (uint)genesis_sprite_words[1];
     }
 LAB_02008b90:
-    uVar2 = DAT_020993c0;
-    uVar17 = uVar17 + 1;
-    puVar18 = puVar18 + 4;
+    uVar2 = previous_oam_sprite_count;
+    ds_sprite_index = ds_sprite_index + 1;
+    oam_attr1_cursor = oam_attr1_cursor + 4;
     uVar14 = uVar20 & 0x7f;
-    if (param_2 <= uVar17 || (uVar20 & 0x7f) == 0) {
-      if (uVar17 < DAT_020993c0) {
-        puVar11 = &DAT_023dc1a8 + uVar17 * 4;
-        uVar14 = uVar17;
+    if (sprite_limit <= ds_sprite_index || (uVar20 & 0x7f) == 0) {
+      if (ds_sprite_index < previous_oam_sprite_count) {
+        stale_oam_attr0_cursor = &ds_oam_staging_attr0 + ds_sprite_index * 4;
+        uVar14 = ds_sprite_index;
         do {
           uVar14 = uVar14 + 1;
-          *puVar11 = 0x200;
-          puVar11 = puVar11 + 4;
+          *stale_oam_attr0_cursor = 0x200;
+          stale_oam_attr0_cursor = stale_oam_attr0_cursor + 4;
         } while (uVar14 < uVar2);
       }
-      copy_sprite_attribute_buffer_to_ds_oam(uVar17);
-      DAT_020993bc = 0;
+      copy_sprite_attribute_buffer_to_ds_oam(ds_sprite_index);
+      sprite_cache_rebuild_pending = 0;
       return;
     }
   } while( true );
@@ -242,7 +242,7 @@ void initialize_ds_sprite_attribute_buffer(void)
   undefined4 *puVar1;
   undefined4 *puVar2;
   
-  puVar1 = (undefined4 *)&DAT_023dc1a8;
+  puVar1 = (undefined4 *)&ds_oam_staging_attr0;
   do {
     puVar2 = puVar1;
     *(undefined2 *)puVar2 = 0x200;
@@ -267,7 +267,7 @@ void initialize_ds_sprite_attribute_buffer(void)
   *(undefined2 *)((int)puVar2 + -0x392) = 0xff06;
   *(undefined2 *)((int)puVar2 + -0x38a) = 0;
   *(undefined2 *)((int)puVar2 + -0x382) = 0;
-  clean_and_invalidate_arm9_data_cache_range(&DAT_023dc1a8,0x400);
+  clean_and_invalidate_arm9_data_cache_range(&ds_oam_staging_attr0,0x400);
   do {
   } while( true );
 }

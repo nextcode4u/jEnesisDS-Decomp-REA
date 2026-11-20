@@ -60,7 +60,7 @@ void rebuild_display_from_vdp_state(void)
     }
     palette_byte_offset = palette_byte_offset + 2;
   } while (palette_index != 0x40);
-  if (DAT_023ddb05 == '\0') {
+  if (vdp_wide_display_mode == '\0') {
     select_window_tilemap_layout();
     rebuild_background_tilemap_from_vdp_words(&vdp_vram + vdp_window_name_table_base,0x800,2);
   }
@@ -68,12 +68,12 @@ void rebuild_display_from_vdp_state(void)
     select_window_tilemap_layout(1);
     rebuild_background_tilemap_from_vdp_words(&vdp_vram + vdp_window_name_table_base,0x1000,2);
   }
-  select_background_tilemap_layout(DAT_023dcfa4);
-  rebuild_background_tilemap_from_vdp_words(&vdp_vram + vdp_plane_a_name_table_base,DAT_023dc8a0,0);
-  rebuild_background_tilemap_from_vdp_words(&vdp_vram + vdp_plane_b_name_table_base,DAT_023dc8a0,1);
-  DAT_020993bc = 1;
-  build_ds_sprite_attributes_from_genesis_sprite_table(DAT_0b003648,DAT_020993c0,&DAT_020993c0,1,unaff_r4,in_lr);
-  DAT_020993bc = 0;
+  select_background_tilemap_layout(vdp_background_layout_code);
+  rebuild_background_tilemap_from_vdp_words(&vdp_vram + vdp_plane_a_name_table_base,plane_name_table_span_bytes,0);
+  rebuild_background_tilemap_from_vdp_words(&vdp_vram + vdp_plane_b_name_table_base,plane_name_table_span_bytes,1);
+  sprite_cache_rebuild_pending = 1;
+  build_ds_sprite_attributes_from_genesis_sprite_table(vdp_vram_base_pointer,previous_oam_sprite_count,&previous_oam_sprite_count,1,unaff_r4,in_lr);
+  sprite_cache_rebuild_pending = 0;
   return;
 }
 

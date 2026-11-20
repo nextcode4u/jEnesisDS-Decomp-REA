@@ -58,12 +58,12 @@ undefined4 parse_cartridge_header(int param_1)
   if (param_1 == 0) {
     return 0;
   }
-  newlib_memset(DAT_02098fc8 + 0x200,0,0x20);
-  newlib_memset(DAT_02098fc8 + 0x220,0,0x20);
-  iVar3 = DAT_02098fc8;
+  newlib_memset(loaded_cartridge_metadata + 0x200,0,0x20);
+  newlib_memset(loaded_cartridge_metadata + 0x220,0,0x20);
+  iVar3 = loaded_cartridge_metadata;
   iVar5 = 0x120;
   iVar2 = 0;
-  *(undefined1 *)(DAT_02098fc8 + 0x262) = 0;
+  *(undefined1 *)(loaded_cartridge_metadata + 0x262) = 0;
   *(undefined4 *)(iVar3 + 0x240) = 0;
   *(undefined4 *)(iVar3 + 0x244) = 0;
   *(undefined4 *)(iVar3 + 0x24c) = 0;
@@ -80,7 +80,7 @@ undefined4 parse_cartridge_header(int param_1)
       cVar8 = cVar1;
       if (iVar5 == 0x150) goto LAB_02001784;
     }
-    *(char *)(iVar2 + DAT_02098fc8 + 0x200) = cVar1;
+    *(char *)(iVar2 + loaded_cartridge_metadata + 0x200) = cVar1;
     iVar2 = iVar2 + 1;
     cVar8 = cVar1;
   } while (iVar5 != 0x150);
@@ -95,15 +95,15 @@ LAB_02001784:
       cVar8 = cVar1;
       if (iVar5 == 0x180) goto LAB_020017cc;
     }
-    *(char *)(iVar3 + DAT_02098fc8 + 0x220) = cVar1;
+    *(char *)(iVar3 + loaded_cartridge_metadata + 0x220) = cVar1;
     iVar3 = iVar3 + 1;
     cVar8 = cVar1;
   } while (iVar5 != 0x180);
 LAB_020017cc:
-  iVar3 = DAT_02098fc8;
-  *(uint *)(DAT_02098fc8 + 0x240) =
+  iVar3 = loaded_cartridge_metadata;
+  *(uint *)(loaded_cartridge_metadata + 0x240) =
        (uint)CONCAT11(*(undefined1 *)(param_1 + 0x18e),*(undefined1 *)(param_1 + 399));
-  iVar2 = DAT_02098fc8;
+  iVar2 = loaded_cartridge_metadata;
   if ((*(char *)(param_1 + 0x1b0) == 'R') && (*(char *)(param_1 + 0x1b1) == 'A')) {
     uVar6 = (uint)*(byte *)(param_1 + 0x1b5) << 0x10 | (uint)*(byte *)(param_1 + 0x1b4) << 0x18 |
             (uint)*(byte *)(param_1 + 0x1b7) | (uint)*(byte *)(param_1 + 0x1b6) << 8;
@@ -145,16 +145,16 @@ LAB_020017cc:
       *(undefined4 *)(iVar3 + 0x250) = 0x2000ff;
       *(undefined1 *)(iVar3 + 0x261) = 1;
     }
-    *(undefined1 *)(DAT_02098fc8 + 0x265) = 1;
+    *(undefined1 *)(loaded_cartridge_metadata + 0x265) = 1;
     return 1;
   }
   uVar4 = 0;
   uVar6 = 0;
-  *(undefined1 *)(DAT_02098fc8 + 0x262) = 0;
+  *(undefined1 *)(loaded_cartridge_metadata + 0x262) = 0;
   *(undefined1 *)(iVar2 + 0x261) = 0;
 LAB_02001804:
-  iVar3 = DAT_02098fc8;
-  *(uint *)(DAT_02098fc8 + 0x250) = uVar4;
+  iVar3 = loaded_cartridge_metadata;
+  *(uint *)(loaded_cartridge_metadata + 0x250) = uVar4;
   *(undefined1 *)(iVar3 + 0x265) = 0;
   *(uint *)(iVar3 + 0x24c) = uVar6;
   *(undefined4 *)(iVar3 + 0x248) = 0;
@@ -276,37 +276,37 @@ undefined4 load_genesis_rom_from_stream(int param_1,undefined4 param_2)
   char cVar12;
   
   newlib_memset(&cartridge_rom_bytes,0,0x306800);
-  if (DAT_02098fc8 == 0) {
-    DAT_02098fc8 = newlib_malloc_global_reent_wrapper(0x268);
+  if (loaded_cartridge_metadata == 0) {
+    loaded_cartridge_metadata = newlib_malloc_global_reent_wrapper(0x268);
   }
-  newlib_strncpy(DAT_02098fc8,param_2,0x100);
-  *(undefined4 *)(DAT_02098fc8 + 600) = 0;
+  newlib_strncpy(loaded_cartridge_metadata,param_2,0x100);
+  *(undefined4 *)(loaded_cartridge_metadata + 600) = 0;
   if (param_1 != 0) {
     newlib_fseek(param_1,0,2);
     uVar6 = newlib_ftell(param_1);
     newlib_fseek(param_1,0,0);
     if (0x306800 < uVar6) {
-      *(uint *)(DAT_02098fc8 + 600) = *(uint *)(DAT_02098fc8 + 600) | 6;
+      *(uint *)(loaded_cartridge_metadata + 600) = *(uint *)(loaded_cartridge_metadata + 600) | 6;
       return 0;
     }
     if (uVar6 != 0) {
       iVar7 = rom_header_lacks_sega_signature(param_1);
       if (iVar7 == 0) {
         newlib_fread(&cartridge_rom_bytes,1,uVar6,param_1);
-        *(undefined1 *)(DAT_02098fc8 + 0x260) = 0;
+        *(undefined1 *)(loaded_cartridge_metadata + 0x260) = 0;
       }
       else {
         uVar6 = uVar6 - 0x200;
         newlib_fseek(param_1,0x200,0);
         newlib_fread(&cartridge_rom_bytes,1,uVar6,param_1);
         deinterleave_smd_rom_blocks(&cartridge_rom_bytes,uVar6);
-        *(undefined1 *)(DAT_02098fc8 + 0x260) = 1;
+        *(undefined1 *)(loaded_cartridge_metadata + 0x260) = 1;
       }
       parse_cartridge_header(&cartridge_rom_bytes,uVar6);
       if (((emulator_option_flags & 0x20) != 0) &&
-         (iVar8 = compute_genesis_rom_checksum(&cartridge_rom_bytes,uVar6), iVar7 = DAT_02098fc8,
-         iVar8 != *(int *)(DAT_02098fc8 + 0x240))) {
-        *(uint *)(DAT_02098fc8 + 600) = *(uint *)(DAT_02098fc8 + 600) | 0x10;
+         (iVar8 = compute_genesis_rom_checksum(&cartridge_rom_bytes,uVar6), iVar7 = loaded_cartridge_metadata,
+         iVar8 != *(int *)(loaded_cartridge_metadata + 0x240))) {
+        *(uint *)(loaded_cartridge_metadata + 600) = *(uint *)(loaded_cartridge_metadata + 600) | 0x10;
         *(int *)(iVar7 + 0x240) = iVar8;
         DAT_020b4e7b = (undefined1)iVar8;
         DAT_020b4e7a = (undefined1)((uint)iVar8 >> 8);
@@ -341,12 +341,12 @@ undefined4 load_genesis_rom_from_stream(int param_1,undefined4 param_2)
       switch(cVar5) {
       case '1':
       case 'J':
-        *(undefined1 *)(DAT_02098fc8 + 0x254) = 0;
+        *(undefined1 *)(loaded_cartridge_metadata + 0x254) = 0;
         set_genesis_region_and_version_register();
         uVar11 = 1;
         break;
       default:
-        *(undefined1 *)(DAT_02098fc8 + 0x254) = 2;
+        *(undefined1 *)(loaded_cartridge_metadata + 0x254) = 2;
         set_genesis_region_and_version_register(0xc0);
         uVar11 = 1;
         break;
@@ -355,7 +355,7 @@ undefined4 load_genesis_rom_from_stream(int param_1,undefined4 param_2)
       case 'F':
       case 'U':
         uVar11 = 1;
-        *(undefined1 *)(DAT_02098fc8 + 0x254) = 1;
+        *(undefined1 *)(loaded_cartridge_metadata + 0x254) = 1;
         set_genesis_region_and_version_register(0x80);
       }
       goto LAB_02001dd4;
@@ -364,9 +364,9 @@ undefined4 load_genesis_rom_from_stream(int param_1,undefined4 param_2)
   uVar11 = 0;
   uVar6 = 0;
 LAB_02001dd4:
-  iVar7 = DAT_02098fc8;
-  puVar1 = (uint *)(DAT_02098fc8 + 600);
-  *(uint *)(DAT_02098fc8 + 0x244) = uVar6;
+  iVar7 = loaded_cartridge_metadata;
+  puVar1 = (uint *)(loaded_cartridge_metadata + 600);
+  *(uint *)(loaded_cartridge_metadata + 0x244) = uVar6;
   *(uint *)(iVar7 + 600) = *puVar1 | 1;
   probe_savestate_slots();
   swap_adjacent_bytes_in_backing_buffer(&cartridge_rom_bytes,uVar6);
@@ -401,12 +401,12 @@ undefined1 open_rom_from_browser_selection(uint selected_row)
       entry_or_filename = entry_or_filename + 3;
       arm_veneer_for_nds_swiwaitforvblank();
       draw_loading_message(entry_or_filename);
-      rom_stream = newlib_fopen(entry_or_filename,&DAT_0208f074);
+      rom_stream = newlib_fopen(entry_or_filename,&binary_read_mode);
       rom_loaded = load_genesis_rom_from_stream(rom_stream,entry_or_filename);
       newlib_fclose(rom_stream);
-      if (*(char *)(DAT_02098fc8 + 0x265) != '\0') {
-        configure_cartridge_save_ram(DAT_02098fc8,*(undefined4 *)(DAT_02098fc8 + 0x248),
-                     *(undefined4 *)(DAT_02098fc8 + 0x244));
+      if (*(char *)(loaded_cartridge_metadata + 0x265) != '\0') {
+        configure_cartridge_save_ram(loaded_cartridge_metadata,*(undefined4 *)(loaded_cartridge_metadata + 0x248),
+                     *(undefined4 *)(loaded_cartridge_metadata + 0x244));
       }
       DAT_02098ff8 = 0;
       return rom_loaded;

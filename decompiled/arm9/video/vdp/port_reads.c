@@ -14,7 +14,7 @@ undefined2 read_vdp_horizontal_and_vertical_counters(void)
   if (DAT_0b003624 <= DAT_0b000014) {
     uVar2 = DAT_0b003624;
   }
-  if (DAT_023ddb05 == '\0') {
+  if (vdp_wide_display_mode == '\0') {
     uVar1 = (&DAT_0208e720)[uVar2];
   }
   else {
@@ -37,7 +37,7 @@ uint read_vdp_status_and_clear_read_side_effects(void)
   }
   status_word = (DAT_0b000084 | DAT_0b000088 | DAT_0b000094 | DAT_0b00007c | DAT_0b00009c |
           DAT_0b00008c | DAT_0b000090 | DAT_0b000098 | DAT_0b000080 | DAT_0b0000a0) & 0xffff;
-  if (DAT_0b00362f == '\0') {
+  if (vdp_display_enabled == '\0') {
     status_word = status_word | 8;
   }
   vdp_control_word_pending = 0;

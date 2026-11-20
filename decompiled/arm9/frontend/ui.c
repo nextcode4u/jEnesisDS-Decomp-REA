@@ -106,11 +106,11 @@ void draw_current_rom_information(void)
   undefined *puVar4;
   int iVar5;
   
-  cVar1 = *(char *)(DAT_02098fc8 + 0x254);
+  cVar1 = *(char *)(loaded_cartridge_metadata + 0x254);
   arm_tail_branch_to_load_subscreen_palette_tiles_and_map();
   clear_text_rows_from(3);
-  iVar2 = DAT_02098fc8;
-  iVar3 = newlib_strrchr(DAT_02098fc8,0x2f);
+  iVar2 = loaded_cartridge_metadata;
+  iVar3 = newlib_strrchr(loaded_cartridge_metadata,0x2f);
   iVar5 = iVar3 + 1;
   if (iVar3 == 0) {
     iVar5 = iVar2;
@@ -120,12 +120,12 @@ void draw_current_rom_information(void)
   write_text_at_tile_position("Now Playing:",6,1);
   write_text_at_tile_position(&DAT_023cb4f0,7,1);
   write_text_at_tile_position("Rom Size:",9,1);
-  format_hexadecimal_value(*(undefined4 *)(DAT_02098fc8 + 0x244),9,0xf);
+  format_hexadecimal_value(*(undefined4 *)(loaded_cartridge_metadata + 0x244),9,0xf);
   write_text_at_tile_position("Rom Checksum:",10,1);
-  write_hexadecimal_value_to_overlay(*(undefined4 *)(DAT_02098fc8 + 0x240),10,0xf);
+  write_hexadecimal_value_to_overlay(*(undefined4 *)(loaded_cartridge_metadata + 0x240),10,0xf);
   write_text_at_tile_position("Rom Type:",0xb,1);
   puVar4 = &DAT_0208f0f0;
-  if (*(char *)(DAT_02098fc8 + 0x260) == '\0') {
+  if (*(char *)(loaded_cartridge_metadata + 0x260) == '\0') {
     puVar4 = &DAT_0208f0f4;
   }
   write_text_at_tile_position(puVar4,0xb,0xf);
@@ -135,14 +135,14 @@ void draw_current_rom_information(void)
   draw_rom_browser_row_highlight(7);
   copy_rom_information_overlay_tiles();
   draw_rom_region_indicator(cVar1);
-  if (*(char *)(DAT_02098fc8 + 0x261) != '\0') {
+  if (*(char *)(loaded_cartridge_metadata + 0x261) != '\0') {
     draw_cartridge_sram_indicator();
   }
   draw_rom_video_standard_indicator(cVar1 == '\x02');
   draw_state_slots_label();
-  draw_savestate_slot_presence_indicator(0,*(uint *)(DAT_02098fc8 + 600) & 0x20);
+  draw_savestate_slot_presence_indicator(0,*(uint *)(loaded_cartridge_metadata + 600) & 0x20);
   sRam0620156e = 0x84;
-  if ((*(uint *)(DAT_02098fc8 + 600) & 0x40) == 0) {
+  if ((*(uint *)(loaded_cartridge_metadata + 600) & 0x40) == 0) {
     sRam0620156e = 0x87;
   }
   sRam062015b2 = sRam0620156e + 0x11;

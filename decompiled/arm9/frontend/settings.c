@@ -159,7 +159,7 @@ undefined4 run_configuration_menu(int param_1)
     write_text_at_tile_position("[A]:     Change Option",0x15,1);
     write_text_at_tile_position("[SELECT]:Continue Game",0x16,1);
   }
-  DAT_02098fd0 = 0;
+  previous_ds_keys = 0;
   while( true ) {
     arm_veneer_for_sample_ds_keys_and_update_repeat_state();
     puVar5 = &DAT_02085a10;
@@ -172,18 +172,18 @@ undefined4 run_configuration_menu(int param_1)
     } while (iVar4 != 10);
     draw_rom_browser_row_highlight(DAT_02098fe8 + 8);
     uVar2 = arm_veneer_for_read_latched_ds_key_state();
-    if (((uVar2 & 0x40) == 0) || ((DAT_02098fd0 & 0x40) != 0)) {
-      if (((uVar2 & 0x80) != 0) && (((DAT_02098fd0 & 0x80) == 0 && (DAT_02098fe8 < 9)))) {
+    if (((uVar2 & 0x40) == 0) || ((previous_ds_keys & 0x40) != 0)) {
+      if (((uVar2 & 0x80) != 0) && (((previous_ds_keys & 0x80) == 0 && (DAT_02098fe8 < 9)))) {
         move_settings_highlight_down();
       }
     }
     else if (DAT_02098fe8 != 0) {
       move_settings_highlight_up();
     }
-    if (((uVar2 & 1) != 0) && ((DAT_02098fd0 & 1) == 0)) {
+    if (((uVar2 & 1) != 0) && ((previous_ds_keys & 1) == 0)) {
       advance_configuration_value(&DAT_02085a10 + DAT_02098fe8 * 0xc);
     }
-    DAT_02098fd0 = uVar2;
+    previous_ds_keys = uVar2;
     if ((uVar2 & 4) != 0) break;
     arm_veneer_for_nds_swiwaitforvblank();
     arm_veneer_for_nds_swiwaitforvblank();
@@ -197,7 +197,7 @@ undefined4 run_configuration_menu(int param_1)
     configure_frame_timing_callbacks();
   }
   arm_veneer_for_nds_swiwaitforvblank();
-  DAT_02098fd0 = 0;
+  previous_ds_keys = 0;
   if (param_1 != 0) {
     clear_text_overlay_tilemap();
     arm_tail_branch_to_load_subscreen_palette_tiles_and_map();

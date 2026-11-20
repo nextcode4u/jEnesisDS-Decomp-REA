@@ -227,7 +227,7 @@ LAB_02003518:
     iVar5 = iVar5 + 1;
   }
   else if (uVar3 == 0x13) {
-    if ((DAT_02098fd0 & 0x80) != 0) goto LAB_02003644;
+    if ((previous_ds_keys & 0x80) != 0) goto LAB_02003644;
     select_next_rom_browser_page();
     iVar5 = 0;
   }
@@ -235,7 +235,7 @@ LAB_02003518:
   do {
     if (DAT_0208f344 < 5) {
       if (DAT_0208f344 != 4) goto LAB_02003568;
-      if ((DAT_02098fd0 & 0x40) != 0) goto LAB_02003650;
+      if ((previous_ds_keys & 0x40) != 0) goto LAB_02003650;
       select_previous_rom_browser_page();
       iVar4 = 0;
     }
@@ -248,15 +248,15 @@ LAB_02003568:
       iVar4 = iVar4 + 1;
     }
     while( true ) {
-      if (((uVar1 & 0x20) != 0) && ((DAT_02098fd0 & 0x20) == 0)) {
+      if (((uVar1 & 0x20) != 0) && ((previous_ds_keys & 0x20) == 0)) {
         select_previous_rom_browser_page();
         arm_veneer_for_nds_swiwaitforvblank();
       }
-      if (((uVar1 & 0x10) != 0) && ((DAT_02098fd0 & 0x10) == 0)) {
+      if (((uVar1 & 0x10) != 0) && ((previous_ds_keys & 0x10) == 0)) {
         select_next_rom_browser_page();
         arm_veneer_for_nds_swiwaitforvblank();
       }
-      if (((uVar1 & 2) != 0) && ((DAT_02098fd0 & 2) == 0)) {
+      if (((uVar1 & 2) != 0) && ((previous_ds_keys & 2) == 0)) {
         change_working_directory_on_device(&DAT_0208f254);
         enumerate_rom_browser_directory();
         restore_overlay_tilemap_row(DAT_0208f344);
@@ -269,12 +269,12 @@ LAB_02003568:
         uVar3 = 0;
       }
       else {
-        uVar3 = (DAT_02098fd0 ^ 1) & 1;
+        uVar3 = (previous_ds_keys ^ 1) & 1;
       }
-      if ((((uVar1 & 4) != 0) && ((DAT_02098fd0 & 4) == 0)) && (param_1 != 0)) {
+      if ((((uVar1 & 4) != 0) && ((previous_ds_keys & 4) == 0)) && (param_1 != 0)) {
         restore_overlay_tilemap_row(DAT_0208f344);
         free_rom_directory_list();
-        DAT_02098fd0 = uVar1;
+        previous_ds_keys = uVar1;
         return 2;
       }
       DAT_02098fe4 = DAT_0208f344 - 4;
@@ -287,7 +287,7 @@ LAB_02003568:
           arm_veneer_for_nds_swiwaitforvblank();
           arm_veneer_for_nds_swiwaitforvblank();
           arm_veneer_for_nds_swiwaitforvblank();
-          DAT_02098fd0 = uVar1;
+          previous_ds_keys = uVar1;
           free_rom_directory_list();
           return 1;
         }
@@ -296,7 +296,7 @@ LAB_02003568:
       arm_veneer_for_nds_swiwaitforvblank();
       arm_veneer_for_nds_swiwaitforvblank();
       arm_veneer_for_nds_swiwaitforvblank();
-      DAT_02098fd0 = uVar1;
+      previous_ds_keys = uVar1;
       render_rom_directory_page(DAT_02098fe0);
       if (param_1 == 0) goto LAB_02003504;
 LAB_02003610:

@@ -228,3 +228,243 @@ processor	switchD_0200e01c::switchdataD_020154b0	z80_arm_base_opcode_table	The c
 0x02003cc8	param_1	source_address	Selects backing storage for a VDP DMA source on the 68000 bus.
 0x02003cc8	puVar1	source_pointer	Selects backing storage for a VDP DMA source on the 68000 bus.
 0x02003cc8	bVar2	source_in_cartridge	Selects backing storage for a VDP DMA source on the 68000 bus.
+processor	DAT_020993a0	cached_viewport_mode	Display setup and sprite positioning share effective viewport offsets. Menu movement changes the requested offsets and sets the update flag.
+processor	DAT_020993a4	viewport_offset_x	Display setup and sprite positioning share effective viewport offsets. Menu movement changes the requested offsets and sets the update flag.
+processor	DAT_020993a8	viewport_offset_y	Display setup and sprite positioning share effective viewport offsets. Menu movement changes the requested offsets and sets the update flag.
+processor	DAT_020993ac	viewport_update_pending	Display setup and sprite positioning share effective viewport offsets. Menu movement changes the requested offsets and sets the update flag.
+processor	DAT_020993b0	requested_viewport_offset_x	Display setup and sprite positioning share effective viewport offsets. Menu movement changes the requested offsets and sets the update flag.
+processor	DAT_020993b4	requested_viewport_offset_y	Display setup and sprite positioning share effective viewport offsets. Menu movement changes the requested offsets and sets the update flag.
+processor	DAT_0b00362f	vdp_display_enabled	VDP registers 1, 11, 12 and 13 determine display enable, scroll modes, active geometry and the VRAM horizontal scroll base.
+processor	DAT_023dcfac	vdp_vscroll_mode	VDP registers 1, 11, 12 and 13 determine display enable, scroll modes, active geometry and the VRAM horizontal scroll base.
+processor	DAT_023dcdb0	vdp_hscroll_mode	VDP registers 1, 11, 12 and 13 determine display enable, scroll modes, active geometry and the VRAM horizontal scroll base.
+processor	DAT_023dcea4	vdp_hscroll_table_base	VDP registers 1, 11, 12 and 13 determine display enable, scroll modes, active geometry and the VRAM horizontal scroll base.
+processor	DAT_023ddb05	vdp_wide_display_mode	VDP registers 1, 11, 12 and 13 determine display enable, scroll modes, active geometry and the VRAM horizontal scroll base.
+processor	DAT_023ddb06	vdp_240_line_mode	VDP registers 1, 11, 12 and 13 determine display enable, scroll modes, active geometry and the VRAM horizontal scroll base.
+processor	DAT_023dd370	vdp_active_height_pixels	VDP registers 1, 11, 12 and 13 determine display enable, scroll modes, active geometry and the VRAM horizontal scroll base.
+processor	DAT_023dc8ae	vdp_active_width_pixels	VDP registers 1, 11, 12 and 13 determine display enable, scroll modes, active geometry and the VRAM horizontal scroll base.
+processor	DAT_023ddeb2	vdp_active_width_tiles	VDP registers 1, 11, 12 and 13 determine display enable, scroll modes, active geometry and the VRAM horizontal scroll base.
+processor	DAT_023dc8c8	vdp_window_map_stride_tiles	VDP registers 1, 11, 12 and 13 determine display enable, scroll modes, active geometry and the VRAM horizontal scroll base.
+processor	DAT_020b4c0a	vdp_sprite_count_limit	VDP registers 1, 11, 12 and 13 determine display enable, scroll modes, active geometry and the VRAM horizontal scroll base.
+processor	DAT_023dc8ac	frame_active_height_pixels	Frame setup latches the active geometry. Sprite bounds checks and window setup then use these latched dimensions.
+processor	DAT_023dc8b2	frame_active_width_pixels	Frame setup latches the active geometry. Sprite bounds checks and window setup then use these latched dimensions.
+processor	DAT_023dceac	frame_active_width_tiles	Frame setup latches the active geometry. Sprite bounds checks and window setup then use these latched dimensions.
+processor	DAT_023dc8b0	frame_window_map_stride_tiles	Frame setup latches the active geometry. Sprite bounds checks and window setup then use these latched dimensions.
+processor	DAT_023dde94	vdp_window_y_from_bottom	VDP registers 17 and 18 supply window direction and position. The scanline renderer tests the vertical split and records selection of the window.
+processor	DAT_020b4c10	vdp_window_y_split_pixels	VDP registers 17 and 18 supply window direction and position. The scanline renderer tests the vertical split and records selection of the window.
+processor	DAT_023ddeb4	vdp_window_x_from_right	VDP registers 17 and 18 supply window direction and position. The scanline renderer tests the vertical split and records selection of the window.
+processor	DAT_023dc7b0	scanline_window_selected	VDP registers 17 and 18 supply window direction and position. The scanline renderer tests the vertical split and records selection of the window.
+processor	DAT_023dcea8	record_vdp_scanline_state	The renderer records scroll and backdrop values per scanline. The DS display handler reads those arrays and applies offsets and queued palette changes.
+processor	DAT_023dcbca	scanline_backdrop_color	The renderer records scroll and backdrop values per scanline. The DS display handler reads those arrays and applies offsets and queued palette changes.
+processor	DAT_023dceb4	scanline_display_blanked	The renderer records scroll and backdrop values per scanline. The DS display handler reads those arrays and applies offsets and queued palette changes.
+processor	DAT_023dd744	scanline_plane_a_hscroll	The renderer records scroll and backdrop values per scanline. The DS display handler reads those arrays and applies offsets and queued palette changes.
+processor	DAT_023dd384	scanline_plane_a_vscroll	The renderer records scroll and backdrop values per scanline. The DS display handler reads those arrays and applies offsets and queued palette changes.
+processor	DAT_023dd924	scanline_plane_b_hscroll	The renderer records scroll and backdrop values per scanline. The DS display handler reads those arrays and applies offsets and queued palette changes.
+processor	DAT_023dd564	scanline_plane_b_vscroll	The renderer records scroll and backdrop values per scanline. The DS display handler reads those arrays and applies offsets and queued palette changes.
+processor	DAT_023ddb0c	scanline_pending_palette_changes	The renderer records scroll and backdrop values per scanline. The DS display handler reads those arrays and applies offsets and queued palette changes.
+processor	DAT_0b00364e	vdp_vsram_second_word	The renderer records scroll and backdrop values per scanline. The DS display handler reads those arrays and applies offsets and queued palette changes.
+processor	LAB_0200bbd0	record_scaled_scanline_hscroll_mode_0	The scale option selects four ARM callbacks by VDP register 11 bits 1 to 0. Each native entry begins by mapping a Genesis scanline to an output line.
+processor	LAB_0200c0cc	record_scaled_scanline_hscroll_mode_1	The scale option selects four ARM callbacks by VDP register 11 bits 1 to 0. Each native entry begins by mapping a Genesis scanline to an output line.
+processor	LAB_0200bf18	record_scaled_scanline_hscroll_mode_2	The scale option selects four ARM callbacks by VDP register 11 bits 1 to 0. Each native entry begins by mapping a Genesis scanline to an output line.
+processor	LAB_0200bd6c	record_scaled_scanline_hscroll_mode_3	The scale option selects four ARM callbacks by VDP register 11 bits 1 to 0. Each native entry begins by mapping a Genesis scanline to an output line.
+processor	DAT_023dc8a4	plane_a_tilemap_refresh_pending	Name table changes request a rebuild of one plane. A layout change rebuilds both, then the frame code clears the flag.
+processor	DAT_023dc8a8	plane_b_tilemap_refresh_pending	Name table changes request a rebuild of one plane. A layout change rebuilds both, then the frame code clears the flag.
+processor	DAT_0208f358	background_layout_refresh_pending	Name table changes request a rebuild of one plane. A layout change rebuilds both, then the frame code clears the flag.
+processor	DAT_023dcfa4	vdp_background_layout_code	Name table changes request a rebuild of one plane. A layout change rebuilds both, then the frame code clears the flag.
+processor	DAT_023dc8a0	plane_name_table_span_bytes	Name table changes request a rebuild of one plane. A layout change rebuilds both, then the frame code clears the flag.
+processor	DAT_023dc8b4	vdp_plane_a_name_table_end	Name table changes request a rebuild of one plane. A layout change rebuilds both, then the frame code clears the flag.
+processor	DAT_023dc8b8	vdp_plane_b_name_table_end	Name table changes request a rebuild of one plane. A layout change rebuilds both, then the frame code clears the flag.
+processor	DAT_023dc8bc	vdp_window_name_table_end	Name table changes request a rebuild of one plane. A layout change rebuilds both, then the frame code clears the flag.
+processor	DAT_020acbec	vram_word_change_flags	DMA records which VRAM words changed. The tilemap transfer reads corresponding byte flags through pointers based on Plane A and Plane B name table offsets.
+processor	DAT_023dde8c	plane_a_word_change_flags	DMA records which VRAM words changed. The tilemap transfer reads corresponding byte flags through pointers based on Plane A and Plane B name table offsets.
+processor	DAT_023dde90	plane_b_word_change_flags	DMA records which VRAM words changed. The tilemap transfer reads corresponding byte flags through pointers based on Plane A and Plane B name table offsets.
+processor	DAT_023dceb0	vram_word_change_flags_base	DMA records which VRAM words changed. The tilemap transfer reads corresponding byte flags through pointers based on Plane A and Plane B name table offsets.
+processor	DAT_020993cc	background_pattern_tile_map	The background tile cache allocates a DS tile index and records refresh flags. Pattern writes also mark the sprite tile data dirty.
+processor	DAT_0209a3cc	plane_b_pattern_tile_map	The background tile cache allocates a DS tile index and records refresh flags. Pattern writes also mark the sprite tile data dirty.
+processor	DAT_0209b3cc	window_pattern_tile_map	The background tile cache allocates a DS tile index and records refresh flags. Pattern writes also mark the sprite tile data dirty.
+processor	DAT_0209c3cc	background_next_ds_tile	The background tile cache allocates a DS tile index and records refresh flags. Pattern writes also mark the sprite tile data dirty.
+processor	DAT_0209c3d4	background_cache_refresh_flags	The background tile cache allocates a DS tile index and records refresh flags. Pattern writes also mark the sprite tile data dirty.
+processor	DAT_0209c3e0	sprite_pattern_dirty_flags	The background tile cache allocates a DS tile index and records refresh flags. Pattern writes also mark the sprite tile data dirty.
+processor	DAT_0b003648	vdp_vram_base_pointer	The background tile cache allocates a DS tile index and records refresh flags. Pattern writes also mark the sprite tile data dirty.
+processor	DAT_023dcdac	vdp_sat_host_pointer	Sprite register 5 changes the host SAT pointer. Sprite building compares cached entries and the current OAM slot, and submits the staged attributes through DMA3.
+processor	DAT_020993bc	sprite_cache_rebuild_pending	Sprite register 5 changes the host SAT pointer. Sprite building compares cached entries and the current OAM slot, and submits the staged attributes through DMA3.
+processor	DAT_020993c0	previous_oam_sprite_count	Sprite register 5 changes the host SAT pointer. Sprite building compares cached entries and the current OAM slot, and submits the staged attributes through DMA3.
+processor	DAT_023dc1a8	ds_oam_staging_attr0	Sprite register 5 changes the host SAT pointer. Sprite building compares cached entries and the current OAM slot, and submits the staged attributes through DMA3.
+processor	DAT_023dc1aa	ds_oam_staging_attr1	Sprite register 5 changes the host SAT pointer. Sprite building compares cached entries and the current OAM slot, and submits the staged attributes through DMA3.
+processor	DAT_023dcfb0	sprite_cache_word_0	Sprite register 5 changes the host SAT pointer. Sprite building compares cached entries and the current OAM slot, and submits the staged attributes through DMA3.
+processor	DAT_023dcfb2	sprite_cache_size_and_link	Sprite register 5 changes the host SAT pointer. Sprite building compares cached entries and the current OAM slot, and submits the staged attributes through DMA3.
+processor	DAT_023dcfb4	sprite_cache_tile_and_flags	Sprite register 5 changes the host SAT pointer. Sprite building compares cached entries and the current OAM slot, and submits the staged attributes through DMA3.
+processor	DAT_023dcfb6	sprite_cache_x_word	Sprite register 5 changes the host SAT pointer. Sprite building compares cached entries and the current OAM slot, and submits the staged attributes through DMA3.
+processor	DAT_023dcfb8	sprite_cache_oam_slot	Sprite register 5 changes the host SAT pointer. Sprite building compares cached entries and the current OAM slot, and submits the staged attributes through DMA3.
+processor	DAT_023dcfba	sprite_cache_visible_flag	Sprite register 5 changes the host SAT pointer. Sprite building compares cached entries and the current OAM slot, and submits the staged attributes through DMA3.
+processor	DAT_023dc5b4	sprite_line_mask_generation	Sprite masking marks each affected scanline with the current generation. Display update compares the tag to the current generation before enabling OBJ.
+processor	DAT_023dc5bc	sprite_line_mask_tags	Sprite masking marks each affected scanline with the current generation. Display update compares the tag to the current generation before enabling OBJ.
+processor	DAT_023dcdb4	sprite_y_scale_adjustments	Sprite masking marks each affected scanline with the current generation. Display update compares the tag to the current generation before enabling OBJ.
+processor	DAT_0208e578	ds_tilemap_low_priority_bases	The tilemap writers route the converted word according to Genesis name table bit 15 and write the blank tile to its opposite-priority map.
+processor	DAT_0208e57c	ds_tilemap_high_priority_bases	The tilemap writers route the converted word according to Genesis name table bit 15 and write the blank tile to its opposite-priority map.
+0x02009614	param_1	register_index	Stores the register byte and updates the renderer state. Register-specific arithmetic reuses scratch values.
+0x02009614	param_2	register_value	Stores the register byte and updates the renderer state. Register-specific arithmetic reuses scratch values.
+0x02009614	bVar1	register_byte	Stores the register byte and updates the renderer state. Register-specific arithmetic reuses scratch values.
+0x0200c280	param_1	scanline	Uses the scanline index to choose a pair of VRAM scroll-table words and reads vertical scroll for each plane.
+0x0200c280	uVar3	hscroll_word_address	Uses the scanline index to choose a pair of VRAM scroll-table words and reads vertical scroll for each plane.
+0x0200c280	uVar2	plane_a_vscroll_value	Uses the scanline index to choose a pair of VRAM scroll-table words and reads vertical scroll for each plane.
+0x0200c280	cVar1	vscroll_mode_snapshot	Uses the scanline index to choose a pair of VRAM scroll-table words and reads vertical scroll for each plane.
+0x020086d8	param_1	genesis_sprite_words	Decodes size and pattern bits from the Genesis sprite and copies tiles from VRAM to the DS OAM slot's tile region.
+0x020086d8	param_2	genesis_vram_base	Decodes size and pattern bits from the Genesis sprite and copies tiles from VRAM to the DS OAM slot's tile region.
+0x020086d8	param_3	ds_sprite_index	Decodes size and pattern bits from the Genesis sprite and copies tiles from VRAM to the DS OAM slot's tile region.
+0x020086d8	uVar4	ds_sprite_x	Decodes size and pattern bits from the Genesis sprite and copies tiles from VRAM to the DS OAM slot's tile region.
+0x020086d8	uVar2	ds_sprite_y	Decodes size and pattern bits from the Genesis sprite and copies tiles from VRAM to the DS OAM slot's tile region.
+0x02008984	param_1	genesis_vram_base	Follows the Genesis SAT link, prepares the current DS OAM slot and uses the cached fields if the pattern range is clean.
+0x02008984	param_2	sprite_limit	Follows the Genesis SAT link, prepares the current DS OAM slot and uses the cached fields if the pattern range is clean.
+0x02008984	uVar17	ds_sprite_index	Follows the Genesis SAT link, prepares the current DS OAM slot and uses the cached fields if the pattern range is clean.
+0x02008984	puVar15	genesis_sprite_words	Follows the Genesis SAT link, prepares the current DS OAM slot and uses the cached fields if the pattern range is clean.
+0x02008984	puVar16	cached_sprite_words	Follows the Genesis SAT link, prepares the current DS OAM slot and uses the cached fields if the pattern range is clean.
+0x02008984	puVar18	oam_attr1_cursor	Follows the Genesis SAT link, prepares the current DS OAM slot and uses the cached fields if the pattern range is clean.
+0x02008984	puVar11	stale_oam_attr0_cursor	Follows the Genesis SAT link, prepares the current DS OAM slot and uses the cached fields if the pattern range is clean.
+0x02008984	puVar9	next_dirty_flag	Follows the Genesis SAT link, prepares the current DS OAM slot and uses the cached fields if the pattern range is clean.
+0x02008984	puVar10	dirty_flag_cursor	Follows the Genesis SAT link, prepares the current DS OAM slot and uses the cached fields if the pattern range is clean.
+0x020074b8	param_1	genesis_pattern_index	Looks up a Genesis pattern in a per-plane map and allocates a DS tile when necessary.
+0x020074b8	param_2	background_plane	Looks up a Genesis pattern in a per-plane map and allocates a DS tile when necessary.
+0x020074b8	uVar1	cache_entry	Looks up a Genesis pattern in a per-plane map and allocates a DS tile when necessary.
+0x020074b8	uVar3	ds_tile_index	Looks up a Genesis pattern in a per-plane map and allocates a DS tile when necessary.
+0x020075ac	param_1	background_plane	Uses the plane index to inspect or reset its tile cache.
+0x020075bc	param_1	background_plane	Uses the plane index to inspect or reset its tile cache.
+0x020075d0	param_1	background_plane	Uses the plane index to inspect or reset its tile cache.
+0x02007630	param_1	name_table_words	Walks the Genesis name table words and sends each word and byte offset to the selected DS writer.
+0x02007630	param_2	table_byte_count	Walks the Genesis name table words and sends each word and byte offset to the selected DS writer.
+0x02007630	param_3	background_plane	Walks the Genesis name table words and sends each word and byte offset to the selected DS writer.
+0x02007630	uVar1	entry_byte_offset	Walks the Genesis name table words and sends each word and byte offset to the selected DS writer.
+0x02007630	uVar2	next_entry_offset	Walks the Genesis name table words and sends each word and byte offset to the selected DS writer.
+0x020076d0	param_1	vram_byte_address	The VRAM byte address selects a 32-byte pattern. The supplied word updates each resident DS copy.
+0x020076d0	param_2	pattern_word	The VRAM byte address selects a 32-byte pattern. The supplied word updates each resident DS copy.
+0x020076d0	uVar2	genesis_pattern_index	The VRAM byte address selects a 32-byte pattern. The supplied word updates each resident DS copy.
+0x020076d0	uVar3	cache_entry	The VRAM byte address selects a 32-byte pattern. The supplied word updates each resident DS copy.
+0x020076d0	bVar5	ds_tile_resident	The VRAM byte address selects a 32-byte pattern. The supplied word updates each resident DS copy.
+0x020077b8	param_1	background_plane	The plane and byte offset choose paired DS map entries. The Genesis word supplies pattern, flip, palette and priority.
+0x020077b8	param_2	entry_byte_offset	The plane and byte offset choose paired DS map entries. The Genesis word supplies pattern, flip, palette and priority.
+0x020077b8	param_3	genesis_name_word	The plane and byte offset choose paired DS map entries. The Genesis word supplies pattern, flip, palette and priority.
+0x02007830	param_1	background_plane	The plane and byte offset choose paired DS map entries. The Genesis word supplies pattern, flip, palette and priority.
+0x02007830	param_2	entry_byte_offset	The plane and byte offset choose paired DS map entries. The Genesis word supplies pattern, flip, palette and priority.
+0x02007830	param_3	genesis_name_word	The plane and byte offset choose paired DS map entries. The Genesis word supplies pattern, flip, palette and priority.
+0x020078c8	param_1	background_plane	The plane and byte offset choose paired DS map entries. The Genesis word supplies pattern, flip, palette and priority.
+0x020078c8	param_2	entry_byte_offset	The plane and byte offset choose paired DS map entries. The Genesis word supplies pattern, flip, palette and priority.
+0x020078c8	param_3	genesis_name_word	The plane and byte offset choose paired DS map entries. The Genesis word supplies pattern, flip, palette and priority.
+0x0200797c	param_1	background_plane	The plane and byte offset choose paired DS map entries. The Genesis word supplies pattern, flip, palette and priority.
+0x0200797c	param_2	entry_byte_offset	The plane and byte offset choose paired DS map entries. The Genesis word supplies pattern, flip, palette and priority.
+0x0200797c	param_3	genesis_name_word	The plane and byte offset choose paired DS map entries. The Genesis word supplies pattern, flip, palette and priority.
+0x02007a2c	param_1	entry_byte_offset	Converts one Genesis window name table word and chooses its paired DS map entries.
+0x02007a2c	param_2	genesis_name_word	Converts one Genesis window name table word and chooses its paired DS map entries.
+0x02007aac	param_1	entry_byte_offset	Converts one Genesis window name table word and chooses its paired DS map entries.
+0x02007aac	param_2	genesis_name_word	Converts one Genesis window name table word and chooses its paired DS map entries.
+0x02007b4c	param_1	source_name_words	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02007b4c	param_2	destination_byte_offset	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02007b4c	param_3	destination_step	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02007b4c	param_4	destination_offset_limit	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02007c04	param_1	source_name_words	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02007c04	param_2	destination_byte_offset	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02007c04	param_3	destination_step	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02007c04	param_4	destination_offset_limit	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02007ce4	param_1	source_name_words	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02007ce4	param_2	destination_byte_offset	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02007ce4	param_3	destination_step	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02007ce4	param_4	destination_offset_limit	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02007ddc	param_1	source_name_words	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02007ddc	param_2	destination_byte_offset	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02007ddc	param_3	destination_step	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02007ddc	param_4	destination_offset_limit	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02007ed8	param_1	source_name_words	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02007ed8	param_2	destination_byte_offset	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02007ed8	param_3	destination_step	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02007ed8	param_4	destination_offset_limit	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02007f94	param_1	source_name_words	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02007f94	param_2	destination_byte_offset	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02007f94	param_3	destination_step	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02007f94	param_4	destination_offset_limit	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02008078	param_1	source_name_words	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02008078	param_2	destination_byte_offset	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02008078	param_3	destination_step	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02008078	param_4	destination_offset_limit	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02008174	param_1	source_name_words	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02008174	param_2	destination_byte_offset	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02008174	param_3	destination_step	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02008174	param_4	destination_offset_limit	Fetches source name words consecutively and advances the DS map byte offset until it reaches the supplied limit.
+0x02008270	param_1	source_name_words	Walks source words and advances the window map byte offset, stopping when the entry count is exhausted.
+0x02008270	param_2	destination_byte_offset	Walks source words and advances the window map byte offset, stopping when the entry count is exhausted.
+0x02008270	param_3	destination_step	Walks source words and advances the window map byte offset, stopping when the entry count is exhausted.
+0x02008270	param_4	entries_remaining	Walks source words and advances the window map byte offset, stopping when the entry count is exhausted.
+0x02008320	param_1	source_name_words	Walks source words and advances the window map byte offset, stopping when the entry count is exhausted.
+0x02008320	param_2	destination_byte_offset	Walks source words and advances the window map byte offset, stopping when the entry count is exhausted.
+0x02008320	param_3	destination_step	Walks source words and advances the window map byte offset, stopping when the entry count is exhausted.
+0x02008320	param_4	entries_remaining	Walks source words and advances the window map byte offset, stopping when the entry count is exhausted.
+0x010042c0	param_1	source_pattern_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x010042c0	param_2	destination_obj_tile_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01004300	param_1	source_pattern_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01004300	param_2	destination_obj_tile_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01004360	param_1	source_pattern_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01004360	param_2	destination_obj_tile_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01004410	param_1	source_pattern_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01004410	param_2	destination_obj_tile_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x010044d0	param_1	source_pattern_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x010044d0	param_2	destination_obj_tile_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01004530	param_1	source_pattern_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01004530	param_2	destination_obj_tile_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x010045f0	param_1	source_pattern_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x010045f0	param_2	destination_obj_tile_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01004750	param_1	source_pattern_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01004750	param_2	destination_obj_tile_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x010048c0	param_1	source_pattern_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x010048c0	param_2	destination_obj_tile_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01004970	param_1	source_pattern_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01004970	param_2	destination_obj_tile_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01004ab0	param_1	source_pattern_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01004ab0	param_2	destination_obj_tile_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01004ce0	param_1	source_pattern_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01004ce0	param_2	destination_obj_tile_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01004f30	param_1	source_pattern_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01004f30	param_2	destination_obj_tile_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01004ff0	param_1	source_pattern_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01004ff0	param_2	destination_obj_tile_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01005160	param_1	source_pattern_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01005160	param_2	destination_obj_tile_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01005410	param_1	source_pattern_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+0x01005410	param_2	destination_obj_tile_words	The sprite size dispatcher supplies VRAM pattern words and the DS OBJ tile destination.
+processor	DAT_02098fc8	loaded_cartridge_metadata	The cartridge metadata block begins with the loaded filename. Frontend input shares the previous DS key sample for edge detection.
+processor	DAT_02098fd0	previous_ds_keys	The cartridge metadata block begins with the loaded filename. Frontend input shares the previous DS key sample for edge detection.
+processor	DAT_0208f070	binary_write_mode	The native ROM contains these exact NUL-terminated stdio mode strings.
+processor	DAT_0208f074	binary_read_mode	The native ROM contains these exact NUL-terminated stdio mode strings.
+processor	DAT_023eb348	savestate_region_table	Save-state initialization fills a table of source and destination regions. The reader and writer serialize each region with a fixed size.
+processor	DAT_023eb314	savestate_header	Save-state initialization fills a table of source and destination regions. The reader and writer serialize each region with a fixed size.
+processor	DAT_023eb318	savestate_m68k_context	Save-state initialization fills a table of source and destination regions. The reader and writer serialize each region with a fixed size.
+processor	DAT_023eb31c	savestate_m68k_ram	Save-state initialization fills a table of source and destination regions. The reader and writer serialize each region with a fixed size.
+processor	DAT_023eb320	savestate_vdp_registers	Save-state initialization fills a table of source and destination regions. The reader and writer serialize each region with a fixed size.
+processor	DAT_023eb324	savestate_cram	Save-state initialization fills a table of source and destination regions. The reader and writer serialize each region with a fixed size.
+processor	DAT_023eb328	savestate_vsram	Save-state initialization fills a table of source and destination regions. The reader and writer serialize each region with a fixed size.
+processor	DAT_023eb32c	savestate_vram	Save-state initialization fills a table of source and destination regions. The reader and writer serialize each region with a fixed size.
+processor	DAT_023eb330	savestate_z80_context	Save-state initialization fills a table of source and destination regions. The reader and writer serialize each region with a fixed size.
+processor	DAT_023eb338	savestate_z80_ram	Save-state initialization fills a table of source and destination regions. The reader and writer serialize each region with a fixed size.
+processor	DAT_023eb33c	savestate_ym2612_bank_0	Save-state initialization fills a table of source and destination regions. The reader and writer serialize each region with a fixed size.
+processor	DAT_023eb340	savestate_ym2612_bank_1	Save-state initialization fills a table of source and destination regions. The reader and writer serialize each region with a fixed size.
+processor	DAT_023eb344	savestate_psg_registers	Save-state initialization fills a table of source and destination regions. The reader and writer serialize each region with a fixed size.
+processor	DAT_020b4c4c	savestate_regions_initialized	Save-state initialization fills a table of source and destination regions. The reader and writer serialize each region with a fixed size.
+0x0200d0b8	param_1	slot_number	Uses the cartridge filename length to replace the extension with the slot-specific suffix.
+0x0200d0b8	iVar1	filename_length	Uses the cartridge filename length to replace the extension with the slot-specific suffix.
+0x0200d0b8	iVar2	slot_path	Uses the cartridge filename length to replace the extension with the slot-specific suffix.
+0x0200d0b8	iVar3	original_filename_end	Uses the cartridge filename length to replace the extension with the slot-specific suffix.
+0x0200d13c	param_1	slot_number	Passes regions to binary stdio and uses an intermediate word for packed control state.
+0x0200d13c	iVar1	m68k_state	Passes regions to binary stdio and uses an intermediate word for packed control state.
+0x0200d13c	iVar2	z80_state	Passes regions to binary stdio and uses an intermediate word for packed control state.
+0x0200d13c	uVar3	slot_path	Passes regions to binary stdio and uses an intermediate word for packed control state.
+0x0200d13c	iVar4	state_stream	Passes regions to binary stdio and uses an intermediate word for packed control state.
+0x0200d13c	local_2c	packed_state_word	Passes regions to binary stdio and uses an intermediate word for packed control state.
+0x0200d4c8	param_1	slot_number	Passes regions to binary stdio and uses an intermediate word for packed control state.
+0x0200d4c8	iVar1	m68k_state	Passes regions to binary stdio and uses an intermediate word for packed control state.
+0x0200d4c8	iVar2	z80_state	Passes regions to binary stdio and uses an intermediate word for packed control state.
+0x0200d4c8	uVar3	slot_path	Passes regions to binary stdio and uses an intermediate word for packed control state.
+0x0200d4c8	iVar4	state_stream	Passes regions to binary stdio and uses an intermediate word for packed control state.
+0x0200d4c8	local_1c	packed_state_word	Passes regions to binary stdio and uses an intermediate word for packed control state.
+0x02002e54	param_1	slot_number	The menu selects load, save or cancel based on the slot presence flag and DS keys.
+0x02002e54	uVar1	ds_keys	The menu selects load, save or cancel based on the slot presence flag and DS keys.
+0x02002e54	uVar2	confirm_pressed	The menu selects load, save or cancel based on the slot presence flag and DS keys.
+0x02002e54	uVar3	slot_flag_or_menu_row	The menu selects load, save or cancel based on the slot presence flag and DS keys.
+0x02002e54	uVar4	first_available_row	The menu selects load, save or cancel based on the slot presence flag and DS keys.
+0x0200d82c	uVar1	slot_path	Opens each slot's path and sets its presence flag on success.
+0x0200d82c	iVar2	state_stream	Opens each slot's path and sets its presence flag on success.

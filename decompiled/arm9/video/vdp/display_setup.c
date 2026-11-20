@@ -345,19 +345,19 @@ void apply_prepared_scanline_display_state(int scanline)
   short *ds_bg_palette_cursor;
   short *queued_colors;
   
-  scanline = scanline + DAT_020993a8 + 1;
-  _DAT_05000000 = (&DAT_023dcbca)[scanline];
-  if ((&DAT_023dceb4)[scanline] != '\0') {
+  scanline = scanline + viewport_offset_y + 1;
+  _DAT_05000000 = (&scanline_backdrop_color)[scanline];
+  if ((&scanline_display_blanked)[scanline] != '\0') {
     _DAT_04000000 = _DAT_04000000 & 0xe0ff;
     return;
   }
   _DAT_04000014 =
-       (undefined2)(((uint)(ushort)(&DAT_023dd924)[scanline] + DAT_020993a4) * 0x10000 >> 0x10);
+       (undefined2)(((uint)(ushort)(&scanline_plane_b_hscroll)[scanline] + viewport_offset_x) * 0x10000 >> 0x10);
   _DAT_0400001c = _DAT_04000014;
   _DAT_04000016 =
-       (undefined2)((DAT_020993a8 + (uint)(ushort)(&DAT_023dd564)[scanline]) * 0x10000 >> 0x10);
+       (undefined2)((viewport_offset_y + (uint)(ushort)(&scanline_plane_b_vscroll)[scanline]) * 0x10000 >> 0x10);
   _DAT_0400001e = _DAT_04000016;
-  if ((&DAT_023dc7b0)[scanline] == '\x01') {
+  if ((&scanline_window_selected)[scanline] == '\x01') {
     background_control = &DAT_023dc5ac;
   }
   else {
@@ -366,19 +366,19 @@ void apply_prepared_scanline_display_state(int scanline)
   _DAT_04000008 = (undefined2)background_control[1];
   _DAT_0400000c = (undefined2)*background_control;
   _DAT_04000010 =
-       (undefined2)((DAT_020993a4 + (uint)(ushort)(&DAT_023dd744)[scanline]) * 0x10000 >> 0x10);
+       (undefined2)((viewport_offset_x + (uint)(ushort)(&scanline_plane_a_hscroll)[scanline]) * 0x10000 >> 0x10);
   _DAT_04000018 = _DAT_04000010;
   _DAT_04000012 =
-       (undefined2)((DAT_020993a8 + (uint)(ushort)(&DAT_023dd384)[scanline]) * 0x10000 >> 0x10);
+       (undefined2)((viewport_offset_y + (uint)(ushort)(&scanline_plane_a_vscroll)[scanline]) * 0x10000 >> 0x10);
   _DAT_0400001a = _DAT_04000012;
   _DAT_04000000 = _DAT_04000000 | 0x1f00;
-  if ((&DAT_023dc5bc)[scanline] == DAT_023dc5b4) {
+  if ((&sprite_line_mask_tags)[scanline] == sprite_line_mask_generation) {
     _DAT_04000048 = 0xf;
   }
   else {
     _DAT_04000048 = 0x1f;
   }
-  queued_colors = (short *)(&DAT_023ddb0c)[scanline];
+  queued_colors = (short *)(&scanline_pending_palette_changes)[scanline];
   if (queued_colors != (short *)0x0) {
     ds_bg_palette_cursor = (short *)&DAT_05000002;
     do {
@@ -389,7 +389,7 @@ void apply_prepared_scanline_display_state(int scanline)
       }
       ds_bg_palette_cursor = ds_bg_palette_cursor + 1;
     } while (ds_bg_palette_cursor != (short *)0x5000080);
-    (&DAT_023ddb0c)[scanline] = 0;
+    (&scanline_pending_palette_changes)[scanline] = 0;
     return;
   }
   return;
@@ -409,7 +409,7 @@ undefined4 configure_ds_display_windows(void)
   
   select_background_tilemap_layout(0);
   select_window_tilemap_layout(0);
-  puVar3 = &DAT_020993cc;
+  puVar3 = &background_pattern_tile_map;
   clear_and_initialize_renderer_vram();
   DAT_04000041 = 0;
   DAT_04000040 = 0xff;
@@ -423,29 +423,29 @@ undefined4 configure_ds_display_windows(void)
     puVar3[0x1001] = 0x2000;
     puVar3 = puVar3 + 1;
   } while (puVar3 != (undefined2 *)0x209a3ca);
-  puVar2 = (undefined4 *)&DAT_023dc5bc;
+  puVar2 = (undefined4 *)&sprite_line_mask_tags;
   do {
     puVar1 = (undefined4 *)((int)puVar2 + 1);
     *(undefined1 *)puVar2 = 0;
     puVar2 = puVar1;
   } while (puVar1 != &write_ds_background_tilemap_word);
-  DAT_0209b3cc = 0x8000;
-  DAT_020993c0 = 0x50;
-  DAT_0209a3cc = 0x8000;
+  window_pattern_tile_map = 0x8000;
+  previous_oam_sprite_count = 0x50;
+  plane_b_pattern_tile_map = 0x8000;
   DAT_0209c3d0 = 1;
-  DAT_0209c3cc = 1;
+  background_next_ds_tile = 1;
   DAT_0209c3ce = 1;
   DAT_0209c3dc = 0;
-  DAT_020993cc = 0x8000;
-  DAT_0209c3d4 = 0;
+  background_pattern_tile_map = 0x8000;
+  background_cache_refresh_flags = 0;
   DAT_0209c3d8 = 0;
-  puVar2 = (undefined4 *)&DAT_0209c3e0;
+  puVar2 = (undefined4 *)&sprite_pattern_dirty_flags;
   do {
     puVar1 = (undefined4 *)((int)puVar2 + 1);
     *(undefined1 *)puVar2 = 1;
     puVar2 = puVar1;
   } while (puVar1 != &DAT_0209cbe0);
-  DAT_023dc5b4 = 1;
+  sprite_line_mask_generation = 1;
   coproc_moveto_Domain_Access_Control(7);
   return 7;
 }
@@ -474,8 +474,8 @@ void reset_vdp_memory_and_renderer_state(void)
     puVar6 = puVar5 + 1;
     *puVar5 = 0;
     puVar5 = puVar6;
-  } while (puVar6 != &DAT_020acbec);
-  puVar4 = (undefined4 *)&DAT_020acbec;
+  } while (puVar6 != &vram_word_change_flags);
+  puVar4 = (undefined4 *)&vram_word_change_flags;
   do {
     puVar7 = (undefined4 *)((int)puVar4 + 1);
     *(undefined1 *)puVar4 = 0;
@@ -486,7 +486,7 @@ void reset_vdp_memory_and_renderer_state(void)
     puVar1 = puVar8 + 1;
     *puVar8 = 0;
     puVar8 = puVar1;
-  } while (puVar1 != (undefined2 *)&DAT_023dc7b0);
+  } while (puVar1 != (undefined2 *)&scanline_window_selected);
   puVar8 = &vdp_vsram;
   do {
     puVar1 = puVar8 + 1;
@@ -520,14 +520,14 @@ void reset_vdp_memory_and_renderer_state(void)
     puVar3 = puVar3 + 1;
     puVar8 = puVar8 + 1;
   } while (puVar1 != &DAT_023dc94a);
-  puVar4 = &DAT_023ddb0c;
+  puVar4 = &scanline_pending_palette_changes;
   do {
     puVar7 = puVar4 + 1;
     *puVar4 = 0;
     puVar4 = puVar7;
-  } while (puVar7 != &DAT_023dde8c);
-  DAT_023dde90 = 0;
-  DAT_023dde8c = 0;
+  } while (puVar7 != &plane_a_word_change_flags);
+  plane_b_word_change_flags = 0;
+  plane_a_word_change_flags = 0;
   puVar5 = &DAT_023dde95;
   do {
     puVar6 = puVar5 + 1;
@@ -543,7 +543,7 @@ void reset_vdp_memory_and_renderer_state(void)
   DAT_020b4bf1 = 0;
   vdp_h_interrupt_enabled = 0;
   DAT_0b00362c = 0;
-  DAT_023ddeb4 = 0;
+  vdp_window_x_from_right = 0;
   DAT_0b000074 = &vdp_vram;
   DAT_0b0000a0 = 0;
   DAT_0b000044 = 0;
@@ -566,16 +566,16 @@ void reset_vdp_memory_and_renderer_state(void)
   DAT_0b000090 = 0;
   DAT_0b000094 = 0;
   DAT_0b00009c = 0;
-  DAT_023dde94 = 0;
-  DAT_023ddb05 = 0;
+  vdp_window_y_from_bottom = 0;
+  vdp_wide_display_mode = 0;
   vdp_address_increment = 2;
-  DAT_023ddb06 = 0;
+  vdp_240_line_mode = 0;
   vdp_dma_enabled = 0;
-  DAT_0b00362f = 0;
+  vdp_display_enabled = 0;
   vdp_dma_mode = 0;
   DAT_020b4c04 = 0;
-  DAT_023dcdb0 = 0;
-  DAT_023dcfac = 0;
+  vdp_hscroll_mode = 0;
+  vdp_vscroll_mode = 0;
   DAT_023ddeb0 = 0;
   DAT_023ddb04 = 0;
   vdp_dma_length_register = 0;
@@ -584,38 +584,38 @@ void reset_vdp_memory_and_renderer_state(void)
   DAT_023dcea6 = 0;
   DAT_023dd372._0_1_ = 0;
   DAT_023dcdaa = 0;
-  DAT_023dcea4 = 0;
+  vdp_hscroll_table_base = 0;
   vdp_h_interrupt_reload = 0;
   vdp_backdrop_color_index = 0;
   DAT_020b4bf6 = 0;
   DAT_020b4c08 = 0;
   vdp_access_code = 0;
-  DAT_020b4c0a = 0;
-  DAT_023dc8ae = 0x140;
-  DAT_023dc8b2 = 0x140;
-  DAT_023dd370 = 0xf0;
-  DAT_023dc8ac = 0xf0;
-  DAT_023dc8c8 = 0;
-  DAT_023dc8b0 = 0;
+  vdp_sprite_count_limit = 0;
+  vdp_active_width_pixels = 0x140;
+  frame_active_width_pixels = 0x140;
+  vdp_active_height_pixels = 0xf0;
+  frame_active_height_pixels = 0xf0;
+  vdp_window_map_stride_tiles = 0;
+  frame_window_map_stride_tiles = 0;
   DAT_023dcfa8 = 0;
-  DAT_023dceac = 0;
+  frame_active_width_tiles = 0;
   DAT_023ddb08 = 0;
   DAT_020b4c07 = 0;
   vdp_dma_remaining = 0;
   vdp_mode_5_bit = 0;
-  DAT_023dceb0 = &DAT_020acbec;
-  DAT_023dcdac = &vdp_vram;
-  DAT_0b003648 = &vdp_vram;
+  vram_word_change_flags_base = &vram_word_change_flags;
+  vdp_sat_host_pointer = &vdp_vram;
+  vdp_vram_base_pointer = &vdp_vram;
   DAT_023dc8c4 = 0;
   configure_ds_display_windows();
-  puVar1 = &DAT_023dd744;
-  puVar3 = &DAT_023dd384;
-  DAT_023dc8a0 = 0x800;
-  DAT_023dc8a8 = 0;
-  DAT_023dc8a4 = 0;
-  DAT_023dcfa4 = 0;
-  puVar8 = &DAT_023dcbca;
-  puVar5 = &DAT_023dceb4;
+  puVar1 = &scanline_plane_a_hscroll;
+  puVar3 = &scanline_plane_a_vscroll;
+  plane_name_table_span_bytes = 0x800;
+  plane_b_tilemap_refresh_pending = 0;
+  plane_a_tilemap_refresh_pending = 0;
+  vdp_background_layout_code = 0;
+  puVar8 = &scanline_backdrop_color;
+  puVar5 = &scanline_display_blanked;
   do {
     *puVar1 = 0;
     puVar12 = puVar1 + 0xf0;
@@ -628,19 +628,19 @@ void reset_vdp_memory_and_renderer_state(void)
     puVar3 = puVar3 + 1;
     puVar8 = puVar8 + 1;
     puVar5 = puVar5 + 1;
-  } while (puVar1 != &DAT_023dd924);
+  } while (puVar1 != &scanline_plane_b_hscroll);
   iVar9 = 0;
   do {
     *(undefined4 *)((int)&DAT_023dd372 + iVar9 + 2) = 0;
-    *(undefined4 *)((int)&DAT_023dc8b4 + iVar9) = 0;
+    *(undefined4 *)((int)&vdp_plane_a_name_table_end + iVar9) = 0;
     iVar9 = iVar9 + 4;
   } while (iVar9 != 0x10);
   uVar2 = 0;
   cVar11 = '\0';
-  DAT_023dcdb4 = 0;
+  sprite_y_scale_adjustments = 0;
   do {
     cVar11 = cVar11 + '\x01';
-    pcVar10 = &DAT_023dcdb4 + uVar2;
+    pcVar10 = &sprite_y_scale_adjustments + uVar2;
     do {
       uVar2 = uVar2 + 1;
       if (0xef < uVar2) {

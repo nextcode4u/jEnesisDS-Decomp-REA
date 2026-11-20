@@ -4,39 +4,39 @@
 
 // 0x02002e54  display_savestate_slot_status
 
-undefined4 display_savestate_slot_status(int param_1)
+undefined4 display_savestate_slot_status(int slot_number)
 
 {
-  uint uVar1;
-  uint uVar2;
-  uint uVar3;
-  uint uVar4;
+  uint ds_keys;
+  uint confirm_pressed;
+  uint slot_flag_or_menu_row;
+  uint first_available_row;
   
-  DAT_02098fd0 = 0;
-  if (param_1 == 1) {
-    uVar3 = *(uint *)(DAT_02098fc8 + 600);
+  previous_ds_keys = 0;
+  if (slot_number == 1) {
+    slot_flag_or_menu_row = *(uint *)(loaded_cartridge_metadata + 600);
     arm_veneer_for_nds_swiwaitforvblank();
     clear_text_rows_from(0xe);
     write_text_at_tile_position("Savestate Slot",0xe,8);
-    uVar3 = uVar3 >> 5 & 1;
+    slot_flag_or_menu_row = slot_flag_or_menu_row >> 5 & 1;
     format_hexadecimal_value(1,0xe,0x17);
-    uVar4 = uVar3 ^ 1;
-    if (uVar3 == 0) goto LAB_02002eac;
+    first_available_row = slot_flag_or_menu_row ^ 1;
+    if (slot_flag_or_menu_row == 0) goto LAB_02002eac;
   }
   else {
-    if ((param_1 != 2) || ((*(uint *)(DAT_02098fc8 + 600) & 0x40) == 0)) {
+    if ((slot_number != 2) || ((*(uint *)(loaded_cartridge_metadata + 600) & 0x40) == 0)) {
       arm_veneer_for_nds_swiwaitforvblank();
       clear_text_rows_from(0xe);
       write_text_at_tile_position("Savestate Slot",0xe,8);
-      format_hexadecimal_value(param_1,0xe,0x17);
-      uVar4 = 1;
+      format_hexadecimal_value(slot_number,0xe,0x17);
+      first_available_row = 1;
       goto LAB_02002eac;
     }
     arm_veneer_for_nds_swiwaitforvblank();
     clear_text_rows_from(0xe);
     write_text_at_tile_position("Savestate Slot",0xe,8);
     format_hexadecimal_value(2,0xe,0x17);
-    uVar4 = 0;
+    first_available_row = 0;
   }
   write_text_at_tile_position(&DAT_0208f1bc,0x11,0xe);
 LAB_02002eac:
@@ -44,46 +44,46 @@ LAB_02002eac:
   write_text_at_tile_position("CANCEL",0x13,0xd);
   draw_rom_browser_row_highlight(0x13);
   arm_veneer_for_nds_swiwaitforvblank();
-  uVar3 = 2;
+  slot_flag_or_menu_row = 2;
   while( true ) {
     arm_veneer_for_sample_ds_keys_and_update_repeat_state();
-    draw_rom_browser_row_highlight(uVar3 + 0x11);
-    uVar1 = arm_veneer_for_read_latched_ds_key_state();
-    if ((((uVar1 & 0x40) != 0) && ((DAT_02098fd0 & 0x40) == 0)) && (uVar4 < uVar3)) {
-      restore_overlay_tilemap_row(uVar3 + 0x11);
-      uVar3 = uVar3 - 1;
+    draw_rom_browser_row_highlight(slot_flag_or_menu_row + 0x11);
+    ds_keys = arm_veneer_for_read_latched_ds_key_state();
+    if ((((ds_keys & 0x40) != 0) && ((previous_ds_keys & 0x40) == 0)) && (first_available_row < slot_flag_or_menu_row)) {
+      restore_overlay_tilemap_row(slot_flag_or_menu_row + 0x11);
+      slot_flag_or_menu_row = slot_flag_or_menu_row - 1;
     }
-    if ((((uVar1 & 0x80) != 0) && ((DAT_02098fd0 & 0x80) == 0)) && (uVar3 < 2)) {
-      restore_overlay_tilemap_row(uVar3 + 0x11);
-      uVar3 = uVar3 + 1;
+    if ((((ds_keys & 0x80) != 0) && ((previous_ds_keys & 0x80) == 0)) && (slot_flag_or_menu_row < 2)) {
+      restore_overlay_tilemap_row(slot_flag_or_menu_row + 0x11);
+      slot_flag_or_menu_row = slot_flag_or_menu_row + 1;
     }
-    if ((uVar1 & 1) == 0) {
-      uVar2 = 0;
+    if ((ds_keys & 1) == 0) {
+      confirm_pressed = 0;
     }
     else {
-      uVar2 = (DAT_02098fd0 ^ 1) & 1;
+      confirm_pressed = (previous_ds_keys ^ 1) & 1;
     }
-    DAT_02098fd0 = uVar1;
-    if ((uVar1 & 4) != 0) break;
+    previous_ds_keys = ds_keys;
+    if ((ds_keys & 4) != 0) break;
     arm_veneer_for_nds_swiwaitforvblank();
     arm_veneer_for_nds_swiwaitforvblank();
     arm_veneer_for_nds_swiwaitforvblank();
-    if (uVar2 != 0) {
-      restore_overlay_tilemap_row(uVar3 + 0x11);
-      if (uVar3 == 0) {
+    if (confirm_pressed != 0) {
+      restore_overlay_tilemap_row(slot_flag_or_menu_row + 0x11);
+      if (slot_flag_or_menu_row == 0) {
         write_text_at_tile_position("Loading.. DONT switch off!",0xf,1);
-        load_emulator_savestate(param_1);
+        load_emulator_savestate(slot_number);
         DAT_0b000024 = 0;
       }
-      else if (uVar3 == 1) {
+      else if (slot_flag_or_menu_row == 1) {
         write_text_at_tile_position("Saving... DONT switch off!",0xf);
-        if (param_1 == 1) {
-          *(uint *)(DAT_02098fc8 + 600) = *(uint *)(DAT_02098fc8 + 600) | 0x20;
+        if (slot_number == 1) {
+          *(uint *)(loaded_cartridge_metadata + 600) = *(uint *)(loaded_cartridge_metadata + 600) | 0x20;
         }
-        else if (param_1 == 2) {
-          *(uint *)(DAT_02098fc8 + 600) = *(uint *)(DAT_02098fc8 + 600) | 0x40;
+        else if (slot_number == 2) {
+          *(uint *)(loaded_cartridge_metadata + 600) = *(uint *)(loaded_cartridge_metadata + 600) | 0x40;
         }
-        write_emulator_savestate(param_1);
+        write_emulator_savestate(slot_number);
       }
 LAB_02002fac:
       arm_veneer_for_nds_swiwaitforvblank();
@@ -300,8 +300,8 @@ void bind_vdp_memory_regions_for_savestate(void)
 {
   int iVar1;
   
-  iVar1 = DAT_023eb348;
-  *(undefined1 **)(DAT_023eb348 + 0xc) = &vdp_registers;
+  iVar1 = savestate_region_table;
+  *(undefined1 **)(savestate_region_table + 0xc) = &vdp_registers;
   *(undefined2 **)(iVar1 + 0x14) = &vdp_vsram;
   *(undefined1 **)(iVar1 + 0x18) = &vdp_vram;
   *(undefined2 **)(iVar1 + 0x10) = &vdp_cram;
@@ -314,119 +314,119 @@ void bind_vdp_memory_regions_for_savestate(void)
 void prepare_savestate_header_and_regions(void)
 
 {
-  DAT_023eb348 = &DAT_023eb314;
-  DAT_023eb314 = 0x4a530003;
-  DAT_023eb318 = m68k_context_pointer;
-  DAT_023eb31c = &genesis_work_ram_bytes;
-  DAT_023eb330 = z80_context_pointer;
-  DAT_023eb338 = get_z80_work_ram_buffer();
-  DAT_023eb33c = get_ym2612_bank_0_mirror_for_savestate();
-  DAT_023eb340 = get_ym2612_bank_1_mirror_for_savestate();
-  DAT_023eb344 = get_psg_mirror_for_savestate();
+  savestate_region_table = &savestate_header;
+  savestate_header = 0x4a530003;
+  savestate_m68k_context = m68k_context_pointer;
+  savestate_m68k_ram = &genesis_work_ram_bytes;
+  savestate_z80_context = z80_context_pointer;
+  savestate_z80_ram = get_z80_work_ram_buffer();
+  savestate_ym2612_bank_0 = get_ym2612_bank_0_mirror_for_savestate();
+  savestate_ym2612_bank_1 = get_ym2612_bank_1_mirror_for_savestate();
+  savestate_psg_registers = get_psg_mirror_for_savestate();
   bind_vdp_memory_regions_for_savestate();
-  DAT_020b4c4c = 1;
+  savestate_regions_initialized = 1;
   return;
 }
 
 
 // 0x0200d0b8  make_savestate_slot_path
 
-int make_savestate_slot_path(byte param_1)
+int make_savestate_slot_path(byte slot_number)
 
 {
-  int iVar1;
-  int iVar2;
-  int iVar3;
+  int filename_length;
+  int slot_path;
+  int original_filename_end;
   
-  iVar1 = newlib_strlen(DAT_02098fc8);
-  iVar2 = newlib_malloc_global_reent_wrapper(iVar1 + 3);
-  newlib_strncpy(iVar2,DAT_02098fc8,iVar1);
-  iVar3 = iVar2 + iVar1;
-  *(undefined1 *)(iVar3 + -4) = 0x5f;
-  *(undefined1 *)(iVar3 + -2) = 0x2e;
-  *(undefined1 *)(iVar3 + -1) = 0x6a;
-  *(byte *)(iVar3 + -3) = (param_1 & 3) + 0x30;
-  *(undefined1 *)(iVar2 + iVar1) = 0x73;
-  *(undefined1 *)(iVar3 + 2) = 0;
-  *(undefined1 *)(iVar3 + 1) = 0x74;
-  return iVar2;
+  filename_length = newlib_strlen(loaded_cartridge_metadata);
+  slot_path = newlib_malloc_global_reent_wrapper(filename_length + 3);
+  newlib_strncpy(slot_path,loaded_cartridge_metadata,filename_length);
+  original_filename_end = slot_path + filename_length;
+  *(undefined1 *)(original_filename_end + -4) = 0x5f;
+  *(undefined1 *)(original_filename_end + -2) = 0x2e;
+  *(undefined1 *)(original_filename_end + -1) = 0x6a;
+  *(byte *)(original_filename_end + -3) = (slot_number & 3) + 0x30;
+  *(undefined1 *)(slot_path + filename_length) = 0x73;
+  *(undefined1 *)(original_filename_end + 2) = 0;
+  *(undefined1 *)(original_filename_end + 1) = 0x74;
+  return slot_path;
 }
 
 
 // 0x0200d13c  load_emulator_savestate
 
-void load_emulator_savestate(undefined4 param_1)
+void load_emulator_savestate(undefined4 slot_number)
 
 {
-  int iVar1;
-  int iVar2;
-  undefined4 uVar3;
-  int iVar4;
-  undefined4 local_2c;
+  int m68k_state;
+  int z80_state;
+  undefined4 slot_path;
+  int state_stream;
+  undefined4 packed_state_word;
   
-  if (DAT_020b4c4c == 0) {
+  if (savestate_regions_initialized == 0) {
     prepare_savestate_header_and_regions();
   }
-  iVar2 = DAT_023eb330;
-  iVar1 = DAT_023eb318;
-  local_2c = 0;
-  uVar3 = make_savestate_slot_path(param_1);
-  iVar4 = newlib_fopen(uVar3,&DAT_0208f074);
-  if (iVar4 != 0) {
+  z80_state = savestate_z80_context;
+  m68k_state = savestate_m68k_context;
+  packed_state_word = 0;
+  slot_path = make_savestate_slot_path(slot_number);
+  state_stream = newlib_fopen(slot_path,&binary_read_mode);
+  if (state_stream != 0) {
     arm_veneer_for_disable_arm9_interrupt_sources(3);
     configure_ds_display_windows();
     clear_sound_mirrors_before_state_load();
-    newlib_fread(&DAT_023eb314,4,1,iVar4);
-    newlib_fread(iVar1,4,8,iVar4);
-    newlib_fread(iVar1 + 0x20,4,8,iVar4);
-    newlib_fread(iVar1 + 0x40,4,1,iVar4);
-    newlib_fread(iVar1 + 0x44,4,1,iVar4);
-    newlib_fread(iVar1 + 0x48,4,1,iVar4);
-    newlib_fread(iVar1 + 0x4c,4,1,iVar4);
-    newlib_fread(iVar1 + 0x50,4,1,iVar4);
-    newlib_fread(iVar1 + 0x8c,4,1,iVar4);
-    newlib_fread(iVar1 + 0x90,4,1,iVar4);
-    newlib_fread(iVar1 + 0x94,4,1,iVar4);
-    if (1 < (byte)DAT_023eb314) {
-      newlib_fread(iVar1 + 0x98,4,1,iVar4);
+    newlib_fread(&savestate_header,4,1,state_stream);
+    newlib_fread(m68k_state,4,8,state_stream);
+    newlib_fread(m68k_state + 0x20,4,8,state_stream);
+    newlib_fread(m68k_state + 0x40,4,1,state_stream);
+    newlib_fread(m68k_state + 0x44,4,1,state_stream);
+    newlib_fread(m68k_state + 0x48,4,1,state_stream);
+    newlib_fread(m68k_state + 0x4c,4,1,state_stream);
+    newlib_fread(m68k_state + 0x50,4,1,state_stream);
+    newlib_fread(m68k_state + 0x8c,4,1,state_stream);
+    newlib_fread(m68k_state + 0x90,4,1,state_stream);
+    newlib_fread(m68k_state + 0x94,4,1,state_stream);
+    if (1 < (byte)savestate_header) {
+      newlib_fread(m68k_state + 0x98,4,1,state_stream);
     }
-    newlib_fread(iVar1 + 0x9c,4,1,iVar4);
-    newlib_fread(&local_2c,4,1,iVar4);
-    *(undefined1 *)(iVar1 + 0xa0) = local_2c._3_1_;
-    *(char *)(iVar1 + 0xa1) = (char)((uint)local_2c >> 0x10);
-    *(char *)(iVar1 + 0xa2) = (char)((uint)local_2c >> 8);
-    *(char *)(iVar1 + 0xa3) = (char)local_2c;
-    newlib_fread(&local_2c,4,1,iVar4);
-    *(char *)(iVar1 + 0xa4) = (char)((uint)local_2c >> 8);
-    *(char *)(iVar1 + 0xa5) = (char)local_2c;
-    newlib_fread(DAT_023eb31c,1,0x10000,iVar4);
-    newlib_fread(DAT_023eb320,1,0x18,iVar4);
-    newlib_fread(DAT_023eb324,2,0x40,iVar4);
-    newlib_fread(DAT_023eb328,2,0x28,iVar4);
-    newlib_fread(DAT_023eb32c,1,0x10000,iVar4);
-    if (1 < (byte)DAT_023eb314) {
-      newlib_fread(DAT_023eb338,1,0x2000,iVar4);
-      newlib_fread(iVar2 + 0x404,1,0x5c,iVar4);
-      newlib_fread(DAT_023eb33c,1,0x100,iVar4);
-      newlib_fread(DAT_023eb340,1,0x100,iVar4);
-      newlib_fread(DAT_023eb344,1,0x20,iVar4);
-      newlib_fread(&local_2c,4,1,iVar4);
-      z80_bus_request_asserted = (undefined1)((uint)local_2c >> 0x10);
-      z80_reset_released = (undefined1)((uint)local_2c >> 8);
-      DAT_0208f349 = (undefined1)local_2c;
-      newlib_fread(&local_2c,4,1,iVar4);
-      restore_z80_bank_latch_from_savestate(local_2c);
-      newlib_fread(&local_2c,4,1,iVar4);
-      *(undefined1 *)(iVar2 + 0x4a4) = (undefined1)local_2c;
-      *(undefined1 *)(iVar2 + 0x4a5) = local_2c._1_1_;
-      *(undefined1 *)(iVar2 + 0x4a6) = local_2c._2_1_;
-      *(undefined1 *)(iVar2 + 0x4a7) = local_2c._3_1_;
+    newlib_fread(m68k_state + 0x9c,4,1,state_stream);
+    newlib_fread(&packed_state_word,4,1,state_stream);
+    *(undefined1 *)(m68k_state + 0xa0) = packed_state_word._3_1_;
+    *(char *)(m68k_state + 0xa1) = (char)((uint)packed_state_word >> 0x10);
+    *(char *)(m68k_state + 0xa2) = (char)((uint)packed_state_word >> 8);
+    *(char *)(m68k_state + 0xa3) = (char)packed_state_word;
+    newlib_fread(&packed_state_word,4,1,state_stream);
+    *(char *)(m68k_state + 0xa4) = (char)((uint)packed_state_word >> 8);
+    *(char *)(m68k_state + 0xa5) = (char)packed_state_word;
+    newlib_fread(savestate_m68k_ram,1,0x10000,state_stream);
+    newlib_fread(savestate_vdp_registers,1,0x18,state_stream);
+    newlib_fread(savestate_cram,2,0x40,state_stream);
+    newlib_fread(savestate_vsram,2,0x28,state_stream);
+    newlib_fread(savestate_vram,1,0x10000,state_stream);
+    if (1 < (byte)savestate_header) {
+      newlib_fread(savestate_z80_ram,1,0x2000,state_stream);
+      newlib_fread(z80_state + 0x404,1,0x5c,state_stream);
+      newlib_fread(savestate_ym2612_bank_0,1,0x100,state_stream);
+      newlib_fread(savestate_ym2612_bank_1,1,0x100,state_stream);
+      newlib_fread(savestate_psg_registers,1,0x20,state_stream);
+      newlib_fread(&packed_state_word,4,1,state_stream);
+      z80_bus_request_asserted = (undefined1)((uint)packed_state_word >> 0x10);
+      z80_reset_released = (undefined1)((uint)packed_state_word >> 8);
+      DAT_0208f349 = (undefined1)packed_state_word;
+      newlib_fread(&packed_state_word,4,1,state_stream);
+      restore_z80_bank_latch_from_savestate(packed_state_word);
+      newlib_fread(&packed_state_word,4,1,state_stream);
+      *(undefined1 *)(z80_state + 0x4a4) = (undefined1)packed_state_word;
+      *(undefined1 *)(z80_state + 0x4a5) = packed_state_word._1_1_;
+      *(undefined1 *)(z80_state + 0x4a6) = packed_state_word._2_1_;
+      *(undefined1 *)(z80_state + 0x4a7) = packed_state_word._3_1_;
     }
-    newlib_fclose(iVar4);
+    newlib_fclose(state_stream);
     rebuild_display_from_vdp_state();
-    rebase_m68k_program_counter_after_savestate(iVar1);
-    if (1 < (byte)DAT_023eb314) {
-      rebase_z80_pc_and_sp_into_work_ram(iVar2);
+    rebase_m68k_program_counter_after_savestate(m68k_state);
+    if (1 < (byte)savestate_header) {
+      rebase_z80_pc_and_sp_into_work_ram(z80_state);
       restart_arm7_audio_and_replay_fm_registers();
     }
     arm_veneer_for_enable_arm9_interrupt_sources(3);
@@ -437,64 +437,64 @@ void load_emulator_savestate(undefined4 param_1)
 
 // 0x0200d4c8  write_emulator_savestate
 
-void write_emulator_savestate(undefined4 param_1)
+void write_emulator_savestate(undefined4 slot_number)
 
 {
-  int iVar1;
-  int iVar2;
-  undefined4 uVar3;
-  int iVar4;
-  uint local_1c;
+  int m68k_state;
+  int z80_state;
+  undefined4 slot_path;
+  int state_stream;
+  uint packed_state_word;
   
-  if (DAT_020b4c4c == 0) {
+  if (savestate_regions_initialized == 0) {
     prepare_savestate_header_and_regions();
   }
-  iVar2 = DAT_023eb330;
-  iVar1 = DAT_023eb318;
-  uVar3 = make_savestate_slot_path(param_1);
-  DAT_023eb314 = 0x4a530003;
-  iVar4 = newlib_fopen(uVar3,&DAT_0208f070);
-  if (iVar4 != 0) {
+  z80_state = savestate_z80_context;
+  m68k_state = savestate_m68k_context;
+  slot_path = make_savestate_slot_path(slot_number);
+  savestate_header = 0x4a530003;
+  state_stream = newlib_fopen(slot_path,&binary_write_mode);
+  if (state_stream != 0) {
     arm_veneer_for_disable_arm9_interrupt_sources(3);
-    encode_m68k_program_counter_for_savestate(iVar1);
-    encode_z80_pc_and_sp_as_ram_offsets(iVar2);
-    newlib_fwrite(&DAT_023eb314,4,1,iVar4);
-    newlib_fwrite(iVar1,4,8,iVar4);
-    newlib_fwrite(iVar1 + 0x20,4,8,iVar4);
-    newlib_fwrite(iVar1 + 0x40,4,1,iVar4);
-    newlib_fwrite(iVar1 + 0x44,4,1,iVar4);
-    newlib_fwrite(iVar1 + 0x48,4,1,iVar4);
-    newlib_fwrite(iVar1 + 0x4c,4,1,iVar4);
-    newlib_fwrite(iVar1 + 0x50,4,1,iVar4);
-    newlib_fwrite(iVar1 + 0x8c,4,1,iVar4);
-    newlib_fwrite(iVar1 + 0x90,4,1,iVar4);
-    newlib_fwrite(iVar1 + 0x94,4,1,iVar4);
-    newlib_fwrite(iVar1 + 0x98,4,1,iVar4);
-    newlib_fwrite(iVar1 + 0x9c,4,1,iVar4);
-    local_1c = (uint)*(byte *)(iVar1 + 0xa1) << 0x10 | (uint)*(byte *)(iVar1 + 0xa0) << 0x18 |
-               (uint)*(byte *)(iVar1 + 0xa3) | (uint)*(byte *)(iVar1 + 0xa2) << 8;
-    newlib_fwrite(&local_1c,4,1,iVar4);
-    local_1c = (uint)CONCAT11(*(undefined1 *)(iVar1 + 0xa4),*(undefined1 *)(iVar1 + 0xa5));
-    newlib_fwrite(&local_1c,4,1,iVar4);
-    newlib_fwrite(DAT_023eb31c,1,0x10000,iVar4);
-    newlib_fwrite(DAT_023eb320,1,0x18,iVar4);
-    newlib_fwrite(DAT_023eb324,2,0x40,iVar4);
-    newlib_fwrite(DAT_023eb328,2,0x28,iVar4);
-    newlib_fwrite(DAT_023eb32c,1,0x10000,iVar4);
-    newlib_fwrite(DAT_023eb338,1,0x2000,iVar4);
-    newlib_fwrite(iVar2 + 0x404,1,0x5c,iVar4);
-    newlib_fwrite(DAT_023eb33c,1,0x100,iVar4);
-    newlib_fwrite(DAT_023eb340,1,0x100,iVar4);
-    newlib_fwrite(DAT_023eb344,1,0x20,iVar4);
-    local_1c = (uint)DAT_0208f349 | (uint)z80_bus_request_asserted << 0x10 | (uint)z80_reset_released << 8;
-    newlib_fwrite(&local_1c,4,1,iVar4);
-    local_1c = get_z80_bank_latch_for_savestate();
-    newlib_fwrite(&local_1c,4,1,iVar4);
-    local_1c = *(uint *)(iVar2 + 0x4a4);
-    newlib_fwrite(&local_1c,4,1,iVar4);
-    newlib_fclose(iVar4);
-    rebase_m68k_program_counter_after_savestate(iVar1);
-    rebase_z80_pc_and_sp_into_work_ram(iVar2);
+    encode_m68k_program_counter_for_savestate(m68k_state);
+    encode_z80_pc_and_sp_as_ram_offsets(z80_state);
+    newlib_fwrite(&savestate_header,4,1,state_stream);
+    newlib_fwrite(m68k_state,4,8,state_stream);
+    newlib_fwrite(m68k_state + 0x20,4,8,state_stream);
+    newlib_fwrite(m68k_state + 0x40,4,1,state_stream);
+    newlib_fwrite(m68k_state + 0x44,4,1,state_stream);
+    newlib_fwrite(m68k_state + 0x48,4,1,state_stream);
+    newlib_fwrite(m68k_state + 0x4c,4,1,state_stream);
+    newlib_fwrite(m68k_state + 0x50,4,1,state_stream);
+    newlib_fwrite(m68k_state + 0x8c,4,1,state_stream);
+    newlib_fwrite(m68k_state + 0x90,4,1,state_stream);
+    newlib_fwrite(m68k_state + 0x94,4,1,state_stream);
+    newlib_fwrite(m68k_state + 0x98,4,1,state_stream);
+    newlib_fwrite(m68k_state + 0x9c,4,1,state_stream);
+    packed_state_word = (uint)*(byte *)(m68k_state + 0xa1) << 0x10 | (uint)*(byte *)(m68k_state + 0xa0) << 0x18 |
+               (uint)*(byte *)(m68k_state + 0xa3) | (uint)*(byte *)(m68k_state + 0xa2) << 8;
+    newlib_fwrite(&packed_state_word,4,1,state_stream);
+    packed_state_word = (uint)CONCAT11(*(undefined1 *)(m68k_state + 0xa4),*(undefined1 *)(m68k_state + 0xa5));
+    newlib_fwrite(&packed_state_word,4,1,state_stream);
+    newlib_fwrite(savestate_m68k_ram,1,0x10000,state_stream);
+    newlib_fwrite(savestate_vdp_registers,1,0x18,state_stream);
+    newlib_fwrite(savestate_cram,2,0x40,state_stream);
+    newlib_fwrite(savestate_vsram,2,0x28,state_stream);
+    newlib_fwrite(savestate_vram,1,0x10000,state_stream);
+    newlib_fwrite(savestate_z80_ram,1,0x2000,state_stream);
+    newlib_fwrite(z80_state + 0x404,1,0x5c,state_stream);
+    newlib_fwrite(savestate_ym2612_bank_0,1,0x100,state_stream);
+    newlib_fwrite(savestate_ym2612_bank_1,1,0x100,state_stream);
+    newlib_fwrite(savestate_psg_registers,1,0x20,state_stream);
+    packed_state_word = (uint)DAT_0208f349 | (uint)z80_bus_request_asserted << 0x10 | (uint)z80_reset_released << 8;
+    newlib_fwrite(&packed_state_word,4,1,state_stream);
+    packed_state_word = get_z80_bank_latch_for_savestate();
+    newlib_fwrite(&packed_state_word,4,1,state_stream);
+    packed_state_word = *(uint *)(z80_state + 0x4a4);
+    newlib_fwrite(&packed_state_word,4,1,state_stream);
+    newlib_fclose(state_stream);
+    rebase_m68k_program_counter_after_savestate(m68k_state);
+    rebase_z80_pc_and_sp_into_work_ram(z80_state);
     arm_veneer_for_enable_arm9_interrupt_sources(3);
   }
   return;
@@ -506,23 +506,23 @@ void write_emulator_savestate(undefined4 param_1)
 void probe_savestate_slots(void)
 
 {
-  undefined4 uVar1;
-  int iVar2;
+  undefined4 slot_path;
+  int state_stream;
   
-  uVar1 = make_savestate_slot_path(1);
-  iVar2 = newlib_fopen(uVar1,&DAT_0208f074);
-  if (iVar2 != 0) {
-    *(uint *)(DAT_02098fc8 + 600) = *(uint *)(DAT_02098fc8 + 600) | 0x20;
+  slot_path = make_savestate_slot_path(1);
+  state_stream = newlib_fopen(slot_path,&binary_read_mode);
+  if (state_stream != 0) {
+    *(uint *)(loaded_cartridge_metadata + 600) = *(uint *)(loaded_cartridge_metadata + 600) | 0x20;
     newlib_fclose();
   }
-  newlib_free_global_reent_wrapper(uVar1);
-  uVar1 = make_savestate_slot_path(2);
-  iVar2 = newlib_fopen(uVar1,&DAT_0208f074);
-  if (iVar2 != 0) {
-    *(uint *)(DAT_02098fc8 + 600) = *(uint *)(DAT_02098fc8 + 600) | 0x40;
+  newlib_free_global_reent_wrapper(slot_path);
+  slot_path = make_savestate_slot_path(2);
+  state_stream = newlib_fopen(slot_path,&binary_read_mode);
+  if (state_stream != 0) {
+    *(uint *)(loaded_cartridge_metadata + 600) = *(uint *)(loaded_cartridge_metadata + 600) | 0x40;
     newlib_fclose();
   }
-  newlib_free_r(&DAT_0208f3a0,uVar1);
+  newlib_free_r(&DAT_0208f3a0,slot_path);
   return;
 }
 

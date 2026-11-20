@@ -6,6 +6,7 @@ Start with the feature you want to understand. The Nintendo DS has two host CPUs
 - [Start a game from the ROM browser](#start-a-game-from-the-rom-browser)
 - [Follow the gameplay loop and display](#follow-the-gameplay-loop-and-display)
 - [Follow a VDP write to a DS display update](#follow-a-vdp-write-to-a-ds-display-update)
+- [Follow scroll values and sprites to the DS](#follow-scroll-values-and-sprites-to-the-ds)
 - [Read a large export](#read-a-large-export)
 - [Follow a 68000 controller-port read](#follow-a-68000-controller-port-read)
 - [Read CPU context and timing](#read-cpu-context-and-timing)
@@ -62,6 +63,15 @@ During visible scanlines the VDP decrements its horizontal interrupt counter and
 Menu actions run through a separate key and touch handler. The pause screen uses the D-pad to move the viewport by changing and clamping two screen offsets. Those offsets affect how the Genesis image fits on the smaller DS screen. [Key and touch actions](../decompiled/arm9/frontend/input.c#L111) · [Viewport adjustment](../decompiled/arm9/system/emulator.c#L484) · [Graphics offsets](../decompiled/arm9/video/graphics.c#L15)
 
 To see how Genesis video data reaches the DS, follow the display rebuild used by the save-state loader. It reapplies 24 Genesis VDP (video display processor) register values, converts 64 palette entries, and updates DS palette memory and renderer buffers. This is a concrete entry point for the hardware-facing video code. [Display rebuild](../decompiled/arm9/video/vdp/display_updates.c#L20)
+
+### Follow scroll values and sprites to the DS
+
+1. **Record the scanline.** VDP register 11 selects the horizontal and vertical scroll modes. Register 13 supplies the VRAM address of the horizontal scroll table. Each entry holds Plane A's word followed by Plane B's. The unscaled callback records both scroll values, the backdrop color, and whether the window replaces Plane A on the line. With scaling enabled, the selector uses one of four ARM entries based on register 11 bits 1–0. [VDP register writes](../decompiled/arm9/video/graphics.c#L243) · [Unscaled callback](../decompiled/arm9/video/graphics.c#L532) · [Callback selector](../decompiled/arm9/video/graphics.c#L215)
+2. **Apply the prepared display state.** During display compare, the DS handler chooses the line using the viewport's Y offset. It writes scroll values to the DS background registers, selects the background controls for the window, and consumes any pending palette changes. [Display compare updates](../decompiled/arm9/video/vdp/display_setup.c#L337)
+3. **Build the sprite list.** The sprite code walks the seven-bit links in the Genesis sprite attribute table. It checks the cached attribute words, tile dirty flags, and OAM slot before deciding whether to copy tiles or only update the position. A separate mask tags scanlines where the display handler disables DS sprites. [Sprite cache and OAM](../decompiled/arm9/video/sprites/state_updates.c#L57)
+4. **Build the DS name tables.** A Genesis name word selects a pattern, palette, flip flags, and priority. The writer maps the pattern to a DS tile, writes the converted entry to the selected priority map, and writes blank tile `0x3ff` to its partner. [Tile cache](../decompiled/arm9/video/vdp/tile_cache.c) · [Paired maps](../decompiled/arm9/video/vdp/tilemap_writes.c#L5)
+
+Genesis Plus GX likewise reads a pair of horizontal scroll words at a line-dependent VRAM offset. PicoDrive walks the linked sprite attribute table until the link returns to zero or the sprite limit is reached. jEnesisDS uses those fields to prepare separate DS background and object state. [Genesis Plus GX scroll renderer](https://github.com/ekeeke/Genesis-Plus-GX/blob/2499cd3e3d1d8b7d0130d8b2825adb4cc608b2c0/core/vdp_render.c#L1537) · [PicoDrive sprite traversal](https://github.com/notaz/picodrive/blob/26ecb2b6358fefba24e3d68b9eb2efba7f10d5ee/pico/draw.c#L871)
 
 The emulated CPU handlers have their own folders. The original ROM's 68000 handler table maps opcode `0x4e71` to the NOP routine in ARM9 instruction TCM. The indirect jump at the end of that routine is part of opcode dispatch. For a representative Z80 path, start at the routine that accepts a cycle budget and loads the Z80 state before dispatch. [68000 NOP](../decompiled/arm9/cpu/m68k/exceptions_and_control.c#L157) · [Z80 cycle budget](../decompiled/arm9/cpu/z80/core.c#L146)
 
@@ -159,6 +169,34 @@ The dispatcher puts the algorithm in the high nibble and uses the low nibble for
 3. The writer opens the path and writes the header word `0x4a530003`, followed by CPU fields and emulated memory regions. The reader consults the low version byte when deciding whether to read the additional fields. It rebuilds the display and restores live state after reading. [Write a state](../decompiled/arm9/storage/save_states.c#L438) · [Load a state](../decompiled/arm9/storage/save_states.c#L356)
 
 The writer converts the 68000's live host fetch pointer into a Genesis program counter before serialization. The reader maps that guest address back into host memory. The Z80 uses a related conversion for its program counter and stack pointer, storing offsets from its RAM base. These conversions explain why the writer and reader call CPU helpers around the file operations. [Encode 68000 PC](../decompiled/arm9/storage/save_states.c#L209) · [Rebase 68000 PC](../decompiled/arm9/storage/save_states.c#L170) · [Z80 pointer conversions](../decompiled/arm9/storage/save_states.c#L126)
+
+### Version 3 save-state layout
+
+The jEnesisDS 0.7.4 writer starts with the little-endian word `0x4a530003`. The 28 native `fwrite` calls request a total of `0x223e4` bytes (140,260) for a complete write. The table gives byte offsets from the start of that version's file. The loader gates the word at `0x64` and the Z80 and sound section on a version byte greater than 1. [Version 3 write sequence](../decompiled/arm9/storage/save_states.c#L438) · [Version-gated reader](../decompiled/arm9/storage/save_states.c#L356)
+
+| Offset | Bytes | Data |
+| --- | --- | --- |
+| `0x00000` | `0x04` | Header and version |
+| `0x00004` | `0x20` | 68000 data registers D0–D7 |
+| `0x00024` | `0x20` | 68000 address registers A0–A7 |
+| `0x00044` | `0x30` | Selected 68000 context fields and two packed control words. The guest PC is at file offset `0x48`. |
+| `0x00074` | `0x10000` | 68000 work RAM |
+| `0x10074` | `0x18` | VDP registers |
+| `0x1008c` | `0x80` | CRAM |
+| `0x1010c` | `0x50` | VSRAM |
+| `0x1015c` | `0x10000` | VRAM |
+| `0x2015c` | `0x2000` | Z80 RAM |
+| `0x2215c` | `0x5c` | Z80 context slice starting at `+0x404`. Guest PC and SP are at file offsets `0x22178` and `0x2217c`. |
+| `0x221b8` | `0x100` | YM2612 bank 0 register mirror |
+| `0x222b8` | `0x100` | YM2612 bank 1 register mirror |
+| `0x223b8` | `0x20` | PSG state block |
+| `0x223d8` | `0x0c` | Packed Z80 bus state, bank latch, and pending interrupts |
+
+To verify offsets in the original ARM9 ELF, find the calls to `0x020822e0` and multiply the values loaded into `r1` and `r2` before each call. These are the element size and count. For example, the write at `0x0200d6c4` takes size 2 and count 64 for CRAM. Build the ELF with the reference rebuild instructions. [Reference rebuild](../README.md#matching-rom-rebuild-in-wsl)
+
+```sh
+arm-none-eabi-objdump -m armv5te -D --start-address=0x0200d4c8 --stop-address=0x0200d82c build/arm9.elf
+```
 
 Cartridge SRAM is the game’s own persistent memory and uses `.srm` files. The cartridge code prepares SRAM after reading the ROM header. The gameplay loop can flush changed SRAM during its periodic menu and input checks. [Configure cartridge SRAM](../decompiled/arm9/storage/save_ram.c#L66) · [Flush cartridge SRAM](../decompiled/arm9/storage/save_ram.c#L32)
 

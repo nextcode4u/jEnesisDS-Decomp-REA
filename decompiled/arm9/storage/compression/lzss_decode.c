@@ -113,7 +113,7 @@ uint load_file_and_decode_lzss_with_prefix(int param_1,int param_2,uint param_3,
   if (((param_2 != 0 && param_1 != 0) && (param_4 != 0 && param_3 != 0)) && (param_5 < param_4)) {
     DAT_023ddebc = &DAT_023deed4;
     DAT_023eb2f8 = &DAT_023eb2fc;
-    iVar6 = newlib_fopen(param_3,&DAT_0208f074);
+    iVar6 = newlib_fopen(param_3,&binary_read_mode);
     param_3 = 0;
     if (iVar6 != 0) {
       newlib_fseek(iVar6,0,2);

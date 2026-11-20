@@ -180,7 +180,7 @@ char read_gameplay_menu_and_touch_actions(void)
     arm_tail_branch_to_load_subscreen_palette_tiles_and_map(uVar2);
     return '\x01';
   }
-  if (((uVar2 & 4) == 0) || ((DAT_02098fd0 & 4) != 0)) {
+  if (((uVar2 & 4) == 0) || ((previous_ds_keys & 4) != 0)) {
     cVar1 = '\0';
   }
   else {
@@ -197,7 +197,7 @@ char read_gameplay_menu_and_touch_actions(void)
     arm_tail_branch_to_load_subscreen_palette_tiles_and_map();
     cVar1 = DAT_0208f347;
   }
-  DAT_02098fd0 = uVar2;
+  previous_ds_keys = uVar2;
   return cVar1;
 }
 

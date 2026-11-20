@@ -30,7 +30,7 @@ void run_frame_h_int_off(void)
       for (; uVar4 < uVar6; uVar4 = uVar4 + 1) {
         DAT_0b00000c = uVar4;
         tick_vdp_horizontal_interrupt_counter(uVar4);
-        (*DAT_023dcea8)(uVar4);
+        (*record_vdp_scanline_state)(uVar4);
       }
       (*DAT_0b000040)(iVar2 << 4);
       if ((((emulator_option_flags & 2) == 0) && (z80_reset_released == '\x01')) && (z80_bus_request_asserted == '\0')) {
@@ -79,7 +79,7 @@ void run_frame_h_int_on(void)
   DAT_0b000080 = 4;
   update_vdp_timing_and_run_m68k_configured(0x22);
   DAT_0b000080 = 0;
-  (*DAT_023dcea8)(0);
+  (*record_vdp_scanline_state)(0);
   update_vdp_timing_and_run_m68k_scanline(uVar2);
   accrue_z80_cycles_for_scanline(0);
   set_or_clear_z80_pending_interrupt_bits(&z80_context,1,0);
@@ -94,7 +94,7 @@ void run_frame_h_int_on(void)
       DAT_0b000080 = 4;
       update_vdp_timing_and_run_m68k_configured(0x22);
       DAT_0b000080 = 0;
-      (*DAT_023dcea8)(uVar5);
+      (*record_vdp_scanline_state)(uVar5);
       update_vdp_timing_and_run_m68k_scanline(uVar2);
       uVar3 = uVar5 + 1;
       accrue_z80_cycles_for_scanline(uVar5);
@@ -171,21 +171,21 @@ void reset_emulation_for_cartridge(void)
   arm_veneer_for_nds_swiwaitforvblank();
   request_arm7_audio_start();
   if ((emulator_option_flags & 4) == 0) {
-    DAT_023dcea8 = record_unscaled_scanline_scroll_and_backdrop;
+    record_vdp_scanline_state = record_unscaled_scanline_scroll_and_backdrop;
   }
   else {
-    switch(DAT_023dcdb0) {
+    switch(vdp_hscroll_mode) {
     case 0:
-      DAT_023dcea8 = (code *)&LAB_0200bbd0;
+      record_vdp_scanline_state = (code *)&record_scaled_scanline_hscroll_mode_0;
       return;
     case 1:
-      DAT_023dcea8 = (code *)&LAB_0200c0cc;
+      record_vdp_scanline_state = (code *)&record_scaled_scanline_hscroll_mode_1;
       return;
     case 2:
-      DAT_023dcea8 = (code *)&LAB_0200bf18;
+      record_vdp_scanline_state = (code *)&record_scaled_scanline_hscroll_mode_2;
       return;
     case 3:
-      DAT_023dcea8 = (code *)&LAB_0200bd6c;
+      record_vdp_scanline_state = (code *)&record_scaled_scanline_hscroll_mode_3;
       return;
     }
   }
@@ -384,7 +384,7 @@ LAB_0200126c:
 LAB_02001288:
   DAT_02098fac = DAT_02098fac + 1;
   if (DAT_02098fac == 8) {
-    if ((*(char *)(DAT_02098fc8 + 0x261) != '\0') && (*(char *)(DAT_02098fc8 + 0x263) != '\0')) {
+    if ((*(char *)(loaded_cartridge_metadata + 0x261) != '\0') && (*(char *)(loaded_cartridge_metadata + 0x263) != '\0')) {
       if (0x78 < (uint)(DAT_0b000008 - DAT_02098fb4)) {
         flush_cartridge_save_ram();
       }
@@ -507,16 +507,16 @@ void adjust_paused_viewport(void)
   if ((uVar2 & 0x40) != 0) {
     adjust_vertical_viewport_offset(iVar3);
   }
-  iVar1 = DAT_020993b4;
+  iVar1 = requested_viewport_offset_y;
   if ((uVar2 & 0x80) != 0) {
-    DAT_020993b4 = DAT_020993b4 - iVar3;
-    if (DAT_020993b4 < -0x18) {
-      DAT_020993b4 = -0x18;
+    requested_viewport_offset_y = requested_viewport_offset_y - iVar3;
+    if (requested_viewport_offset_y < -0x18) {
+      requested_viewport_offset_y = -0x18;
     }
-    else if (0x18 < DAT_020993b4) {
-      DAT_020993b4 = 0x18;
+    else if (0x18 < requested_viewport_offset_y) {
+      requested_viewport_offset_y = 0x18;
     }
-    DAT_020993ac = (uint)(iVar1 != DAT_020993b4);
+    viewport_update_pending = (uint)(iVar1 != requested_viewport_offset_y);
     return;
   }
   return;
@@ -580,20 +580,20 @@ void update_genesis_controller_state(void)
         adjust_horizontal_viewport_offset(DAT_02098ff8 >> 8);
       }
     }
-    previous_viewport_x = DAT_020993b0;
+    previous_viewport_x = requested_viewport_offset_x;
     if ((ds_keys & 0x10) != 0) {
       if (DAT_02098ff8 < 0x200) {
         DAT_02098ff8 = DAT_02098ff8 + 0x40;
       }
       if (0 < DAT_02098ff8) {
-        DAT_020993b0 = DAT_020993b0 + (DAT_02098ff8 >> 8);
-        if (DAT_020993b0 < -0x20) {
-          DAT_020993b0 = -0x20;
+        requested_viewport_offset_x = requested_viewport_offset_x + (DAT_02098ff8 >> 8);
+        if (requested_viewport_offset_x < -0x20) {
+          requested_viewport_offset_x = -0x20;
         }
-        else if (0x20 < DAT_020993b0) {
-          DAT_020993b0 = 0x20;
+        else if (0x20 < requested_viewport_offset_x) {
+          requested_viewport_offset_x = 0x20;
         }
-        DAT_020993ac = (uint)(previous_viewport_x != DAT_020993b0);
+        viewport_update_pending = (uint)(previous_viewport_x != requested_viewport_offset_x);
         return;
       }
     }
