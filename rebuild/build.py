@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reassemble the jEnesisDS startup code and link it with the preserved payload."""
+"""Build jEnesisDS from source or rebuild the release for comparison."""
 import argparse
 from hashlib import sha256
 import os
@@ -9,6 +9,7 @@ import struct
 from tempfile import TemporaryDirectory
 
 from banner import render_banner
+from native import ARM7_BASE, ARM7_IMAGE_SIZE, ARM9_BASE, ARM9_IMAGE_SIZE
 from r20 import EXPECTED_ROM_SHA256, check_match, compiler_command, run, tool
 from recovered import (check_codec_image, prepare_reference_arm7, prepare_reference_arm9,
                        stage_c_runtime_sections, with_libnds_headers)
@@ -52,7 +53,8 @@ def main():
         "--tool-prefix", type=Path, default=DEFAULT_PREFIX,
         help="Absolute path prefix ending in arm-eabi- for devkitARM r20 binutils",
     )
-    parser.add_argument("--rom", type=Path, default=WORKSPACE / "input/jEnesisDS.nds")
+    parser.add_argument("--rom", type=Path, help="Original release for reference build and comparison")
+    parser.add_argument("--source-only", action="store_true", help="Build without opening the release ROM")
     parser.add_argument("--r20-root", type=Path, help="Compile and link the matched ARM7 and ARM9 regions")
     parser.add_argument("--libnds-repo", type=Path, help="Link matched code from period libnds sources")
     parser.add_argument("--replace-codec", action="store_true",
@@ -60,6 +62,8 @@ def main():
     args = parser.parse_args()
     if (args.libnds_repo or args.replace_codec) and not args.r20_root:
         parser.error("the SDK and codec variants require --r20-root")
+    if args.source_only and (not args.libnds_repo or args.rom or args.replace_codec):
+        parser.error("--source-only requires --r20-root and --libnds-repo and cannot be combined with --rom or --replace-codec")
     r20 = args.r20_root.expanduser().resolve() if args.r20_root else None
     prefix = r20 / "bin/arm-eabi-" if r20 else args.tool_prefix.expanduser().absolute()
     libfat = None
@@ -70,13 +74,18 @@ def main():
             parser.error(f"Cannot find period libfat archive at {libfat}. Set LIBFAT to its installation.")
     assembler, linker, objcopy = (tool(prefix, name) for name in ("as", "ld", "objcopy"))
 
-    rom = args.rom.read_bytes()
-    if sha256(rom).hexdigest() != EXPECTED_ROM_SHA256:
-        raise ValueError("Expected the original jEnesisDS 0.7.4 ROM")
-    arm9_offset, _, arm9_base, arm9_size = struct.unpack_from("<4I", rom, 0x20)
-    arm7_offset, _, arm7_base, arm7_size = struct.unpack_from("<4I", rom, 0x30)
-    arm9 = rom[arm9_offset:arm9_offset + arm9_size]
-    arm7 = rom[arm7_offset:arm7_offset + arm7_size]
+    if args.source_only:
+        rom = arm9 = arm7 = None
+        arm9_base, arm9_size = ARM9_BASE, ARM9_IMAGE_SIZE
+        arm7_base, arm7_size = ARM7_BASE, ARM7_IMAGE_SIZE
+    else:
+        rom = (args.rom or WORKSPACE / "input/jEnesisDS.nds").read_bytes()
+        if sha256(rom).hexdigest() != EXPECTED_ROM_SHA256:
+            raise ValueError("Expected the original jEnesisDS 0.7.4 ROM")
+        arm9_offset, _, arm9_base, arm9_size = struct.unpack_from("<4I", rom, 0x20)
+        arm7_offset, _, arm7_base, arm7_size = struct.unpack_from("<4I", rom, 0x30)
+        arm9 = rom[arm9_offset:arm9_offset + arm9_size]
+        arm7 = rom[arm7_offset:arm7_offset + arm7_size]
 
     with TemporaryDirectory(prefix=".rebuild-", dir=WORKSPACE) as scratch:
         work = Path(scratch)
@@ -114,20 +123,26 @@ def main():
 
         rebuilt9 = (work / "arm9.bin").read_bytes()
         rebuilt7 = (work / "arm7.bin").read_bytes()
-        if args.replace_codec:
+        if args.source_only:
+            if (len(rebuilt9), len(rebuilt7)) != (arm9_size, arm7_size):
+                raise ValueError(f"Unexpected image sizes: ARM9 {len(rebuilt9):#x}, ARM7 {len(rebuilt7):#x}")
+        elif args.replace_codec:
             check_codec_image(arm9, rebuilt9, arm9_base)
         else:
             check_match(arm9, rebuilt9, "ARM9 image")
-        check_match(arm7, rebuilt7, "ARM7 image")
+        if arm7 is not None:
+            check_match(arm7, rebuilt7, "ARM7 image")
         if r20:
             rebuilt_rom = package_r20_rom(work, r20)
         else:
             rebuilt_rom = package_reference_rom(rom, rebuilt9, rebuilt7)
-        if not args.replace_codec:
+        if rom is not None and not args.replace_codec:
             check_match(rom, rebuilt_rom, "NDS ROM")
 
         output = WORKSPACE / "build"
-        if r20:
+        if args.source_only:
+            output /= "source-rom"
+        elif r20:
             name = "reference-c"
             if args.libnds_repo:
                 name += "-sdk"

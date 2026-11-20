@@ -1,6 +1,6 @@
 # jEnesisDS 0.7.4 analysis handoff
 
-Use `descriptive-decomp` to trace the released Nintendo DS emulator by subsystem. The annotation pass identified 2,336 ARM9 opcode dispatch targets and 128 ARM7 dispatch targets. The branch preserves the REA pseudocode for all 3,083 indexed routines. This branch builds the recovered C with devkitARM r20 and the period SDK. The full reference rebuild still reads unrecovered regions from the original DS ROM.
+Use `descriptive-decomp` to trace the released Nintendo DS emulator by subsystem. The annotation pass identified 2,336 ARM9 opcode dispatch targets and 128 ARM7 dispatch targets. The branch preserves the REA pseudocode for all 3,083 indexed routines. This branch builds the complete emulator with devkitARM r20 and the period SDK. The original DS ROM is used in a separate comparison.
 
 Follow the [reading guide](READING-GUIDE.md) to understand a feature. Use the [worked trace](VERIFYING-A-TRACE.md) to check a routine against the dispatch table and ARM instructions.
 
@@ -62,7 +62,38 @@ Install the three packages in the [SDK setup table](../README.md#build-with-the-
 
 The target writes `sdk-check.nds` and per-processor ELF, archive, and linker map files under `build/r20-homebrew/`. Open the test ROM in melonDS as ordinary DS homebrew. The test prints `ARM7 FIFO: OK` after a round trip through the recovered ARM9 FIFO code and ARM7 PSG table. With DLDI enabled and a FAT image, it prints `libfat: mounted`. Add a file named `sdkcheck.txt` to the root of that image with `R` as its first byte to exercise a read through newlib and libfat. Both the FIFO round trip and the FAT file read passed in melonDS 1.1. [ARM9 check](../rebuild/devkitpro/sdk_check_arm9.c) · [ARM7 check](../rebuild/devkitpro/sdk_check_arm7.c)
 
-The test ROM exercises a subset of the recovered code. The complete emulator still requires unrecovered code and data. The byte-matching targets below use the original layout and compare those independent regions with the release.
+The test ROM exercises a subset of the recovered code. The complete emulator build below uses the release memory layout and the historical SDK sources.
+
+## Build the complete source ROM
+
+Install the archived r20 toolchain, libnds headers, and libfat archive from the [SDK setup table](../README.md#build-with-the-period-devkitpro-sdk). Set `DEVKITARM` to the installed r20 directory and clone the full libnds history for the specific historical revisions listed above.
+
+```sh
+mkdir -p build/sdk-sources
+git clone https://github.com/devkitPro/libnds.git build/sdk-sources/libnds
+make source-rom R20_ROOT="$DEVKITARM" LIBNDS_REPO=build/sdk-sources/libnds
+```
+
+The ARM7 and ARM9 ELF files, linker maps, and packaged ROM are written under `build/source-rom/`. The linker fails if any load range is uncovered. The r20 `ndstool` packages the linked images and generated launcher banner. A clean checkout of this branch built successfully without the original ROM present. A separate comparison of the packaged result matched 0.7.4 with SHA-256 `cc2ab8b1153cd115978a68c1490e6fe0ea578832f877e7cf3169cbd920cf8104`. [Build entry point](../rebuild/build.py)
+
+```sh
+make compare-source-rom ROM=input/jEnesisDS.nds
+```
+
+The last 43,940 ARM9 bytes came from 7,696 bytes of frontend assembly, 756 bytes of C messages and initial state, and 35,488 bytes of generated graphics. The assembly is organized by ROM browser, input, settings, graphics, panels, and text. [Frontend assembly](../rebuild/source/native/arm9/frontend) · [Messages](../rebuild/source/frontend_messages.c) · [Initial state](../rebuild/source/frontend_initial_state.c)
+
+The graphics source uses indexed PGM sheets, RGB555 palette entries, and numeric tilemaps. The generator packs each sheet into 8×8 DS tiles and emits the asset structure as C. Edit the pixel indices and palettes together to change colors. The menu map uses 16-bit DS text background entries. The startup map uses one byte per affine tile index. [Editable assets](../rebuild/assets/frontend) · [Graphics generator](../rebuild/generate_frontend_assets.py)
+
+| ARM9 address | Asset |
+| --- | --- |
+| `0x02085a88` | Font palette |
+| `0x02085aa8` | Font sheet, 96 tiles |
+| `0x020872a8` | Menu palette |
+| `0x020874a8` | Menu sheet, 156 tiles |
+| `0x02089ba8` | Menu map, 32×24 entries |
+| `0x0208a1a8` | Startup palette |
+| `0x0208a3a8` | Startup sheet, 250 tiles |
+| `0x0208e228` | Startup map, 32×24 entries, ending at `0x0208e528` |
 
 ## Compile the recovered ARM9 C
 
@@ -107,8 +138,6 @@ Run `make recovered-c` with the complete r20 toolchain. It compiles the sources 
 
 Run `make reference-c` to link the verified C and assembly regions into their processor images. The linker maps in `build/reference-c/` record the input objects and original addresses. The linker emits the 14,060-byte zero-filled ARM9 DTCM load image. The launcher banner builds from a 32-pixel-square indexed icon, its RGB555 palette, and UTF-16LE titles, with a generated CRC. The r20 `ndstool` emits the header, empty file name table, and alignment padding. The target compares the complete ROM with the release and still reads the unrecovered processor code and data from the release. [Build setup](../README.md#compile-recovered-c-with-devkitarm-r20) · [Launcher banner source](../rebuild/banner.py)
 
-The SDK reference build supplies the entire ARM7 image from source and the period SDK. Its linker maps show 43,940 ROM-backed ARM9 bytes. The largest range is 35,488 bytes at `0x02085a88–0x0208e528`. It starts with font palette data and contains font tiles, menu graphics, and startup artwork. The other gaps contain the original frontend, its strings, and a few initialized frontend state bytes. The nonvisual option descriptors at `0x02085a10–0x02085a88` and the VDP layout defaults are recovered C. [ROM gap placement](../rebuild/recovered.py) · [ROM packaging](../rebuild/build.py)
-
 The original author described the 68000 engine as his own ARM assembly and described the Z80 engine as assembly in the release thread. The recovered assembly retains the original register conventions and dispatch layout. [Lordus’s development and release thread](https://gbadev.net/forum-archive/thread/23/13632.html)
 
 The FIFO receive ISR reads `REG_IPC_FIFO_RX` once per message and splits that word into a command and a payload. The nonblocking sender clears the send FIFO and returns zero when full. The waiting sender at `0x0200c530` was identified from ARM instructions between the indexed callback setter and nonblocking sender. [Indexed pseudocode](../decompiled/arm9/system/ipc.c#L449) · [Verified C](../rebuild/source/arm9_fifo.c)
@@ -123,7 +152,7 @@ The ARM7 FIFO setup and transfer code at `0x037fc0cc–0x037fc0f0` and `0x037fc4
 
 The PCM clear and chip reset at `0x037fc0f0–0x037fc218` match 296 bytes. The routines clear the VRAM rings, reset both chips, restore the write cursors and timer bookkeeping, and notify ARM9. The two initial VRAM base pointers also build from C. [PCM reset](../rebuild/source/arm7_audio_reset.c) · [Base pointers](../rebuild/source/arm7_pcm_bases.c)
 
-The YM2612 sample-loop selector at `0x03800e50–0x03801054` builds from the 128 named algorithm and operator-mask entries in the analysis index. The linked table and its base pointer match all 516 bytes. Its destination routines are among the remaining ROM-backed code. [Dispatch generator](../rebuild/generate_ym2612_dispatch.py)
+The YM2612 sample-loop selector at `0x03800e50–0x03801054` builds from the 128 named algorithm and operator-mask entries in the analysis index. The linked table and its base pointer match all 516 bytes. Its destination routines assemble from the algorithm-specific PCM loops. [Dispatch generator](../rebuild/generate_ym2612_dispatch.py) · [PCM loops](../rebuild/source/native/arm7/ym2612)
 
 The ARM7 YM2612 lookup data at `0x038026f8–0x03806d34` generates during the build. It contains the 1,024-entry half-step logarithmic sine, 3,328 packed attenuation-to-sample entries, and the envelope, pitch, and pan tables. All 17,980 bytes match. The generator has no ROM input. [YM2612 table generator](../rebuild/generate_ym2612_tables.py)
 
@@ -134,7 +163,7 @@ The SDK reference build uses matching ARM code from the r20 `libc.a` and `libgcc
 
 ## Assemble the recovered native regions
 
-Run `make recovered-native R20_ROOT="$DEVKITARM"` to assemble and link the 55 native ranges, totaling 240,488 bytes. It writes one ELF per processor and one binary per range under `build/recovered-native/`. Run `make compare-recovered-native ROM=/path/to/jEnesisDS.nds` separately. The comparison checks instructions, literal data, and branch destinations. The ITCM comparison reads the ROM bytes at the load address while the linker uses the address at which the code runs. [Assembler and comparison](../rebuild/check_native.py) · [Region definitions](../rebuild/native.py)
+Run `make recovered-native R20_ROOT="$DEVKITARM"` to assemble and link the 62 native ranges, totaling 248,184 bytes. It writes one ELF per processor and one binary per range under `build/recovered-native/`. Run `make compare-recovered-native ROM=/path/to/jEnesisDS.nds` separately. The comparison checks instructions, literal data, and branch destinations. The ITCM comparison reads the ROM bytes at the load address while the linker uses the address at which the code runs. [Assembler and comparison](../rebuild/check_native.py) · [Region definitions](../rebuild/native.py)
 
 | Selected range (end exclusive) | Bytes | Contents |
 | --- | ---: | --- |
@@ -149,7 +178,7 @@ Run `make recovered-native R20_ROOT="$DEVKITARM"` to assemble and link the 55 na
 The assembly was transcribed from the native instructions and grouped by opcode family, video routine, or synthesis stage. Use the address comments and matching `functions.tsv` to cross-reference a handler with its pseudocode. The included files assemble in one assembler object per subsystem. Each release range keeps its own section. Literal pools and alignment stay in the source. The C dispatch tables can resolve directly to the assembled handler labels. The standalone link uses the release addresses in the processor import files for routines and tables outside the native ranges. [ARM9 function index](../decompiled/arm9/functions.tsv) · [ARM7 function index](../decompiled/arm7/functions.tsv) · [ARM9 linker imports](../rebuild/source/native/arm9_imports.ld) · [ARM7 linker imports](../rebuild/source/native/arm7_imports.ld)
 Other ARM9 assembly ranges cover frame scheduling, controller input, bus routing, cartridge and save-state I/O, VDP ports and DMA, tile and sprite drawing, and the release LZSS routines. The Z80 parity and result-flag tables at `0x0200dd20–0x0200df20` are computed as C constant expressions. The adjacent ARM entry installs the decoder page pointers. [Machine routines](../rebuild/source/native/arm9/machine) · [Renderer](../rebuild/source/native/arm9/renderer) · [VDP ports](../rebuild/source/native/arm9/vdp_ports) · [Z80 flag tables](../rebuild/source/z80_flag_tables.c)
 
-The ARM9 platform assembly includes the libnds, libfat, libgcc, and newlib interworking veneers and the CP15 accessors. The recovered browser model handles directory entries and ROM selection. The remaining original presentation code points to font tiles at `0x02085aa8`, menu tiles at `0x020874a8`, and menu maps at `0x02089ba8`. Startup graphics use a palette at `0x0208a1a8`, tiles at `0x0208a3a8`, and a map at `0x0208e228`. [SDK veneers](../rebuild/source/native/arm9/platform/sdk_veneers.inc) · [Browser model](../rebuild/source/native/arm9/browser_model) · [Menu asset loads](../decompiled/arm9/frontend/ui.c#L416) · [Startup asset loads](../decompiled/arm9/video/vdp/display_setup.c#L83)
+The ARM9 platform assembly includes the libnds, libfat, libgcc, and newlib interworking veneers and the CP15 accessors. The recovered browser model handles directory entries and ROM selection. The recovered presentation code points to font tiles at `0x02085aa8`, menu tiles at `0x020874a8`, and menu maps at `0x02089ba8`. Startup graphics use a palette at `0x0208a1a8`, tiles at `0x0208a3a8`, and a map at `0x0208e228`. [SDK veneers](../rebuild/source/native/arm9/platform/sdk_veneers.inc) · [Browser model](../rebuild/source/native/arm9/browser_model) · [Menu asset loads](../decompiled/arm9/frontend/ui.c#L416) · [Startup asset loads](../decompiled/arm9/video/vdp/display_setup.c#L83)
 
 ## Build the complete ARM7 image
 
@@ -223,7 +252,7 @@ make reference-c-sdk R20_ROOT="$DEVKITARM" LIBNDS_REPO=build/sdk-sources/libnds
 
 `reference-c-sdk` links those ARM7 ranges and the six ARM9 key routines, April 2006 ARM9 `touchReadXY`, IRQ setup, ITCM IRQ table and dispatcher, Slot-1 code, video bank control, data-cache maintenance, BIOS calls, and r20 runtime objects. It also links 21 members of libfat-nds 20070127 covering 20,770 bytes of code and initialized data. The library uses the original Thumb entry points, including veneers for ARM newlib functions. The directory object links its original filename character sets and shares the dot and dot-dot strings at their release addresses. The ARM9 newlib regions include stdio, the reentrant syscall wrappers, character classification and allocator state. Eleven r20 `libsysbase.a` members supply device registration, directory and file operations, and heap allocation. Their data and heap globals link at the release addresses. The build restores the two alignment bytes after newlib’s locale string in a checksum-verified archive member. [ARM9 SDK staging](../rebuild/sdk_arm9.py) · [libfat placement and imports](../rebuild/sdk_libfat.py)
 
-The `LIBFAT` path defaults to the `libfat` directory beside devkitARM. The output ROM and linker maps are under `build/reference-c-sdk/`. The linker generates the known 0xff alignment fill before the DLDI block, around SDK sections, and between initialized data sections. The reference build still uses the original ROM for the remaining regions.
+The `LIBFAT` path defaults to the `libfat` directory beside devkitARM. The output ROM and linker maps are under `build/reference-c-sdk/`. The linker generates the known 0xff alignment fill before the DLDI block, around SDK sections, and between initialized data sections. The reference target compares the output with the original ROM. The `source-rom` target links the same SDK regions without opening the original ROM.
 
 Compiler selection, source revision, and per-file optimization can each affect a match. The ROM's libnds routines have matching code from different points in SDK history. The reconstructed C check isolates functions so each match demonstrates what the compiler produced from source.
 

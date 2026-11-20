@@ -11,7 +11,7 @@ NDSLIB_REPO ?= build/sdk-sources/ndslib-archive
 LZSS_SOURCES = bounded_stream lzss_match_tree lzss_encode lzss_decode lzss_memory lzss_buffers lzss_state
 
 .PHONY: r20-homebrew recovered-c compare-recovered-c recovered-native compare-recovered-native check-c check-lzss check-lzss-standalone check-codec-rom check-sdk check-pseudocode arm7-sdk check-arm7-sdk arm7-image compare-arm7-image \
-	reference reference-c reference-c-sdk reference-c-codec
+	reference reference-c reference-c-sdk reference-c-codec source-rom compare-source-rom
 
 r20-homebrew:
 	$(MAKE) -f rebuild/devkitpro/Makefile
@@ -70,6 +70,12 @@ reference-c:
 
 reference-c-sdk:
 	$(PYTHON) rebuild/build.py --rom "$(ROM)" --r20-root "$(R20_ROOT)" --libnds-repo "$(LIBNDS_REPO)"
+
+source-rom:
+	$(PYTHON) rebuild/build.py --source-only --r20-root "$(R20_ROOT)" --libnds-repo "$(LIBNDS_REPO)"
+
+compare-source-rom:
+	cmp "$(ROM)" build/source-rom/jEnesisDS-0.7.4-rebuilt.nds
 
 reference-c-codec:
 	$(PYTHON) rebuild/build.py --rom "$(ROM)" --r20-root "$(R20_ROOT)" --replace-codec

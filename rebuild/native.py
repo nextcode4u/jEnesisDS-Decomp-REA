@@ -27,6 +27,8 @@ class NativeRegion:
 
 ARM7_BASE = 0x037F8000
 ARM7_IMAGE_SIZE = 0xED94
+ARM9_BASE = 0x02000000
+ARM9_IMAGE_SIZE = 0x98F70
 ARM9_ITCM = NativeRegion("arm9_itcm", 0x01000000, 0x010056E0, load_address=0x020936F0)
 NATIVE_REGIONS = {
     7: (
@@ -42,6 +44,13 @@ NATIVE_REGIONS = {
         NativeRegion("arm7_ym2612", 0x037FC590, 0x03800E50),
     ),
     9: (
+        NativeRegion("arm9_frontend_main", 0x020011b0, 0x02001530, "arm9_frontend"),
+        NativeRegion("arm9_frontend_panels", 0x020023dc, 0x0200311c, "arm9_frontend"),
+        NativeRegion("arm9_frontend_rom_browser", 0x020034b0, 0x020037b4, "arm9_frontend"),
+        NativeRegion("arm9_frontend_indicators", 0x02006730, 0x02006a44, "arm9_frontend"),
+        NativeRegion("arm9_frontend_graphics", 0x02006b78, 0x02006f2c, "arm9_frontend"),
+        NativeRegion("arm9_frontend_text", 0x0200d8c4, 0x0200db8c, "arm9_frontend"),
+        NativeRegion("arm9_frontend_hex_tiles", 0x0200dc64, 0x0200dd20, "arm9_frontend"),
         NativeRegion("arm9_empty_callback", 0x0200030c, 0x02000310, "arm9_platform"),
         NativeRegion("arm9_cp15_accessors", 0x02072c28, 0x02072c50, "arm9_platform"),
         NativeRegion("arm9_sdk_veneers", 0x02085898, 0x02085988, "arm9_platform"),

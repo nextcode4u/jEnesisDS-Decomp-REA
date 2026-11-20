@@ -4,6 +4,7 @@ from pathlib import Path
 import shutil
 import subprocess
 
+from generate_frontend_assets import OUTPUT_NAME as FRONTEND_ASSETS_SOURCE, write_source as write_frontend_assets
 from generate_m68k_operand_dispatch import (
     OPERAND_CLASSES, OUTPUT_NAME as M68K_OPERAND_SOURCE, read_handler_index,
     write_source as write_m68k_operand_dispatch,
@@ -583,6 +584,18 @@ RECOVERED_REGIONS = (
     ),
     ("68000 condition and rotate counts", "m68k_condition_tables.c", None,
      0x020168B0, 0x02016A70, {}),
+    ("Frontend palettes, artwork and maps", FRONTEND_ASSETS_SOURCE, None,
+     0x02085A88, 0x0208E528, {}),
+    ("Frontend pause and error messages", "frontend_messages.c", ".rodata.pause_messages",
+     0x0208EFE4, 0x0208F070, {}),
+    ("Frontend menu messages", "frontend_messages.c", ".rodata.menu_messages",
+     0x0208F078, 0x0208F20C, {}),
+    ("Frontend browser messages", "frontend_messages.c", ".rodata.browser_messages",
+     0x0208F228, 0x0208F254, {}),
+    ("Frontend option captions", "frontend_messages.c", ".rodata.option_captions",
+     0x0208F258, 0x0208F2F8, {}),
+    ("Frontend initial state", "frontend_initial_state.c", ".data",
+     0x0208F344, 0x0208F34C, {}),
     ("Emulator option descriptors", "emulator_options.c", None,
      0x02085A10, 0x02085A88, {
          "force_update_caption": 0x0208F258,
@@ -697,7 +710,9 @@ def with_libnds_headers(compiler, r20):
 
 
 def compile_arm9_source(compiler, work, filename):
-    if filename == M68K_OPERAND_SOURCE:
+    if filename == FRONTEND_ASSETS_SOURCE:
+        write_frontend_assets(work / filename)
+    elif filename == M68K_OPERAND_SOURCE:
         write_m68k_operand_dispatch(work / filename)
     elif filename == Z80_DISPATCH_SOURCE:
         write_z80_dispatch(work / filename)
