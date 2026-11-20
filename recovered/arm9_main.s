@@ -61834,7 +61834,7 @@ m68k_dispatch_table:
     bl .L_02074b88 @ 0207367c
     movs r2, #0x12 @ 02073680
     ldr r3, [pc, #0x12c] @ 02073682
-    add r2, sp, r2 @ 02073684
+    add r2, sp @ 02073684
     mov sl, r2 @ 02073686
     str r3, [sp] @ 02073688
 .L_0207368a:
@@ -62524,7 +62524,7 @@ m68k_dispatch_table:
 .L_02073bf2:
     movs r3, #0x2a @ 02073bf2
     lsls r4, r4, #9 @ 02073bf4
-    add r3, sp, r3 @ 02073bf6
+    add r3, sp @ 02073bf6
     str r4, [sp, #0x18] @ 02073bf8
     str r0, [sp, #0x1c] @ 02073bfa
     mov sl, r3 @ 02073bfc
@@ -64392,7 +64392,7 @@ m68k_dispatch_table:
     adds r4, r2, #0 @ 02074a76
     ldr r3, [pc, #0xa8] @ 02074a78
     movs r2, #0xa @ 02074a7a
-    add r2, sp, r2 @ 02074a7c
+    add r2, sp @ 02074a7c
     adds r5, r1, #0 @ 02074a7e
     lsls r6, r0, #9 @ 02074a80
     mov r8, r2 @ 02074a82
@@ -69425,7 +69425,7 @@ m68k_dispatch_table:
     ldr r5, [pc, #0x54] @ 0207f020
     add r3, sp, #0x38 @ 0207f022
     mov sl, r3 @ 0207f024
-    add r5, sp, r5 @ 0207f026
+    add r5, sp @ 0207f026
     b .L_0207f04a @ 0207f028
 .L_0207f02a:
     adds r1, r5, #0 @ 0207f02a
@@ -69502,7 +69502,7 @@ m68k_dispatch_table:
     mov r3, r8 @ 0207f0b4
     movs r2, #0xb @ 0207f0b6
     adds r3, #0x38 @ 0207f0b8
-    add r2, sp, r2 @ 0207f0ba
+    add r2, sp @ 0207f0ba
     str r3, [sp] @ 0207f0bc
     mov fp, r2 @ 0207f0be
 .L_0207f0c0:
@@ -70311,7 +70311,7 @@ m68k_dispatch_table:
 .L_0207f6c4:
     movs r2, #0x37 @ 0207f6c4
     movs r1, #1 @ 0207f6c6
-    add r2, sp, r2 @ 0207f6c8
+    add r2, sp @ 0207f6c8
     mov sl, r1 @ 0207f6ca
     mov fp, r2 @ 0207f6cc
     b .L_0207f6ec @ 0207f6ce
@@ -70693,7 +70693,7 @@ m68k_dispatch_table:
     b .L_0207fb60 @ 0207f980
 .L_0207f982:
     movs r1, #0x57 @ 0207f982
-    add r1, sp, r1 @ 0207f984
+    add r1, sp @ 0207f984
     movs r0, #0 @ 0207f986
     movs r4, #0 @ 0207f988
     mov sl, r1 @ 0207f98a

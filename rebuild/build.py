@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Assemble the recovered CPU sources and package a Nintendo DS ROM."""
+"""Build the recovered Nintendo DS emulator with BlocksDS."""
 import argparse
 from hashlib import sha256
+import os
 from pathlib import Path
 import shutil
 import struct
@@ -12,8 +13,6 @@ from menu import write_menu_sources
 
 STARTUP = Path(__file__).resolve().parent
 ROOT = STARTUP.parent
-DEFAULT_PREFIX = Path.home() / ".cache/jenesisds-decomp/devkitarm-r20/bin/arm-eabi-"
-DEFAULT_NDSTOOL = Path("/opt/devkitpro/tools/bin/ndstool")
 IMAGES = {
     "arm9": (0x02000000, 0x98f70, "arm946e-s"),
     "arm7": (0x037f8000, 0xed94, "arm7tdmi"),
@@ -46,11 +45,19 @@ def verify_nds(path, work):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--tool-prefix", type=Path, default=DEFAULT_PREFIX,
-                        help="Path prefix for GNU ARM binutils, such as /path/bin/arm-eabi-")
-    parser.add_argument("--ndstool", type=Path,
-                        default=Path(shutil.which("ndstool") or DEFAULT_NDSTOOL),
-                        help="Path to ndstool")
+    wonderful = Path(os.environ.get("WONDERFUL_TOOLCHAIN", "/opt/wonderful"))
+    blocksds = Path(os.environ.get("BLOCKSDS", wonderful / "thirdparty/blocksds/core"))
+    if "BLOCKSDS" not in os.environ and not blocksds.is_dir():
+        blocksds = Path("/opt/blocksds/core")
+    parser.add_argument(
+        "--tool-prefix", type=Path,
+        default=wonderful / "toolchain/gcc-arm-none-eabi/bin/arm-none-eabi-",
+        help="Path prefix for Wonderful's ARM binutils",
+    )
+    parser.add_argument(
+        "--ndstool", type=Path, default=blocksds / "tools/ndstool/ndstool",
+        help="Path to BlocksDS ndstool",
+    )
     args = parser.parse_args()
     prefix = args.tool_prefix.expanduser().absolute()
     ndstool = str(args.ndstool.expanduser().absolute())
@@ -76,9 +83,8 @@ def main():
                 raise ValueError(f"{cpu} image changed size")
 
         name = "GenesisPlayer.nds"
-        run(ndstool, "-c", name, "-9", "arm9.bin", "-7", "arm7.bin", "-h", "0x200",
-            "-r9", "0x02000000", "-e9", "0x02000000", "-r7", "0x037f8000",
-            "-e7", "0x037f8000", "-g", "####", "00", "GENESIS", work=work)
+        run(ndstool, "-c", name, "-9", "arm9.elf", "-7", "arm7.elf", "-h", "0x200",
+            "-g", "####", "00", "GENESIS", work=work)
         digest = verify_nds(work / name, work)
         for result in (name, "arm9.elf", "arm9.map", "arm7.elf", "arm7.map"):
             (work / result).replace(output / result)
