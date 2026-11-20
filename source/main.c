@@ -120,6 +120,8 @@ struct application {
 
 static int display_bg;
 static unsigned bitmap_visible, bitmap_queued;
+static volatile bool bitmap_field_visible;
+static bool bitmap_field_queued;
 static uint32_t display_revision;
 static bool display_visible;
 enum game_output { OUTPUT_NONE, OUTPUT_BITMAP, OUTPUT_TILES };
@@ -153,6 +155,7 @@ static void present_game_frame(void)
             bgSetMapBase(display_bg, bitmap_queued);
         }
         bitmap_visible = bitmap_queued;
+        bitmap_field_visible = bitmap_field_queued;
         bgShow(display_bg);
     } else {
         return;
@@ -189,6 +192,7 @@ static void draw_game_frame(const struct megadrive *md)
             output = OUTPUT_TILES;
         } else {
             bitmap_queued = bitmap_visible ^ 4;
+            bitmap_field_queued = md->vdp_odd_field;
             uint16_t *bitmap = (uint16_t *)BG_GFX + bitmap_queued * (0x4000 / sizeof(uint16_t));
             vdp_render_frame(md, bitmap);
             output = OUTPUT_BITMAP;
@@ -521,7 +525,7 @@ static uint8_t genesis_buttons(uint32_t keys)
 static struct dac_frame dac_transfers[DAC_TRANSFER_SLOTS];
 static unsigned dac_in_use;
 static unsigned dac_phase;
-static uint16_t dac_generation;
+static uint16_t dac_generation, audio_sequence;
 enum { DS_REFRESH = 5983, PAL_REFRESH = 4970 };
 
 static struct dac_frame *begin_audio_frame(struct application *app, bool pal)
@@ -536,6 +540,7 @@ static struct dac_frame *begin_audio_frame(struct application *app, bool pal)
         dac_generation = app->sound_generation;
     }
 
+    ++audio_sequence;
     unsigned refresh = pal ? PAL_REFRESH : DS_REFRESH;
     dac_phase += PSG_RATE * 100;
     unsigned count = dac_phase / refresh;
@@ -546,6 +551,7 @@ static struct dac_frame *begin_audio_frame(struct application *app, bool pal)
             frame->count = count;
             frame->generation = app->sound_generation;
             frame->slot = slot;
+            frame->sequence = audio_sequence;
             dac_begin(&app->md, frame);
             return frame;
         }
@@ -556,7 +562,8 @@ static struct dac_frame *begin_audio_frame(struct application *app, bool pal)
 static void submit_dac_frame(struct dac_frame *frame)
 {
     if (frame) {
-        DC_FlushRange(frame, sizeof(*frame));
+        DC_FlushRange(frame, offsetof(struct dac_frame, fm_writes) +
+                             frame->fm_count * sizeof(frame->fm_writes[0]));
         if (fifoSendAddress(FIFO_USER_02, frame))
             dac_in_use |= 1U << frame->slot;
     }
@@ -629,6 +636,7 @@ int main(void)
         // display the newest one. Bound the work so input stays responsive.
         if (running && frame_budget) {
             app.md.pad1_pressed = genesis_buttons(keysHeld());
+            bool presented_first_field = false;
             for (unsigned frame = 0; frame < frame_budget && !app.md.cpu.stopped; ++frame) {
                 struct dac_frame *audio = begin_audio_frame(&app, pal);
                 megadrive_run_frame(&app.md);
@@ -637,8 +645,17 @@ int main(void)
                 send_audio(&app);
                 if (!app.md.cpu.stopped)
                     submit_dac_frame(audio);
+                // With two emulated fields before a VBlank, choose the one
+                // opposite the field currently on screen.
+                if (frame == 0 && frame_budget == 2 &&
+                    (app.md.vdp_registers[12] & 6) == 6 &&
+                    app.md.vdp_odd_field != bitmap_field_visible) {
+                    draw_game_frame(&app.md);
+                    presented_first_field = true;
+                }
             }
-            draw_game_frame(&app.md);
+            if (!presented_first_field)
+                draw_game_frame(&app.md);
             if (app.md.cpu.stopped)
                 draw_screen(&app, NULL);
         }

@@ -45,7 +45,9 @@ void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum ge
     md->z80_reset = true;
     genesis_z80_reset(md);
     md->ym_registers[0][0x2a] = 0x80;
-    md->ym_registers[1][0xb6] = 0xc0;
+    for (unsigned bank = 0; bank < 2; ++bank)
+        for (unsigned channel = 0; channel < 3; ++channel)
+            md->ym_registers[bank][0xb4 + channel] = 0xc0;
     megadrive_reset_serial(md);
     for (unsigned i = 1; i < 8; i += 2)
         md->psg_registers[i] = 15;
@@ -97,6 +99,9 @@ void megadrive_run_frame(struct megadrive *md)
     md->frame_cycle = cycles;
     unsigned active_lines = (md->vdp_registers[1] & 8) ? 240 : 224;
     md->vblank = false;
+    md->vdp_odd_field = (md->vdp_registers[12] & 2) && !md->vdp_odd_field;
+    if ((md->vdp_registers[12] & 6) == 6)
+        ++md->video_revision;
     // Run to each counter expiration. Reload from R10 at the start of
     // active display and when it expires, so writes take effect on reload.
     unsigned hint_line = md->vdp_registers[10];
@@ -178,6 +183,14 @@ void megadrive_ym_write_at(struct megadrive *md, unsigned port, uint8_t data, un
     if (md->ym_registers[bank][reg] != data &&
         ((!bank && (reg == 0x2a || reg == 0x2b)) || (bank && reg == 0xb6)))
         dac_sync(md, cycle);
+    if (!bank && reg == 0x28) {
+        unsigned channel = data & 3;
+        if (channel != 3)
+            md->ym_fm_keys[channel + ((data & 4) ? 3 : 0)] = data >> 4;
+    }
+    if ((!bank && (reg == 0x22 || reg == 0x27 || reg == 0x28 || reg == 0x2b)) ||
+        (reg >= 0x30 && reg <= 0xb6 && (reg & 3) != 3))
+        capture_fm_write(md, bank * 256 + reg, data, cycle);
     md->ym_registers[bank][reg] = data;
     md->ym_busy_cycles = 32;
 }
@@ -226,6 +239,45 @@ static void write_serial(struct megadrive *md, unsigned reg, uint8_t value)
     }
 }
 
+static uint16_t read_vdp_data(struct megadrive *md)
+{
+    unsigned address = md->vdp_address & 0xfffe;
+    unsigned word = (address >> 1) & 63;
+    md->vdp_command_pending = false;
+    md->vdp_address += md->vdp_registers[15];
+    switch (md->vdp_code & 15) {
+    case 0: return (uint16_t)md->vram[address] << 8 | md->vram[address + 1];
+    case 4: return word < 40 ? md->vsram[word] : md->vsram[0];
+    case 8: return md->cram[word];
+    default: return 0;
+    }
+}
+
+static uint16_t read_vdp_counters(const struct megadrive *md)
+{
+    unsigned master_clocks = md->frame_cycle * 7;
+    unsigned vertical = master_clocks / 3420;
+    unsigned horizontal_clocks = master_clocks % 3420;
+    bool wide = (md->vdp_registers[12] & 1) != 0;
+    unsigned horizontal = horizontal_clocks * (wide ? 211 : 171) / 3420;
+    if (horizontal >= (wide ? 0xb7U : 0x94U))
+        horizontal += wide ? 0xe4 - 0xb7 : 0xe9 - 0x94;
+
+    bool pal = (md->version & 0x40) != 0;
+    bool tall = (md->vdp_registers[1] & 8) != 0;
+    unsigned overflow = tall ? (pal ? 0x10a : 0x106) : (pal ? 0x102 : 0xea);
+    if (vertical > overflow)
+        vertical -= pal ? 313 : 262;
+
+    unsigned interlace = md->vdp_registers[12] & 6;
+    if (interlace & 2) {
+        if (interlace == 6)
+            vertical *= 2;
+        vertical = (vertical & ~1U) | ((vertical >> 8) & 1);
+    }
+    return (vertical << 8) | horizontal;
+}
+
 uint8_t megadrive_read_byte(struct megadrive *md, uint32_t address)
 {
     address &= 0xffffff;
@@ -241,6 +293,10 @@ uint8_t megadrive_read_byte(struct megadrive *md, uint32_t address)
     }
     if (address >= 0xa10002 && address <= 0xa10007)
         return read_port(md, (address - 0xa10002) >> 1);
+    if (address >= 0xc00000 && address <= 0xc0000f) {
+        unsigned status = megadrive_read_word(md, address & ~1U);
+        return address & 1 ? status : status >> 8;
+    }
     if (address >= 0xa1000e && address <= 0xa1001f)
         return read_serial(md, (address - 0xa1000e) >> 1);
     // The recovered I/O handler decodes the byte pair by masking bit zero.
@@ -264,13 +320,19 @@ uint16_t megadrive_read_word(struct megadrive *md, uint32_t address)
         return (uint16_t)md->rom[address] << 8 | md->rom[address + 1];
     if (address >= 0xe00000)
         return (uint16_t)md->ram[address & 0xffff] << 8 | md->ram[(address + 1) & 0xffff];
+    if (address == 0xc00000 || address == 0xc00002)
+        return read_vdp_data(md);
+    if (address >= 0xc00008 && address <= 0xc0000e)
+        return read_vdp_counters(md);
     if (address == 0xc00004 || address == 0xc00006) {
         md->vdp_command_pending = false;
         unsigned clocks = (md->frame_cycle * 7) % 3420;
         bool wide = (md->vdp_registers[12] & 1) != 0;
         bool hblank = wide ? clocks >= 228 && clocks < 872 : clocks >= 280 && clocks < 860;
         // Synchronous transfers leave the FIFO empty and DMA idle.
-        return 0x0200 | (md->vblank ? 8 : 0) | (hblank ? 4 : 0) | ((md->version & 0x40) ? 1 : 0);
+        bool odd_field = (md->vdp_registers[12] & 2) && md->vdp_odd_field;
+        return 0x0200 | (odd_field ? 0x10 : 0) | (md->vblank ? 8 : 0) |
+               (hblank ? 4 : 0) | ((md->version & 0x40) ? 1 : 0);
     }
     if (address == 0xa11100)
         return (uint16_t)megadrive_read_byte(md, address) << 8;

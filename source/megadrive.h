@@ -58,12 +58,14 @@ struct megadrive {
     uint16_t vdp_address;
     uint8_t vdp_code;
     bool vdp_command_pending;
+    bool vdp_odd_field;
     bool vdp_fill_pending;
     bool vblank;
     bool hint_pending;
     uint8_t psg_latch;
     uint16_t psg_registers[8];
     uint8_t ym_address[2];
+    uint8_t ym_fm_keys[FM_CHANNELS];
     uint8_t ym_registers[2][256];
     unsigned ym_busy_cycles;
     uint32_t ym_timer_clocks[2];

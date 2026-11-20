@@ -148,6 +148,54 @@ static void test_z80_delay_loops(const struct cartridge *cart)
     assert(md.sound_cpu.sf == expected.sf && md.sound_cpu.zf == expected.zf);
 }
 
+static void test_fm_output(void)
+{
+    struct fm_chip fm;
+    fm_reset(&fm, false);
+    int left = 0, right = 0;
+    fm_sample(&fm, &left, &right);
+    assert(left == 0 && right == 0);
+
+    // Key four operators on channel 6 and pan them left.
+    for (unsigned slot = 0; slot < FM_OPERATORS; ++slot) {
+        unsigned offset = slot * 4 + 2;
+        fm_write(&fm, 0x130 + offset, 1);
+        fm_write(&fm, 0x140 + offset, 20);
+        fm_write(&fm, 0x150 + offset, 31);
+        fm_write(&fm, 0x180 + offset, 15);
+    }
+    fm_write(&fm, 0x1a6, 0x22);
+    fm_write(&fm, 0x1a2, 0x84);
+    fm_write(&fm, 0x1b6, 0x80);
+    fm_write(&fm, 0x28, 0xf6);
+
+    for (unsigned algorithm = 0; algorithm < 8; ++algorithm) {
+        fm_write(&fm, 0x1b2, algorithm);
+        bool audible = false;
+        for (unsigned sample = 0; sample < 128; ++sample) {
+            left = right = 0;
+            fm_sample(&fm, &left, &right);
+            audible |= left != 0;
+            assert(right == 0);
+        }
+        assert(audible);
+    }
+
+    fm_write(&fm, 0x2b, 0x80);
+    for (unsigned sample = 0; sample < 4; ++sample) {
+        left = right = 0;
+        fm_sample(&fm, &left, &right);
+    }
+    assert(left == 0 && right == 0);
+    fm_write(&fm, 0x2b, 0);
+    fm_write(&fm, 0x28, 6);
+    for (unsigned sample = 0; sample < 2048; ++sample) {
+        left = right = 0;
+        fm_sample(&fm, &left, &right);
+    }
+    assert(left == 0 && right == 0);
+}
+
 static void test_dac_timing(const struct cartridge *cart)
 {
     static struct megadrive md;
@@ -169,6 +217,9 @@ static void test_dac_timing(const struct cartridge *cart)
         {0, 0}, {0, 0}, {96, 96}, {96, 96},
         {0, 96}, {0, 96}, {0, -96}, {0, -96},
     };
+    assert(frame.fm_count == 2);
+    assert(frame.fm_writes[0].reg == 0x2b && frame.fm_writes[0].sample == 2);
+    assert(frame.fm_writes[1].reg == 0x1b6 && frame.fm_writes[1].sample == 4);
     assert(!md.dac_capture.frame);
     assert(!memcmp(frame.samples, expected, sizeof(expected)));
 }
@@ -291,6 +342,66 @@ static void test_vdp_render(struct megadrive *md)
     assert(bitmap[0] == 0);
 }
 
+static void test_vdp_reads(const struct cartridge *cart)
+{
+    static struct megadrive md;
+    megadrive_reset(&md, cart, GENESIS_REGION_USA);
+    vdp_register(&md, 15, 2);
+    set_vram_word(&md, 0x100, 0x1234);
+    assert(megadrive_write_word(&md, 0xc00004, 0x0100));
+    assert(megadrive_write_word(&md, 0xc00004, 0));
+    assert(megadrive_read_word(&md, 0xc00002) == 0x1234 && md.vdp_address == 0x102);
+    md.cram[1] = 0x00e;
+    assert(megadrive_write_word(&md, 0xc00004, 2));
+    assert(megadrive_write_word(&md, 0xc00004, 0x20));
+    assert(megadrive_read_byte(&md, 0xc00001) == 0x0e && md.vdp_address == 4);
+    md.vsram[1] = 0x7fa;
+    assert(megadrive_write_word(&md, 0xc00004, 2));
+    assert(megadrive_write_word(&md, 0xc00004, 0x10));
+    assert(megadrive_read_word(&md, 0xc00000) == 0x7fa && md.vdp_address == 4);
+
+    md.frame_cycle = (235 * 3420 + 6) / 7;
+    assert(megadrive_read_word(&md, 0xc00008) == 0xe500);
+    assert(megadrive_read_byte(&md, 0xc0000a) == 0xe5);
+    md.frame_cycle = 485;
+    assert(megadrive_read_word(&md, 0xc00008) == 0x00fe);
+    vdp_register(&md, 12, 1);
+    assert(megadrive_read_word(&md, 0xc00008) == 0x00fe);
+}
+
+static void test_interlace(const struct cartridge *cart)
+{
+    static struct megadrive md;
+    static uint16_t bitmap[VDP_VIEW_WIDTH * VDP_VIEW_HEIGHT / 2];
+    megadrive_reset(&md, cart, GENESIS_REGION_USA);
+    vdp_register(&md, 1, 0x40);
+    vdp_register(&md, 2, 8);
+    vdp_register(&md, 4, 3);
+    vdp_register(&md, 5, 0x20);
+    vdp_register(&md, 12, 6);
+    vdp_register(&md, 13, 0x3f);
+
+    memset(md.vram + 64, 0x11, 4);
+    memset(md.vram + 68, 0x22, 4);
+    memset(md.vram + 128, 0x33, 4);
+    memset(md.vram + 132, 0x44, 4);
+    set_vram_word(&md, 0x2080, 1);
+    set_vram_word(&md, 0x4000, 256 + 32);
+    set_vram_word(&md, 0x4004, 2);
+    set_vram_word(&md, 0x4006, 128 + 16);
+
+    vdp_render_frame(&md, bitmap);
+    assert(bitmap[0] == 0x0101 && bitmap[8] == 0x0303);
+    assert(!(megadrive_read_word(&md, 0xc00004) & 0x10));
+    md.cpu.stopped = true;
+    megadrive_run_frame(&md);
+    vdp_render_frame(&md, bitmap);
+    assert(bitmap[0] == 0x0202 && bitmap[8] == 0x0404);
+    assert(megadrive_read_byte(&md, 0xc00005) & 0x10);
+    megadrive_run_frame(&md);
+    assert(!(megadrive_read_word(&md, 0xc00004) & 0x10));
+}
+
 static void test_idle_loops(struct megadrive *md)
 {
     struct m68k *cpu = &md->cpu;
@@ -407,6 +518,7 @@ int main(void)
     assert(megadrive_read_byte(&md, 0xa10001) == 0xe1);
     assert(md.frame_cycles > 150000 && !md.cpu.stopped);
     test_status_immediates();
+    test_fm_output();
     test_dac_timing(&cartridge);
     test_z80_dac_writes(&cartridge);
     test_startup_bus(&md);
@@ -414,6 +526,8 @@ int main(void)
     test_z80_and_ym(&md);
     test_vdp_dma(&md);
     test_vdp_render(&md);
+    test_vdp_reads(&cartridge);
+    test_interlace(&cartridge);
 
     assert(m68k_interrupt(&md.cpu, &md, 6) == 0);  // Reset masks level 6.
     md.cpu.sr = 0x2304;

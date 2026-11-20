@@ -49,6 +49,12 @@ void psg_render(struct psg *psg, int16_t *output, size_t count)
             if (period == 0)
                 period = 1;
             psg->counter[channel] -= ticks;
+            if (period == 1 && !(channel == 2 && noise_mode == 3)) {
+                if (psg->counter[channel] <= 0) {
+                    psg->positive[channel] ^= (1 - psg->counter[channel]) & 1;
+                    psg->counter[channel] = 1;
+                }
+            }
             while (psg->counter[channel] <= 0) {
                 psg->counter[channel] += period;
                 psg->positive[channel] = !psg->positive[channel];

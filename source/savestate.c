@@ -8,7 +8,7 @@
 
 enum { FNV_PRIME = 16777619 };
 static const uint32_t fnv_start = UINT32_C(2166136261);
-static const uint8_t magic[4] = {'J', 'S', 'C', 5};
+static const uint8_t magic[4] = {'J', 'S', 'C', 7};
 
 struct state_io {
     FILE *file;
@@ -130,6 +130,14 @@ static void transfer_state(struct state_io *io, struct megadrive *md, unsigned v
     } else {
         megadrive_reset_serial(md);
     }
+    if (version >= 6)
+        ARRAY_BYTES(md->ym_fm_keys);
+    else
+        memset(md->ym_fm_keys, 0, sizeof(md->ym_fm_keys));
+    if (version >= 7)
+        SCALAR(md->vdp_odd_field);
+    else
+        md->vdp_odd_field = false;
 #undef SCALAR
 #undef ARRAY_BYTES
 }
