@@ -1305,7 +1305,7 @@ LAB_02008b90:
 }
 
 
-// 0x020090e8  graphics_access_shared_state
+// 0x020090e8  tick_vdp_horizontal_interrupt_counter
 
 void FUN_020090e8(undefined4 param_1)
 
@@ -1322,7 +1322,7 @@ void FUN_020090e8(undefined4 param_1)
 }
 
 
-// 0x02009144  graphics_access_shared_state
+// 0x02009144  begin_vdp_vertical_blanking
 
 void FUN_02009144(int param_1)
 
@@ -1347,7 +1347,7 @@ void FUN_02009144(int param_1)
 }
 
 
-// 0x020091ec  graphics_access_shared_state
+// 0x020091ec  reload_vdp_counter_during_vertical_blanking
 
 void FUN_020091ec(undefined4 param_1)
 
@@ -1544,7 +1544,7 @@ void FUN_02009570(void)
 }
 
 
-// 0x02009614  graphics_dispatch_selector_cases
+// 0x02009614  write_vdp_register_and_update_render_state
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 

@@ -10,21 +10,24 @@ For a first pass, follow the [reading guide](READING-GUIDE.md) from ROM selectio
 decompiled/
   arm9/
     cpu/
-      m68k/        Instruction families, including MOVE addressing modes
-      z80/         Base and prefixed instruction families and dispatch
+      m68k/        Instruction families and MOVE source/destination modes
+      z80/         Instruction families, CB and ED groups, and indexed forms
     frontend/      ROM browser, settings, UI, and input
     platform/      DS services, runtime, and interworking veneers
     storage/       Cartridge loading, FAT, SRAM, and save states
     system/        Startup, emulator control, and IPC
     unresolved/    Routines with provisional or unknown roles
-    video/         VDP and DS graphics
+    video/         VDP registers, timing, and DS graphics
+      vdp/         Display setup, updates, palette paths, and overlay
   arm7/
     audio/         Service, timers, PSG, DAC, and YM2612
+      ym2612/
+        render/    One file per FM algorithm, including its silent variants
     platform/      Startup, IPC, interrupts, BIOS, runtime, and peripherals
     unresolved/    Routines with provisional or unknown roles
 ```
 
-The 66 module files group routines by processor and subsystem. The large 68000 word and long MOVE families are further grouped by the source addressing mode from a representative opcode. Routines are in ascending address order within each module. The branch keeps working names in short headers and the detailed annotations in two processor indexes.
+The 126 module files group routines by processor and subsystem. The largest 68000 word and long MOVE groups also use the destination addressing mode from a representative opcode. Z80 modules use instruction families and operand types. Routines are in ascending address order within each module. The branch keeps working names in short headers and detailed annotations in two processor indexes.
 
 ## Trace a routine
 
@@ -37,9 +40,9 @@ The 66 module files group routines by processor and subsystem. The large 68000 w
 | ARM9 boot and emulator | `0x02000000` · `0x020011e4` · [Startup](../decompiled/arm9/system/startup.c#L5) · [Emulator](../decompiled/arm9/system/emulator.c#L343) |
 | Browser and ROM loading | `0x020034b0` · `0x02001d40` · [Browser loop](../decompiled/arm9/frontend/rom_browser.c#L187) · [Cartridge loader](../decompiled/arm9/storage/cartridge.c#L260) |
 | Save states | `0x0200d13c` · `0x0200d4c8` · [Load](../decompiled/arm9/storage/save_states.c#L365) · [Write](../decompiled/arm9/storage/save_states.c#L447) |
-| CPU dispatch examples | `0x01003d00` · `0x01000020` · [68000 NOP](../decompiled/arm9/cpu/m68k/exceptions_and_control.c#L157) · [Z80 NOP](../decompiled/arm9/cpu/z80/control_and_io.c#L5) |
+| CPU dispatch examples | `0x01003d00` · `0x01000020` · [68000 NOP](../decompiled/arm9/cpu/m68k/exceptions_and_control.c#L157) · [Z80 NOP](../decompiled/arm9/cpu/z80/control_and_io/flags_io_and_cpu_control.c#L5) |
 | ARM7 startup and audio | `0x037f8000` · `0x037f81f4` · [Startup](../decompiled/arm7/platform/startup.c#L5) · [Audio service](../decompiled/arm7/audio/service.c#L5) |
-| Sound generation | `0x037f86f4` · `0x037f95fc` · [PSG](../decompiled/arm7/audio/psg.c#L59) · [FM channel](../decompiled/arm7/audio/ym2612/control.c#L544) |
+| Sound generation | `0x037f86f4` · `0x037f95fc` · [PSG](../decompiled/arm7/audio/psg.c#L59) · [FM channel](../decompiled/arm7/audio/ym2612/channel_rendering.c#L127) |
 | ARM7 IPC | `0x037fc218` · `0x037fc468` · [Audio command](../decompiled/arm7/platform/ipc.c#L16) · [FIFO interrupt](../decompiled/arm7/platform/ipc.c#L190) |
 
 Treat `reviewed`, `dispatch table`, and `library match` as evidence from the corresponding analysis. `Control flow`, `call context`, and `pseudocode clue` describe working interpretations. `Unresolved` identifies routines whose purpose still needs investigation. Machine flags, indirect branches, and overlapping symbols can be misrepresented in pseudocode. Opcode decoding references are available in the original manuals. [Motorola M68000 reference](https://www.nxp.com/docs/en/reference-manual/M68000PRM.pdf) · [Zilog Z80 manual](https://www.zilog.com/docs/z80/um0080.pdf)

@@ -33,17 +33,27 @@ H-INT is the Genesis horizontal interrupt. The settings routine provides the Off
 arm-none-eabi-objdump -D --start-address=0x02000bbc --stop-address=0x02000bec build/arm9.elf
 ```
 
+During visible scanlines the VDP decrements its horizontal interrupt counter and reloads it from register 10 when it underflows. At the first blank line the timing code also sets the vertical blanking state. This connects the frame scheduler to VDP timing. [Horizontal counter](../decompiled/arm9/video/graphics.c#L1308) · [Start of vertical blanking](../decompiled/arm9/video/graphics.c#L1325)
+
 Menu actions run through a separate key and touch handler. The pause screen uses the D-pad to move the viewport by changing and clamping two screen offsets. Those offsets affect how the Genesis image fits on the smaller DS screen. [Key and touch actions](../decompiled/arm9/frontend/input.c#L111) · [Viewport adjustment](../decompiled/arm9/system/emulator.c#L484) · [Graphics offsets](../decompiled/arm9/video/graphics.c#L5)
 
-To see how Genesis video data reaches the DS, follow the display rebuild used by the save-state loader. It reapplies 24 Genesis VDP (video display processor) register values, converts 64 palette entries, and updates DS palette memory and renderer buffers. This is a concrete entry point for the hardware-facing video code. [Display rebuild](../decompiled/arm9/video/vdp.c#L4212)
+To see how Genesis video data reaches the DS, follow the display rebuild used by the save-state loader. It reapplies 24 Genesis VDP (video display processor) register values, converts 64 palette entries, and updates DS palette memory and renderer buffers. This is a concrete entry point for the hardware-facing video code. [Display rebuild](../decompiled/arm9/video/vdp/display_updates.c#L20)
 
 The emulated CPU handlers have their own folders. The original ROM's 68000 handler table maps opcode `0x4e71` to the NOP routine in ARM9 instruction TCM. The indirect jump at the end of that routine is part of opcode dispatch. For a representative Z80 path, start at the routine that accepts a cycle budget and loads the Z80 state before dispatch. [68000 NOP](../decompiled/arm9/cpu/m68k/exceptions_and_control.c#L157) · [Z80 cycle budget](../decompiled/arm9/cpu/z80/core.c#L146)
+
+The larger 68000 MOVE groups use the source and destination addressing modes in their paths. For Z80 register loads, look under `data_transfer/`. Z80 bit changes are grouped by SET or RES and the bit number, with separate folders for the ordinary CB prefix and the IX/IY-indexed forms. [68000 instructions](../decompiled/arm9/cpu/m68k) · [Z80 instructions](../decompiled/arm9/cpu/z80)
 
 ## Follow an ARM7 audio command
 
 1. **Send a command.** During menu transitions ARM9 requests mute or unmute. The command is in the high byte of the interprocessor FIFO word. `0x0e` mutes and `0x0f` unmutes. Separate commands start or stop the ARM7 playback channels and timers. [ARM9 mute control](../decompiled/arm9/system/ipc.c#L248)
 2. **Receive and apply it.** The ARM7 receive handler splits the command and payload, then invokes the installed callback. Its audio command switch handles those controls. Command `0x0b` reads buffered sound data through the shared descriptor published by ARM9. [FIFO handler](../decompiled/arm7/platform/ipc.c#L190) · [Audio command handler](../decompiled/arm7/platform/ipc.c#L16)
-3. **Refill audio buffers.** While playback is enabled, the ARM7 service uses elapsed hardware timer counts to decide how many samples to generate. It handles the DAC sample stream separately and refills buffers for the PSG (tone and noise) and YM2612 (FM). The refill code wraps when a buffer reaches its end. [Timer-driven refill](../decompiled/arm7/audio/service.c#L110) · [PSG renderer](../decompiled/arm7/audio/psg.c#L59) · [Six FM channels](../decompiled/arm7/audio/ym2612/control.c#L787)
+3. **Refill audio buffers.** While playback is enabled, the ARM7 service uses elapsed hardware timer counts to decide how many samples to generate. It handles the DAC sample stream separately and refills buffers for the PSG (tone and noise) and YM2612 (FM). The refill code wraps when a buffer reaches its end. [Timer-driven refill](../decompiled/arm7/audio/service.c#L110) · [PSG renderer](../decompiled/arm7/audio/psg.c#L59) · [Six FM channels](../decompiled/arm7/audio/ym2612/channel_rendering.c#L252)
+
+### Follow one YM2612 channel
+
+The YM2612 register handler updates channel settings and operator parameters. The channel renderer prepares the state for four operators, steps their envelopes when needed, and calls the sample-loop dispatcher. The algorithm determines how the four operators feed into one another and contribute to the output. [Register handler](../decompiled/arm7/audio/ym2612/registers_and_setup.c#L5) · [Channel preparation](../decompiled/arm7/audio/ym2612/channel_rendering.c#L127)
+
+The dispatcher puts the algorithm in the high nibble and uses the low nibble for the four operator level comparisons against `0x3400`. Each algorithm file contains all 16 masks, including the variants that write silent PCM. For example, selector `0x4f` means algorithm 4 and mask `0xf`, so execution enters the handler at `0x037ff0e0`. Its index entry is reachable with `python3 scripts/find_routine.py 0x037ff0e0`. [Dispatcher](../decompiled/arm7/audio/ym2612/channel_rendering.c#L1152) · [Algorithm 4, mask 0xf](../decompiled/arm7/audio/ym2612/render/algorithm_4.c#L693)
 
 ## Follow saved data to disk
 
