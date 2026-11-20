@@ -1,6 +1,6 @@
 # jEnesisDS BlocksDS C port
 
-The C port uses BlocksDS startup, libnds, the SDK ARM7 core, and Wonderful's C compiler. The ROM browser and cartridge loader work. The C emulator can run a first 68000 and VDP diagnostic, with a limited instruction set and backdrop-only rendering. Full gameplay, audio, and save states are still pending.
+The port compiles the project's ARM7 and ARM9 programs from C with Wonderful's compiler. It links against libnds and uses the standard BlocksDS startup code. The ROM browser and cartridge loader work, and the emulator runs the 68000 and VDP backdrop diagnostic. Full gameplay, audio, and save states are still pending.
 
 ## Build on Linux or WSL
 
@@ -12,11 +12,14 @@ From the repository root, run:
 make
 ```
 
-This produces `build/jEnesisDS-C.nds`. Set `WONDERFUL_TOOLCHAIN` or `BLOCKSDS` to use a custom installation. In melonDS, enable a virtual DLDI SD card and add Genesis ROMs to it. Use the D-pad and **A** to open a folder or cartridge, **Start** to run a loaded cartridge, and **B** to go back.
+This compiles and links both CPUs into ELFs under `build/c/`, then packages them into `build/jEnesisDS-C.nds`. The fresh build requires only this checkout and the installed SDK and toolchain. Set `WONDERFUL_TOOLCHAIN` or `BLOCKSDS` to use a custom installation.
+
+In melonDS, enable a virtual DLDI SD card and add Genesis ROMs to it. Use the D-pad and **A** to open a folder or cartridge, **Start** to run a loaded cartridge, and **B** to go back.
 
 ## C sources
 
 - [ROM browser](source/main.c) mounts the SD card through libnds and browses directories using standard file APIs.
+- [ARM7 services](source/arm7/main.c) set up the system FIFO for storage and send input samples to the ARM9.
 - [Cartridge loader](source/cartridge.c) reads raw ROMs, decodes SMD blocks, parses the cartridge header, and computes the Genesis checksum.
 - [68000 interpreter](source/m68k.c) reads the reset vectors, executes the implemented instructions, and reports the address and opcode where execution stops.
 - [Genesis bus and VDP](source/megadrive.c) map the cartridge and mirrored work RAM, handle early I/O reads, and process VDP register and CRAM writes for the backdrop.
@@ -27,7 +30,7 @@ The C build runs the Genesis backdrop diagnostic in melonDS 1.1. Both captured t
 
 ## Gameplay reference
 
-The recovered assembly build remains available via `python3 rebuild/build.py` and produces `build/GenesisPlayer.nds` for comparison. Its CPU images match the verified `minimal-build` baseline. Gameplay, video, audio, and cross-version save states were tested in melonDS with that reference build. [Assembly build at `f918e86`](https://github.com/nextcode4u/jEnesisDS-Decomp-REA/tree/f918e86) · [devkitARM r20 archive](https://wii.leseratte10.de/devkitPro/devkitARM/r20%20%282007%29/)
+The playable assembly reference is available at commit `f918e86`. In a checkout of that commit, `python3 rebuild/build.py` produces `build/GenesisPlayer.nds`. Gameplay, video, audio, and cross-version save states were tested in melonDS with that reference build. [Assembly build at `f918e86`](https://github.com/nextcode4u/jEnesisDS-Decomp-REA/tree/f918e86) · [devkitARM r20 archive](https://wii.leseratte10.de/devkitPro/devkitARM/r20%20%282007%29/)
 
 ## Developer note
 
