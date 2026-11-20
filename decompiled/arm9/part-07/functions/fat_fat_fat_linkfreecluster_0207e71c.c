@@ -1,0 +1,62 @@
+// Analysis annotation
+// Role — fat fat fat linkfreecluster
+// Basis — library match
+// Matches symbol _FAT_fat_linkFreeCluster in libfat-nds 20070127 (file_allocation_table.o)
+// after masking relocation fields.
+
+// rea decompile_all
+// name: FUN_0207e71c
+// address: 0x207e71c
+// body: available
+// range: 0x207e71c-0x207e799 inclusive
+// non_contiguous: false
+// provider: Ghidra 12.1.4 (ghidra)
+// analysis_profile: ee07897cf0d8c1f32e8434e3e0eb5f18c1cf8a29342632ece9fdf7c42dcbeda6
+// limitations: This session opens a caller-selected existing Ghidra project through a private copy, without import, auto-analysis or repair scripts. Original analysis completeness and settings are unknown.; The original project is never opened by Ghidra or modified. The private copy is read-only to bridge operations and deleted on close; original executable bytes are never written.; The analysis profile records the selected project content fingerprint and program name. The imported program SHA-256 must match the admitted target; the project may contain caller annotations or earlier edits, which are not fresh REA discoveries.; Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.; Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.; External functions and functions without an analyzable body return null; other decompiler failures remain explicit.
+// pseudocode: provider-specific; not original source
+
+
+uint FUN_0207e71c(int param_1,uint param_2)
+
+{
+  bool bVar1;
+  uint uVar2;
+  int iVar3;
+  uint uVar4;
+  
+  uVar4 = *(uint *)(param_1 + 0x34);
+  if (uVar4 < param_2) {
+LAB_0207e72c:
+    uVar2 = 0;
+  }
+  else {
+    uVar2 = FUN_0207e470();
+    if ((uVar2 < 2) || (uVar4 < uVar2)) {
+      uVar2 = *(uint *)(param_1 + 0x38);
+      if (uVar2 < 2) {
+        uVar2 = 2;
+      }
+      bVar1 = false;
+      while (iVar3 = FUN_0207e470(param_1,uVar2), iVar3 != 0) {
+        while (uVar2 = uVar2 + 1, uVar4 < uVar2) {
+          if (bVar1) {
+            *(uint *)(param_1 + 0x38) = uVar2;
+            goto LAB_0207e72c;
+          }
+          uVar2 = 2;
+          bVar1 = true;
+          iVar3 = FUN_0207e470(param_1,2);
+          if (iVar3 == 0) goto LAB_0207e76e;
+        }
+      }
+LAB_0207e76e:
+      *(uint *)(param_1 + 0x38) = uVar2;
+      if ((1 < param_2) && (param_2 < uVar4)) {
+        FUN_0207e590(param_1,param_2,uVar2);
+      }
+      FUN_0207e590(param_1,uVar2,0xfffffff);
+    }
+  }
+  return uVar2;
+}
+

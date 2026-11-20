@@ -2,7 +2,7 @@
 
 This workspace contains a static decompilation of Stephan Dittrich’s jEnesisDS 0.7.4 Nintendo DS emulator. REA 6.9.0 exported C-like pseudocode from Ghidra 12.1.4 projects for the two processors. The exports are generated analysis, with inferred types, names, and function boundaries. Rebuilding the emulator would require further source reconstruction and validation. Use the Ghidra listings to confirm behavior around computed jumps, shared assembly tails, and hardware registers.
 
-REA exported 2,879 ARM9 functions and 204 ARM7 functions. Every pseudocode file matches its REA index hash. The indexes cover all 2,336 identified ARM9 dispatch targets and all 128 ARM7 dispatch targets.
+REA exported 2,879 ARM9 functions and 204 ARM7 functions. Each named file carries an analysis note followed by the original REA pseudocode. The indexes record the filename, original Ghidra symbol, and hashes used to verify both forms. The indexes cover all 2,336 identified ARM9 dispatch targets and all 128 ARM7 dispatch targets.
 
 ## Matching ROM rebuild
 
@@ -29,13 +29,36 @@ The byte-matched rebuild booted in melonDS 1.1 and loaded a Genesis diagnostic R
 
 | Path | Contents |
 | --- | --- |
-| [ARM9 index](decompiled/arm9/functions.tsv) | Address-sorted index of all ARM9 exports, including the relative path for each function |
-| [ARM7 index](decompiled/arm7/decompile-index.json) | Function names, addresses, pseudocode paths, and per-function export status |
+| [ARM9 index](decompiled/arm9/functions.tsv) | ARM9 roles, descriptions, analysis basis, and relative file paths |
+| [ARM7 index](decompiled/arm7/functions.tsv) | ARM7 roles, descriptions, analysis basis, and relative file paths |
 | [Extracted layout](extracted/nds-layout.json) | Original ROM offsets, entry and load addresses, lengths, and SHA-256 digests |
 | [Nintendo DS header](evidence/nds-header.txt) | Header values and CRCs from the original ROM |
 | [Rebuild script](rebuild/build.py) | Assembles both startup routines, links the payload, and verifies the result |
 
-Use the ARM9 or ARM7 index to find a function by address. ARM9 is exported in seven address ranges, with a REA index in each part and a combined TSV in the ARM9 directory.
+Use the processor TSVs to filter by subsystem, role, or address. The filename ends in the eight-digit address used by the Ghidra listing. ARM9 is still organized into seven export ranges.
+
+## Reading the named functions
+
+| Subsystem | Starting points |
+| --- | --- |
+| ARM9 startup | [Map TCM and start ARM9](decompiled/arm9/part-01/functions/start_arm9_and_map_tcm_02000000.c) |
+| ROM browser | [Run the browser event loop](decompiled/arm9/part-01/functions/run_rom_browser_event_loop_020034b0.c) |
+| Cartridge formats | [Deinterleave SMD blocks](decompiled/arm9/part-01/functions/deinterleave_smd_rom_blocks_02001c4c.c) · [Load the selected ROM](decompiled/arm9/part-01/functions/load_genesis_rom_from_stream_02001d40.c) |
+| Save states | [Load a savestate](decompiled/arm9/part-01/functions/load_emulator_savestate_0200d13c.c) · [Write a savestate](decompiled/arm9/part-01/functions/write_emulator_savestate_0200d4c8.c) |
+| CPU dispatch | [M68000 NOP](decompiled/arm9/part-01/functions/m68k_nop_01003d00.c) · [Z80 NOP](decompiled/arm9/part-01/functions/z80_nop_01000020.c) |
+| ARM7 audio | [Run the audio service](decompiled/arm7/functions/run_arm7_audio_service_037f81f4.c) · [Update audio from the timers](decompiled/arm7/functions/update_audio_from_hardware_timers_037fbeb8.c) |
+| Genesis sound | [Render PSG samples](decompiled/arm7/functions/render_psg_samples_037f86f4.c) · [Prepare and render an FM channel](decompiled/arm7/functions/prepare_and_render_fm_channel_037f95fc.c) |
+| ARM7 IPC | [Dispatch a receive interrupt](decompiled/arm7/functions/dispatch_fifo_receive_interrupt_037fc468.c) · [Handle an ARM9 audio command](decompiled/arm7/functions/handle_arm9_audio_command_037fc218.c) |
+
+The `basis` column shows how each description was assigned.
+
+- **Reviewed** identifies a role traced in the decompiled body or startup assembly.
+- **Dispatch table** identifies the handler’s incoming opcode or FM selectors. A shared handler can have additional aliases.
+- **Library match** uses symbols from matching historical libfat, libnds, newlib, or libgcc objects after accounting for relocations.
+- **Control flow**, **call context**, and **pseudocode clue** describe visible behavior or nearby functions. Treat them as working names.
+- **Unresolved** marks routines whose purpose is still open.
+
+Instruction decoding references include the Motorola M68000 and Zilog Z80 manuals. [M68000 Programmer’s Reference Manual](https://www.nxp.com/docs/en/reference-manual/M68000PRM.pdf) · [Z80 CPU User Manual](https://www.zilog.com/docs/z80/um0080.pdf)
 
 ## Addresses
 
@@ -48,10 +71,10 @@ ARM9 startup copies the bytes from `0x020936f0` to `0x01000000` for ITCM and the
 
 | Processor | Entry | Main routine | Dispatch table |
 | --- | --- | --- | --- |
-| ARM9 | [`0x02000000`](decompiled/arm9/part-01/functions/0x2000000.c) | [`0x020011e4`](decompiled/arm9/part-01/functions/0x20011e4.c) | M68000 at `0x02032c28` and Z80 at `0x020153f0` |
-| ARM7 | [`0x037f8000`](decompiled/arm7/functions/0x37f8000.c) | [`0x037f81f4`](decompiled/arm7/functions/0x37f81f4.c) | `0x03800e50` |
+| ARM9 | [`0x02000000`](decompiled/arm9/part-01/functions/start_arm9_and_map_tcm_02000000.c) | [`0x020011e4`](decompiled/arm9/part-01/functions/run_emulator_and_file_menu_020011e4.c) | M68000 at `0x02032c28` and Z80 at `0x020153f0` |
+| ARM7 | [`0x037f8000`](decompiled/arm7/functions/start_arm7_audio_processor_037f8000.c) | [`0x037f81f4`](decompiled/arm7/functions/run_arm7_audio_service_037f81f4.c) | `0x03800e50` |
 
-The ARM9 M68000 table has 65,536 little-endian words. For opcode `0x4e71` (NOP), the pointer is at `0x02032c28 + 4 × 0x4e71` and resolves to [`0x01003d00`](decompiled/arm9/part-01/functions/0x1003d00.c) in ITCM. The Z80 analysis seeds the 1,328 contiguous ARM pointers beginning at `0x020153f0`. Some entries share a native handler. The ARM7 table has 128 pointers followed by a literal referring back to the table.
+The ARM9 M68000 table has 65,536 little-endian words. For opcode `0x4e71` (NOP), the pointer is at `0x02032c28 + 4 × 0x4e71` and resolves to [`0x01003d00`](decompiled/arm9/part-01/functions/m68k_nop_01003d00.c) in ITCM. The Z80 analysis seeds the 1,328 contiguous ARM pointers beginning at `0x020153f0`. Some entries share a native handler. The ARM7 table has 128 pointers followed by a literal referring back to the table.
 
 ## Reproduce the REA export
 

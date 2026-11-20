@@ -34,8 +34,8 @@
       "address": "0x37f8000",
       "name": "arm7_entry",
       "status": "written",
-      "relative_path": "functions/0x37f8000.c",
-      "sha256": "c28ee9125f478ec2f613d50370f74df8c994c1394746de7ce475e26e009d247b",
+      "relative_path": "functions/start_arm7_audio_processor_037f8000.c",
+      "sha256": "7dd830c4e0a481af310bd99acf1ec5d2c1c4708e8b721939c70e82680889482a",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -63,8 +63,8 @@
       "address": "0x37f805c",
       "name": "FUN_037f805c",
       "status": "written",
-      "relative_path": "functions/0x37f805c.c",
-      "sha256": "2aabb51a65972ccbd49bb415401d15ff8cf76ae39d326b4d82d05d3b04d8b6fe",
+      "relative_path": "functions/clear_aligned_words_to_zero_037f805c.c",
+      "sha256": "f03086886fcc247cde5e6c1f43ac5f6d1d1a62aaffcbcf5ee7e45f60608bf164",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -92,8 +92,8 @@
       "address": "0x37f80d0",
       "name": "FUN_037f80d0",
       "status": "written",
-      "relative_path": "functions/0x37f80d0.c",
-      "sha256": "99483206d73ee2952e0b8381fc0082a0b92309d3726f8e7b28d941133179a143",
+      "relative_path": "functions/helper_for_run_arm7_c_runtime_initializers_037f80d0.c",
+      "sha256": "fb0b6558660a6f58ec172fab87331a4c1ac29155faa5af49d1ef15b4a9c1ed4c",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -121,8 +121,8 @@
       "address": "0x37f80f0",
       "name": "thunk_FUN_03801b40",
       "status": "written",
-      "relative_path": "functions/0x37f80f0.c",
-      "sha256": "468590dd0664c334b411af6363cf2f445077deb607db432742c3bf72b351b480",
+      "relative_path": "functions/call_via_r3_interworking_veneer_037f80f0.c",
+      "sha256": "2d2429ce4a263d20fe9b9064adb9e1e2ccbb8f183fe8713486735a3d1e2eefbf",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -150,8 +150,8 @@
       "address": "0x37f80fc",
       "name": "thunk_FUN_03801200",
       "status": "written",
-      "relative_path": "functions/0x37f80fc.c",
-      "sha256": "66265c8bab88423b8ab1e35276c6da9652207cc71a84c68c04cb8f6b95185e01",
+      "relative_path": "functions/veneer_to_initialize_rtc_control_037f80fc.c",
+      "sha256": "3a4ab95f6283dcb9f4cb9822bf0eb7749f57c69450d95451d3f7925e804b9f63",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -179,8 +179,8 @@
       "address": "0x37f8108",
       "name": "thunk_FUN_038015d0",
       "status": "written",
-      "relative_path": "functions/0x37f8108.c",
-      "sha256": "9dd0b12a3a001d0f1092b0a76b46c550c52c76c8df0e5bcd21ae2b76482d5763",
+      "relative_path": "functions/veneer_to_initialize_interrupt_controller_037f8108.c",
+      "sha256": "a091f3170208dabdfa028481da5f0119eb6339052cb31764417df2cd866b83b8",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -208,8 +208,8 @@
       "address": "0x37f8114",
       "name": "thunk_FUN_03801564",
       "status": "written",
-      "relative_path": "functions/0x37f8114.c",
-      "sha256": "dabd57ae16227581b30e8eacdb05c1215eeba9d1c562e42d659f0b6d33549a03",
+      "relative_path": "functions/veneer_to_install_interrupt_callback_037f8114.c",
+      "sha256": "68a289adecb23fb0fa1568d6139288d91393d523891675fcc44041a21e1d719f",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -237,8 +237,8 @@
       "address": "0x37f8120",
       "name": "thunk_FUN_038016d8",
       "status": "written",
-      "relative_path": "functions/0x37f8120.c",
-      "sha256": "ad6769d0a53524b2559c74a01edb6876892f2de2f75bb29eb0061eb067b88b41",
+      "relative_path": "functions/veneer_to_enable_interrupt_sources_037f8120.c",
+      "sha256": "7398c2b89a448bf1c2cbb3e45bb2999bf59f199e58be8c6691b1562469b6a505",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -266,8 +266,8 @@
       "address": "0x37f812c",
       "name": "thunk_FUN_0380178c",
       "status": "written",
-      "relative_path": "functions/0x37f812c.c",
-      "sha256": "dcd2bdf21695d50bddf0627dae34904e7df9398025653d7e5b63566b202c4ce8",
+      "relative_path": "functions/veneer_to_bios_wait_for_vblank_037f812c.c",
+      "sha256": "59b21600328e17147d1c3419e1634a7722712e2ddb4dad1d2f7c29fe6f3955cd",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -295,8 +295,8 @@
       "address": "0x37f8138",
       "name": "thunk_FUN_03801360",
       "status": "written",
-      "relative_path": "functions/0x37f8138.c",
-      "sha256": "af93a40648ae32398eb3328fd8baa612146b89190434b9f192b7088fa8d8e0ec",
+      "relative_path": "functions/veneer_to_calibrate_touch_coordinates_037f8138.c",
+      "sha256": "f768a5723b5cf949576fb35ac76d6bf6ae37fe8da45adb352160004c565bfdb2",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -324,8 +324,8 @@
       "address": "0x37f8144",
       "name": "thunk_FUN_038019ec",
       "status": "written",
-      "relative_path": "functions/0x37f8144.c",
-      "sha256": "1332bd93bceed8f2e498489a2ef102201062a5110b902f4b8acb3c154440ce94",
+      "relative_path": "functions/veneer_to_compiler_divsi3_037f8144.c",
+      "sha256": "4df6b11fc957a870096f40c3da5f8e08b72d6e18ce49a4e09a3a8a37f4496510",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -353,8 +353,8 @@
       "address": "0x37f8148",
       "name": "thunk_FUN_038019ec",
       "status": "written",
-      "relative_path": "functions/0x37f8148.c",
-      "sha256": "83dd35148321fa8169efee79e74624e153f9fef03d3bdccac87f8357ade391f8",
+      "relative_path": "functions/veneer_to_compiler_divsi3_037f8148.c",
+      "sha256": "e38fd0c069f48ec6c58e8cb5d8459e3b53109eb1e9010e9306683bafcf1cd292",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -382,8 +382,8 @@
       "address": "0x37f814c",
       "name": "FUN_037f814c",
       "status": "written",
-      "relative_path": "functions/0x37f814c.c",
-      "sha256": "2a5a1c5b472c8c0281693d9cfd56926b476984f998a5d88e3d9c61ae835037fe",
+      "relative_path": "functions/run_once_initialization_guard_037f814c.c",
+      "sha256": "9ee9b8061be83ab707c7f647565c75d2b767cd4f39f401fd780bff8b2b5806fc",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -411,8 +411,8 @@
       "address": "0x37f8190",
       "name": "FUN_037f8190",
       "status": "written",
-      "relative_path": "functions/0x37f8190.c",
-      "sha256": "e7c533ee05bf859ff0c19e468198e41beb67a82cf961b536a980935f19008fda",
+      "relative_path": "functions/return_only_stub_037f8190.c",
+      "sha256": "ffe9c9d4f4e03d7e68dfa3b76f701045b24e4c51db6f330c11d69d3e1d6fa586",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -440,8 +440,8 @@
       "address": "0x37f81f4",
       "name": "arm7_main",
       "status": "written",
-      "relative_path": "functions/0x37f81f4.c",
-      "sha256": "709e9a82411d785f2791779fca0f026f6b95e4d9dc4c01f7ebdc84ef3b9b383d",
+      "relative_path": "functions/run_arm7_audio_service_037f81f4.c",
+      "sha256": "9391e5698855a6e05757e451161bcce3440e270b98915ea52bb5da6f41e9477f",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -469,8 +469,8 @@
       "address": "0x37f8504",
       "name": "FUN_037f8504",
       "status": "written",
-      "relative_path": "functions/0x37f8504.c",
-      "sha256": "34179ffa6f6a8ab48d83299cbdf30b81c8abc42992266725315c946d3cb8a876",
+      "relative_path": "functions/apply_psg_latch_and_data_bytes_037f8504.c",
+      "sha256": "beb074cdb099ddc841eda205221ebadbedd84b509968f08bba4ceee4aedf9682",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -502,8 +502,8 @@
       "address": "0x37f86f4",
       "name": "FUN_037f86f4",
       "status": "written",
-      "relative_path": "functions/0x37f86f4.c",
-      "sha256": "fa10d3129238de0710e947a7dc749c30f78fa173bee37cb934d22d01fba9cde5",
+      "relative_path": "functions/render_psg_samples_037f86f4.c",
+      "sha256": "cc39e17a04a18d4ccc8879fa9328b71f7c3a5105f4061f498a6e95f51957f385",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -531,8 +531,8 @@
       "address": "0x37f89bc",
       "name": "FUN_037f89bc",
       "status": "written",
-      "relative_path": "functions/0x37f89bc.c",
-      "sha256": "58a1217ac278197d90073f5d358378b4ed789101cead450dc943cde81964b605",
+      "relative_path": "functions/reset_psg_channel_state_037f89bc.c",
+      "sha256": "fb01f57d21d93f2e0f0744ee88e72d5afa62089a56b06171dfc03eca0e651865",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -560,8 +560,8 @@
       "address": "0x37f8a30",
       "name": "FUN_037f8a30",
       "status": "written",
-      "relative_path": "functions/0x37f8a30.c",
-      "sha256": "b41954ee60e967b6f84a45773886de44ec0e52eb76b5127cf80d4e77cde5e511",
+      "relative_path": "functions/initialize_psg_clock_and_state_037f8a30.c",
+      "sha256": "60f2ca00c79044ef3ab04ecdcf6c96071778cc0fd575ae1308e62e79561ed765",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -589,8 +589,8 @@
       "address": "0x37f8a88",
       "name": "FUN_037f8a88",
       "status": "written",
-      "relative_path": "functions/0x37f8a88.c",
-      "sha256": "8629d61ceea310d06cd15bc938568c5d8f92305ab58c4b4f08f2daee8f15791c",
+      "relative_path": "functions/step_fm_operator_envelope_037f8a88.c",
+      "sha256": "a8cb619a9f5217958873bebe8d085fa97891f56a4087b6522c328aafe61478f0",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -622,8 +622,8 @@
       "address": "0x37f8e1c",
       "name": "FUN_037f8e1c",
       "status": "written",
-      "relative_path": "functions/0x37f8e1c.c",
-      "sha256": "182253e5e387edfffa05e4d59bb7891c6520b0e519003b9108d4ac5eb6ecf77a",
+      "relative_path": "functions/write_ym2612_channel_or_operator_register_037f8e1c.c",
+      "sha256": "1704c294fc623c66f0e892836146627326a509791e0af436fd382a3b8a56bd22",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -655,8 +655,8 @@
       "address": "0x37f9238",
       "name": "FUN_037f9238",
       "status": "written",
-      "relative_path": "functions/0x37f9238.c",
-      "sha256": "198e0e9256eb119a58a44fa33d7e7484737e23b669a5f64ce87a69eec35201c4",
+      "relative_path": "functions/reset_ym2612_registers_037f9238.c",
+      "sha256": "919cec45fa602e7e9e21701d259bea74bcd54dea83e2cc73f5dd03cfcfaadf48",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -684,8 +684,8 @@
       "address": "0x37f9394",
       "name": "FUN_037f9394",
       "status": "written",
-      "relative_path": "functions/0x37f9394.c",
-      "sha256": "8e793647d8f201d9cac8a1e345393fafd02974e590fe0a3187f59d19919d280b",
+      "relative_path": "functions/apply_ym2612_bank1_writes_037f9394.c",
+      "sha256": "8d659e63295bb22ced0c72be8f745dbf8498e188eab21dce9999bd6f0af71045",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -713,8 +713,8 @@
       "address": "0x37f93d8",
       "name": "FUN_037f93d8",
       "status": "written",
-      "relative_path": "functions/0x37f93d8.c",
-      "sha256": "f87d38b9df64647a0151b9313b10ec95998fa7b9ae3b9d9715154b4a0b712c12",
+      "relative_path": "functions/helper_for_service_dac_buffer_037f93d8.c",
+      "sha256": "1da8fb7f1ce5929b560c2b5fe59ae4f0adeeae2d466f31eeb860ab1d6618aa05",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -742,8 +742,8 @@
       "address": "0x37f93e8",
       "name": "FUN_037f93e8",
       "status": "written",
-      "relative_path": "functions/0x37f93e8.c",
-      "sha256": "b3c76b6aadfec5e27e612e892ae7a05d860f96d716efa899b8f564f5a0351ba8",
+      "relative_path": "functions/initialize_ym2612_tables_and_channels_037f93e8.c",
+      "sha256": "50397f8fb35bec0770daef163d9dc61eec416c0c4852c3adc82efa0c3d2d1206",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -771,8 +771,8 @@
       "address": "0x37f95fc",
       "name": "FUN_037f95fc",
       "status": "written",
-      "relative_path": "functions/0x37f95fc.c",
-      "sha256": "15bad577edf2dac68856028cfdf966628a5db254860ce4d28649645c9107263b",
+      "relative_path": "functions/prepare_and_render_fm_channel_037f95fc.c",
+      "sha256": "d611d0cd3afed5bab3b1d48000ffb89fb5cd65d79b44b2284ab38938fbad46f3",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -800,8 +800,8 @@
       "address": "0x37f9afc",
       "name": "FUN_037f9afc",
       "status": "written",
-      "relative_path": "functions/0x37f9afc.c",
-      "sha256": "3a05e7b2c4136430b7c918fd60fb42fd9f5b1e4a3e9c9ec7a7a7e863bb1257a2",
+      "relative_path": "functions/apply_ym2612_bank0_writes_037f9afc.c",
+      "sha256": "19c531e0063b9c9623827686ed40380a48c29895145787cbaae6445fcde02589",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -833,8 +833,8 @@
       "address": "0x37f9d9c",
       "name": "FUN_037f9d9c",
       "status": "written",
-      "relative_path": "functions/0x37f9d9c.c",
-      "sha256": "09dd4a66d6e831642eb6aef04a37b09a2fdf10ae1f8d82c7eaacc0c8b5aac73c",
+      "relative_path": "functions/render_six_fm_channels_037f9d9c.c",
+      "sha256": "016375192e3203e0f0e48341b31b9a4bd1a3b95e36748eae6de6dbd62dc15455",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -866,8 +866,8 @@
       "address": "0x37fb9fc",
       "name": "FUN_037fb9fc",
       "status": "written",
-      "relative_path": "functions/0x37fb9fc.c",
-      "sha256": "34836d92b4bc441e8911b3c599c90af0013de87e08aa973b56384cb2624c3d20",
+      "relative_path": "functions/write_timer_registers_and_sound_channel_registers_037fb9fc.c",
+      "sha256": "eafdf4dcfe37a9982345e780b7949f0ade4980e4d889d4fd257f8190bcfc63fe",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -895,8 +895,8 @@
       "address": "0x37fbc10",
       "name": "FUN_037fbc10",
       "status": "written",
-      "relative_path": "functions/0x37fbc10.c",
-      "sha256": "e7bc6f699b8a47b0bf5ce9ce3780c944b2a08fc2aa19170c1d6162ba26da4687",
+      "relative_path": "functions/reset_dac_sample_cursor_037fbc10.c",
+      "sha256": "4c6d9a2257577005f5ef0946fcce8d0ae4b73bf4f2d34bae497a58b6d5aed31f",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -924,8 +924,8 @@
       "address": "0x37fbc68",
       "name": "FUN_037fbc68",
       "status": "written",
-      "relative_path": "functions/0x37fbc68.c",
-      "sha256": "f3cdd4dcc6c164b636858196718c10e0a9ff63bf5d5be5887e92014b9a96519c",
+      "relative_path": "functions/render_unsigned_dac_to_pcm16_037fbc68.c",
+      "sha256": "ef464e126a21cef05f6164ec834c7690ac45131dfe195f63ca89926d655d5ed5",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -953,8 +953,8 @@
       "address": "0x37fbda8",
       "name": "FUN_037fbda8",
       "status": "written",
-      "relative_path": "functions/0x37fbda8.c",
-      "sha256": "35df5bb2687832b128f3ff9d21d473dd63848d131174d230d03ba39601156864",
+      "relative_path": "functions/service_dac_buffer_037fbda8.c",
+      "sha256": "1ca250691345312644c5350280fdf9c09ecf8291ffd9fbbf4328bc538551b6d5",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -982,8 +982,8 @@
       "address": "0x37fbeb8",
       "name": "FUN_037fbeb8",
       "status": "written",
-      "relative_path": "functions/0x37fbeb8.c",
-      "sha256": "66b5793ba7b4bdc2d6ac3e033095f874840ce5b88f52f084995bf79eab3778f7",
+      "relative_path": "functions/update_audio_from_hardware_timers_037fbeb8.c",
+      "sha256": "1de92d974b74f90d2f40430745368b46cf4ee2c8ce25d73f9880435feba703d5",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1015,8 +1015,8 @@
       "address": "0x37fbf44",
       "name": "FUN_037fbf44",
       "status": "written",
-      "relative_path": "functions/0x37fbf44.c",
-      "sha256": "9b1edd5425d013502e870bbf4c88dabf4a768c8f88b4bf553904612e5c99c905",
+      "relative_path": "functions/reset_fm_register_state_037fbf44.c",
+      "sha256": "fcd8281884250e1ea3130d17badfb702f70eab9798c79b471abce6ea1b8cb454",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1044,8 +1044,8 @@
       "address": "0x37fbf5c",
       "name": "FUN_037fbf5c",
       "status": "written",
-      "relative_path": "functions/0x37fbf5c.c",
-      "sha256": "12b5aa5255fb407c0f2a90638914a2809a1a113de271ea9a2bbc4bc590bb7a87",
+      "relative_path": "functions/initialize_audio_buffers_and_clocks_037fbf5c.c",
+      "sha256": "ec23ca61847c8ce4125d2d73e17d1381f2dd71dc940174b72f4be51f839c6473",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1073,8 +1073,8 @@
       "address": "0x37fc0cc",
       "name": "FUN_037fc0cc",
       "status": "written",
-      "relative_path": "functions/0x37fc0cc.c",
-      "sha256": "b45b89a0d3182198309782ab0353db4f285530800287d9dd2cf0903779111612",
+      "relative_path": "functions/initialize_sound_message_handler_037fc0cc.c",
+      "sha256": "5c5533dbb6bd24f73d78999abe20a3e715e86670bc139c2487b1d799bfd603bf",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1102,8 +1102,8 @@
       "address": "0x37fc14c",
       "name": "FUN_037fc14c",
       "status": "written",
-      "relative_path": "functions/0x37fc14c.c",
-      "sha256": "d11f69239178ac109d1e44085d027a61ec80f66c22d60222eccd2396ffbfb393",
+      "relative_path": "functions/reset_audio_buffers_and_chips_037fc14c.c",
+      "sha256": "06ef43a7cd36c0c62b24342ed3013fb0aeff8a08a51bfd10bfa7c4650fbfdc46",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1131,8 +1131,8 @@
       "address": "0x37fc218",
       "name": "FUN_037fc218",
       "status": "written",
-      "relative_path": "functions/0x37fc218.c",
-      "sha256": "1be40fc47bf91d2090565a658127f3d60e43494c10f134f9cac335c15f782c8b",
+      "relative_path": "functions/handle_arm9_audio_command_037fc218.c",
+      "sha256": "d45c6337fa96d81ef2db51b2d4f262f38602efacffa0e8b79aeb60faacf72903",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1168,8 +1168,8 @@
       "address": "0x37fc468",
       "name": "FUN_037fc468",
       "status": "written",
-      "relative_path": "functions/0x37fc468.c",
-      "sha256": "e7820f5c9dc10cb835a0b5c5b09c104885e1f1413395b92638ad1a83b70f890a",
+      "relative_path": "functions/dispatch_fifo_receive_interrupt_037fc468.c",
+      "sha256": "dc5721a8b683f23100a9f11bcb87959cea9b6d9d3a016d99b61a9f44aefebe58",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1197,8 +1197,8 @@
       "address": "0x37fc504",
       "name": "FUN_037fc504",
       "status": "written",
-      "relative_path": "functions/0x37fc504.c",
-      "sha256": "45672befa6557d463410ffd2e0091e846c1f1c0a5df72097676fdd3c96ec47aa",
+      "relative_path": "functions/set_fifo_message_callback_037fc504.c",
+      "sha256": "49671e4c9ea8d7939eaab879e748a3e050af6f3d3c679c2aa4e126a2d45965d2",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1226,8 +1226,8 @@
       "address": "0x37fc514",
       "name": "FUN_037fc514",
       "status": "written",
-      "relative_path": "functions/0x37fc514.c",
-      "sha256": "310f524638dd74036a253d254f520831ca0b269b19554a8bb214c596736e757d",
+      "relative_path": "functions/send_fifo_command_and_payload_037fc514.c",
+      "sha256": "780be39ca8a817d12c915b75e3fc34879cabb7087a082c58c3fc7167184a4627",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1255,8 +1255,8 @@
       "address": "0x37fc544",
       "name": "FUN_037fc544",
       "status": "written",
-      "relative_path": "functions/0x37fc544.c",
-      "sha256": "a66a59f811219cc8aea8c55d56e533cd0dbfdcd56261290305377c008bbcb8db",
+      "relative_path": "functions/enable_fifo_receive_interrupt_037fc544.c",
+      "sha256": "6f971b56a706b020f711bd80de0d502994611fdf56da5825c52d92d29a27c27d",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1284,8 +1284,8 @@
       "address": "0x37fc590",
       "name": "arm7_dispatch_037fc590",
       "status": "written",
-      "relative_path": "functions/0x37fc590.c",
-      "sha256": "0019f4f3f551f7cef15551b570588c59b5c5ab9a95fca6bf485973eeba85c7a7",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fc590.c",
+      "sha256": "f31deb569ecbfcf64b85bdb1af20e642685bd631a48d71c3a18896baeaa803ec",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1313,8 +1313,8 @@
       "address": "0x37fc5d4",
       "name": "arm7_dispatch_037fc5d4",
       "status": "written",
-      "relative_path": "functions/0x37fc5d4.c",
-      "sha256": "431b021d1a7537fe0a8c1161ebc9205e4bf8e91a22f7ea955ff46bfbea44d733",
+      "relative_path": "functions/ym2612_render_algorithm_0_mask_01_037fc5d4.c",
+      "sha256": "2274df2542a55e2cbbad30dd724d0d1368996fac6c869bc807c369e178c444d4",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1342,8 +1342,8 @@
       "address": "0x37fc638",
       "name": "arm7_dispatch_037fc638",
       "status": "written",
-      "relative_path": "functions/0x37fc638.c",
-      "sha256": "684b28382a3c718f7ccfde9e366aa70691ceff6030f71c1d43be41148b7c2c61",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fc638.c",
+      "sha256": "1e07e4309aa36117153973a8c944e9c759176054bd3ddfb30a5f681fec2493ec",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1371,8 +1371,8 @@
       "address": "0x37fc6b0",
       "name": "arm7_dispatch_037fc6b0",
       "status": "written",
-      "relative_path": "functions/0x37fc6b0.c",
-      "sha256": "40c45e2462cc238b7880167bf314c35c28636154e1e1cd3c467c69527ccb9e70",
+      "relative_path": "functions/ym2612_render_algorithm_0_mask_09_037fc6b0.c",
+      "sha256": "2876562fc2b6e66dd660a2d70c4500e9d6bb0186a5e89f72c7e160a765621698",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1400,8 +1400,8 @@
       "address": "0x37fc748",
       "name": "arm7_dispatch_037fc748",
       "status": "written",
-      "relative_path": "functions/0x37fc748.c",
-      "sha256": "31b09d285990eb1f9fced6f75d0913c40a7a6fe12cd684cdf875a666a8187653",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fc748.c",
+      "sha256": "eda5a58183a8508677afd3e4add05758d5d473c350452cc3b715863e1bbeeded",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1429,8 +1429,8 @@
       "address": "0x37fc7b8",
       "name": "arm7_dispatch_037fc7b8",
       "status": "written",
-      "relative_path": "functions/0x37fc7b8.c",
-      "sha256": "614da821235006322f830f7cb7228ac67939a7c358b47366666380230c3c6788",
+      "relative_path": "functions/ym2612_render_algorithm_0_mask_03_037fc7b8.c",
+      "sha256": "3a66a378f4dace86bddff58f897b32137b11bdc8af424fb4420ba5d0a710dccd",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1458,8 +1458,8 @@
       "address": "0x37fc844",
       "name": "arm7_dispatch_037fc844",
       "status": "written",
-      "relative_path": "functions/0x37fc844.c",
-      "sha256": "81f710f2834cbb56ddaafd744551e21e399fecb1a2306f617ea02e3ca58862d4",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fc844.c",
+      "sha256": "37f1bbff024afe6163f773bac797e7efaddf4256472d590d4788890f8a3120c0",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1487,8 +1487,8 @@
       "address": "0x37fc8e8",
       "name": "arm7_dispatch_037fc8e8",
       "status": "written",
-      "relative_path": "functions/0x37fc8e8.c",
-      "sha256": "bde98fafb91737a0b9d65f7f68e8afd1db83f6d0866b03d0ed8a1bfb60ce6ba8",
+      "relative_path": "functions/ym2612_render_algorithm_0_mask_0b_037fc8e8.c",
+      "sha256": "5770606e16703c463e0532ff8900b96abc4d1d372b9b3045743a96a86ed0463f",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1516,8 +1516,8 @@
       "address": "0x37fc9a8",
       "name": "arm7_dispatch_037fc9a8",
       "status": "written",
-      "relative_path": "functions/0x37fc9a8.c",
-      "sha256": "fb1dde999caa9568af6691afe6d56bad9fd211669020491bee1f1b77d17f9967",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fc9a8.c",
+      "sha256": "1a50f0865762be265732ea7ba384bb9911440750f6755fc37565f54ba120d6e6",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1545,8 +1545,8 @@
       "address": "0x37fc9f0",
       "name": "arm7_dispatch_037fc9f0",
       "status": "written",
-      "relative_path": "functions/0x37fc9f0.c",
-      "sha256": "7dc6be9450bcad6f113484f134cf1038f2bc697397401a31613970012b0ab4e2",
+      "relative_path": "functions/ym2612_render_algorithm_0_mask_05_037fc9f0.c",
+      "sha256": "e8ffbaff90fb8230fa1da4ad0132fdc03ed9f07e10a7ccf5fe4b2007b431eb51",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1574,8 +1574,8 @@
       "address": "0x37fca84",
       "name": "arm7_dispatch_037fca84",
       "status": "written",
-      "relative_path": "functions/0x37fca84.c",
-      "sha256": "3024b139ca997f115c662d0a2d76b028798db20c0fc9880dab892aa03c3117c3",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fca84.c",
+      "sha256": "73ab7c7c675b0d6c4aae38a095f5cb96b7b42230eeba8b45396d7759abb5d801",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1603,8 +1603,8 @@
       "address": "0x37fcb00",
       "name": "arm7_dispatch_037fcb00",
       "status": "written",
-      "relative_path": "functions/0x37fcb00.c",
-      "sha256": "394b9b30d57e22acffcb34ea64bec138d559e83ff23a1122f3feab36d7a3d788",
+      "relative_path": "functions/ym2612_render_algorithm_0_mask_0d_037fcb00.c",
+      "sha256": "121dbaa0db4e3156532166fc71669fb711086125e31727c9c58e75cd7c946427",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1632,8 +1632,8 @@
       "address": "0x37fcbc8",
       "name": "arm7_dispatch_037fcbc8",
       "status": "written",
-      "relative_path": "functions/0x37fcbc8.c",
-      "sha256": "6745d4a258a7fa26f6300268ea148a3029f520b3555a6d4df6ddf3c05556c0e0",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fcbc8.c",
+      "sha256": "9b19065d1432102225b3e15c202ac532defefc6e2e1b975bd4f1077713e01228",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1661,8 +1661,8 @@
       "address": "0x37fcc38",
       "name": "arm7_dispatch_037fcc38",
       "status": "written",
-      "relative_path": "functions/0x37fcc38.c",
-      "sha256": "8e1b4a66e56cb7a8c774c8f2e968d32013928efac2ee3b727e3ac577dfad7856",
+      "relative_path": "functions/ym2612_render_algorithm_0_mask_07_037fcc38.c",
+      "sha256": "28f8e78545252232e9e58ab4761f18a17c447c20987dbdee91655d099bd1ebfa",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1690,8 +1690,8 @@
       "address": "0x37fccf4",
       "name": "arm7_dispatch_037fccf4",
       "status": "written",
-      "relative_path": "functions/0x37fccf4.c",
-      "sha256": "7d9e4f8a28170b04b25e288141781e7777fbb258687fab482de6d93a11f940e2",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fccf4.c",
+      "sha256": "f0963e943f8dfdd1f3553bed5a1feb9b7a93170b4f3a786613c3e970fb5931f3",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1719,8 +1719,8 @@
       "address": "0x37fcd98",
       "name": "arm7_dispatch_037fcd98",
       "status": "written",
-      "relative_path": "functions/0x37fcd98.c",
-      "sha256": "2236981bb5574684850684f1cdd343f7a1729a89e3d685e12eac432436637292",
+      "relative_path": "functions/ym2612_render_algorithm_0_mask_0f_037fcd98.c",
+      "sha256": "7f8e70349b7432d75bf2f9fb9f405bbd951fc24b3aeef10373e43375d7f37943",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1748,8 +1748,8 @@
       "address": "0x37fce88",
       "name": "arm7_dispatch_037fce88",
       "status": "written",
-      "relative_path": "functions/0x37fce88.c",
-      "sha256": "dd7604caba9a1c4dec08d2824c90abc7c1b1440a78ec4b97ab5cbd98ef172246",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fce88.c",
+      "sha256": "b0acf6ae0c076bf8754a05d81d104e5dd523eea97be4199ceb0696d4bb48a152",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1777,8 +1777,8 @@
       "address": "0x37fced0",
       "name": "arm7_dispatch_037fced0",
       "status": "written",
-      "relative_path": "functions/0x37fced0.c",
-      "sha256": "f4c68ef557cb88cf21353038b5c63f0c39a8a6903d98d96b42412534c8cad62d",
+      "relative_path": "functions/ym2612_render_algorithm_1_mask_01_037fced0.c",
+      "sha256": "0d05aadb01e4b48ba4d10b71a0908c081b210882b679407568c27d1383513f29",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1806,8 +1806,8 @@
       "address": "0x37fcf34",
       "name": "arm7_dispatch_037fcf34",
       "status": "written",
-      "relative_path": "functions/0x37fcf34.c",
-      "sha256": "c0cbb33176f48e018d96afe015867692a98ea963542f20bbd4ea045e672e1b2c",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fcf34.c",
+      "sha256": "79a54ff380d0f544f4db9a604375f9e043f50a05cef09a391ad4a70883d35329",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1835,8 +1835,8 @@
       "address": "0x37fcfb0",
       "name": "arm7_dispatch_037fcfb0",
       "status": "written",
-      "relative_path": "functions/0x37fcfb0.c",
-      "sha256": "48d6d6d70bc901f085365a5dbe30680315acb9c7af5a3f99dc65d0c1e7178e1b",
+      "relative_path": "functions/ym2612_render_algorithm_1_mask_09_037fcfb0.c",
+      "sha256": "ad6f7033517a1a730694ddd0c5b852557ae4485213fd1933884fc4261d4dc0b7",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1864,8 +1864,8 @@
       "address": "0x37fd048",
       "name": "arm7_dispatch_037fd048",
       "status": "written",
-      "relative_path": "functions/0x37fd048.c",
-      "sha256": "9e62cc0d20d906e793c8affb61e6b61b1f6beab9491475a5ec0cf0a473813b42",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fd048.c",
+      "sha256": "ef39c5c4581186a833763e3e363c5625310ab07b21a613dc239e62bc929c401d",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1893,8 +1893,8 @@
       "address": "0x37fd0b0",
       "name": "arm7_dispatch_037fd0b0",
       "status": "written",
-      "relative_path": "functions/0x37fd0b0.c",
-      "sha256": "63b7b8d8e54d44660b4bf1b9a0010239793532e67716f71ef66fb9dbc46e83e1",
+      "relative_path": "functions/ym2612_render_algorithm_1_mask_03_037fd0b0.c",
+      "sha256": "702f38f7501227cefb2fd14dc0b2ea3ed59d3a9044a260ce850dda6d69d0b2d5",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1922,8 +1922,8 @@
       "address": "0x37fd134",
       "name": "arm7_dispatch_037fd134",
       "status": "written",
-      "relative_path": "functions/0x37fd134.c",
-      "sha256": "503f76a09ae928aeb12cb0de63b0a3830a90b3bc656426f2532784ed7f17cf19",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fd134.c",
+      "sha256": "8503ca1e19cc5701012342b8ec9c9b77691dfbd0af34229c2e32cc4d1da95f3d",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1951,8 +1951,8 @@
       "address": "0x37fd1d0",
       "name": "arm7_dispatch_037fd1d0",
       "status": "written",
-      "relative_path": "functions/0x37fd1d0.c",
-      "sha256": "7b8a454ad93a3743dd206ab1cdc8c43f672a44e4fa1335e7f8c7041da5a13493",
+      "relative_path": "functions/ym2612_render_algorithm_1_mask_0b_037fd1d0.c",
+      "sha256": "fc0a20768e42eb97f8095746807ce2b422fe9b2dc88622eeaf3f971c313cc7d8",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -1980,8 +1980,8 @@
       "address": "0x37fd288",
       "name": "arm7_dispatch_037fd288",
       "status": "written",
-      "relative_path": "functions/0x37fd288.c",
-      "sha256": "3fbf337bb577e69ca347fe1c195d2c91ea9d7e3d2f30033323075cdbb2b73859",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fd288.c",
+      "sha256": "e690a9437a85b53bd5196bfb2fc32eb9af2bf9ab8dd74fd61028e53c73554b49",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2009,8 +2009,8 @@
       "address": "0x37fd2d0",
       "name": "arm7_dispatch_037fd2d0",
       "status": "written",
-      "relative_path": "functions/0x37fd2d0.c",
-      "sha256": "56df703e44a08fcca07df7c35a57459d1d23ba0e41809c0d093bd16ec6713289",
+      "relative_path": "functions/ym2612_render_algorithm_1_mask_05_037fd2d0.c",
+      "sha256": "435cabd3a5373ff8f902f273e73ad91a566e35dc48b5d5096a1c0d8107c396ec",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2038,8 +2038,8 @@
       "address": "0x37fd364",
       "name": "arm7_dispatch_037fd364",
       "status": "written",
-      "relative_path": "functions/0x37fd364.c",
-      "sha256": "0ba98dba8d8820cdcf8d25eced3fa29b91b30b5588375c2ffe9092e7a988ffa7",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fd364.c",
+      "sha256": "93406d30a570c6ca7a93d51ead343c99487898b19d184a9f79cda1bb866efaf4",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2067,8 +2067,8 @@
       "address": "0x37fd3e0",
       "name": "arm7_dispatch_037fd3e0",
       "status": "written",
-      "relative_path": "functions/0x37fd3e0.c",
-      "sha256": "69098247bef385aabf9b5016df514f6a15421e115175e2119e812cd38bb0e780",
+      "relative_path": "functions/ym2612_render_algorithm_1_mask_0d_037fd3e0.c",
+      "sha256": "6e3b95343aa2628bed1651a5f7972787329889cd871be372d4fbd960c2c49a75",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2096,8 +2096,8 @@
       "address": "0x37fd4a8",
       "name": "arm7_dispatch_037fd4a8",
       "status": "written",
-      "relative_path": "functions/0x37fd4a8.c",
-      "sha256": "0e5593d6e7b2853a3fcaf05a57e774f05650c539b1303ea3edb570c20e21847f",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fd4a8.c",
+      "sha256": "a314de13641975d58683cfe2dc1cf556112cdb1a0893c195a73ac0430ca83476",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2125,8 +2125,8 @@
       "address": "0x37fd510",
       "name": "arm7_dispatch_037fd510",
       "status": "written",
-      "relative_path": "functions/0x37fd510.c",
-      "sha256": "07a484835894947e84cd3fd0d0793105bd7bfe3e6c51d2d53656f69ade971eb9",
+      "relative_path": "functions/ym2612_render_algorithm_1_mask_07_037fd510.c",
+      "sha256": "03536b277705d06a20c71b32e4b0c145ff40ca246dd37b7d65ee0a7cdb7e91f9",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2154,8 +2154,8 @@
       "address": "0x37fd5c4",
       "name": "arm7_dispatch_037fd5c4",
       "status": "written",
-      "relative_path": "functions/0x37fd5c4.c",
-      "sha256": "b68411b9e02bed65b36c2648577e91eed5a16d7385e266341142ad7ba65a5e00",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fd5c4.c",
+      "sha256": "d142602333f852c7f5b0d21ad8a6aae1276058ff88951de03b0d6d2583fc046f",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2183,8 +2183,8 @@
       "address": "0x37fd660",
       "name": "arm7_dispatch_037fd660",
       "status": "written",
-      "relative_path": "functions/0x37fd660.c",
-      "sha256": "6caf227d74205e01477ce0e6b22e130bcf229c4c54657356bd8c5b37f98a1030",
+      "relative_path": "functions/ym2612_render_algorithm_1_mask_0f_037fd660.c",
+      "sha256": "2d5e219aba41b12d5625d2fe3a954e7b1698496049e933fe482a60d63a674d4e",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2212,8 +2212,8 @@
       "address": "0x37fd748",
       "name": "arm7_dispatch_037fd748",
       "status": "written",
-      "relative_path": "functions/0x37fd748.c",
-      "sha256": "aed4e56396c13deb3807a3cf3093107f6206888fb8d4d1e8c16b91d231fd7003",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fd748.c",
+      "sha256": "c404670a2958c1d40cceeb45721b87766fbaa3e13702ad0d50d82c807badce37",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2241,8 +2241,8 @@
       "address": "0x37fd78c",
       "name": "arm7_dispatch_037fd78c",
       "status": "written",
-      "relative_path": "functions/0x37fd78c.c",
-      "sha256": "d37212933dc6857b9c421390b74314b2048c4d1aba8aca147ec371be3e4c9cd1",
+      "relative_path": "functions/ym2612_render_algorithm_2_mask_01_037fd78c.c",
+      "sha256": "c4c6a4ea04405d1ac91f465005417ee0c8a4b6790d21bc22341c58cff944cfe7",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2270,8 +2270,8 @@
       "address": "0x37fd7fc",
       "name": "arm7_dispatch_037fd7fc",
       "status": "written",
-      "relative_path": "functions/0x37fd7fc.c",
-      "sha256": "8adbd75b38ff3f9fd7089aad9d2974e938ff31d386cfdf67d3f44462182403df",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fd7fc.c",
+      "sha256": "ccc46c29bebc5101c942cd7409f452195987e27dc34c6f6a4cbf136021732433",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2299,8 +2299,8 @@
       "address": "0x37fd874",
       "name": "arm7_dispatch_037fd874",
       "status": "written",
-      "relative_path": "functions/0x37fd874.c",
-      "sha256": "58b0f7a9cabaaade18cb9d822aefaf1ccb902fd1f306de91c3e645b94fc1ed31",
+      "relative_path": "functions/ym2612_render_algorithm_2_mask_09_037fd874.c",
+      "sha256": "4706064ac1fc1f34efbc1d75346574ab810d6da33ce5e64165e387be58a2f545",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2328,8 +2328,8 @@
       "address": "0x37fd918",
       "name": "arm7_dispatch_037fd918",
       "status": "written",
-      "relative_path": "functions/0x37fd918.c",
-      "sha256": "80f26870c421aa7e9a2eba52261fc87b2b06356713bc9de05b92f50113b56eae",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fd918.c",
+      "sha256": "eef66af362528a376b5422a2ec7cc159f16b85e9e01c8f275836f9ba00608279",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2357,8 +2357,8 @@
       "address": "0x37fd97c",
       "name": "arm7_dispatch_037fd97c",
       "status": "written",
-      "relative_path": "functions/0x37fd97c.c",
-      "sha256": "7ebdc61bbabfeba0d059f4a7d23e23a95b7f8ab3022abc457006781e62b9cb71",
+      "relative_path": "functions/ym2612_render_algorithm_2_mask_03_037fd97c.c",
+      "sha256": "a1a73057c0c8d48cab95fc51781b80153b6863804f2f850474ddbfe65f00f6bc",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2386,8 +2386,8 @@
       "address": "0x37fda08",
       "name": "arm7_dispatch_037fda08",
       "status": "written",
-      "relative_path": "functions/0x37fda08.c",
-      "sha256": "14753a41b9f3e2dedac055b8a2b99156e7c60120e64bdc22bc7a8b013a379ab2",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fda08.c",
+      "sha256": "1b33e815aec3abe5191a410e07bd804764634b5ee7d23dcab2e09f27bc36da53",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2415,8 +2415,8 @@
       "address": "0x37fdaa0",
       "name": "arm7_dispatch_037fdaa0",
       "status": "written",
-      "relative_path": "functions/0x37fdaa0.c",
-      "sha256": "1193add6428fb4315fc520c7f183cf2f59afd23db92399c1e403817862bd697a",
+      "relative_path": "functions/ym2612_render_algorithm_2_mask_0b_037fdaa0.c",
+      "sha256": "88eea375dce0d25a8098a81abd60af4f876d691debe653d2167a9bcd098d4884",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2444,8 +2444,8 @@
       "address": "0x37fdb60",
       "name": "arm7_dispatch_037fdb60",
       "status": "written",
-      "relative_path": "functions/0x37fdb60.c",
-      "sha256": "12f899374badb4065847b1195960addfeaef9bf8b769744b0be0f3f46af45674",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fdb60.c",
+      "sha256": "bcca3842b3322f12e393b3fbbcbb7656a37ad473dc15bf97c26f62c8d42862c2",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2473,8 +2473,8 @@
       "address": "0x37fdba4",
       "name": "arm7_dispatch_037fdba4",
       "status": "written",
-      "relative_path": "functions/0x37fdba4.c",
-      "sha256": "6f019098dc7f61fab2884371058166510e81156376c254abb0c8aa98662aa47f",
+      "relative_path": "functions/ym2612_render_algorithm_2_mask_05_037fdba4.c",
+      "sha256": "85d7f632716f11c4541511ff0a0e7e5c06cd3f80b19ed0fb7e57414db6a9a918",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2502,8 +2502,8 @@
       "address": "0x37fdc3c",
       "name": "arm7_dispatch_037fdc3c",
       "status": "written",
-      "relative_path": "functions/0x37fdc3c.c",
-      "sha256": "0b755eefc03fd61465962e41fffe574452b3e1bfc7c4e7a9dfb5038c16656ccb",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fdc3c.c",
+      "sha256": "0835e0c5d9102769bb510ff5eaf30e357eb14442ecd8909b669dfd3232312e0c",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2531,8 +2531,8 @@
       "address": "0x37fdcb4",
       "name": "arm7_dispatch_037fdcb4",
       "status": "written",
-      "relative_path": "functions/0x37fdcb4.c",
-      "sha256": "fc3b2b26bb226b7257a11e92f6c2e71708d21e5b3b20df3b0537c30b6c53b4b0",
+      "relative_path": "functions/ym2612_render_algorithm_2_mask_0d_037fdcb4.c",
+      "sha256": "b97e7397b2b677bc1d442675077c18c39a4e711c033b38da6ef2d8a06817781e",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2560,8 +2560,8 @@
       "address": "0x37fdd80",
       "name": "arm7_dispatch_037fdd80",
       "status": "written",
-      "relative_path": "functions/0x37fdd80.c",
-      "sha256": "58ec5e4718ad44260f4a52f4754438de6e065bc77def8ccb113fbc245970ee6f",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fdd80.c",
+      "sha256": "4d9dae1e4f85f1fd2124c8d71faae00ea403b7246c56c890a8a8a175d7698ac1",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2589,8 +2589,8 @@
       "address": "0x37fdde4",
       "name": "arm7_dispatch_037fdde4",
       "status": "written",
-      "relative_path": "functions/0x37fdde4.c",
-      "sha256": "d14cf6f7215807bba8dec60a0a0da44b22427ee601fd5a6733297bb2fd233ce3",
+      "relative_path": "functions/ym2612_render_algorithm_2_mask_07_037fdde4.c",
+      "sha256": "e31ac1aff02f5411354e399fda8d2bef6b6799cfae357f1671e7ca9508b32f4f",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2618,8 +2618,8 @@
       "address": "0x37fde98",
       "name": "arm7_dispatch_037fde98",
       "status": "written",
-      "relative_path": "functions/0x37fde98.c",
-      "sha256": "7166f40306513e94ba604fa980cfeb1ab8f5e843eee5dc922a6c9d106c0e5ffa",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fde98.c",
+      "sha256": "3d4dcffaf535f192577168f8a67185e7210537d7a3bb064b9b2e3f47d5c89431",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2647,8 +2647,8 @@
       "address": "0x37fdf30",
       "name": "arm7_dispatch_037fdf30",
       "status": "written",
-      "relative_path": "functions/0x37fdf30.c",
-      "sha256": "3ac90bcba8d53a46208aa1b07c1f7eb8b912318c6eb96e7b496ee40ce5bed870",
+      "relative_path": "functions/ym2612_render_algorithm_2_mask_0f_037fdf30.c",
+      "sha256": "10c2011a0ac0e2e107305ea706dff28eb51535fcc53aaf9b4888160f432d8507",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2676,8 +2676,8 @@
       "address": "0x37fe018",
       "name": "arm7_dispatch_037fe018",
       "status": "written",
-      "relative_path": "functions/0x37fe018.c",
-      "sha256": "71e8f5cc71ba630de4e3bb40e3980026d483c71976a66280e76073505e1dad2d",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fe018.c",
+      "sha256": "40e10cf0a9bc64eabeb9a12443fc5708c956cefc0971616cbbd76ecb7aecc108",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2705,8 +2705,8 @@
       "address": "0x37fe05c",
       "name": "arm7_dispatch_037fe05c",
       "status": "written",
-      "relative_path": "functions/0x37fe05c.c",
-      "sha256": "ee08f66c203044b0e1b4237303b276dd1585f844c6d3fce669000f3ad2c8c4a1",
+      "relative_path": "functions/ym2612_render_algorithm_3_mask_01_037fe05c.c",
+      "sha256": "781c0063b220f5a115a76c640a372e781212d5b77bf6610311e01e5c946a4820",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2734,8 +2734,8 @@
       "address": "0x37fe0c8",
       "name": "arm7_dispatch_037fe0c8",
       "status": "written",
-      "relative_path": "functions/0x37fe0c8.c",
-      "sha256": "bd79a376b7333cfa6881d8fd073f79bdd27898200854d15985ac3189a234335b",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fe0c8.c",
+      "sha256": "e287151b373fe52d07c6dee13378796c49027d4632d4d552f84b11785500340a",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2763,8 +2763,8 @@
       "address": "0x37fe140",
       "name": "arm7_dispatch_037fe140",
       "status": "written",
-      "relative_path": "functions/0x37fe140.c",
-      "sha256": "88af4ee49bcc8ef5594d0a65358300fba301bbb186367e63b4e8472034c04977",
+      "relative_path": "functions/ym2612_render_algorithm_3_mask_09_037fe140.c",
+      "sha256": "f6159cff6709a323aec209b2e163b869916b838245307af82d18a4ec18ce6172",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2792,8 +2792,8 @@
       "address": "0x37fe1e0",
       "name": "arm7_dispatch_037fe1e0",
       "status": "written",
-      "relative_path": "functions/0x37fe1e0.c",
-      "sha256": "81f028370afe01c3faa9e1865d9a172d048d1ba86b9e4618ceccd71306614575",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fe1e0.c",
+      "sha256": "1540797b087238e18065a6942278e73d8641f323efffd79c550aad44ffd0bb0f",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2821,8 +2821,8 @@
       "address": "0x37fe250",
       "name": "arm7_dispatch_037fe250",
       "status": "written",
-      "relative_path": "functions/0x37fe250.c",
-      "sha256": "7cf3258ec6a1b9a3feb17cbad10007fefc5cfe4a1d6caaf379455b71877ae00f",
+      "relative_path": "functions/ym2612_render_algorithm_3_mask_03_037fe250.c",
+      "sha256": "9c4676dee42ea8ffade274d6138f0fdaff3e5f12517a5a6ef884a9ea92621855",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2850,8 +2850,8 @@
       "address": "0x37fe2e4",
       "name": "arm7_dispatch_037fe2e4",
       "status": "written",
-      "relative_path": "functions/0x37fe2e4.c",
-      "sha256": "cb6011d555915f2de0c545ad565ae03d71848636b893b896ee9a2d18e66c955d",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fe2e4.c",
+      "sha256": "804501a89290b4c7fe70d9a63cba5ed49b4477475bc9285bd5cdc04b48191386",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2879,8 +2879,8 @@
       "address": "0x37fe388",
       "name": "arm7_dispatch_037fe388",
       "status": "written",
-      "relative_path": "functions/0x37fe388.c",
-      "sha256": "c6d59834f521809960fe5fcc469a592a659642334bad03308c5b9c71a9a1f6dd",
+      "relative_path": "functions/ym2612_render_algorithm_3_mask_0b_037fe388.c",
+      "sha256": "8c22baea5f15ad26ae09f1c592d1a4d7501a30e8988982ca42afae2437607220",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2908,8 +2908,8 @@
       "address": "0x37fe450",
       "name": "arm7_dispatch_037fe450",
       "status": "written",
-      "relative_path": "functions/0x37fe450.c",
-      "sha256": "6a6b95b7cb50bc739e877fa96df6434dc4f20a0407f395be68236fffbd125232",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fe450.c",
+      "sha256": "68c77041b5a75dc7472ad8f4bbf4fba9193551fccbe063a3784e6de45fd998f0",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2937,8 +2937,8 @@
       "address": "0x37fe494",
       "name": "arm7_dispatch_037fe494",
       "status": "written",
-      "relative_path": "functions/0x37fe494.c",
-      "sha256": "6ab6a79a7495633d60a312645bad11849e5521e31f5c1d6e3eecc76fee458dbb",
+      "relative_path": "functions/ym2612_render_algorithm_3_mask_05_037fe494.c",
+      "sha256": "40349e882f10df40359f8fb1696732bcc1ae63b7cca069a69f2df7b979bce6dd",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2966,8 +2966,8 @@
       "address": "0x37fe524",
       "name": "arm7_dispatch_037fe524",
       "status": "written",
-      "relative_path": "functions/0x37fe524.c",
-      "sha256": "4ebe46577b8b4788787e90453e7cce5703dbfd3fd0df5e8cb663abbb1d65215b",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fe524.c",
+      "sha256": "9c38b916d4a5ddae90c45aadf3bfbc96e6e0307783509cf1f9b4a0e491d7af5c",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -2995,8 +2995,8 @@
       "address": "0x37fe59c",
       "name": "arm7_dispatch_037fe59c",
       "status": "written",
-      "relative_path": "functions/0x37fe59c.c",
-      "sha256": "630e78000f66350c1b266285da5f14b4bd0ff4bee0af13ec621d0beb17f44bc4",
+      "relative_path": "functions/ym2612_render_algorithm_3_mask_0d_037fe59c.c",
+      "sha256": "7d527cf2a315fb6db7b40ed94992b969dc9d198ce1d1cd3267e5b041ea589a44",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3024,8 +3024,8 @@
       "address": "0x37fe660",
       "name": "arm7_dispatch_037fe660",
       "status": "written",
-      "relative_path": "functions/0x37fe660.c",
-      "sha256": "08f1e03a4f4ec3dd190cf6179bc8cdc6ef7713a1b7d65a53a925eee31cb7e255",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fe660.c",
+      "sha256": "bf84c44e23ad3c727aa5495f9c73bb64c8714139aa0d5712ea13c441a81c081d",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3053,8 +3053,8 @@
       "address": "0x37fe6d0",
       "name": "arm7_dispatch_037fe6d0",
       "status": "written",
-      "relative_path": "functions/0x37fe6d0.c",
-      "sha256": "318d99ceb0548ea0e5337f8497b6299b3cb23f0b97e4d27d66f5fe1716f7086a",
+      "relative_path": "functions/ym2612_render_algorithm_3_mask_07_037fe6d0.c",
+      "sha256": "c5f83e8c082a58def42f43b678e180d1463cca243ad2f98f810a08e440a02d36",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3082,8 +3082,8 @@
       "address": "0x37fe788",
       "name": "arm7_dispatch_037fe788",
       "status": "written",
-      "relative_path": "functions/0x37fe788.c",
-      "sha256": "01e6e0415cf7ae20ecbc95ce578396b4600abf40672d55d1c7b5712af8a9f009",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fe788.c",
+      "sha256": "a99549ec93d5928133d69eff395f014c58c4372fca826bfe6d9bf355f94cfa25",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3111,8 +3111,8 @@
       "address": "0x37fe82c",
       "name": "arm7_dispatch_037fe82c",
       "status": "written",
-      "relative_path": "functions/0x37fe82c.c",
-      "sha256": "bd878428c812c559bd899aaf3e2b71a3f226ef05fd52ad210b97eeed0e9134fc",
+      "relative_path": "functions/ym2612_render_algorithm_3_mask_0f_037fe82c.c",
+      "sha256": "a8062ba98c7105711d078a8a2cbe415adb3c3fbc2c7b40e898fca0193c9bd2d4",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3140,8 +3140,8 @@
       "address": "0x37fe918",
       "name": "arm7_dispatch_037fe918",
       "status": "written",
-      "relative_path": "functions/0x37fe918.c",
-      "sha256": "74ee7e5f9df736ed5dd9f47db6bc7c7bce68b97a685a1f5c6411ccccf6826426",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fe918.c",
+      "sha256": "67314f8abb0e7eff4953858baf9367feb88ccd48e846fa959530b8757dd63cee",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3169,8 +3169,8 @@
       "address": "0x37fe958",
       "name": "arm7_dispatch_037fe958",
       "status": "written",
-      "relative_path": "functions/0x37fe958.c",
-      "sha256": "6a3f7d292a8d47d4e0255b75dad53c53870420665369db0f4aa4bf832102bdec",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fe958.c",
+      "sha256": "c393fb77d2056e79fccc43c615336c5458eca2a99426eaa88a832779ca118dac",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3198,8 +3198,8 @@
       "address": "0x37fe9cc",
       "name": "arm7_dispatch_037fe9cc",
       "status": "written",
-      "relative_path": "functions/0x37fe9cc.c",
-      "sha256": "57a33141de87a9677898028a7899ec2075f7da94e105e55024ba1f8c3bc13e3c",
+      "relative_path": "functions/ym2612_render_algorithm_4_mask_01_037fe9cc.c",
+      "sha256": "d04b7dc576ef22afa51aa737482d65e31a517c70b56c573e302cca291c29bf1f",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3227,8 +3227,8 @@
       "address": "0x37fea2c",
       "name": "arm7_dispatch_037fea2c",
       "status": "written",
-      "relative_path": "functions/0x37fea2c.c",
-      "sha256": "c54a8441020dcf0db2384d90b967f3a28b246ebace42fd5718bf89d575ab0cd5",
+      "relative_path": "functions/ym2612_render_algorithm_4_mask_09_037fea2c.c",
+      "sha256": "0d452db8317d6f272663bf03c5518839caadf32997c27e206b05993e04bceb17",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3256,8 +3256,8 @@
       "address": "0x37feac0",
       "name": "arm7_dispatch_037feac0",
       "status": "written",
-      "relative_path": "functions/0x37feac0.c",
-      "sha256": "5b7100f16c8385236cff0f230a98af417a29168325d30c0140c898d08dabe123",
+      "relative_path": "functions/ym2612_render_algorithm_4_mask_02_037feac0.c",
+      "sha256": "25ef691ed77ec6598880a1869a9fad4aadf33f4593249352f880f1f1e5f03d9f",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3285,8 +3285,8 @@
       "address": "0x37feb2c",
       "name": "arm7_dispatch_037feb2c",
       "status": "written",
-      "relative_path": "functions/0x37feb2c.c",
-      "sha256": "86723692d4784cb1fb5e09d6d3b508b25dc2cb9b33e5c3b3e6dd5e9d339001f2",
+      "relative_path": "functions/ym2612_render_algorithm_4_mask_0a_037feb2c.c",
+      "sha256": "3e5327a0237c8ea41814957174758e026758abdbce2cdff13143f5fac74717ea",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3314,8 +3314,8 @@
       "address": "0x37febcc",
       "name": "arm7_dispatch_037febcc",
       "status": "written",
-      "relative_path": "functions/0x37febcc.c",
-      "sha256": "1c3e47ad8daf6438bc253603111ad960f1f9270b1db6aa3d6f087f2893a91ebe",
+      "relative_path": "functions/ym2612_render_algorithm_4_mask_03_037febcc.c",
+      "sha256": "d4238f005d5fc8486a961fbdfd5895f46bf68038eb981d564d64092fd69557fa",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3343,8 +3343,8 @@
       "address": "0x37fec5c",
       "name": "arm7_dispatch_037fec5c",
       "status": "written",
-      "relative_path": "functions/0x37fec5c.c",
-      "sha256": "c2a407b0a5e494e2e9df3561bb7e155a8d080a768e8aa964025b21ae4ceee738",
+      "relative_path": "functions/ym2612_render_algorithm_4_mask_0b_037fec5c.c",
+      "sha256": "384c7ec02c7471bdb69f5178f90d93b37e46b5122efb66d0bfd712c5cbeae9e2",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3372,8 +3372,8 @@
       "address": "0x37fed20",
       "name": "arm7_dispatch_037fed20",
       "status": "written",
-      "relative_path": "functions/0x37fed20.c",
-      "sha256": "db8ea9d681fe2705952ff31a6bfac1ebda754dbe0402cef3ffd94279c3989e43",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fed20.c",
+      "sha256": "dca98e15880db204e66e0af45d0ad6e7144cd5c9d5bb2c0075a70611b7db5431",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3401,8 +3401,8 @@
       "address": "0x37fed60",
       "name": "arm7_dispatch_037fed60",
       "status": "written",
-      "relative_path": "functions/0x37fed60.c",
-      "sha256": "efb6bab6a1616b77f3698b591682251125fd19ced36f4c1c159af2d9415b34e7",
+      "relative_path": "functions/ym2612_write_silent_pcm_037fed60.c",
+      "sha256": "0fba2036df3d02ba5a44a12284b241127463ee4eea19279a1b47e1c1d73324f3",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3430,8 +3430,8 @@
       "address": "0x37fedd4",
       "name": "arm7_dispatch_037fedd4",
       "status": "written",
-      "relative_path": "functions/0x37fedd4.c",
-      "sha256": "3da8f4691f612070ad4897897cfa458eea9439edd6e223658c72187ab3cc9719",
+      "relative_path": "functions/ym2612_render_algorithm_4_mask_05_037fedd4.c",
+      "sha256": "f9f39b59d941c41d8d818c272da5aef8fdf90efab907f621376425e36559df9e",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3459,8 +3459,8 @@
       "address": "0x37fee5c",
       "name": "arm7_dispatch_037fee5c",
       "status": "written",
-      "relative_path": "functions/0x37fee5c.c",
-      "sha256": "0abf898388eda660f91c99ce1fcc53998a5454ff3065c18b59d0c083623db813",
+      "relative_path": "functions/ym2612_render_algorithm_4_mask_0d_037fee5c.c",
+      "sha256": "6c97931fb251e629dfd5b64b4bb436c36416bb0d8109926e2f9b63b0be766e0f",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3488,8 +3488,8 @@
       "address": "0x37fef18",
       "name": "arm7_dispatch_037fef18",
       "status": "written",
-      "relative_path": "functions/0x37fef18.c",
-      "sha256": "d7c565c925cb95574f685cb2bbbb709383b290b34be3b69757a63ef4f839ad22",
+      "relative_path": "functions/ym2612_render_algorithm_4_mask_06_037fef18.c",
+      "sha256": "a8bd03dd1dbc77df01b78b4bf9251c64c43a061a8de90903387b10d60a8aa075",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3517,8 +3517,8 @@
       "address": "0x37fef84",
       "name": "arm7_dispatch_037fef84",
       "status": "written",
-      "relative_path": "functions/0x37fef84.c",
-      "sha256": "7b3716783b93408633897deb4ec362f69109b343d8dd8540e730406aedcd366d",
+      "relative_path": "functions/ym2612_render_algorithm_4_mask_0e_037fef84.c",
+      "sha256": "23152be0493bf8bf18abcea84fa5d9193e961d47661f28a4790958bb7ce5f68c",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3546,8 +3546,8 @@
       "address": "0x37ff024",
       "name": "arm7_dispatch_037ff024",
       "status": "written",
-      "relative_path": "functions/0x37ff024.c",
-      "sha256": "db6e0eb60030dd1940a9300b0875f5c7b7a364351f07fc1e1adc53ae49264b1c",
+      "relative_path": "functions/ym2612_render_algorithm_4_mask_07_037ff024.c",
+      "sha256": "d63fe05abf93c96e118cb4f347ee4d4629c50cd3fffee0e2c1605112a7a6d9a4",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3575,8 +3575,8 @@
       "address": "0x37ff0e0",
       "name": "arm7_dispatch_037ff0e0",
       "status": "written",
-      "relative_path": "functions/0x37ff0e0.c",
-      "sha256": "dc06827a92a5042ba9f9d57a73c3952af21092fa65e219209f7c9bae58e2b9c9",
+      "relative_path": "functions/ym2612_render_algorithm_4_mask_0f_037ff0e0.c",
+      "sha256": "1d144e9fc515cdbc57fa19839469ab50930acf050d1d072447a031876c85c990",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3604,8 +3604,8 @@
       "address": "0x37ff1d0",
       "name": "arm7_dispatch_037ff1d0",
       "status": "written",
-      "relative_path": "functions/0x37ff1d0.c",
-      "sha256": "48a9c663208ed9f7a4e8f04ab867ce104c41317b0e1660c41db2119fd3c0f63a",
+      "relative_path": "functions/ym2612_write_silent_pcm_037ff1d0.c",
+      "sha256": "462fbf003a808e1666c0414d558bb38741f37212b794187c9b6a02880f69718e",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3633,8 +3633,8 @@
       "address": "0x37ff214",
       "name": "arm7_dispatch_037ff214",
       "status": "written",
-      "relative_path": "functions/0x37ff214.c",
-      "sha256": "373da11aa593b1b80e6cec0ba43bd26932434992b3581c0aab0ad5db54c039f7",
+      "relative_path": "functions/ym2612_write_silent_pcm_037ff214.c",
+      "sha256": "31a9a2bf2317808f27e7d66a03e7996ba35a84bc850302ca80505550eee6f2c8",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3662,8 +3662,8 @@
       "address": "0x37ff28c",
       "name": "arm7_dispatch_037ff28c",
       "status": "written",
-      "relative_path": "functions/0x37ff28c.c",
-      "sha256": "6f7f98a0e4b0cf256808e3372c1557ed1679d85d07344fc062f2440f1486d4fb",
+      "relative_path": "functions/ym2612_render_algorithm_5_mask_01_037ff28c.c",
+      "sha256": "aec01badf518b06ebae751f1173c2fd6c0d4237edcb94cf79d33477a3b1711aa",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3691,8 +3691,8 @@
       "address": "0x37ff2f8",
       "name": "arm7_dispatch_037ff2f8",
       "status": "written",
-      "relative_path": "functions/0x37ff2f8.c",
-      "sha256": "c64a2d9c5e409abec3f06760707c2799f3861a6d46b39ffce1157b685bf71e57",
+      "relative_path": "functions/ym2612_render_algorithm_5_mask_09_037ff2f8.c",
+      "sha256": "3e7401f862c69101d68eb402e0f61c40ab22756c94466d6ff739412cbbc67bea",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3720,8 +3720,8 @@
       "address": "0x37ff398",
       "name": "arm7_dispatch_037ff398",
       "status": "written",
-      "relative_path": "functions/0x37ff398.c",
-      "sha256": "01ff8a8b6fc82623fd72f51449b9dde69e740e50e18a3154e84d3cdafee321d8",
+      "relative_path": "functions/ym2612_render_algorithm_5_mask_02_037ff398.c",
+      "sha256": "64a13a95cdd96d81a62283be2939a8d5e90c050903e9eadf6c2aafa1576a0ffe",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3749,8 +3749,8 @@
       "address": "0x37ff404",
       "name": "arm7_dispatch_037ff404",
       "status": "written",
-      "relative_path": "functions/0x37ff404.c",
-      "sha256": "8ef49033766824114a3af7b5909504f68d2b889d5d6fb389d8ee01f80be3191e",
+      "relative_path": "functions/ym2612_render_algorithm_5_mask_0a_037ff404.c",
+      "sha256": "60e3f745afe9afde0fa87b6bb00290fad9143ba6e9378f398f7f4de7ed293d96",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3778,8 +3778,8 @@
       "address": "0x37ff4a4",
       "name": "arm7_dispatch_037ff4a4",
       "status": "written",
-      "relative_path": "functions/0x37ff4a4.c",
-      "sha256": "c02b4f29d48a67182460250581a573f08c6656b34ec5eb5d390e17459350802b",
+      "relative_path": "functions/ym2612_render_algorithm_5_mask_03_037ff4a4.c",
+      "sha256": "91d466cb65496985a08aac5f7a875efaae9e85ebd97e29441f4ab612faa7dc09",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3807,8 +3807,8 @@
       "address": "0x37ff53c",
       "name": "arm7_dispatch_037ff53c",
       "status": "written",
-      "relative_path": "functions/0x37ff53c.c",
-      "sha256": "66c6159e764df1b25b1bbc6486c047dbdf04fbb761345ac41812382642cb7f78",
+      "relative_path": "functions/ym2612_render_algorithm_5_mask_0b_037ff53c.c",
+      "sha256": "18721df9a9a4abd90d5fd5283ec5e0d3e9654ea6de96ed2f8b22b596ebf78439",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3836,8 +3836,8 @@
       "address": "0x37ff608",
       "name": "arm7_dispatch_037ff608",
       "status": "written",
-      "relative_path": "functions/0x37ff608.c",
-      "sha256": "6cac5e9b258eaa1a8556f92dd20411eddd76ab3a9e857de45c8f88cde658f03d",
+      "relative_path": "functions/ym2612_render_algorithm_5_mask_04_037ff608.c",
+      "sha256": "b55965b9325a440423a74610c76956b471a13a086f28f256082d42be74cf2246",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3865,8 +3865,8 @@
       "address": "0x37ff674",
       "name": "arm7_dispatch_037ff674",
       "status": "written",
-      "relative_path": "functions/0x37ff674.c",
-      "sha256": "b0108f8586d70fca5d6524a5eead068f69f4714ea71f66ca6ad777f9a75f577c",
+      "relative_path": "functions/ym2612_render_algorithm_5_mask_0c_037ff674.c",
+      "sha256": "e1bbd833e06561d8ebf74c26841038e285d31342ef04b61c12f21cf3f2318a20",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3894,8 +3894,8 @@
       "address": "0x37ff714",
       "name": "arm7_dispatch_037ff714",
       "status": "written",
-      "relative_path": "functions/0x37ff714.c",
-      "sha256": "0a3dc7b3d93e28838184522ddaf34f08dba3fd2614af64296781af63ea393cff",
+      "relative_path": "functions/ym2612_render_algorithm_5_mask_05_037ff714.c",
+      "sha256": "6586107867e82d8d42036bb12bcbf61b7faa80e6303ed376e323c047c7669274",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3923,8 +3923,8 @@
       "address": "0x37ff7ac",
       "name": "arm7_dispatch_037ff7ac",
       "status": "written",
-      "relative_path": "functions/0x37ff7ac.c",
-      "sha256": "37ab1a8cf69feff6aa228372d42a6b2b7c2aa329e54f7c07cee00d2d2a596481",
+      "relative_path": "functions/ym2612_render_algorithm_5_mask_0d_037ff7ac.c",
+      "sha256": "67918460f4dc647246cdeef75290f34d2cf0ad445197177a17b832408ea9f301",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3952,8 +3952,8 @@
       "address": "0x37ff878",
       "name": "arm7_dispatch_037ff878",
       "status": "written",
-      "relative_path": "functions/0x37ff878.c",
-      "sha256": "712f6eb8f9510b3a4dc7576e096db4f23c575e0b58e47a3c796efa20480cf550",
+      "relative_path": "functions/ym2612_render_algorithm_5_mask_06_037ff878.c",
+      "sha256": "053d3f9f26ed298ad8a44249469a0efbf5fd2012faa63fd52d6cb88e91e5f61d",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -3981,8 +3981,8 @@
       "address": "0x37ff910",
       "name": "arm7_dispatch_037ff910",
       "status": "written",
-      "relative_path": "functions/0x37ff910.c",
-      "sha256": "92d1d712d4f837bcecbd34fb75780abab72f7c8c982bd6921eb15c9393109b2d",
+      "relative_path": "functions/ym2612_render_algorithm_5_mask_0e_037ff910.c",
+      "sha256": "2ee92776e9046e2f87f6d7279a3b8e7e9d0178b00e844ccd235415a783695c2b",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4010,8 +4010,8 @@
       "address": "0x37ff9dc",
       "name": "arm7_dispatch_037ff9dc",
       "status": "written",
-      "relative_path": "functions/0x37ff9dc.c",
-      "sha256": "a540b6d70661410bdc22f62188a04a5135677fb9ddcc4b85c5ba0ec9f2021e73",
+      "relative_path": "functions/ym2612_render_algorithm_5_mask_07_037ff9dc.c",
+      "sha256": "45f1208477c56cd0321656d7b6c89e0dcd9c2dd6f6effe08b1a9d0cacb48a8ff",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4039,8 +4039,8 @@
       "address": "0x37ffaa0",
       "name": "arm7_dispatch_037ffaa0",
       "status": "written",
-      "relative_path": "functions/0x37ffaa0.c",
-      "sha256": "900101fbf1c09a7ba3fdd444f84365cd3dae098e680d98376edd531b4ff33a8f",
+      "relative_path": "functions/ym2612_render_algorithm_5_mask_0f_037ffaa0.c",
+      "sha256": "16fe62bcfca1057e2c6dae1642706b5555638bbec0640dc5ac74458dc7daf519",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4068,8 +4068,8 @@
       "address": "0x37ffb98",
       "name": "arm7_dispatch_037ffb98",
       "status": "written",
-      "relative_path": "functions/0x37ffb98.c",
-      "sha256": "d329552122741e5db47af92415ea07eef25a9de748f00157546214b1d53aebda",
+      "relative_path": "functions/ym2612_write_silent_pcm_037ffb98.c",
+      "sha256": "18dbee3fd212349cb84f3ed9d1cc5aeb580f2bbb7285c9b4fc17196960e0e486",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4097,8 +4097,8 @@
       "address": "0x37ffbd8",
       "name": "arm7_dispatch_037ffbd8",
       "status": "written",
-      "relative_path": "functions/0x37ffbd8.c",
-      "sha256": "5098e28729a67bdb1797eb4ef1564d883f9f220b9ec778e14e75b4986d0fd920",
+      "relative_path": "functions/ym2612_write_silent_pcm_037ffbd8.c",
+      "sha256": "1ba0c5987b88dbc0ad3cf95e75da97f94ed1eafe6551ce2147e705c70d0c9d90",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4126,8 +4126,8 @@
       "address": "0x37ffc4c",
       "name": "arm7_dispatch_037ffc4c",
       "status": "written",
-      "relative_path": "functions/0x37ffc4c.c",
-      "sha256": "04d5f6d7407970b708265cf47d295ad2e95ef444ad1bb086d07480de81a62b7e",
+      "relative_path": "functions/ym2612_render_algorithm_6_mask_01_037ffc4c.c",
+      "sha256": "bbef2e4b14f6a2188329916cc97505882dc7443cd9ac7580779431ffd000d76e",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4155,8 +4155,8 @@
       "address": "0x37ffcac",
       "name": "arm7_dispatch_037ffcac",
       "status": "written",
-      "relative_path": "functions/0x37ffcac.c",
-      "sha256": "e753cd7ad1efb95e2fb0fa646571dfca6f5f9c0a092765a22cb9a1514d4f0e05",
+      "relative_path": "functions/ym2612_render_algorithm_6_mask_09_037ffcac.c",
+      "sha256": "322642e18581b5939a281745c6b19cd06b284730711dba5ce12867c1a7c96a5f",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4184,8 +4184,8 @@
       "address": "0x37ffd40",
       "name": "arm7_dispatch_037ffd40",
       "status": "written",
-      "relative_path": "functions/0x37ffd40.c",
-      "sha256": "b74171d13393d9cee6e7a3b3f0b7a0a32f7284c9a66efb273728a82952700eb3",
+      "relative_path": "functions/ym2612_render_algorithm_6_mask_02_037ffd40.c",
+      "sha256": "79b0f65a76f0dd47f3bec760427d8c7c43bf8d494442f6c1b871d0fd80f917ee",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4213,8 +4213,8 @@
       "address": "0x37ffdac",
       "name": "arm7_dispatch_037ffdac",
       "status": "written",
-      "relative_path": "functions/0x37ffdac.c",
-      "sha256": "2eea13aa6c7bf30d0e2c159d6ee86d9e170cbc1d2b8f9e6e777d1157c2a108bd",
+      "relative_path": "functions/ym2612_render_algorithm_6_mask_0a_037ffdac.c",
+      "sha256": "b04491423a3de97fce74ab4e24116c299d3fc26b289e015b46b5ebb481123d8a",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4242,8 +4242,8 @@
       "address": "0x37ffe4c",
       "name": "arm7_dispatch_037ffe4c",
       "status": "written",
-      "relative_path": "functions/0x37ffe4c.c",
-      "sha256": "30879f34e98f8e4c3a0ed48c3c610f5258be079dda459cac880f53d5918383da",
+      "relative_path": "functions/ym2612_render_algorithm_6_mask_03_037ffe4c.c",
+      "sha256": "f23f604300d729aeb976552066dea49652451443068731f24c7ef1fe0fa84101",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4271,8 +4271,8 @@
       "address": "0x37ffedc",
       "name": "arm7_dispatch_037ffedc",
       "status": "written",
-      "relative_path": "functions/0x37ffedc.c",
-      "sha256": "041b0899677c49bf187a0d3dd444e3dc2ec4ad2cf060d787928845d701d01231",
+      "relative_path": "functions/ym2612_render_algorithm_6_mask_0b_037ffedc.c",
+      "sha256": "d02baa2733c2329dfb4a6a6a2af7cb8167c02bae412737b5e3c105fad45499e4",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4300,8 +4300,8 @@
       "address": "0x37fffa0",
       "name": "arm7_dispatch_037fffa0",
       "status": "written",
-      "relative_path": "functions/0x37fffa0.c",
-      "sha256": "4a1a7c0f7021e238cef0f1d42ea0aaf94c3883daea1919f3f19b5b2220b90b96",
+      "relative_path": "functions/ym2612_render_algorithm_6_mask_04_037fffa0.c",
+      "sha256": "d8e1a6c366841a803f87eaf39ce2b40c0b5a6bd23be027ff8a35bb36222ec551",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4329,8 +4329,8 @@
       "address": "0x3800000",
       "name": "arm7_dispatch_03800000",
       "status": "written",
-      "relative_path": "functions/0x3800000.c",
-      "sha256": "d2d1f28fd5a0b1dbd7195592eda476db50f6090ce83c65e37e4640be505bcf96",
+      "relative_path": "functions/ym2612_render_algorithm_6_mask_0c_03800000.c",
+      "sha256": "80f2787b0f95517fd31c388f9e4f8f8b4343f184712db1a72126b2e786a8cf0e",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4358,8 +4358,8 @@
       "address": "0x3800094",
       "name": "arm7_dispatch_03800094",
       "status": "written",
-      "relative_path": "functions/0x3800094.c",
-      "sha256": "aceb68ee2f4954b42e44dd5cdbaa39301a1d8deea00937222649024ef2908c65",
+      "relative_path": "functions/ym2612_render_algorithm_6_mask_05_03800094.c",
+      "sha256": "a32b0ef890759bd596975621879ad40cad08684a3cd2efb548da5189eeb537b7",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4387,8 +4387,8 @@
       "address": "0x3800118",
       "name": "arm7_dispatch_03800118",
       "status": "written",
-      "relative_path": "functions/0x3800118.c",
-      "sha256": "a1eff50d115faef225237f86365655b60e32259c19fa81f049e2256c3d8157f1",
+      "relative_path": "functions/ym2612_render_algorithm_6_mask_0d_03800118.c",
+      "sha256": "6fe77f61b835bed55b7c3e654f875c9872c01037f8d619ac35c7f3003123570e",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4416,8 +4416,8 @@
       "address": "0x38001d0",
       "name": "arm7_dispatch_038001d0",
       "status": "written",
-      "relative_path": "functions/0x38001d0.c",
-      "sha256": "120836815164c7fb7e99b4a24fd9ac48eeee1ff3519e188b4c0a1e86a29a41ea",
+      "relative_path": "functions/ym2612_render_algorithm_6_mask_06_038001d0.c",
+      "sha256": "8ee5c96ff8e5315ed5774bbc97d0d2d1502ddd4f64b744588ffcfe55b6b0ceb2",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4445,8 +4445,8 @@
       "address": "0x3800260",
       "name": "arm7_dispatch_03800260",
       "status": "written",
-      "relative_path": "functions/0x3800260.c",
-      "sha256": "29a1286a99d2e97ef41abc730f7388ecd14343c67bd0c2b447e5303eb6833d83",
+      "relative_path": "functions/ym2612_render_algorithm_6_mask_0e_03800260.c",
+      "sha256": "ff3c6dad940584dbad323bf46780ffb532bac344b7e40d20c5934ea1a163abe8",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4474,8 +4474,8 @@
       "address": "0x3800324",
       "name": "arm7_dispatch_03800324",
       "status": "written",
-      "relative_path": "functions/0x3800324.c",
-      "sha256": "7cc8b5d15687365e357d926ad55f981face899c7e33068146f5eae888bff0ce8",
+      "relative_path": "functions/ym2612_render_algorithm_6_mask_07_03800324.c",
+      "sha256": "97167903302a81a207723707b9842ab62cca0d3106bdeb4f68514cede8437f82",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4503,8 +4503,8 @@
       "address": "0x38003d8",
       "name": "arm7_dispatch_038003d8",
       "status": "written",
-      "relative_path": "functions/0x38003d8.c",
-      "sha256": "179a0559e876c8c88b15c41c3c8eadc7c89fab37f32b0ed4ac3f7b199bb98622",
+      "relative_path": "functions/ym2612_render_algorithm_6_mask_0f_038003d8.c",
+      "sha256": "cd349c5192288529bb62cf58517888a5028c44d5c01702edbd45120d3f0ae957",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4532,8 +4532,8 @@
       "address": "0x38004c0",
       "name": "arm7_dispatch_038004c0",
       "status": "written",
-      "relative_path": "functions/0x38004c0.c",
-      "sha256": "a9602b45669b3b7d4763511ae3f045bc5d4124f6be677c2b1473164e6a5b2779",
+      "relative_path": "functions/ym2612_render_algorithm_7_mask_00_038004c0.c",
+      "sha256": "f36cb4f20d8d519648f30868c5f838dc094663dbedd3808911a9a2cfd7cab2b9",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4561,8 +4561,8 @@
       "address": "0x3800504",
       "name": "arm7_dispatch_03800504",
       "status": "written",
-      "relative_path": "functions/0x3800504.c",
-      "sha256": "21d994d6a433f05921c9318590cec1046e13f562aa0c07588c52dfd7c181c1aa",
+      "relative_path": "functions/ym2612_render_algorithm_7_mask_08_03800504.c",
+      "sha256": "c183566587467bb93af9c64fb8167b042659c857c8706b7459fd0c662af7fb72",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4590,8 +4590,8 @@
       "address": "0x380057c",
       "name": "arm7_dispatch_0380057c",
       "status": "written",
-      "relative_path": "functions/0x380057c.c",
-      "sha256": "a5c809551eddfe8dcc2af3774553a737f1635081534ca6537379e69094edd05f",
+      "relative_path": "functions/ym2612_render_algorithm_7_mask_01_0380057c.c",
+      "sha256": "ecb3aeca857dedf6fed1907e215e6742cf9feda5d347239667da20956ce078e9",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4619,8 +4619,8 @@
       "address": "0x38005e0",
       "name": "arm7_dispatch_038005e0",
       "status": "written",
-      "relative_path": "functions/0x38005e0.c",
-      "sha256": "7c2c19a872f8418c562c84ee4ba0bf3c315a4ae8f65c378820e141f52542b5b3",
+      "relative_path": "functions/ym2612_render_algorithm_7_mask_09_038005e0.c",
+      "sha256": "d8aa860ac62768abff8fdd09c135b0f9f356f1a299c187832769fb75a06f20f5",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4648,8 +4648,8 @@
       "address": "0x3800678",
       "name": "arm7_dispatch_03800678",
       "status": "written",
-      "relative_path": "functions/0x3800678.c",
-      "sha256": "51b3557c24698961b99c65a7d0797d1643fe4e1998b751a531e6f15e262ac856",
+      "relative_path": "functions/ym2612_render_algorithm_7_mask_02_03800678.c",
+      "sha256": "588a50be04f1b8ba4732c568137f89d5f91b4065ddefbd76c06ccefa3899b35c",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4677,8 +4677,8 @@
       "address": "0x38006dc",
       "name": "arm7_dispatch_038006dc",
       "status": "written",
-      "relative_path": "functions/0x38006dc.c",
-      "sha256": "0ebd05565318723609fa7622e32d2dc279207056fb8d2eb649194b2c70be7576",
+      "relative_path": "functions/ym2612_render_algorithm_7_mask_0a_038006dc.c",
+      "sha256": "af09621f8150dc30cf00673da0ab023a91cba3a2cbe2bda92ca2c508d8cc2804",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4706,8 +4706,8 @@
       "address": "0x3800774",
       "name": "arm7_dispatch_03800774",
       "status": "written",
-      "relative_path": "functions/0x3800774.c",
-      "sha256": "214cb66e7eb67a4e861866374bb17bfdd80c50e6d464e3edaaa053af8a0be931",
+      "relative_path": "functions/ym2612_render_algorithm_7_mask_03_03800774.c",
+      "sha256": "25d20e7e7f26141250077b652b7fff455016e1d2fa0f88f855be5b8955a116f4",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4735,8 +4735,8 @@
       "address": "0x38007fc",
       "name": "arm7_dispatch_038007fc",
       "status": "written",
-      "relative_path": "functions/0x38007fc.c",
-      "sha256": "affee8b1f5f2b6bb3f70c09eec55d490f3623bc93f5d6e5c3d87ad3df5a736da",
+      "relative_path": "functions/ym2612_render_algorithm_7_mask_0b_038007fc.c",
+      "sha256": "fb49705248b7e25a6de39276bdc1436d610c4312f371ad58fe38485c60a0029f",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4764,8 +4764,8 @@
       "address": "0x38008b8",
       "name": "arm7_dispatch_038008b8",
       "status": "written",
-      "relative_path": "functions/0x38008b8.c",
-      "sha256": "ee58c8457e4faf0ed47c8bef2ab638c79e963bd7168eb6d455bb480f1e6e3925",
+      "relative_path": "functions/ym2612_render_algorithm_7_mask_04_038008b8.c",
+      "sha256": "af32173528de3d910d23afc2a628a6792662533905b26bed6c5f5faf5dbb2edb",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4793,8 +4793,8 @@
       "address": "0x380091c",
       "name": "arm7_dispatch_0380091c",
       "status": "written",
-      "relative_path": "functions/0x380091c.c",
-      "sha256": "8c8c5ee68efae65c1508df2744d63b2c5f4ad812e944f9cbf0fa7dd8d7a87f07",
+      "relative_path": "functions/ym2612_render_algorithm_7_mask_0c_0380091c.c",
+      "sha256": "5f970e649cb5450472e47d4b581293e5d52ec5f1c0d8a7e9ed9c98b9ad700f85",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4822,8 +4822,8 @@
       "address": "0x38009b4",
       "name": "arm7_dispatch_038009b4",
       "status": "written",
-      "relative_path": "functions/0x38009b4.c",
-      "sha256": "0564dd06e2544f1793b3b9eb60334d64209184a8697c00fac4263ee4ec1bde54",
+      "relative_path": "functions/ym2612_render_algorithm_7_mask_05_038009b4.c",
+      "sha256": "c6010a7a89ef39db82fd082fadb15d17ce299a9d8d4c0765700e1657a4439daf",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4851,8 +4851,8 @@
       "address": "0x3800a3c",
       "name": "arm7_dispatch_03800a3c",
       "status": "written",
-      "relative_path": "functions/0x3800a3c.c",
-      "sha256": "51bff60e6c0c311aadc5263536f219005fc4c60e08639b3e9cd3ee7ea90cc2b3",
+      "relative_path": "functions/ym2612_render_algorithm_7_mask_0d_03800a3c.c",
+      "sha256": "4b91fbf27815c175da67ddcec164bae74f173b0eead3aa1ddfce887a74cb98d2",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4880,8 +4880,8 @@
       "address": "0x3800af8",
       "name": "arm7_dispatch_03800af8",
       "status": "written",
-      "relative_path": "functions/0x3800af8.c",
-      "sha256": "fcbb71f64794dcce9e57088008d1b2495b2e5e503668c95a3da5b8ade1b21d7f",
+      "relative_path": "functions/ym2612_render_algorithm_7_mask_06_03800af8.c",
+      "sha256": "eab92c1363eab99f52f72d574114716b9b9b9c50d87805121a783c7f9ded81e7",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4909,8 +4909,8 @@
       "address": "0x3800b80",
       "name": "arm7_dispatch_03800b80",
       "status": "written",
-      "relative_path": "functions/0x3800b80.c",
-      "sha256": "441065cca9fc67bf793420ef36a43c087cc52570d5261c7f1e569e87b59cee2e",
+      "relative_path": "functions/ym2612_render_algorithm_7_mask_0e_03800b80.c",
+      "sha256": "1a2c7f82833a69fcd54a65ea4a9f92ee3bc12d066a1ac95a8d3ffe97876d2c2e",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4938,8 +4938,8 @@
       "address": "0x3800c3c",
       "name": "arm7_dispatch_03800c3c",
       "status": "written",
-      "relative_path": "functions/0x3800c3c.c",
-      "sha256": "6b7a0ff82e8e711e39575f7fa6a96ceb7badb843349ffeb248f7d837170d0d35",
+      "relative_path": "functions/ym2612_render_algorithm_7_mask_07_03800c3c.c",
+      "sha256": "0f5f098ab79ac4e0ecc1e5fec46a1d2f82ed4256faec0d25aa243e474a21406b",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -4967,8 +4967,8 @@
       "address": "0x3800ce8",
       "name": "arm7_dispatch_03800ce8",
       "status": "written",
-      "relative_path": "functions/0x3800ce8.c",
-      "sha256": "37113673f38a86e225c71ee2eadfe7b01f20f044a69fa6ed69e59f2ca8e56b6b",
+      "relative_path": "functions/ym2612_render_algorithm_7_mask_0f_03800ce8.c",
+      "sha256": "80a6e0a0146b66b5a9148950da1fc81a6225d8814108cc7c6b41f13a0fbe488a",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5000,8 +5000,8 @@
       "address": "0x3800dd0",
       "name": "FUN_03800dd0",
       "status": "written",
-      "relative_path": "functions/0x3800dd0.c",
-      "sha256": "4bc3487ca1321dc8e8593f7b04e5a69e8c6d546945712e38364643c33b914c26",
+      "relative_path": "functions/dispatch_fm_algorithm_and_operator_mask_03800dd0.c",
+      "sha256": "36e5dbc4efc4b93bb85d2858d37d71972e71b810bfaf079edde45ae811d56728",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5029,8 +5029,8 @@
       "address": "0x3801060",
       "name": "FUN_03801060",
       "status": "written",
-      "relative_path": "functions/0x3801060.c",
-      "sha256": "9260d65dc4edc7681613c3f98873650e8241ec01155dc10b748e1025bd753545",
+      "relative_path": "functions/convert_bcd_bytes_to_decimal_03801060.c",
+      "sha256": "f878496c8e72395833363b6da74c5504d8d2724b852d0392763fdace50e4f3a2",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5058,8 +5058,8 @@
       "address": "0x380108c",
       "name": "FUN_0380108c",
       "status": "written",
-      "relative_path": "functions/0x380108c.c",
-      "sha256": "f442d28569e9b04ff8ab1bc76536aeac8b20925ed9fe004069c8a343c79fa3aa",
+      "relative_path": "functions/convert_decimal_bytes_to_bcd_0380108c.c",
+      "sha256": "2e071d9e40aef54fb2ff04bbcc7f8e33d0f1a7624b7d72a460a745e535bc6c7a",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5087,8 +5087,8 @@
       "address": "0x38010c8",
       "name": "FUN_038010c8",
       "status": "written",
-      "relative_path": "functions/0x38010c8.c",
-      "sha256": "276770dfc796a389ddbef8d05f429e0b700dacc95f753980f89011ad60084861",
+      "relative_path": "functions/transfer_rtc_command_and_response_038010c8.c",
+      "sha256": "deda7f7e967a951352a621470f8081710ae0ba0f5ec74b04cb016254e61f77c2",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5116,8 +5116,8 @@
       "address": "0x3801200",
       "name": "FUN_03801200",
       "status": "written",
-      "relative_path": "functions/0x3801200.c",
-      "sha256": "3565c7aac1d39442dda7780ac94e022701e1233065d8b1d70485c4144647b503",
+      "relative_path": "functions/initialize_rtc_control_03801200.c",
+      "sha256": "19633d8dc08217d35063180ff98f544d06973f2cd129adb14d4b3c1752055a0d",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5145,8 +5145,8 @@
       "address": "0x3801244",
       "name": "FUN_03801244",
       "status": "written",
-      "relative_path": "functions/0x3801244.c",
-      "sha256": "58ef75e3ff1c925f10ff8b1912bc218db240ae22e2da7daed3555cf424cb3705",
+      "relative_path": "functions/read_touch_adc_sample_03801244.c",
+      "sha256": "06eca9d0d805fda54ddbb8cbbeba22421bb0692da359feeab048710ea5368e6a",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5174,8 +5174,8 @@
       "address": "0x3801310",
       "name": "FUN_03801310",
       "status": "written",
-      "relative_path": "functions/0x3801310.c",
-      "sha256": "bfbdcace1c5b646d9c6ac45a5e0596538f71a8e6057b6d7de977f1e0b8a9b59d",
+      "relative_path": "functions/sample_touch_coordinates_03801310.c",
+      "sha256": "54be516c51be1453895df94b1adb6c992a58582eeb293e71200a861c9a8b5e67",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5203,8 +5203,8 @@
       "address": "0x3801360",
       "name": "FUN_03801360",
       "status": "written",
-      "relative_path": "functions/0x3801360.c",
-      "sha256": "8ac6551e1ad3b47fea89e21e606b0ea5ede9e2ce0657e51abd9de1f43bd21066",
+      "relative_path": "functions/calibrate_touch_coordinates_03801360.c",
+      "sha256": "0974d9203f7a57cea7a8333a896d83f42bd70c27d82601c5510d815f66cdca16",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5232,8 +5232,8 @@
       "address": "0x380152c",
       "name": "FUN_0380152c",
       "status": "written",
-      "relative_path": "functions/0x380152c.c",
-      "sha256": "5462ad1b2eb24ba440e836516ced076cfaa69c846e97a10c5f31b8ebdf75e178",
+      "relative_path": "functions/read_temperature_adc_pair_0380152c.c",
+      "sha256": "9a12bfa33856695d764a6f0875479a5cc90c0c6085b1446fdb7c5ef7fdb620ee",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5261,8 +5261,8 @@
       "address": "0x3801564",
       "name": "FUN_03801564",
       "status": "written",
-      "relative_path": "functions/0x3801564.c",
-      "sha256": "a0f574c9cdd08a668f99e24bd61789061566e9cfffc13801fce164ec39c41279",
+      "relative_path": "functions/install_interrupt_callback_03801564.c",
+      "sha256": "e4628d5f04585df0a122e196d39ff842323f274735556559f3cbcc69462b458c",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5290,8 +5290,8 @@
       "address": "0x38015d0",
       "name": "FUN_038015d0",
       "status": "written",
-      "relative_path": "functions/0x38015d0.c",
-      "sha256": "726fb34fe8299bb628e10bbc09f6fbdd7377b0e8a93a0a02b386f4f5bde66e7e",
+      "relative_path": "functions/initialize_interrupt_controller_038015d0.c",
+      "sha256": "5b87c09dd7f75bfb8e32355e3254b281cfcab30c3d6b6f96f186af1edc3a148f",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5319,8 +5319,8 @@
       "address": "0x3801620",
       "name": "FUN_03801620",
       "status": "written",
-      "relative_path": "functions/0x3801620.c",
-      "sha256": "3a3f7adaca4e1df7e4efc3066fe8644a346d5ed6ea8f1c2cada9753122763b13",
+      "relative_path": "functions/disable_interrupt_sources_03801620.c",
+      "sha256": "0a6775e921f26b84c8973587d10c517482123bbd3f5813b911b8b280e3688571",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5348,8 +5348,8 @@
       "address": "0x38016a4",
       "name": "FUN_038016a4",
       "status": "written",
-      "relative_path": "functions/0x38016a4.c",
-      "sha256": "b8cc834ed9620e51c3761f76436324cba7e14f0639b003154a44d474bae25959",
+      "relative_path": "functions/replace_irq_dispatcher_038016a4.c",
+      "sha256": "d8068154d1de4c63ce2505d9ca9bcc03118362bc0651d9d1a131107062379a28",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5377,8 +5377,8 @@
       "address": "0x38016d8",
       "name": "FUN_038016d8",
       "status": "written",
-      "relative_path": "functions/0x38016d8.c",
-      "sha256": "38ccf947b55c0ef29d43dc2c5847ef21a0a9f1e4eaafac8bfefa6c04e8fef9f4",
+      "relative_path": "functions/enable_interrupt_sources_038016d8.c",
+      "sha256": "e93fb2e1eb8cb6a65831874f2aa65cd21cf77d54121d8e50e0445d8905c0cf03",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5406,8 +5406,8 @@
       "address": "0x3801784",
       "name": "FUN_03801784",
       "status": "written",
-      "relative_path": "functions/0x3801784.c",
-      "sha256": "61f5a552ddd8598146d0c0b83c8476d38c7e324269ae9d3c5ac3070fcde221bd",
+      "relative_path": "functions/bios_delay_cycles_03801784.c",
+      "sha256": "636fd279e6f2b935d6de2a1f8cf82e159054a213e1c91f349b1bc382b14697a9",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5435,8 +5435,8 @@
       "address": "0x380178c",
       "name": "FUN_0380178c",
       "status": "written",
-      "relative_path": "functions/0x380178c.c",
-      "sha256": "730c36d90b325795b5fe49a6df55265e7aa3bebe45271eaca2e7f6be0f5adf83",
+      "relative_path": "functions/bios_wait_for_vblank_0380178c.c",
+      "sha256": "a2c2c6828fabfed92e3778feafcf60fb95925b05311813babc3bc4adba05ba15",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5464,8 +5464,8 @@
       "address": "0x38017a2",
       "name": "FUN_038017a2",
       "status": "written",
-      "relative_path": "functions/0x38017a2.c",
-      "sha256": "890bd9ee3581ba604e252e6fe98fffb8ce2389bd6a8dfc008ac0063ee7926466",
+      "relative_path": "functions/bios_divide_with_remainder_038017a2.c",
+      "sha256": "f58151355deba6fdbf459d98c35bfafd6560f38b0d8d68ee43403d013043515f",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5493,8 +5493,8 @@
       "address": "0x38018d8",
       "name": "FUN_038018d8",
       "status": "written",
-      "relative_path": "functions/0x38018d8.c",
-      "sha256": "285bc2f45f9da3bca0b7545987be55279e633ac2d8a5715a438f32922be725f7",
+      "relative_path": "functions/compiler_udivsi3_038018d8.c",
+      "sha256": "788ef8a882846b599902e462b4bba784d569dedf8c2cb2f564202c5ab0a4ab90",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5522,8 +5522,8 @@
       "address": "0x38019d4",
       "name": "FUN_038019d4",
       "status": "written",
-      "relative_path": "functions/0x38019d4.c",
-      "sha256": "ed0e81aaf5e2b3a65d0da8a88cf73184ea4d4e55aa0191d27c5a315cfca9bd71",
+      "relative_path": "functions/compiler_aeabi_uidivmod_038019d4.c",
+      "sha256": "6d71f2da6902404e0af00fc53a37695e1cb6d87881d13c2c90e23fe5548078ab",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5551,8 +5551,8 @@
       "address": "0x38019ec",
       "name": "FUN_038019ec",
       "status": "written",
-      "relative_path": "functions/0x38019ec.c",
-      "sha256": "30107ea76e2fc1f11a7a8dd17dee27093b17c91fea806f95545487ca818167b8",
+      "relative_path": "functions/compiler_divsi3_038019ec.c",
+      "sha256": "6c700061441445fc66d832fd90f0cb21f67e0c9f76d0d7d827a00eb549ef1a90",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5580,8 +5580,8 @@
       "address": "0x3801b18",
       "name": "FUN_03801b18",
       "status": "written",
-      "relative_path": "functions/0x3801b18.c",
-      "sha256": "65d4ca09203efeeb6a6078362db67a359cab1538391f80d75763853bd9a654b2",
+      "relative_path": "functions/compiler_aeabi_idivmod_03801b18.c",
+      "sha256": "92af7e84c7481048801c2514d086fb18d163ace84c8ddd13ac41cebf1ebd73eb",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5609,8 +5609,8 @@
       "address": "0x3801b30",
       "name": "FUN_03801b30",
       "status": "written",
-      "relative_path": "functions/0x3801b30.c",
-      "sha256": "c5721f2e3f5ee19c05337898dae2960a428c4cd4d9160dab943347f4120e4b8d",
+      "relative_path": "functions/helper_for_compiler_udivsi3_03801b30.c",
+      "sha256": "b186b72a5aa12162b631bcb33235baffe6171978e9a2ba545b3fdd72fc969378",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5638,8 +5638,8 @@
       "address": "0x3801b40",
       "name": "FUN_03801b40",
       "status": "written",
-      "relative_path": "functions/0x3801b40.c",
-      "sha256": "9bcfcb8d54504782fa581381f3526ab6e09df967a381afc259f55696f0b9a0ed",
+      "relative_path": "functions/thumb_call_via_r3_03801b40.c",
+      "sha256": "9168cfd9123757659f2d4694a6f0f9873a21cdb7a55e947d1edc521f47895f75",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5667,8 +5667,8 @@
       "address": "0x3801b7c",
       "name": "FUN_03801b7c",
       "status": "written",
-      "relative_path": "functions/0x3801b7c.c",
-      "sha256": "012e03ffca6188e1b6e80c58341748b56d4a1e675a8021e2ba16a496ae4a81f8",
+      "relative_path": "functions/compiler_adddf3_03801b7c.c",
+      "sha256": "cea748a6a7131ea753cf622a2fe7ef94a18ef9857b87df6727fbbdec1ac4781f",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5696,8 +5696,8 @@
       "address": "0x3801eb0",
       "name": "FUN_03801eb0",
       "status": "written",
-      "relative_path": "functions/0x3801eb0.c",
-      "sha256": "66d7665aef3c30a0437eca73ea912ac52dff7f82488ff62bbe1b0bd729bd4240",
+      "relative_path": "functions/compiler_floatsidf_03801eb0.c",
+      "sha256": "3d62da9df23e6cfa9ce2c3826d5c72896eec13d0fa56aab096dea9035388ba13",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5725,8 +5725,8 @@
       "address": "0x3801f8c",
       "name": "FUN_03801f8c",
       "status": "written",
-      "relative_path": "functions/0x3801f8c.c",
-      "sha256": "253ba794cc9ac1cf36e6847ea744d96e63060caf776dbfa08ab1b07d2da0f584",
+      "relative_path": "functions/compiler_muldf3_03801f8c.c",
+      "sha256": "2d4742d3008b6a85731ce3cc702fef57e69a4fb879802daa705c1a2daca10276",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5754,8 +5754,8 @@
       "address": "0x3802184",
       "name": "FUN_03802184",
       "status": "written",
-      "relative_path": "functions/0x3802184.c",
-      "sha256": "9ab4ec543ada3ea02992e2c3431aa47580df9519d278c0374236d5b6adf9800c",
+      "relative_path": "functions/helper_for_compiler_muldf3_03802184.c",
+      "sha256": "39f8bff1f0f04ab34159e952890169728b4cd643302da5706960edffed639135",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5783,8 +5783,8 @@
       "address": "0x380221c",
       "name": "FUN_0380221c",
       "status": "written",
-      "relative_path": "functions/0x380221c.c",
-      "sha256": "a3a924a5fa45ae161e9f2b8d8c0c010d0183409e2313af57d6629e819ef758c7",
+      "relative_path": "functions/compiler_divdf3_0380221c.c",
+      "sha256": "b3db4935bedd77a1a43e5f8d85385b1d5b6af871a171d536d42378b7077d2224",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5812,8 +5812,8 @@
       "address": "0x38023b8",
       "name": "FUN_038023b8",
       "status": "written",
-      "relative_path": "functions/0x38023b8.c",
-      "sha256": "0252d65169074cda14bf51787c2204780b4efa5e38aeaf3b7ebfd18f995b7f92",
+      "relative_path": "functions/helper_for_compiler_divdf3_038023b8.c",
+      "sha256": "fb4f1ae13901aebc226e2acab2fcef5f0484c0d2abc12a5b52ac48cdfbc7f10d",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5841,8 +5841,8 @@
       "address": "0x3802428",
       "name": "FUN_03802428",
       "status": "written",
-      "relative_path": "functions/0x3802428.c",
-      "sha256": "5c6eb4ddada2419f7b1a761e01e3abc4bdd23ac11c3427279dc198fc894539aa",
+      "relative_path": "functions/compiler_fixdfsi_03802428.c",
+      "sha256": "5dc57a5bffb6e4cbf136623550084f4431f537a8f41830238797d6886f77f5e3",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5870,8 +5870,8 @@
       "address": "0x3802484",
       "name": "FUN_03802484",
       "status": "written",
-      "relative_path": "functions/0x3802484.c",
-      "sha256": "9ab07cb34a3a43e61bdb018092cc5df0a296f061fd5541a3b174822b496eb2b9",
+      "relative_path": "functions/compiler_fixunsdfsi_03802484.c",
+      "sha256": "9ca3b3d49d46dc6b8bd00f8b467a929ce4f3c9bd21eed469be70285e62168b4c",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5899,8 +5899,8 @@
       "address": "0x3802524",
       "name": "arm7_startup_call_1",
       "status": "written",
-      "relative_path": "functions/0x3802524.c",
-      "sha256": "0e5de9207049360e3ca75ae229454ddfa4bbaefadf0b45aa181e37fb638b847d",
+      "relative_path": "functions/run_arm7_c_runtime_initializers_03802524.c",
+      "sha256": "40a520407840615613b18751364da55680540589f200eab5e914cb2a508f3b19",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5928,8 +5928,8 @@
       "address": "0x38025ac",
       "name": "FUN_038025ac",
       "status": "written",
-      "relative_path": "functions/0x38025ac.c",
-      "sha256": "59e6e16011f947e881a293c34de36970de05112a961c772536ddf418090d1642",
+      "relative_path": "functions/newlib_memcpy_038025ac.c",
+      "sha256": "d9a2e6d840da46ac8f30878752d379308965ed3039b9b21461a9788d179d9406",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
@@ -5957,8 +5957,8 @@
       "address": "0x3802648",
       "name": "FUN_03802648",
       "status": "written",
-      "relative_path": "functions/0x3802648.c",
-      "sha256": "8bf67beffe0d57f760621f724710d91b1cd2cc7506a35adf500663ecc8bfae6f",
+      "relative_path": "functions/newlib_memset_03802648.c",
+      "sha256": "54ea7e1ad2244c84d4ed852b11c962a7ce22fc5256134e972f94e94b2f1b4c19",
       "provider_source": {
         "status": "unknown",
         "reason": "source_not_available"
