@@ -14,11 +14,11 @@ make
 
 This compiles and links both CPUs into ELFs under `build/c/`, then packages them into `build/jEnesisDS-C.nds`. The fresh build requires only this checkout and the installed SDK and toolchain. Set `WONDERFUL_TOOLCHAIN` or `BLOCKSDS` to use a custom installation.
 
-In melonDS, enable a virtual DLDI SD card and add Genesis ROMs to it. The bottom screen uses the original menu arrangement with a newly drawn theme.
+In melonDS, enable a virtual DLDI SD card and add Genesis ROMs to it. The bottom screen follows the original's icon toolbar, framed list, and slim status strip. The C port draws its own icons and uses a charcoal and copper palette.
 
 - In the ROM browser, use **Up** and **Down** to highlight an entry, **Left** and **Right** to change pages, **A** to open or run the selection, and **B** to open the parent folder.
-- During emulation, touch the panel to pause and touch again or press **SELECT** to resume. Press **SELECT** while running or tap **ROM** to open the browser. Press **SELECT** in the browser to return to the current cartridge.
-- Tap **SET** to open configuration. Use **A** or tap **Country** to cycle the region for the next cartridge.
+- During emulation, touch the panel to pause and touch again or press **SELECT** to resume. Press **SELECT** while running or tap the cartridge icon to open the browser. Press **SELECT** in the browser to return to the current cartridge.
+- Tap the controller icon to open configuration. Use **A** or tap **Country** to cycle the region for the next cartridge.
 - The two save-slot controls show their status when tapped. Save and load operations are pending.
 
 ## C sources

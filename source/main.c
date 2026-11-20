@@ -108,12 +108,6 @@ struct application {
 
 static void draw_browser(const struct browser *browser)
 {
-    char cwd[256];
-    frontend_cursor(2, 3);
-    if (getcwd(cwd, sizeof(cwd)))
-        printf("%.28s", cwd);
-    else
-        fputs("ROMs", stdout);
     if (!browser->count) {
         frontend_cursor(2, MENU_FIRST_ROW);
         fputs("No ROMs in this folder", stdout);
@@ -123,8 +117,8 @@ static void draw_browser(const struct browser *browser)
         if (index >= browser->count)
             break;
         const struct entry *entry = &browser->entries[index];
-        frontend_cursor(2, MENU_FIRST_ROW + (int)row);
-        printf("%c %.26s", entry->directory ? '/' : ' ', entry->name);
+        frontend_cursor(1, MENU_FIRST_ROW + (int)row);
+        printf("%s%.28s", entry->directory ? "/" : "", entry->name);
     }
     frontend_cursor(2, 21);
     fputs("A Open      B Parent folder", stdout);
@@ -207,7 +201,7 @@ static void draw_screen(const struct application *app, const char *message)
         frontend_cursor(2, 22);
         printf("%.28s", message);
     }
-    if (app->view == VIEW_BROWSER && browser->count > MENU_ROW_COUNT && !has_notice) {
+    if (app->view == VIEW_BROWSER && browser->count && !has_notice) {
         unsigned current = browser->first_visible / MENU_ROW_COUNT + 1;
         unsigned total = (browser->count - 1) / MENU_ROW_COUNT + 1;
         frontend_cursor(20, 22);
