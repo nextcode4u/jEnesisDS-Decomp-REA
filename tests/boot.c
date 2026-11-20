@@ -645,6 +645,35 @@ static void test_m68k_batched_loops(void)
     assert(m68k_skip_idle(&direct.cpu, &direct, 50) == 44);
 }
 
+static void test_signed_byte_copy(void)
+{
+    static struct megadrive direct, batched;
+    const uint8_t code[] = {
+        0x10, 0x1a, 0x48, 0x80, 0xd0, 0x43, // move.b (a2)+,d0; ext.w d0; add.w d3,d0
+        0x22, 0xc0, 0x51, 0xc9, 0xff, 0xf6, // move.l d0,(a1)+; dbra d1,0
+        0x7f, 0x80, 0xff, 0x01, 0xc0,
+    };
+    direct.rom = code;
+    direct.rom_size = sizeof(code);
+    direct.cpu.a[1] = 0xff0020;
+    direct.cpu.a[2] = 12;
+    direct.cpu.d[0] = 0x12340000;
+    direct.cpu.d[1] = 5;
+    direct.cpu.d[3] = 70;
+    for (unsigned i = 0; i < 5; ++i)
+        assert(m68k_step(&direct.cpu, &direct));
+    batched = direct;
+    unsigned cycles = 0;
+    for (unsigned i = 0; i < 15; ++i)
+        cycles += m68k_step(&direct.cpu, &direct);
+    assert(cycles == 114 && m68k_skip_idle(&batched.cpu, &batched, cycles) == cycles);
+    assert(memcmp(&direct.cpu, &batched.cpu, sizeof(direct.cpu)) == 0);
+    assert(memcmp(direct.ram, batched.ram, sizeof(direct.ram)) == 0);
+
+    batched.cpu.a[2] = sizeof(code) - 1;
+    assert(m68k_skip_idle(&batched.cpu, &batched, 100) == 38); // Stop at the ROM boundary.
+}
+
 static void test_savestate(struct megadrive *md)
 {
     const char *path = "build/c/boot-test.jsc";
@@ -753,6 +782,26 @@ static void test_psg(void)
         transitions += samples[i] != samples[i - 1];
     }
     assert(transitions >= 13 && transitions <= 15);
+
+    // The audible oscillator loop and the muted block advance must leave the
+    // same phase when noise is clocked by the fastest tone.
+    struct psg muted, audible;
+    int16_t other[512];
+    uint16_t registers[8] = {27, 15, 67, 15, 0, 15, 7, 15};
+    psg_reset(&muted, true);
+    psg_reset(&audible, true);
+    psg_update(&muted, registers);
+    registers[7] = 10;
+    psg_update(&audible, registers);
+    psg_render(&muted, samples, 512);
+    psg_render(&audible, other, 512);
+    for (unsigned i = 0; i < 512; ++i)
+        assert(samples[i] == 0);
+    assert(muted.noise == audible.noise && muted.clock_phase == audible.clock_phase);
+    psg_update(&muted, registers);
+    psg_render(&muted, samples, 512);
+    psg_render(&audible, other, 512);
+    assert(memcmp(samples, other, sizeof(samples)) == 0);
 }
 
 int main(void)
@@ -819,6 +868,7 @@ int main(void)
     assert(m68k_step(&md.cpu, &md) != 0 && md.cpu.d[1] == 0xfffffffb);
     test_idle_loops(&md);
     test_m68k_batched_loops();
+    test_signed_byte_copy();
     md.cpu.pc = 0x264;
     md.cpu.d[0] = 0x12345678;
     md.cpu.d[1] = 0x89abcdef;

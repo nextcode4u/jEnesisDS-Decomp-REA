@@ -213,23 +213,29 @@ static int channel_sample(struct fm_chip *fm, unsigned channel, unsigned tick, u
     int a = wave(&op[0], feedback, am, tick, extra_tick);
     ch->history[1] = ch->history[0];
     ch->history[0] = a;
-    int b = wave(&op[1], (ch->algorithm == 1 || ch->algorithm == 2 || ch->algorithm == 7) ? 0 : a >> 1, am, tick, extra_tick);
-    int c, d;
-    switch (ch->algorithm) {
-    case 0: c = wave(&op[2], b >> 1, am, tick, extra_tick); d = c; break;
-    case 1: c = wave(&op[2], (a + b) >> 1, am, tick, extra_tick); d = c; break;
-    case 2: c = wave(&op[2], b >> 1, am, tick, extra_tick); d = a + c; break;
-    case 3: c = wave(&op[2], 0, am, tick, extra_tick); d = b + c; break;
-    case 4: c = wave(&op[2], 0, am, tick, extra_tick); d = c; break;
-    case 5: c = wave(&op[2], a >> 1, am, tick, extra_tick); d = a; break;
-    default: c = wave(&op[2], 0, am, tick, extra_tick); d = 0; break;
+    unsigned algorithm = ch->algorithm;
+    int b_input = algorithm == 1 || algorithm == 2 || algorithm == 7 ? 0 : a;
+    int b = wave(&op[1], b_input >> 1, am, tick, extra_tick);
+    // Select the signal feeding operator C before evaluating it. All eight
+    // algorithms then follow the same oscillator and envelope code.
+    int c_input = 0, d_input = 0;
+    switch (algorithm) {
+    case 0: c_input = b; break;
+    case 1: c_input = a + b; break;
+    case 2: c_input = b; d_input = a; break;
+    case 3: d_input = b; break;
+    case 5: c_input = d_input = a; break;
+    default: break;
     }
-    int result = wave(&op[3], d >> 1, am, tick, extra_tick);
-    if (ch->algorithm >= 4)
+    int c = wave(&op[2], c_input >> 1, am, tick, extra_tick);
+    if (algorithm <= 4)
+        d_input += c;
+    int result = wave(&op[3], d_input >> 1, am, tick, extra_tick);
+    if (algorithm >= 4)
         result += b;
-    if (ch->algorithm >= 5)
+    if (algorithm >= 5)
         result += c;
-    if (ch->algorithm == 7)
+    if (algorithm == 7)
         result += a;
     return result;
 }

@@ -692,24 +692,54 @@ static unsigned bit_operation(struct m68k *cpu, struct megadrive *md, uint16_t o
 static uint32_t shift_value(struct m68k *cpu, uint32_t value, unsigned size,
                             unsigned kind, unsigned count, bool left)
 {
+    unsigned bits = size * 8;
     uint32_t mask = size_mask(size), sign = (mask >> 1) + 1;
     value &= mask;
     bool extend = (cpu->sr & CCR_X) != 0;
     bool carry = kind == 2 && extend, overflow = false;
-    for (unsigned i = 0; i < count; ++i) {
-        bool old_sign = (value & sign) != 0;
-        carry = left ? old_sign : (value & 1) != 0;
-        if (left)
-            value = (value << 1) & mask;
-        else
-            value >>= 1;
-        bool incoming = kind == 2 ? extend : kind == 3 ? carry : kind == 0 && !left && old_sign;
-        if (incoming)
-            value |= left ? 1 : sign;
-        if (kind != 3)
+    if (count && kind < 2) {
+        if (left) {
+            carry = count <= bits && ((value >> (bits - count)) & 1);
+            if (kind == 0) {
+                // ASL overflows if the old sign and the bits that move into
+                // that position are a mixture of zeros and ones.
+                if (count >= bits) {
+                    overflow = value != 0;
+                } else {
+                    uint32_t prefix = value >> (bits - count - 1);
+                    overflow = prefix && prefix != (UINT32_MAX >> (31 - count));
+                }
+            }
+            value = count < bits ? (value << count) & mask : 0;
+        } else {
+            bool negative = kind == 0 && (value & sign);
+            carry = count <= bits ? (value >> (count - 1)) & 1 : negative;
+            if (count < bits)
+                value = (value >> count) | (negative ? mask ^ (mask >> count) : 0);
+            else
+                value = negative ? mask : 0;
+        }
+        extend = carry;
+    } else if (count && kind == 3) {
+        unsigned rotation = count & (bits - 1);
+        if (rotation) {
+            unsigned distance = left ? rotation : bits - rotation;
+            value = ((value << distance) | (value >> (bits - distance))) & mask;
+        }
+        carry = (value & (left ? 1 : sign)) != 0;
+    } else if (kind == 2 && count) {
+        // Rotate on a ring containing the operand and one additional X bit.
+        unsigned width = bits + 1;
+        while (count >= width)
+            count -= width;
+        if (count) {
+            unsigned distance = left ? count : width - count;
+            uint32_t shifted = distance < bits ? (value << distance) & mask : 0;
+            uint32_t wrapped = distance > 1 ? value >> (width - distance) : 0;
+            carry = (value >> (bits - distance)) & 1;
+            value = shifted | wrapped | (uint32_t)extend << (distance - 1);
             extend = carry;
-        if (kind == 0 && left)
-            overflow |= old_sign != ((value & sign) != 0);
+        }
     }
     set_logic_flags(cpu, size, value);
     cpu->sr = (cpu->sr & ~CCR_X) | (extend ? CCR_X : 0) |
@@ -1097,6 +1127,62 @@ static unsigned skip_ram_store_loop(struct m68k *cpu, struct megadrive *md, unsi
     return iterations * 22;
 }
 
+static unsigned skip_signed_byte_copy(struct m68k *cpu, struct megadrive *md,
+                                      unsigned budget, const uint8_t *rom)
+{
+    // MOVE.B (An)+,Dn; EXT.W Dn; ADD.W Dr,Dn; MOVE.L Dn,(Am)+; DBRA.
+    uint16_t load = rom_word(rom, 0), extend = rom_word(rom, 2);
+    uint16_t add = rom_word(rom, 4), store = rom_word(rom, 6);
+    unsigned source = load & 7, data = (load >> 9) & 7;
+    unsigned increment = add & 7, target = (store >> 9) & 7, counter = cpu->opcode & 7;
+    if ((load & 0xf1f8) != 0x1018 || extend != (0x4880 | data) ||
+        (add & 0xfff8) != (0xd040 | data << 9) || (store & 0xf1ff) != (0x20c0 | data) ||
+        source == target || data == counter || increment == data || increment == counter)
+        return 0;
+
+    unsigned src = cpu->a[source] & 0xffffff, dst = cpu->a[target] & 0xffffff;
+    bool source_in_ram = src >= 0xe00000;
+    if ((!source_in_ram && !rom_visible(md, src, 1)) || dst < 0xe00000 || (dst & 1))
+        return 0;
+    enum { ITERATION_CYCLES = 38 };
+    unsigned step = source == 7 ? 2 : 1;
+    unsigned iterations = budget / ITERATION_CYCLES;
+    unsigned remaining = (uint16_t)cpu->d[counter];
+    unsigned src_bytes = source_in_ram ? 0x10000 - (src & 0xffff) : md->rom_size - src;
+    unsigned src_room = (src_bytes + step - 1) / step;
+    unsigned dst_room = (0x10000 - (dst & 0xffff)) / 4;
+    if (iterations > remaining)
+        iterations = remaining;
+    if (iterations > src_room)
+        iterations = src_room;
+    if (iterations > dst_room)
+        iterations = dst_room;
+    if (!iterations)
+        return 0;
+
+    if (!source_in_ram && !rom_visible(md, src, (iterations - 1) * step + 1))
+        return 0;
+    const uint8_t *input = source_in_ram ? md->ram + (src & 0xffff) : md->rom + src;
+    uint8_t *output = md->ram + (dst & 0xffff);
+    uint32_t upper = cpu->d[data] & 0xffff0000;
+    uint16_t bias = cpu->d[increment], word = 0;
+    for (unsigned i = 0; i < iterations; ++i) {
+        word = (int8_t)input[i * step] + bias;
+        output[0] = upper >> 24;
+        output[1] = upper >> 16;
+        output[2] = word >> 8;
+        output[3] = word;
+        output += 4;
+    }
+    cpu->d[data] = upper | word;
+    cpu->sr = (cpu->sr & ~CCR_X) | (word < bias ? CCR_X : 0);
+    set_logic_flags(cpu, 4, cpu->d[data]);
+    cpu->a[source] += iterations * step;
+    cpu->a[target] += iterations * 4;
+    set_data(cpu, counter, 2, remaining - iterations);
+    return iterations * ITERATION_CYCLES;
+}
+
 static unsigned skip_interleaved_word_stores(struct m68k *cpu, struct megadrive *md,
                                              unsigned budget, const uint8_t *rom)
 {
@@ -1219,6 +1305,8 @@ ITCM_CODE unsigned m68k_skip_idle(struct m68k *cpu, struct megadrive *md, unsign
     if ((op & 0xfff8) == 0x51c8) {
         unsigned loop_cycles = 10;
         if (cpu->pc != cpu->instruction_address) {
+            if (cpu->pc + 8 == cpu->instruction_address && rom_visible(md, pc, 8))
+                return skip_signed_byte_copy(cpu, md, budget, md->rom + pc);
             if (cpu->pc + 10 == cpu->instruction_address && rom_visible(md, pc, 10))
                 return skip_interleaved_word_stores(cpu, md, budget, md->rom + pc);
             if (cpu->pc + 2 != cpu->instruction_address)
