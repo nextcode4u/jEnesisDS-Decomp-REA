@@ -258,10 +258,9 @@ static bool prepare_sprites(const struct megadrive *md, struct page *page, unsig
 bool vdp_ds_prepare(const struct megadrive *md)
 {
     const uint8_t *regs = md->vdp_registers;
-    if (!(regs[1] & 0x40) || (regs[11] & 4) || (regs[12] & 0x0e) ||
+    if (md->vdp_raster_layout || !(regs[1] & 0x40) || (regs[11] & 4) || (regs[12] & 0x0e) ||
         (regs[16] & 0x22) || (regs[17] & 0x9f) || (regs[18] & 0x9f))
         return false;
-    unsigned mode = regs[11] & 3;
     bool wide = (regs[12] & 1) != 0;
     unsigned left = wide ? 32 : 0, top = (regs[1] & 8) ? 24 : 16;
     unsigned next = visible_page ^ 1;
@@ -277,14 +276,10 @@ bool vdp_ds_prepare(const struct megadrive *md)
         !prepare_sprites(md, page, next, wide, left, top))
         return false;
     for (unsigned y = 0; y < VDP_VIEW_HEIGHT; ++y) {
-        unsigned scroll = (regs[13] & 0x3f) << 10;
-        if (mode == 2)
-            scroll += ((y + top) & ~7U) * 4;
-        else if (mode == 3)
-            scroll += (y + top) * 4;
+        unsigned scroll = vdp_hscroll_address(regs, y + top);
         for (unsigned plane = 0; plane < 2; ++plane) {
             unsigned h = (left - vram_word(md, scroll + plane * 2)) & 0x1ff;
-            unsigned v = (top + md->vsram[plane]) & 0x1ff;
+            unsigned v = (top + megadrive_scanline_vscroll(md, y + top, plane)) & 0x1ff;
             page->scroll[y][plane] = h | (v << 16);
         }
     }

@@ -385,6 +385,78 @@ static void test_vdp_reads(const struct cartridge *cart)
     assert(megadrive_read_word(&md, 0xc00008) == 0x00fe);
 }
 
+static void test_scanline_scroll(void)
+{
+    static struct megadrive md;
+    static uint16_t pixels[VDP_VIEW_WIDTH * VDP_VIEW_HEIGHT / 2];
+    uint8_t code[0x270] = {
+        0x00, 0xff, 0xfe, 0x00,
+        0x00, 0x00, 0x02, 0x00,
+        [0x70] = 0x00, 0x00, 0x02, 0x10,
+        [0x78] = 0x00, 0x00, 0x02, 0x40,
+        [0x200] =
+        0x46, 0xfc, 0x20, 0x00,                          // move #$2000,sr
+        0x60, 0xfe,                                      // bra.s to self
+        [0x210] =
+        0x23, 0xfc, 0x40, 0x00, 0x00, 0x10, 0x00, 0xc0, 0x00, 0x04,
+        0x33, 0xfc, 0x00, 0x04, 0x00, 0xc0, 0x00, 0x00,  // plane A vscroll = 4
+        0x33, 0xfc, 0x82, 0x28, 0x00, 0xc0, 0x00, 0x04,  // switch plane A map
+        0x33, 0xfc, 0x85, 0x68, 0x00, 0xc0, 0x00, 0x04,  // switch sprite table
+        0x4e, 0x73,
+        [0x240] =
+        0x23, 0xfc, 0x40, 0x00, 0x00, 0x10, 0x00, 0xc0, 0x00, 0x04,
+        0x33, 0xfc, 0x00, 0x00, 0x00, 0xc0, 0x00, 0x00,  // reset in VBlank
+        0x33, 0xfc, 0x82, 0x30, 0x00, 0xc0, 0x00, 0x04,
+        0x33, 0xfc, 0x85, 0x70, 0x00, 0xc0, 0x00, 0x04,
+        0x4e, 0x73,
+    };
+    const struct cartridge cart = {.data = code, .size = sizeof(code)};
+    megadrive_reset(&md, &cart, GENESIS_REGION_AUTO);
+    vdp_register(&md, 0, 0x10);
+    vdp_register(&md, 1, 0x60);
+    vdp_register(&md, 2, 0x30);
+    vdp_register(&md, 4, 0x05);
+    vdp_register(&md, 5, 0x70);
+    vdp_register(&md, 10, 112);
+    vdp_register(&md, 13, 0x3f);
+    memset(md.vram, 0x11, 16);
+    memset(md.vram + 16, 0x22, 16);
+    md.vram[0xe000 + 1] = 1;
+    md.vram[0xd000 + 1] = 2;
+    megadrive_run_frame(&md);
+    assert(!md.cpu.stopped && md.vsram[0] == 0);
+    assert(md.vdp_row_count == 224 && md.vdp_raster_layout);
+    assert(md.vdp_rows[64].plane_a_base == 0x30);
+    assert(md.vdp_rows[160].plane_a_base == 0x28);
+    assert(md.vdp_sprite_table_count == 2);
+    assert(md.vdp_rows[64].sprite_table == 1 && md.vdp_sprite_tables[0][1] == 1);
+    assert(md.vdp_rows[160].sprite_table == 2 && md.vdp_sprite_tables[1][1] == 2);
+    assert(megadrive_scanline_vscroll(&md, 64, 0) == 0);
+    assert(megadrive_scanline_vscroll(&md, 160, 0) == 4);
+    vdp_render_frame(&md, pixels);
+    assert(pixels[48 * VDP_VIEW_WIDTH / 2] == 0x0101);
+    assert(pixels[144 * VDP_VIEW_WIDTH / 2] == 0x0202);
+
+    const char *path = "build/c/boot-test-raster.jsc";
+    remove(path);
+    const uint32_t identity = savestate_identity(&md);
+    assert(savestate_save(path, identity, &md));
+    md.vdp_row_count = 0;
+    assert(savestate_load(path, identity, &md));
+    assert(md.vdp_row_count == 224 && md.vdp_raster_layout);
+    assert(md.vdp_rows[160].sprite_table == 2);
+    assert(md.vdp_sprite_tables[1][1] == 2);
+    assert(remove(path) == 0);
+
+    vdp_register(&md, 0, 0);
+    uint32_t revision = md.video_revision;
+    megadrive_run_frame(&md);
+    assert(!md.cpu.stopped && md.vdp_row_count == 0);
+    assert(md.video_revision > revision);
+    vdp_render_frame(&md, pixels);
+    assert(pixels[144 * VDP_VIEW_WIDTH / 2] == 0x0101);
+}
+
 static void test_interlace(const struct cartridge *cart)
 {
     static struct megadrive md;
@@ -600,6 +672,7 @@ int main(void)
     test_vdp_render(&md);
     test_vdp_reads(&cartridge);
     test_interlace(&cartridge);
+    test_scanline_scroll();
 
     assert(m68k_interrupt(&md.cpu, &md, 6) == 0);  // Reset masks level 6.
     md.cpu.sr = 0x2304;

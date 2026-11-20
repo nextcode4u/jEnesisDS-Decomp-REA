@@ -8,7 +8,7 @@
 
 enum { FNV_PRIME = 16777619 };
 static const uint32_t fnv_start = UINT32_C(2166136261);
-static const uint8_t magic[4] = {'J', 'S', 'C', 8};
+static const uint8_t magic[4] = {'J', 'S', 'C', 9};
 
 struct state_io {
     FILE *file;
@@ -141,6 +141,34 @@ static void transfer_state(struct state_io *io, struct megadrive *md, unsigned v
     if (version >= 8 && md->sram_size) {
         SCALAR(md->sram_control);
         transfer(io, md->sram, md->sram_size);
+    }
+    md->vdp_capture_raster = false;
+    if (version >= 9) {
+        SCALAR(md->vdp_row_count);
+        SCALAR(md->vdp_sprite_table_count);
+        SCALAR(md->vdp_raster_layout);
+        if (md->vdp_row_count > VDP_MAX_ACTIVE_LINES ||
+            md->vdp_sprite_table_count > VDP_RASTER_SPRITE_TABLES) {
+            io->ok = false;
+            return;
+        }
+        for (unsigned i = 0; i < md->vdp_sprite_table_count; ++i)
+            ARRAY_BYTES(md->vdp_sprite_tables[i]);
+        for (unsigned y = 0; y < md->vdp_row_count; ++y) {
+            struct vdp_scanline *row = &md->vdp_rows[y];
+            SCALAR(row->vscroll[0]);
+            SCALAR(row->vscroll[1]);
+            SCALAR(row->plane_a_base);
+            SCALAR(row->sprite_table);
+            SCALAR(row->display_enabled);
+            if (row->sprite_table > md->vdp_sprite_table_count) {
+                io->ok = false;
+                return;
+            }
+        }
+    } else {
+        md->vdp_row_count = md->vdp_sprite_table_count = 0;
+        md->vdp_raster_layout = false;
     }
 #undef SCALAR
 #undef ARRAY_BYTES

@@ -96,12 +96,63 @@ static ITCM_CODE __attribute__((noinline)) unsigned run_cpu_until(struct megadri
     return cycles;
 }
 
+static unsigned snapshot_sprite_table(struct megadrive *md)
+{
+    bool wide = (md->vdp_registers[12] & 1) != 0;
+    unsigned size = (wide ? 80 : 64) * 8;
+    unsigned base = (md->vdp_registers[5] & (wide ? 0x7e : 0x7f)) << 9;
+    const uint8_t *table = md->vram + base;
+    unsigned count = md->vdp_sprite_table_count;
+    if (count && !memcmp(md->vdp_sprite_tables[count - 1], table, size))
+        return count;
+    if (count == VDP_RASTER_SPRITE_TABLES)
+        return 0;
+    memcpy(md->vdp_sprite_tables[count], table, size);
+    if (size < VDP_SPRITE_TABLE_BYTES)
+        memset(md->vdp_sprite_tables[count] + size, 0, VDP_SPRITE_TABLE_BYTES - size);
+    return ++md->vdp_sprite_table_count;
+}
+
+static void capture_raster_through(struct megadrive *md, unsigned next_line)
+{
+    if (next_line > md->vdp_active_lines)
+        next_line = md->vdp_active_lines;
+    bool first_layout_snapshot = md->vdp_raster_layout && !md->vdp_sprite_table_count;
+    if (next_line <= md->vdp_row_count && !first_layout_snapshot)
+        return;
+    bool display = (md->vdp_registers[1] & 0x40) != 0;
+    unsigned sprite_table = 0;
+    if (md->vdp_raster_layout && display) {
+        sprite_table = snapshot_sprite_table(md);
+        if (first_layout_snapshot && sprite_table) {
+            // Earlier scroll writes may already have recorded this display span.
+            for (unsigned y = 0; y < md->vdp_row_count; ++y)
+                if (md->vdp_rows[y].display_enabled)
+                    md->vdp_rows[y].sprite_table = sprite_table;
+        }
+    }
+    struct vdp_scanline row = {
+        .vscroll = {md->vsram[0], md->vsram[1]},
+        .plane_a_base = md->vdp_registers[2],
+        .sprite_table = sprite_table,
+        .display_enabled = display,
+    };
+    while (md->vdp_row_count < next_line)
+        md->vdp_rows[md->vdp_row_count++] = row;
+}
+
 void megadrive_run_frame(struct megadrive *md)
 {
     unsigned cycles = md->cycle_carry;
     md->z80_synced_cycle = 0;
     md->frame_cycle = cycles;
-    unsigned active_lines = (md->vdp_registers[1] & 8) ? 240 : 224;
+    unsigned active_lines = (md->vdp_registers[1] & 8) ? VDP_MAX_ACTIVE_LINES : 224;
+    bool had_raster = md->vdp_row_count != 0;
+    md->vdp_row_count = 0;
+    md->vdp_sprite_table_count = 0;
+    md->vdp_raster_layout = false;
+    md->vdp_active_lines = active_lines;
+    md->vdp_capture_raster = true;
     md->vblank = false;
     md->vdp_odd_field = (md->vdp_registers[12] & 2) && !md->vdp_odd_field;
     if ((md->vdp_registers[12] & 6) == 6)
@@ -115,6 +166,11 @@ void megadrive_run_frame(struct megadrive *md)
         hint_line += md->vdp_registers[10] + 1;
     }
     cycles = run_cpu_until(md, cycles, 3420 * active_lines / 7);
+    md->vdp_capture_raster = false;
+    if (md->vdp_row_count)
+        capture_raster_through(md, active_lines);
+    if (had_raster || md->vdp_row_count)
+        ++md->video_revision;
     md->vblank = true;
     genesis_z80_vblank(md, cycles);
     if (!md->cpu.stopped && (md->vdp_registers[1] & 0x20))
@@ -449,6 +505,8 @@ static void vdp_store(struct megadrive *md, uint16_t value)
     case 5:
         value &= 0x07ff;
         if (word < 40 && md->vsram[word] != value) {
+            if (word < 2 && md->vdp_capture_raster && !(md->vdp_registers[11] & 4))
+                capture_raster_through(md, md->frame_cycle * 7 / 3420 + 1);
             md->vsram[word] = value;
             ++md->video_revision;
         }
@@ -529,7 +587,13 @@ static bool vdp_write_control(struct megadrive *md, uint16_t value)
             unsigned reg = (value >> 8) & 0x1f;
             if (reg >= sizeof(md->vdp_registers))
                 return false;
-            if (md->vdp_registers[reg] != (uint8_t)value) {
+            uint8_t changed = md->vdp_registers[reg] ^ (uint8_t)value;
+            if (changed) {
+                if (md->vdp_capture_raster &&
+                    ((reg == 1 && (changed & 0x40)) || reg == 2 || reg == 5)) {
+                    md->vdp_raster_layout = true;
+                    capture_raster_through(md, md->frame_cycle * 7 / 3420 + 1);
+                }
                 md->vdp_registers[reg] = (uint8_t)value;
                 if (reg <= 18)
                     ++md->video_revision;

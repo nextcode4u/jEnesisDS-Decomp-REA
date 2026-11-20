@@ -8,6 +8,19 @@
 
 #include <stddef.h>
 
+enum {
+    VDP_MAX_ACTIVE_LINES = 240,
+    VDP_SPRITE_TABLE_BYTES = 80 * 8,
+    VDP_RASTER_SPRITE_TABLES = 8,
+};
+
+struct vdp_scanline {
+    uint16_t vscroll[2];
+    uint8_t plane_a_base;
+    uint8_t sprite_table;
+    bool display_enabled;
+};
+
 enum genesis_region {
     GENESIS_REGION_AUTO,
     GENESIS_REGION_USA,
@@ -54,6 +67,10 @@ struct megadrive {
     uint8_t vram[0x10000];
     uint16_t cram[64];
     uint16_t vsram[40];
+    struct vdp_scanline vdp_rows[VDP_MAX_ACTIVE_LINES];
+    uint8_t vdp_sprite_tables[VDP_RASTER_SPRITE_TABLES][VDP_SPRITE_TABLE_BYTES];
+    unsigned vdp_row_count, vdp_sprite_table_count, vdp_active_lines;
+    bool vdp_capture_raster, vdp_raster_layout;
     uint32_t video_revision;
     uint32_t vram_revisions[0x10000 / 32];
     uint8_t vdp_registers[24];
@@ -83,6 +100,12 @@ struct megadrive {
 static inline bool megadrive_sram_visible(const struct megadrive *md, uint32_t address)
 {
     return (md->sram_control & 1) && address - md->sram_start < md->sram_size;
+}
+
+static inline uint16_t megadrive_scanline_vscroll(const struct megadrive *md,
+                                                unsigned y, unsigned plane)
+{
+    return y < md->vdp_row_count ? md->vdp_rows[y].vscroll[plane] : md->vsram[plane];
 }
 
 void megadrive_reset_serial(struct megadrive *md);
