@@ -63,3 +63,7 @@ REA_OUTPUT_DIR=build/rea-decompiled REA_EVIDENCE_DIR=build/rea-evidence bash scr
 ```
 
 The build script creates local projects under `ghidra/` and stops if a matching project already exists. Keep each `.gpr` beside its corresponding `.rep` directory when opening it in Ghidra. The export destinations in the command above keep the checked-in snapshots available alongside the new analysis. The decompile script resumes a matching export when its export journal is present. Both scripts also accept `arm9` or `arm7`. The GNU linker supplies analysis-only ELF containers whose `.text` sections match the extracted NDS images byte for byte. This lets REA reuse the prepared Ghidra projects with the processor, RAM, and dispatch mappings already applied.
+
+## Developer note
+
+This project was developed with assistance from AI language models. Some source code was generated or refined using AI, then reviewed, modified and integrated by the project author where appropriate.
