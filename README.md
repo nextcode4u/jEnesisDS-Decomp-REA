@@ -18,7 +18,7 @@ In melonDS, enable a virtual DLDI SD card and add Genesis ROMs to it. The bottom
 
 - In the ROM browser, use **Up** and **Down** to highlight an entry, **Left** and **Right** to change pages, **A** to open or run the selection, and **B** to open the parent folder.
 - During emulation, touch the panel to pause and touch again or press **SELECT** to resume. Press **SELECT** while running or tap the cartridge icon to open the browser. Press **SELECT** in the browser to return to the current cartridge.
-- Tap the controller icon to open configuration. Use **A** or tap **Country** to cycle the region for the next cartridge.
+- Tap the controller icon to open configuration. Use **A** or tap **Country** to cycle the region for the next cartridge. European cartridges target the PAL refresh rate of about 50 Hz.
 - Tap **[1]** or **[2]**, choose **SAVE** or **LOAD** with the D-pad, and press **A**. The portable C build's versioned `.jsc` files live next to the cartridge and have their own format.
 
 ## C sources

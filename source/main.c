@@ -552,11 +552,17 @@ int main(void)
     keysSetRepeat(18, 4);
     draw_screen(&app, read_directory(&app.browser));
 
+    // The DS display runs at about 59.83 Hz. A 313-line PAL cartridge
+    // runs at about 49.70 Hz, so present it on a subset of DS VBlanks.
+    enum { DS_REFRESH = 5983, PAL_REFRESH = 4970 };
+    unsigned pal_phase = DS_REFRESH - PAL_REFRESH;
     uint32_t observed_vblank = vblank_count;
     for (;;) {
         if (observed_vblank == vblank_count)
             swiWaitForVBlank();
-        observed_vblank = vblank_count;
+        uint32_t current_vblank = vblank_count;
+        unsigned elapsed_vblanks = current_vblank - observed_vblank;
+        observed_vblank = current_vblank;
         scanKeys();
         uint32_t keys = keysDown() | (keysDownRepeat() & (KEY_UP | KEY_DOWN));
         touchPosition touch;
@@ -565,7 +571,15 @@ int main(void)
         const char *message = NULL;
         if (handle_menu(&app, keys, keys & KEY_TOUCH ? &touch : NULL, &message))
             draw_screen(&app, message);
-        if (app.view == VIEW_CARTRIDGE && !app.md.cpu.stopped) {
+        bool running = app.view == VIEW_CARTRIDGE && !app.md.cpu.stopped;
+        bool pal = running && (app.md.version & 0x40);
+        if (pal)
+            pal_phase += PAL_REFRESH * (elapsed_vblanks > 2 ? 2 : elapsed_vblanks);
+        else
+            pal_phase = DS_REFRESH - PAL_REFRESH;
+        if (running && (!pal || pal_phase >= DS_REFRESH)) {
+            if (pal)
+                pal_phase %= DS_REFRESH;
             app.md.pad1_pressed = genesis_buttons(keysHeld());
             megadrive_run_frame(&app.md);
             draw_game_frame(&app.md);
