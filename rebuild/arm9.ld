@@ -14,7 +14,9 @@ SECTIONS
     .dtcm 0x0b000000 : AT(0x02090004)
     {
         __dtcm_start = .;
-        *(.dtcm)
+        /* The initialized image contains only zeroes. Force it into the ROM. */
+        BYTE(0);
+        . += 0x36ec - 1;
         __dtcm_end = .;
     }
 

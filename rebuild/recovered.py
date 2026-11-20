@@ -68,9 +68,20 @@ def check_codec_image(original, rebuilt, base):
     check_match(original, unchanged, "ARM9 image outside codec replacements")
 
 
+DLDI_SOURCE = "dldi_placeholder.c"
+
+
+def arm9_region_layout(obj, filename, end_offset):
+    if filename == DLDI_SOURCE:
+        return f'"{obj}"(.rodata) "{obj}"(.text) . = {end_offset:#x};'
+    return f'"{obj}"(.text)'
+
+
 RECOVERED_REGIONS = (
     ("Cartridge region", "cartridge_region.c", "set_genesis_region_and_version_register",
      0x020002E4, 0x0200030C, {"genesis_region": 0x0B000000}),
+    ("68000 guest PC", "m68k_program_counter.c", "read_m68k_program_counter",
+     0x02000310, 0x0200037C, {"m68k_context": 0x0B0000AC}),
     ("68000 interrupt and cycle wrappers", "m68k_timing.c", "queue_m68k_interrupt_level",
      0x020004E0, 0x02000538, {
          "__aeabi_uidiv": 0x02080380,
@@ -81,18 +92,47 @@ RECOVERED_REGIONS = (
      }),
     ("Cartridge byte order", "cartridge_byte_order.c", "swap_adjacent_bytes_in_backing_buffer",
      0x0200157C, 0x020015C0, {}),
-    ("Z80 bank latch save state", "z80_bank_state.c", "get_z80_bank_latch_for_savestate",
-     0x02004438, 0x02004458, {"z80_cartridge_bank_base": 0x02099008}),
+    ("Z80 cartridge bank", "z80_bank_state.c", "get_z80_bank_latch_for_savestate",
+     0x02004438, 0x02004484, {
+         "z80_cartridge_bank_base": 0x02099008,
+         "cartridge_rom_bytes": 0x020B4CEC,
+     }),
     ("Z80 work RAM", "z80_work_ram.c", "get_z80_work_ram_buffer",
      0x02004C18, 0x02004C44, {"z80_work_ram": 0x0B00161C}),
+    ("Z80 mapped memory", "z80_memory.c", "write_z80_mapped_byte",
+     0x02004C50, 0x02004D94, {
+         "z80_work_ram": 0x0B00161C,
+         "write_z80_banked_byte": 0x020045C8,
+         "queue_ym2612_register_or_dac_write": 0x02005BA0,
+         "queue_psg_register_write": 0x02005AD0,
+         "shift_z80_cartridge_bank_latch": 0x0200440C,
+         "read_z80_banked_cartridge_byte": 0x02004458,
+         "read_ym2612_timer_status": 0x02005B7C,
+     }),
+    ("Z80 RAM reset", "z80_clear.c", "clear_z80_work_ram",
+     0x02004D94, 0x02004DCC, {
+         "z80_work_ram": 0x0B00161C,
+         "z80_reset_word_0": 0x02099034,
+         "z80_reset_word_1": 0x02099038,
+         "memset": 0x02083058,
+     }),
     ("Z80 PC and SP save state", "savestate_z80_pointers.c", "encode_z80_pc_and_sp_as_ram_offsets",
      0x02004F70, 0x020050A8, {}),
+    ("Z80 context initialization", "z80_context.c", "initialize_z80_state_and_dispatch_pointers",
+     0x020050A8, 0x020050CC, {
+         "memset": 0x02083058,
+         "install_z80_dispatch_tables": 0x0200DF20,
+     }),
+    ("68000 packed state", "m68k_context.c", "set_m68k_interrupt_level",
+     0x020050CC, 0x02005164, {}),
     ("Sound mirrors", "sound_state.c", "get_ym2612_bank_0_mirror_for_savestate",
      0x02005AAC, 0x02005AD0, {
          "ym2612_bank_0_mirror": 0x0209907C,
          "ym2612_bank_1_mirror": 0x0209917C,
          "psg_register_mirror": 0x0209937C,
      }),
+    ("YM2612 timer status", "ym2612_status.c", "read_ym2612_timer_status",
+     0x02005B7C, 0x02005B94, {"sound_context": 0x0B000000}),
     ("VDP interrupts", "vdp_interrupts.c", "tick_vdp_horizontal_interrupt_counter",
      0x020090E8, 0x02009214, {
          "vdp_timing": 0x0B000000,
@@ -141,6 +181,8 @@ RECOVERED_REGIONS = (
          "genesis_work_ram_bytes": 0x023CB634,
          "z80_cartridge_bank_base": 0x02099008,
      }),
+    ("Default DLDI interface and reserved storage", DLDI_SOURCE, "dldi_placeholder",
+     0x02074DC0, 0x0207CDC0, {"dldi_reservation_end": 0x0207CDC0}),
     ("Save-state layout and slot path", "savestate_layout.c", "prepare_savestate_header_and_regions",
      0x0200D03C, 0x0200D13C, {
          "emulator_cpu_pointers": 0x0B000000,
@@ -169,12 +211,18 @@ ARM7_REGIONS = (
          "psg_ring_samples": 0x03806DB8,
          "reset_psg_channel_state": 0x037F89BC,
      }),
+    ("ARM7 PSG attenuation table", "arm7_psg_attenuation.c", None,
+     0x03806D4C, 0x03806D8C, {}),
 )
 
 
 def compile_arm9_source(compiler, work, filename):
-    # Keep the last stream read in r0 on decoder exit, as in the release.
-    flags = ("-fno-tree-vrp",) if filename == "lzss_decode.c" else ()
+    flags = {
+        # Keep the last stream read in r0 on decoder exit.
+        "lzss_decode.c": ("-fno-tree-vrp",),
+        # Preserve the original write-then-read function order.
+        "z80_memory.c": ("-fno-unit-at-a-time",),
+    }.get(filename, ())
     return compile_c([*compiler, *flags], work, Path(filename), 9, "-O2", "-marm")
 
 
@@ -237,10 +285,11 @@ def prepare_reference_arm7(work, compiler, image, base, runtime, r20, libnds=Non
     regions = [init_region(base, 0xd0, runtime)]
     objects = list(runtime)
     externals = {}
-    for _, filename, _, start, end, symbols in ARM7_REGIONS:
+    for _, filename, entry, start, end, symbols in ARM7_REGIONS:
         obj = compile_c(compiler, work, Path(filename), 7, "-O2", "-marm").name
         objects.append(obj)
-        regions.append((start, end, f'"{obj}"(.text)'))
+        section = ".text" if entry else ".rodata"
+        regions.append((start, end, f'"{obj}"({section})'))
         externals.update(symbols)
     script = work / "arm7.ld"
     source = script.read_text()
@@ -268,7 +317,7 @@ def prepare_reference_arm9(work, compiler, image, base, runtime, r20, libnds=Non
     for _, filename, _, start, end, symbols in RECOVERED_REGIONS:
         obj = compile_arm9_source(compiler, work, filename).name
         objects.append(obj)
-        regions.append((start, end, f'"{obj}"(.text)'))
+        regions.append((start, end, arm9_region_layout(obj, filename, end - base)))
         externals.update(symbols)
 
     if replace_codec:

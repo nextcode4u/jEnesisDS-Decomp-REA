@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the matched ARM7 libnds and libgcc regions from historical sources."""
+"""Build matched ARM7 regions from historical libnds and r20 runtime archives."""
 import argparse
 from hashlib import sha256
 from pathlib import Path
@@ -22,9 +22,17 @@ ARM7_SDK_REGIONS = (
     (0x03801800, 0x038018D8, "IRQ dispatcher", "arm7-intr-main.o(.text)"),
     (0x038018D8, 0x03801B34, "libgcc division",
      "_udivsi3.o(.text) _divsi3.o(.text) arm7-div0.o(.text)"),
+    (0x03801B34, 0x038024D8, "libgcc interworking and double-precision arithmetic",
+     "_call_via_rX.o(.text) _addsubdf3.o(.text) _muldivdf3.o(.text) "
+     "_fixdfsi.o(.text) _fixunsdfsi.o(.text)"),
+    (0x038025AC, 0x038026E0, "newlib memory operations",
+     "lib_a-memcpy.o(.text) lib_a-memset.o(.text)"),
 )
 ARM7_SDK_EXTERNALS = {"__irq_flags": 0x0380FFF8, "irqTable": 0x0380BE04}
 DIVISION_OBJECTS = ("_udivsi3.o", "_divsi3.o", "arm7-div0.o")
+LIBGCC_OBJECTS = (*DIVISION_OBJECTS[:2], "_call_via_rX.o", "_addsubdf3.o",
+                  "_muldivdf3.o", "_fixdfsi.o", "_fixunsdfsi.o")
+NEWLIB_OBJECTS = ("lib_a-memcpy.o", "lib_a-memset.o")
 TOUCH_BSS = 0x0380BB0C
 
 
@@ -56,9 +64,12 @@ def stage_arm7_sdk(work, compiler, r20, libnds):
     div0 = compile_c(compiler, work, blank_division, 7, "-O2", "-marm")
     div0.rename(work / "arm7-div0.o")
     shutil.copyfile(r20 / "lib/gcc/arm-eabi/4.1.1/libgcc.a", work / "libgcc.a")
-    run(work, tool(prefix, "ar"), "x", "libgcc.a", "_udivsi3.o", "_divsi3.o")
+    shutil.copyfile(r20 / "arm-eabi/lib/libc.a", work / "libc.a")
+    ar = tool(prefix, "ar")
+    run(work, ar, "x", "libgcc.a", *LIBGCC_OBJECTS)
+    run(work, ar, "x", "libc.a", *NEWLIB_OBJECTS)
     return ("arm7-division-veneer.o", "arm7-clock.o", "arm7-touch.o", bios,
-            "arm7-intr-main.o", *DIVISION_OBJECTS)
+            "arm7-intr-main.o", "arm7-div0.o", *LIBGCC_OBJECTS, *NEWLIB_OBJECTS)
 
 
 def build_regions(work, output, r20, libnds):

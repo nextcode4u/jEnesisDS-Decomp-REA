@@ -58,13 +58,16 @@ The r20 startup objects also close two runtime symbol questions. The bytes at AR
 
 ## Compile the recovered ARM9 C
 
-Run `make check-c` with the complete r20 toolchain and the original 0.7.4 ROM. The checker builds these sources in ARM mode with `-O2`, places each linked region at its original ARM9 address, and compares the full bytes, including address literals and branch destinations. The stream decoder uses `-fno-tree-vrp` to return the last read value in r0 with the original instructions. [Build setup](../README.md#compile-recovered-c-with-devkitarm-r20)
+Run `make recovered-c` with the complete r20 toolchain. It compiles the sources in ARM mode with `-O2` and places each region at its original address. The output consists of ELF and binary files under `build/recovered-c/`. Run `make compare-recovered-c ROM=/path/to/jEnesisDS.nds` to compare the saved binaries with the original 0.7.4 ROM, including address literals and branch destinations. `make check-c` runs both steps in one command. The stream decoder uses `-fno-tree-vrp` to return the last read value in r0 with the original instructions. [Build setup](../README.md#compile-recovered-c-with-devkitarm-r20)
 
 | Area | Address range (end exclusive) | Verified C |
 | --- | --- | --- |
 | Cartridge region and byte order | `0x020002e4–0x0200030c`, `0x0200157c–0x020015c0` | Set the Genesis version register and NTSC flag, and swap adjacent bytes while preserving an odd trailing byte. [Region](../rebuild/source/cartridge_region.c) · [Byte order](../rebuild/source/cartridge_byte_order.c) |
 | 68000 timing | `0x020004e0–0x02000538` | Queue an interrupt level, return the current cycle counter, and calculate cycles per scanline. Before the first completed frame, the average-cycle routine returns the startup setting. [Source](../rebuild/source/m68k_timing.c) |
-| Z80 RAM and bank latch | `0x02004438–0x02004458`, `0x02004c18–0x02004c44` | Save and restore the bank latch and read or write Z80 work RAM. [Bank latch](../rebuild/source/z80_bank_state.c) · [Work RAM](../rebuild/source/z80_work_ram.c) |
+| 68000 context | `0x02000310–0x0200037c`, `0x020050cc–0x02005164` | Derive the guest PC from the mapped pointer and page bits, update the pending IRQ, and read the cycle counter and selected status flags. [Guest PC](../rebuild/source/m68k_program_counter.c) · [Context](../rebuild/source/m68k_context.c) |
+| Z80 cartridge bank and work RAM | `0x02004438–0x02004484`, `0x02004c18–0x02004c44` | Preserve the bank latch, read the banked ROM in 68000 word order, and access work RAM directly. [Cartridge bank](../rebuild/source/z80_bank_state.c) · [Work RAM](../rebuild/source/z80_work_ram.c) |
+| Z80 bus mapping and reset | `0x02004c50–0x02004d94`, `0x02004d94–0x02004dcc` | Route byte and word accesses to work RAM, sound, the bank latch, and cartridge space. Clear the 8 KiB work RAM and two associated reset words. [Memory mapping](../rebuild/source/z80_memory.c) · [Reset](../rebuild/source/z80_clear.c) |
+| Z80 initialization and YM2612 status | `0x020050a8–0x020050cc`, `0x02005b7c–0x02005b94` | Clear the Z80 execution context before installing its dispatch tables. Read the two YM2612 timer status flags through the ARM9 context. [Z80 initialization](../rebuild/source/z80_context.c) · [Timer status](../rebuild/source/ym2612_status.c) |
 | Z80 and sound save-state fields | `0x02004f70–0x020050a8`, `0x02005aac–0x02005ad0` | Convert packed Z80 PC and SP fields between host addresses and serialized offsets. Return the FM and PSG mirror pointers. [Z80 pointers](../rebuild/source/savestate_z80_pointers.c) · [Sound mirrors](../rebuild/source/sound_state.c) |
 | VDP timing and serialization | `0x020090e8–0x02009214`, `0x02009cb0–0x02009cf0` | Tick and reload H-INT, enter vertical blanking, and bind the four VDP save-state memory regions. [Scanline timing](../rebuild/source/vdp_interrupts.c) · [Region binding](../rebuild/source/savestate_vdp.c) |
 | ARM9 IPC FIFO | `0x0200c4a8–0x0200c5d8` | Receive and dispatch messages, send with or without waiting, and initialize the interrupt through `irqSet` and `irqEnable`. [Source](../rebuild/source/arm9_fifo.c) |
@@ -73,15 +76,22 @@ Run `make check-c` with the complete r20 toolchain and the original 0.7.4 ROM. T
 | LZSS stream decoder | `0x0200cb78–0x0200ccb4` | Decode literal bytes and overlapping ring-buffer matches using the bounded streams. [Source](../rebuild/source/lzss_decode.c) |
 | LZSS memory decoder | `0x0200ccb4–0x0200cda4` | Initialize input and output streams, copy any literal prefix, and enter the shared decoder. [Source](../rebuild/source/lzss_memory.c) |
 | Cartridge bus | `0x02003ca4–0x02003cf8` | Return the ROM, work RAM, and Z80 bank-latch addresses, and select backing storage for VDP DMA. [Source](../rebuild/source/cartridge_bus.c) |
+| Default DLDI area | `0x02074dc0–0x0207cdc0` | Emit the libfat placeholder, its shared callback that reports no device, and the zero-filled reservation for flashcart drivers. [Recovered C](../rebuild/source/dldi_placeholder.c) · [DLDI format and patching](https://www.chishm.com/DLDI/) |
 | Save-state setup | `0x0200d03c–0x0200d13c` | Populate the version 3 region table and build the numbered `.jst` path. [Source](../rebuild/source/savestate_layout.c) |
 
-Run `make reference-c` to link all verified C regions into their processor images. The linker maps in `build/reference-c/` record the input objects and original addresses. The target compares the complete ROM with the release and uses the original ROM bytes for the remaining code and data. [Build setup](../README.md#compile-recovered-c-with-devkitarm-r20)
+Run `make reference-c` to link all verified C regions into their processor images. The linker maps in `build/reference-c/` record the input objects and original addresses. The linker emits the 14,060-byte zero-filled ARM9 DTCM load image. The r20 `ndstool` emits the header, empty file name table, and alignment padding. The target compares the complete ROM with the release and still reads the launcher banner and unrecovered processor code and data from the release. [Build setup](../README.md#compile-recovered-c-with-devkitarm-r20)
+
+In the SDK reference build, the linker maps account for 568,073 ARM9 bytes and 55,416 ARM7 bytes still supplied by the release. The ARM9 count includes 22,440 ITCM bytes. These ranges contain the remaining CPU engines and dispatch tables, graphics and audio code, frontend code, and initialized data. The launcher banner adds 2,112 bytes outside the processor images. [ROM gap placement](../rebuild/recovered.py) · [ROM packaging](../rebuild/build.py)
 
 The FIFO receive ISR reads `REG_IPC_FIFO_RX` once per message and splits that word into a command and a payload. The nonblocking sender clears the send FIFO and returns zero when full. The waiting sender at `0x0200c530` was identified from ARM instructions between the indexed callback setter and nonblocking sender. [Indexed pseudocode](../decompiled/arm9/system/ipc.c#L449) · [Verified C](../rebuild/source/arm9_fifo.c)
 
 ### ARM7 and runtime initialization
 
-The ARM7 PSG clock and ring setup at `0x037f8a30–0x037f8a88` matches all 88 bytes. It calculates the fixed-point clock step, calls the channel reset, and records the ring length. The matched builds also link the `.init` sections from r20's own `crti.o` and `crtn.o` at ARM9 `0x02000220` and ARM7 `0x037f80d0`. [ARM7 source](../rebuild/source/arm7_psg_clock.c)
+The ARM7 PSG clock and ring setup at `0x037f8a30–0x037f8a88` matches all 88 bytes. It calculates the fixed-point clock step, calls the channel reset, and records the ring length. The PSG attenuation table at `0x03806d4c–0x03806d8c` matches all 64 bytes. Its first 15 entries follow a 2 dB step rounded from a starting amplitude of 6553. The last entry is mute. [Attenuation table](../rebuild/source/arm7_psg_attenuation.c)
+
+The matched builds also link the `.init` sections from r20's own `crti.o` and `crtn.o` at ARM9 `0x02000220` and ARM7 `0x037f80d0`. [ARM7 source](../rebuild/source/arm7_psg_clock.c)
+
+The SDK reference build uses matching ARM code from the r20 `libc.a` and `libgcc.a` archives for both processors, including the ARM9 `memset` called by the Z80 reset and the ARM7 floating-point routines. [ARM9 ranges](../rebuild/sdk_arm9.py) · [ARM7 ranges](../rebuild/sdk_arm7.py)
 
 ## Verify LZSS behavior
 

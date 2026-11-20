@@ -16,6 +16,35 @@ WORKSPACE = SOURCE.parent
 DEFAULT_PREFIX = Path.home() / ".cache/jenesisds-decomp/devkitarm-r20/bin/arm-eabi-"
 
 
+def package_reference_rom(rom, arm9, arm7):
+    arm9_offset = struct.unpack_from("<I", rom, 0x20)[0]
+    arm7_offset = struct.unpack_from("<I", rom, 0x30)[0]
+    fnt_offset, fnt_size = struct.unpack_from("<2I", rom, 0x40)
+    banner_offset = struct.unpack_from("<I", rom, 0x68)[0]
+    # The only directory is the root. Its name list begins immediately after
+    # the directory record and has no files or subdirectories.
+    fnt = struct.pack("<IHHB", 8, 0, 1, 0)
+    if len(fnt) != fnt_size:
+        raise ValueError("Unexpected name table size")
+    return (
+        rom[:arm9_offset] + arm9 +
+        bytes(arm7_offset - arm9_offset - len(arm9)) + arm7 +
+        bytes(fnt_offset - arm7_offset - len(arm7)) + fnt +
+        bytes(banner_offset - fnt_offset - len(fnt)) + rom[banner_offset:]
+    )
+
+
+def package_r20_rom(work, r20, rom):
+    banner_offset = struct.unpack_from("<I", rom, 0x68)[0]
+    (work / "banner.bin").write_bytes(rom[banner_offset:])
+    packager = tool(r20 / "bin/ndstool", "")
+    run(work, packager, "-c", "packed.nds", "-9", "arm9.bin", "-7", "arm7.bin",
+        "-t", "banner.bin", "-h", "0x200",
+        "-r9", "0x02000000", "-e9", "0x02000000",
+        "-r7", "0x037f8000", "-e7", "0x037f8000")
+    return (work / "packed.nds").read_bytes()
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -62,7 +91,6 @@ def main():
         else:
             (work / "arm9-main.bin").write_bytes(arm9[0x220:0x90004])
             (work / "arm7-main.bin").write_bytes(arm7[0xd0:])
-        (work / "arm9-dtcm.bin").write_bytes(arm9[0x90004:0x936f0])
         if args.libnds_repo:
             options[9].extend(["--defsym", "use_sdk_irq=1"])
         else:
@@ -86,11 +114,10 @@ def main():
         else:
             check_match(arm9, rebuilt9, "ARM9 image")
         check_match(arm7, rebuilt7, "ARM7 image")
-        rebuilt_rom = (
-            rom[:arm9_offset] + rebuilt9 +
-            rom[arm9_offset + arm9_size:arm7_offset] + rebuilt7 +
-            rom[arm7_offset + arm7_size:]
-        )
+        if r20:
+            rebuilt_rom = package_r20_rom(work, r20, rom)
+        else:
+            rebuilt_rom = package_reference_rom(rom, rebuilt9, rebuilt7)
         if not args.replace_codec:
             check_match(rom, rebuilt_rom, "NDS ROM")
 

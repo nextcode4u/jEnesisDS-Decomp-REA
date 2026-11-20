@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compile reconstructed and historical C with devkitARM r20 and check ROM bytes."""
+"""Build recovered C with devkitARM r20 and optionally compare ROM bytes."""
 import argparse
 from hashlib import sha256
 import shutil
@@ -9,10 +9,13 @@ import subprocess
 from tempfile import TemporaryDirectory
 
 from r20 import EXPECTED_ROM_SHA256, check_match, compile_c, compiler_command, run, tool
-from recovered import ARM7_REGIONS, RECOVERED_REGIONS, SOURCE, compile_arm9_source
+from recovered import (ARM7_REGIONS, DLDI_SOURCE, RECOVERED_REGIONS, SOURCE,
+                       arm9_region_layout, compile_arm9_source)
 from sdk_source import (LIBNDS_APR_2006, LIBNDS_ITCM_APR_2006, LIBNDS_OCT_2007, assemble_sdk_irq,
                         compile_sdk_keys, snapshot)
 
+
+REGIONS_BY_CPU = {9: RECOVERED_REGIONS, 7: ARM7_REGIONS}
 
 NDSLIB_2005 = "eafb2703db6e2b6b414a2fa15107212522666bff"
 
@@ -119,22 +122,49 @@ def compare(object_path, symbols, image):
     return exact
 
 
-def check_recovered_regions(compiler, prefix, work, image, cpu, regions):
+def recovered_artifacts(directory, cpu):
+    for label, _, _, start, end, _ in REGIONS_BY_CPU[cpu]:
+        stem = f"arm{cpu}-{start:08x}"
+        yield label, start, end, directory / f"{stem}.elf", directory / f"{stem}.bin"
+
+
+def build_recovered_regions(compiler, prefix, work, cpu):
     linker, objcopy = (tool(prefix, name) for name in ("ld", "objcopy"))
-    base, memory = image
-    for label, filename, entry, start, end, symbols in regions:
+    for region, artifact in zip(REGIONS_BY_CPU[cpu], recovered_artifacts(work, cpu)):
+        _, filename, entry, _, _, symbols = region
+        label, start, end, elf, binary = artifact
         if cpu == 9:
             obj = compile_arm9_source(compiler, work, filename)
         else:
             obj = compile_c(compiler, work, Path(filename), cpu, "-O2", "-marm")
-        elf, binary = (obj.with_suffix(ext).name for ext in (".elf", ".bin"))
         definitions = [f"--defsym={name}={address:#x}" for name, address in symbols.items()]
-        run(work, linker, "-Ttext", f"{start:#x}", "-e", entry, *definitions, "-o", elf, obj.name)
-        run(work, objcopy, "-O", "binary", "--only-section=.text", elf, binary)
-        expected = memory[start - base:end - base]
-        check_match(expected, (work / binary).read_bytes(), label)
-        print(f"  {start:#010x}–{end - 1:#010x} {label}"
-              f" {len(expected)}/{len(expected)} bytes (including linked addresses)")
+        section = ".text" if entry else ".rodata"
+        entry_option = ["-e", entry] if entry else ["-e", f"{start:#x}"]
+        if filename == DLDI_SOURCE:
+            section = ".dldi"
+            script = work / "dldi.ld"
+            layout = arm9_region_layout(obj.name, filename, end - start)
+            script.write_text(f"SECTIONS {{ {section} {start:#x} : {{ {layout} }} }}\n")
+            position = ["-T", script.name]
+        else:
+            position = [f"--section-start={section}={start:#x}"]
+        run(work, linker, *position, *entry_option, *definitions, "-o", elf.name, obj.name)
+        run(work, objcopy, "-O", "binary", f"--only-section={section}", elf.name, binary.name)
+        if binary.stat().st_size != end - start:
+            raise ValueError(f"{label} must occupy {end - start} bytes, built {binary.stat().st_size}")
+
+
+def compare_recovered_regions(images, directory):
+    for cpu in REGIONS_BY_CPU:
+        base, memory = images[cpu]
+        print(f"Reconstructed C / ARM{cpu} -O2")
+        for label, start, end, _, binary in recovered_artifacts(directory, cpu):
+            if not base <= start < end <= base + len(memory):
+                raise ValueError(f"{label} lies outside the ARM{cpu} image")
+            expected = memory[start - base:end - base]
+            check_match(expected, binary.read_bytes(), label)
+            print(f"  {start:#010x}–{end - 1:#010x} {label}"
+                  f" {len(expected)}/{len(expected)} bytes (including linked addresses)")
 
 
 def check_sdk_keys(compiler, linker, objcopy, sdk, arm9):
@@ -206,28 +236,46 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--r20-root", default="", help="Complete devkitARM r20 installation")
     parser.add_argument("--build-dir", type=Path, default=Path("build"))
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--build-only", action="store_true",
+                      help="Write recovered ELF and binary regions without a ROM input")
+    mode.add_argument("--compare-only", action="store_true",
+                      help="Compare previously built binary regions without compiling")
     parser.add_argument("--rom", type=Path, default=Path("input/jEnesisDS.nds"))
     parser.add_argument("--libnds-repo", type=Path)
     parser.add_argument("--ndslib-repo", type=Path)
     args = parser.parse_args()
-    if not args.r20_root:
+    if not (args.r20_root or args.compare_only):
         parser.error("set R20_ROOT to the extracted devkitARM r20 directory")
+    if (args.build_only or args.compare_only) and (args.libnds_repo or args.ndslib_repo):
+        parser.error("SDK source comparisons require compiling and comparing in the same command")
     if bool(args.libnds_repo) != bool(args.ndslib_repo):
         parser.error("supply both SDK repositories for the SDK comparison")
     try:
+        build = args.build_dir.resolve()
+        output = build / "recovered-c"
+        if args.compare_only:
+            compare_recovered_regions(rom_images(args.rom), output)
+            return
         r20 = Path(args.r20_root).expanduser().resolve()
         compiler = compiler_command(r20)
         prefix = r20 / "bin/arm-eabi-"
-        images = rom_images(args.rom)
-        build = args.build_dir.resolve()
         build.mkdir(parents=True, exist_ok=True)
         with TemporaryDirectory(prefix="r20-c-", dir=build) as directory:
             work = Path(directory)
             shutil.copytree(SOURCE / "source", work, dirs_exist_ok=True)
-            print("Reconstructed C / ARM9 -O2")
-            check_recovered_regions(compiler, prefix, work, images[9], 9, RECOVERED_REGIONS)
-            print("Reconstructed C / ARM7 -O2")
-            check_recovered_regions(compiler, prefix, work, images[7], 7, ARM7_REGIONS)
+            for cpu in REGIONS_BY_CPU:
+                build_recovered_regions(compiler, prefix, work, cpu)
+            if args.build_only:
+                output.mkdir(exist_ok=True)
+                for cpu in REGIONS_BY_CPU:
+                    for _, _, _, elf, binary in recovered_artifacts(work, cpu):
+                        shutil.copyfile(elf, output / elf.name)
+                        shutil.copyfile(binary, output / binary.name)
+                print(f"Built {sum(map(len, REGIONS_BY_CPU.values()))} recovered regions in {output}")
+                return
+            images = rom_images(args.rom)
+            compare_recovered_regions(images, work)
             if args.libnds_repo:
                 check_sdk(compiler, prefix, work, images, args.libnds_repo, args.ndslib_repo)
     except (OSError, ValueError, subprocess.CalledProcessError) as error:

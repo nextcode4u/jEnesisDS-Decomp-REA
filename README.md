@@ -10,7 +10,7 @@ This branch groups the static REA and Ghidra analysis of jEnesisDS 0.7.4 into 25
 | Find a routine or check what an opcode does | [Worked trace](docs/VERIFYING-A-TRACE.md) |
 | Orient myself in the repository or reproduce the analysis | [Handoff and folder map](docs/HANDOFF.md) |
 
-You can browse the code and run routine lookups with Python 3 and the files in this branch. The reference ROM and toolchain are needed for rebuilding and checking the original ARM instructions.
+You can browse the code and run routine lookups with Python 3 and the files in this branch. The recovered C regions build with the r20 toolchain alone. The original release is needed for byte comparison and for supplying the remaining payload in the reference rebuild.
 
 ```sh
 python3 scripts/find_routine.py open_rom_from_browser_selection --show
@@ -29,15 +29,16 @@ The [ARM9 index](decompiled/arm9/functions.tsv) and [ARM7 index](decompiled/arm7
 
 ## Compile recovered C with devkitARM r20
 
-Extract the complete r20 Win32 toolchain and put the original ROM in `input/jEnesisDS.nds`. In WSL, run Make from a Windows-mounted working folder, or set `R20_BUILD_DIR` to a Windows-mounted directory. The compiler needs the full installation, including its C compiler and headers. [Archived devkitARM r20](https://wii.leseratte10.de/devkitPro/devkitARM/r20%20%282007%29/)
+Extract the complete r20 Win32 toolchain. In WSL, run Make from a Windows-mounted working folder, or set `R20_BUILD_DIR` to a Windows-mounted directory. The compiler needs the full installation, including its C compiler and headers. [Archived devkitARM r20](https://wii.leseratte10.de/devkitPro/devkitARM/r20%20%282007%29/)
 
 ```sh
-make check-c R20_ROOT=/mnt/d/tools/devkitARM
+make recovered-c R20_ROOT=/mnt/d/tools/devkitARM
+make compare-recovered-c ROM=input/jEnesisDS.nds
 make reference-c R20_ROOT=/mnt/d/tools/devkitARM
 make check-pseudocode
 ```
 
-`check-c` compares all 2,948 bytes of 38 recovered ARM9 and ARM7 routines with the original ROM. `reference-c` links those C objects and the r20 runtime initialization sections at their original addresses. It verifies the entire result at `build/reference-c/jEnesisDS-0.7.4-rebuilt.nds` and uses the original ROM for the remaining payload. Use `ROM=/path/to/jEnesisDS.nds` if the input is stored elsewhere. [Recovered C](rebuild/source) · [Verified ranges](docs/HANDOFF.md#compile-the-recovered-arm9-c)
+`recovered-c` builds ELF and binary sections under `build/recovered-c/` without opening a ROM. `compare-recovered-c` compares the saved output with the original release. It checks 3,756 bytes covering 50 routines and the PSG attenuation table, plus the 32 KiB default DLDI area. `check-c` combines the build and comparison into one command. Put the original ROM in `input/jEnesisDS.nds` for the comparisons and reference rebuilds. `reference-c` links those C objects and the r20 runtime initialization sections at their original addresses. It generates the zero-filled ARM9 DTCM image and uses r20’s `ndstool` to generate the header, name table, and padding. It verifies the entire result at `build/reference-c/jEnesisDS-0.7.4-rebuilt.nds` and uses the original ROM for the remaining processor code, data, and launcher banner. Use `ROM=/path/to/jEnesisDS.nds` if the input is stored elsewhere. [Recovered C](rebuild/source) · [Verified ranges](docs/HANDOFF.md#compile-the-recovered-arm9-c)
 
 `make check-lzss` uses Python Unicorn to compare the recovered compression and file-entry code with the original ARM9 routines. `make check-sdk` recompiles and compares selected period ndslib and libnds sources. [Test setup](docs/HANDOFF.md#verify-lzss-behavior) · [SDK comparison](docs/HANDOFF.md#reproduce-the-sdk-comparison)
 
@@ -60,7 +61,7 @@ cmp input/jEnesisDS.nds build/jEnesisDS-0.7.4-rebuilt.nds
 
 If the tools are in the default cache, run `python3 rebuild/build.py`. A successful build prints the rebuilt ROM's SHA-256 and leaves `build/arm9.elf` and `build/arm7.elf` for disassembly. A successful `cmp` produces no output.
 
-The builder assembles the recovered startup code and links it with the unreconstructed code and data from the input ROM. This produces the byte-for-byte reference. The separate C port has its own build and compatibility notes. [BlocksDS port](https://github.com/nextcode4u/jEnesisDS-Decomp-REA/tree/blocksds-port)
+The builder assembles the recovered startup code and links it with the unreconstructed code and data from the input ROM. This produces the byte-for-byte reference. An independently built byte-identical ROM still requires recovery of the remaining CPU dispatch code, video and audio engines, frontend, and ROM data.
 
 ## Developer note
 
