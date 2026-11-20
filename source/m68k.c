@@ -1097,33 +1097,100 @@ static unsigned skip_ram_store_loop(struct m68k *cpu, struct megadrive *md, unsi
     return iterations * 22;
 }
 
+static unsigned skip_interleaved_word_stores(struct m68k *cpu, struct megadrive *md,
+                                             unsigned budget, const uint8_t *rom)
+{
+    // Two MOVE.W stores through the same postincrement address register,
+    // followed by SWAP, ADD, SWAP and the taken DBRA.
+    uint16_t first = rom_word(rom, 0), second = rom_word(rom, 2);
+    uint16_t swap = rom_word(rom, 4), add = rom_word(rom, 6);
+    unsigned data = first & 7, accumulator = second & 7, increment = add & 7;
+    unsigned size = (add >> 6) & 3;
+    unsigned address_reg = (first >> 9) & 7, counter = cpu->opcode & 7;
+    if ((first & 0xf1f8) != 0x30c0 || (second & 0xf1f8) != 0x30c0 ||
+        ((second >> 9) & 7) != address_reg || swap != (0x4840 | accumulator) ||
+        (add & 0xff38) != (0xd000 | accumulator << 9) || (size != 1 && size != 2) ||
+        rom_word(rom, 8) != swap ||
+        accumulator == counter || data == counter || increment == counter ||
+        accumulator == data || accumulator == increment)
+        return 0;
+
+    uint32_t address = cpu->a[address_reg] & 0xffffff;
+    if (address < 0xe00000 || (address & 1))
+        return 0;
+    unsigned cost = size == 2 ? 42 : 38;
+    unsigned iterations = budget / cost;
+    unsigned left = (uint16_t)cpu->d[counter];
+    unsigned room = (0x10000 - (address & 0xffff)) / 4;
+    if (iterations > left)
+        iterations = left;
+    if (iterations > room)
+        iterations = room;
+    if (!iterations)
+        return 0;
+
+    uint8_t *dest = md->ram + (address & 0xffff);
+    uint16_t first_word = cpu->d[data];
+    uint32_t mask = size == 2 ? UINT32_MAX : UINT16_MAX;
+    uint32_t stride = cpu->d[increment] & mask;
+    uint32_t value = cpu->d[accumulator];
+    // Work in swapped order across iterations. The high half is the second
+    // output word and can change when a long add carries out of the low half.
+    value = (value << 16) | (value >> 16);
+    bool carry = false;
+    for (unsigned i = 0; i < iterations; ++i) {
+        dest[0] = first_word >> 8;
+        dest[1] = first_word;
+        dest[2] = value >> 24;
+        dest[3] = value >> 16;
+        dest += 4;
+        uint32_t sum = ((value & mask) + stride) & mask;
+        carry = sum < stride;
+        value = (value & ~mask) | sum;
+    }
+    cpu->d[accumulator] = (value << 16) | (value >> 16);
+    // The last ADD sets X. The final SWAP supplies NZVC and preserves X.
+    cpu->sr = (cpu->sr & ~CCR_X) | (carry ? CCR_X : 0);
+    set_logic_flags(cpu, 4, cpu->d[accumulator]);
+    cpu->a[address_reg] += iterations * 4;
+    set_data(cpu, counter, 2, left - iterations);
+    return iterations * cost;
+}
+
 static unsigned skip_inactive_objects(struct m68k *cpu, const struct megadrive *md,
                                       unsigned budget, uint32_t pc)
 {
     unsigned length = cpu->instruction_address - cpu->pc;
-    if (length != 20 && length != 16)
+    if (length != 20 && length != 16 && length != 12)
         return 0;
     if (!rom_visible(md, pc, length))
         return 0;
     const uint8_t *rom = md->rom + pc;
-    bool move_byte = length == 20;
-    unsigned prefix = move_byte ? 2 : 4;
+    bool move_byte = length != 16;
+    bool displaced = length == 12;
+    unsigned prefix = displaced || !move_byte ? 4 : 2;
     uint16_t first = rom_word(rom, 0);
     uint16_t branch = rom_word(rom, prefix);
     uint16_t lea = rom_word(rom, length - 4);
     unsigned areg = first & 7, dreg = (first >> 9) & 7, counter_reg = cpu->opcode & 7;
-    if ((lea & 0xf1f8) != 0x41e8 || ((lea >> 9) & 7) != areg || (lea & 7) != areg ||
-        (int8_t)branch + (int)prefix + 2 != (int)length - 4)
+    if ((lea & 0xf1f8) != 0x41e8 || ((lea >> 9) & 7) != areg || (lea & 7) != areg)
         return 0;
-    if (move_byte) {
-        if ((first & 0xf1f8) != 0x1010 || (branch >> 8) != 0x67 || dreg == counter_reg)
+    if (displaced) {
+        if ((first & 0xf1f8) != 0x1028 || branch != 0x6600 || dreg == counter_reg)
             return 0;
-    } else if ((first & 0xfff8) != 0x4a28 || (branch >> 8) != 0x6a) {
-        return 0;
+    } else {
+        if ((int8_t)branch + (int)prefix + 2 != (int)length - 4)
+            return 0;
+        if (move_byte) {
+            if ((first & 0xf1f8) != 0x1010 || (branch >> 8) != 0x67 || dreg == counter_reg)
+                return 0;
+        } else if ((first & 0xfff8) != 0x4a28 || (branch >> 8) != 0x6a) {
+            return 0;
+        }
     }
     int16_t step = rom_word(rom, length - 2);
-    int16_t offset = move_byte ? 0 : (int16_t)rom_word(rom, 2);
-    unsigned cost = move_byte ? 36 : 40;
+    int16_t offset = !move_byte || displaced ? (int16_t)rom_word(rom, 2) : 0;
+    unsigned cost = displaced ? 42 : move_byte ? 36 : 40;
     unsigned counter = (uint16_t)cpu->d[counter_reg], iterations = budget / cost;
     if (iterations > counter)
         iterations = counter;
@@ -1152,6 +1219,8 @@ ITCM_CODE unsigned m68k_skip_idle(struct m68k *cpu, struct megadrive *md, unsign
     if ((op & 0xfff8) == 0x51c8) {
         unsigned loop_cycles = 10;
         if (cpu->pc != cpu->instruction_address) {
+            if (cpu->pc + 10 == cpu->instruction_address && rom_visible(md, pc, 10))
+                return skip_interleaved_word_stores(cpu, md, budget, md->rom + pc);
             if (cpu->pc + 2 != cpu->instruction_address)
                 return skip_inactive_objects(cpu, md, budget, pc);
             if (!rom_visible(md, pc, 2))
@@ -1170,16 +1239,19 @@ ITCM_CODE unsigned m68k_skip_idle(struct m68k *cpu, struct megadrive *md, unsign
     }
     if ((op != 0x66fa && op != 0x67fa) || cpu->pc + 4 != cpu->instruction_address)
         return 0;
-    if (!rom_visible(md, pc, 4) ||
-        md->rom[pc] != 0x4a || md->rom[pc + 1] != 0x38)
+    if (!rom_visible(md, pc, 4))
         return 0;
-    // TST.B (abs).W followed by BNE/BEQ reads an unchanged work-RAM byte.
-    // The scheduler ends the skip before its next interrupt. No other unit
-    // currently writes work RAM between 68000 instructions.
-    uint16_t address = (uint16_t)md->rom[pc + 2] << 8 | md->rom[pc + 3];
-    if (!(address & 0x8000))
+    uint16_t test = rom_word(md->rom, pc);
+    if (test != 0x4a38 && test != 0x4a78)
+        return 0;
+    // A work-RAM polling loop can run to the next scheduled interrupt.
+    // No other unit currently writes work RAM between 68000 instructions.
+    uint16_t address = rom_word(md->rom, pc + 2);
+    if (!(address & 0x8000) || (test == 0x4a78 && (address & 1)))
         return 0;
     uint8_t value = md->ram[address];
+    if (test == 0x4a78 && md->ram[address + 1])
+        value |= 1;
     unsigned flags = value == 0 ? CCR_Z : (value & 0x80) ? CCR_N : 0;
     if ((cpu->sr & 15) != flags || (value == 0) != (op == 0x67fa))
         return 0;

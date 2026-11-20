@@ -29,9 +29,9 @@ static void update_channel(struct fm_chip *fm, unsigned index)
     static const uint8_t special_slots[] = {1, 2, 0};
 
     for (unsigned slot = 0; slot < FM_OPERATORS; ++slot) {
-        unsigned frequency = fm->frequency[index];
+        unsigned frequency = fm->pitch.channel[index];
         if (index == 2 && slot < 3 && (fm->registers[0][0x27] & 0xc0))
-            frequency = fm->special_frequency[special_slots[slot]];
+            frequency = fm->pitch.special[special_slots[slot]];
         unsigned block = frequency >> 11;
         unsigned number = frequency & 0x7ff;
         unsigned code = block * 4 + key_code[number >> 7];
@@ -122,31 +122,22 @@ void fm_write(struct fm_chip *fm, unsigned reg, uint8_t value)
     if (channel == 3)
         return;
     unsigned group = address & 0xfc;
-    if (group == 0xa4 || (!bank && group == 0xac)) {
-        fm->frequency_high[bank] = value & 0x3f;
-    } else if (group == 0xa0) {
-        fm->frequency[3 * bank + channel] = value | fm->frequency_high[bank] << 8;
-        update_channel(fm, 3 * bank + channel);
-    } else if (!bank && group == 0xa8) {
-        fm->special_frequency[channel] = value | fm->frequency_high[bank] << 8;
-        update_channel(fm, 2);
+    if ((address & 0xf0) == 0xa0) {
+        int updated = fm_pitch_write(&fm->pitch, reg, value);
+        if (updated >= 0)
+            update_channel(fm, updated);
     } else if ((address >= 0x30 && address < 0xa0) || group == 0xb0 || group == 0xb4) {
         update_channel(fm, 3 * bank + channel);
     }
 }
 
 void fm_restore(struct fm_chip *fm, bool pal, const uint8_t registers[2][256],
-                const uint8_t keys[FM_CHANNELS])
+                const uint8_t keys[FM_CHANNELS], const struct fm_pitch *pitch)
 {
     fm_reset(fm, pal);
     memcpy(fm->registers, registers, sizeof(fm->registers));
-    for (unsigned channel = 0; channel < 3; ++channel)
-        fm->special_frequency[channel] = registers[0][0xa8 + channel] |
-                                         (registers[0][0xac + channel] & 63) << 8;
+    fm->pitch = *pitch;
     for (unsigned index = 0; index < FM_CHANNELS; ++index) {
-        const uint8_t *reg = registers[index / 3];
-        unsigned channel = index % 3;
-        fm->frequency[index] = reg[0xa0 + channel] | (reg[0xa4 + channel] & 63) << 8;
         update_channel(fm, index);
         key_change(fm, index, keys[index]);
     }

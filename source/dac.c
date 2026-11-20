@@ -10,6 +10,7 @@ void dac_begin(struct megadrive *md, struct dac_frame *frame)
     frame->fm_overflow = false;
     memcpy(frame->fm_registers, md->ym_registers, sizeof(frame->fm_registers));
     memcpy(frame->fm_keys, md->ym_fm_keys, sizeof(frame->fm_keys));
+    frame->fm_pitch = md->ym_pitch;
 }
 
 void dac_sync(struct megadrive *md, unsigned cycle)

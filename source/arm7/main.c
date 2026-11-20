@@ -89,7 +89,8 @@ static void fill_sound_block(int16_t *left, int16_t *right)
                 const struct dac_frame *frame = &dac_queue[dac_read];
                 if (dac_sample_index == 0) {
                     if (!fm_synced || next_fm_sequence != frame->sequence)
-                        fm_restore(&fm, chip.pal, frame->fm_registers, frame->fm_keys);
+                        fm_restore(&fm, chip.pal, frame->fm_registers, frame->fm_keys,
+                                   &frame->fm_pitch);
                     next_fm_sequence = frame->sequence + 1;
                     fm_synced = !frame->fm_overflow;
                     fm_write_index = 0;

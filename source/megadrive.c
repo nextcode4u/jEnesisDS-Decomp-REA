@@ -249,6 +249,8 @@ void megadrive_ym_write_at(struct megadrive *md, unsigned port, uint8_t data, un
         if (channel != 3)
             md->ym_fm_keys[channel + ((data & 4) ? 3 : 0)] = data >> 4;
     }
+    if ((reg & 0xf0) == 0xa0)
+        fm_pitch_write(&md->ym_pitch, bank * 256 + reg, data);
     if ((!bank && (reg == 0x22 || reg == 0x27 || reg == 0x28 || reg == 0x2b)) ||
         (reg >= 0x30 && reg <= 0xb6 && (reg & 3) != 3))
         capture_fm_write(md, bank * 256 + reg, data, cycle);

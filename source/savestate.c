@@ -8,7 +8,7 @@
 
 enum { FNV_PRIME = 16777619 };
 static const uint32_t fnv_start = UINT32_C(2166136261);
-static const uint8_t magic[4] = {'J', 'S', 'C', 10};
+static const uint8_t magic[4] = {'J', 'S', 'C', 11};
 
 struct state_io {
     FILE *file;
@@ -187,6 +187,33 @@ static void transfer_state(struct state_io *io, struct megadrive *md, unsigned v
         md->controller_cycles = 0;
         memset(md->th_phase, 0, sizeof(md->th_phase));
         memset(md->th_last_edge, 0, sizeof(md->th_last_edge));
+    }
+    struct fm_pitch *pitch = &md->ym_pitch;
+    if (version >= 11) {
+        SCALAR(pitch->channel_high);
+        SCALAR(pitch->special_high);
+        pitch->channel_high &= 0x3f;
+        pitch->special_high &= 0x3f;
+        for (unsigned i = 0; i < FM_CHANNELS; ++i) {
+            SCALAR(pitch->channel[i]);
+            pitch->channel[i] &= 0x3fff;
+        }
+        for (unsigned i = 0; i < 3; ++i) {
+            SCALAR(pitch->special[i]);
+            pitch->special[i] &= 0x3fff;
+        }
+    } else {
+        // Older states saved the raw register image without the write order.
+        for (unsigned bank = 0; bank < 2; ++bank) {
+            const uint8_t *reg = md->ym_registers[bank];
+            for (unsigned i = 0; i < 3; ++i)
+                pitch->channel[bank * 3 + i] = reg[0xa0 + i] | (reg[0xa4 + i] & 0x3f) << 8;
+        }
+        for (unsigned i = 0; i < 3; ++i)
+            pitch->special[i] = md->ym_registers[0][0xa8 + i] |
+                                (md->ym_registers[0][0xac + i] & 0x3f) << 8;
+        pitch->channel_high = md->ym_registers[0][0xa4] & 0x3f;
+        pitch->special_high = md->ym_registers[0][0xac] & 0x3f;
     }
 #undef SCALAR
 #undef ARRAY_BYTES

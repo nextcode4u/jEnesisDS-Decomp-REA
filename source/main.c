@@ -120,6 +120,9 @@ struct application {
     enum genesis_region region;
 };
 
+// The bitmap renderer writes cached RAM. Upload the completed page in one
+// transfer to avoid contending with the display on every pixel store.
+static uint16_t bitmap_pixels[VDP_VIEW_WIDTH * VDP_VIEW_HEIGHT / 2] __attribute__((aligned(32)));
 static int display_bg;
 static unsigned bitmap_visible, bitmap_queued;
 static volatile bool bitmap_field_visible;
@@ -196,7 +199,9 @@ static void draw_game_frame(const struct megadrive *md)
             bitmap_queued = bitmap_visible ^ 4;
             bitmap_field_queued = md->vdp_odd_field;
             uint16_t *bitmap = (uint16_t *)BG_GFX + bitmap_queued * (0x4000 / sizeof(uint16_t));
-            vdp_render_frame(md, bitmap);
+            vdp_render_frame(md, bitmap_pixels);
+            DC_FlushRange(bitmap_pixels, sizeof(bitmap_pixels));
+            dmaCopyWords(3, bitmap_pixels, bitmap, sizeof(bitmap_pixels));
             output = OUTPUT_BITMAP;
         }
         display_revision = md->video_revision;

@@ -1,12 +1,8 @@
 #include "vdp_render.h"
 #include "megadrive.h"
 
-#include <string.h>
-
-struct raster {
-    uint8_t color[VDP_VIEW_WIDTH];
-    uint8_t priority[VDP_VIEW_WIDTH];
-};
+// Keep layer priority and sprite ownership alongside the six-bit palette index.
+enum { PIXEL_COLOR = 0x3f, SPRITE_CLAIMED = 0x40, HIGH_PRIORITY = 0x80 };
 
 struct sprite {
     int x, y;
@@ -25,19 +21,64 @@ static uint16_t vram_word(const struct megadrive *md, unsigned address)
     return (md->vram[(uint16_t)address] << 8) | md->vram[(uint16_t)(address + 1)];
 }
 
-static unsigned pattern_pixel(const struct megadrive *md, unsigned pattern, unsigned x, unsigned y,
-                              unsigned cell_shift)
+static uint32_t pattern_row(const struct megadrive *md, unsigned address)
 {
-    unsigned address = (pattern << (cell_shift + 2)) + y * 4 + x / 2;
-    uint8_t pair = md->vram[(uint16_t)address];
-    return (x & 1) ? pair & 15 : pair >> 4;
+    const uint8_t *p = md->vram + (uint16_t)address;
+    return (uint32_t)p[0] << 24 | (uint32_t)p[1] << 16 |
+           (uint32_t)p[2] << 8 | p[3];
 }
 
-static void draw_plane_line(const struct megadrive *md, struct raster *line,
+static void draw_plane_span(const struct megadrive *md, uint8_t *line,
+                                unsigned length, unsigned px, unsigned py,
+                                unsigned stride, unsigned base, unsigned cell_shift,
+                                bool foreground)
+{
+    const unsigned cell_height = 1U << cell_shift;
+    const unsigned row_address = base + (py >> cell_shift) * stride * 2;
+    const unsigned tile_mask = (0x800 >> (cell_shift - 3)) - 1;
+    const unsigned tile_row = (py & (cell_height - 1)) * 4;
+    unsigned drawn = 0;
+    while (drawn < length) {
+        unsigned offset = px & 7;
+        unsigned count = 8 - offset;
+        if (count > length - drawn)
+            count = length - drawn;
+        uint16_t entry = vram_word(md, row_address + ((px >> 3) & (stride - 1)) * 2);
+        unsigned address = (entry & tile_mask) << (cell_shift + 2);
+        address += (entry & 0x1000) ? (cell_height - 1) * 4 - tile_row : tile_row;
+        uint32_t row = pattern_row(md, address);
+        if (row) {
+            bool flipped = (entry & 0x0800) != 0;
+            unsigned shift = flipped ? offset * 4 : 28 - offset * 4;
+            int step = flipped ? 4 : -4;
+            unsigned palette = (entry >> 9) & 0x30;
+            unsigned priority = (entry >> 8) & HIGH_PRIORITY;
+            uint8_t *dest = line + drawn;
+            if (!foreground || priority) {
+                for (unsigned i = 0; i < count; ++i) {
+                    unsigned color = row >> shift & 15;
+                    if (color)
+                        dest[i] = priority | palette | color;
+                    shift += step;
+                }
+            } else {
+                for (unsigned i = 0; i < count; ++i) {
+                    unsigned color = row >> shift & 15;
+                    if (color && !(dest[i] & HIGH_PRIORITY))
+                        dest[i] = palette | color;
+                    shift += step;
+                }
+            }
+        }
+        drawn += count;
+        px += count;
+    }
+}
+
+static void draw_plane_line(const struct megadrive *md, uint8_t *line,
                             unsigned screen_x, unsigned screen_y, bool wide, unsigned plane,
                             unsigned cell_shift)
 {
-    const unsigned cell_height = 1U << cell_shift;
     const uint8_t *regs = md->vdp_registers;
     static const unsigned cells[4] = {32, 64, 32, 128};
     unsigned width = cells[regs[16] & 3];
@@ -45,57 +86,38 @@ static void draw_plane_line(const struct megadrive *md, struct raster *line,
     unsigned plane_a_base = screen_y < md->vdp_row_count ?
                             md->vdp_rows[screen_y].plane_a_base : regs[2];
     unsigned base = plane ? (regs[4] & 7) << 13 : (plane_a_base & 0x38) << 10;
-    unsigned hscroll_base = vdp_hscroll_address(regs, screen_y);
-    unsigned hscroll = vram_word(md, hscroll_base + plane * 2) & 0x3ff;
+    unsigned hscroll = vram_word(md, vdp_hscroll_address(regs, screen_y) + plane * 2) & 0x3ff;
     bool column_scroll = (regs[11] & 4) != 0;
     unsigned line_scroll = megadrive_scanline_vscroll(md, screen_y, plane);
     unsigned window_x = (regs[17] & 0x1f) * 16;
     unsigned window_y = (regs[18] & 0x1f) * 8;
     bool window_row = (regs[18] & 0x80) ? screen_y >= window_y : screen_y < window_y;
+    bool window_right = (regs[17] & 0x80) != 0;
     unsigned field_y = cell_shift == 4 ? screen_y * 2 + md->vdp_odd_field : screen_y;
     unsigned window_base = (regs[3] & (wide ? 0x3c : 0x3e)) << 10;
-    for (unsigned i = 0; i < VDP_VIEW_WIDTH;) {
-        unsigned x = screen_x + i;
-        bool in_window_x = (regs[17] & 0x80) ? x >= window_x : x < window_x;
-        bool window = plane == 0 && (window_row || in_window_x);
-        unsigned vscroll = column_scroll ? md->vsram[(x / 16) * 2 + plane] : line_scroll;
-        unsigned px = window ? x : (x - hscroll) & (width * 8 - 1);
-        unsigned py = window ? field_y :
-            (field_y + vscroll) & (height * cell_height - 1);
-        unsigned stride = window ? (wide ? 64 : 32) : width;
-        unsigned table = window ? window_base : base;
-        uint16_t entry = vram_word(md, table + ((py >> cell_shift) * stride + px / 8) * 2);
-        unsigned y = py & (cell_height - 1);
-        if (entry & 0x1000)
-            y ^= cell_height - 1;
-        unsigned pattern = entry & (cell_shift == 4 ? 0x3ff : 0x7ff);
-        unsigned flip_x = (entry & 0x0800) ? 7 : 0;
-        unsigned palette = (entry >> 9) & 0x30;
-        unsigned priority = ((entry & 0x8000) ? 4 : 1) + (plane == 0);
-        unsigned count = 8 - (px & 7);
-        // Window and vertical column scroll both switch at 16-dot boundaries.
-        if (count > 16 - (x & 15))
-            count = 16 - (x & 15);
-        if (count > VDP_VIEW_WIDTH - i)
-            count = VDP_VIEW_WIDTH - i;
-        unsigned address = (pattern << (cell_shift + 2)) + y * 4;
-        const uint8_t *source = md->vram + address;
-        uint32_t row = (uint32_t)source[0] << 24 | (uint32_t)source[1] << 16 |
-                       (uint32_t)source[2] << 8 | source[3];
-        if (row) {
-            unsigned pixel = ((px & 7) ^ flip_x) * 4;
-            int step = flip_x ? 4 : -4;
-            unsigned shift = 28 - pixel;
-            for (unsigned n = 0; n < count; ++n) {
-                unsigned color = (row >> shift) & 15;
-                if (color && priority >= line->priority[i + n]) {
-                    line->color[i + n] = palette | color;
-                    line->priority[i + n] = priority;
-                }
-                shift += step;
+    const unsigned end = screen_x + VDP_VIEW_WIDTH;
+    for (unsigned x = screen_x; x < end;) {
+        bool window = plane == 0 && (window_row || (window_right ? x >= window_x : x < window_x));
+        unsigned span_end = end;
+        if (plane == 0 && !window_row && window_x > x && window_x < end)
+            span_end = window_x;
+
+        unsigned px = x, py = field_y;
+        if (!window) {
+            unsigned vscroll = line_scroll;
+            if (column_scroll) {
+                unsigned column_end = (x | 15) + 1;
+                if (column_end < span_end)
+                    span_end = column_end;
+                vscroll = md->vsram[(x / 16) * 2 + plane];
             }
+            px = x + 1024 - hscroll;
+            py = (field_y + vscroll) & ((height << cell_shift) - 1);
         }
-        i += count;
+        draw_plane_span(md, line + x - screen_x, span_end - x, px, py,
+                        window ? (wide ? 64 : 32) : width, window ? window_base : base,
+                        cell_shift, plane == 0);
+        x = span_end;
     }
 }
 
@@ -122,14 +144,13 @@ static unsigned load_sprites(const uint8_t *table, bool wide, unsigned cell_shif
     return count;
 }
 
-static void draw_sprites_line(const struct megadrive *md, struct raster *line,
+static void draw_sprites_line(const struct megadrive *md, uint8_t *line,
                               int screen_x, int screen_y, const struct sprite *sprites,
                               unsigned count, bool wide, unsigned cell_shift)
 {
     const unsigned cell_height = 1U << cell_shift;
     if (cell_shift == 4)
         screen_y = screen_y * 2 + md->vdp_odd_field;
-    bool drawn[VDP_VIEW_WIDTH] = {0};
     unsigned remaining = wide ? 20 : 16;
     for (unsigned i = 0; i < count && remaining; ++i) {
         const struct sprite *sprite = &sprites[i];
@@ -141,22 +162,33 @@ static void draw_sprites_line(const struct megadrive *md, struct raster *line,
         if (entry & 0x1000)
             y = sprite->height * cell_height - 1 - y;
         int left = sprite->x - screen_x, width = sprite->width * 8;
+        int first = left < 0 ? -left : 0;
+        int last = left + width > VDP_VIEW_WIDTH ? VDP_VIEW_WIDTH - left : width;
         unsigned palette = (entry >> 9) & 0x30;
-        unsigned priority = (entry & 0x8000) ? 6 : 3;
-        unsigned pattern = entry & (cell_shift == 4 ? 0x3ff : 0x7ff);
-        for (int column = 0; column < width; ++column) {
-            int destination = left + column;
-            if (destination < 0 || destination >= VDP_VIEW_WIDTH || drawn[destination])
-                continue;
-            unsigned x = (entry & 0x0800) ? width - 1 - column : column;
-            unsigned tile = pattern + (x / 8) * sprite->height + ((unsigned)y >> cell_shift);
-            unsigned color = pattern_pixel(md, tile, x & 7, (unsigned)y & (cell_height - 1),
-                                           cell_shift);
-            if (color) {
-                drawn[destination] = true;
-                if (priority >= line->priority[destination])
-                    line->color[destination] = palette | color;
+        bool high_priority = (entry & 0x8000) != 0;
+        bool flipped = (entry & 0x0800) != 0;
+        unsigned pattern = (entry & (cell_shift == 4 ? 0x3ff : 0x7ff)) + ((unsigned)y >> cell_shift);
+        for (int column = first; column < last;) {
+            unsigned x = flipped ? width - 1 - column : column;
+            unsigned tile = pattern + (x / 8) * sprite->height;
+            unsigned row_address = (tile << (cell_shift + 2)) + (y & (cell_height - 1)) * 4;
+            uint32_t row = pattern_row(md, row_address);
+            unsigned shift = 28 - (x & 7) * 4;
+            int step = flipped ? 4 : -4;
+            int end = (column | 7) + 1;
+            if (end > last)
+                end = last;
+            for (; row && column < end; ++column) {
+                uint8_t *dest = &line[left + column];
+                unsigned color = row >> shift & 15;
+                if (color && !(*dest & SPRITE_CLAIMED)) {
+                    if (high_priority || !(*dest & HIGH_PRIORITY))
+                        *dest = palette | color;
+                    *dest |= SPRITE_CLAIMED;
+                }
+                shift += step;
             }
+            column = end;
         }
     }
 }
@@ -182,8 +214,7 @@ void vdp_render_frame(const struct megadrive *md, uint16_t *pixels)
         unsigned guest_y = screen_y + y;
         const struct vdp_scanline *row = guest_y < md->vdp_row_count ?
                                          &md->vdp_rows[guest_y] : NULL;
-        struct raster line;
-        memset(&line, 0, sizeof(line));
+        uint8_t line[VDP_VIEW_WIDTH] = {0};
         if (row ? row->display_enabled : display_enabled) {
             unsigned table = row ? row->sprite_table : 0;
             if (table != previous_table) {
@@ -192,11 +223,11 @@ void vdp_render_frame(const struct megadrive *md, uint16_t *pixels)
                 count = load_sprites(sprite_data, wide, cell_shift, sprites);
                 previous_table = table;
             }
-            draw_plane_line(md, &line, screen_x, guest_y, wide, 1, cell_shift);
-            draw_plane_line(md, &line, screen_x, guest_y, wide, 0, cell_shift);
-            draw_sprites_line(md, &line, screen_x, guest_y, sprites, count, wide, cell_shift);
+            draw_plane_line(md, line, screen_x, guest_y, wide, 1, cell_shift);
+            draw_plane_line(md, line, screen_x, guest_y, wide, 0, cell_shift);
+            draw_sprites_line(md, line, screen_x, guest_y, sprites, count, wide, cell_shift);
         }
         for (unsigned x = 0; x < VDP_VIEW_WIDTH; x += 2)
-            *pixels++ = line.color[x] | (line.color[x + 1] << 8);
+            *pixels++ = (line[x] | (line[x + 1] << 8)) & (PIXEL_COLOR * 0x101);
     }
 }

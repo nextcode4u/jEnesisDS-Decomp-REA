@@ -23,6 +23,7 @@ struct dac_frame {
     uint8_t slot;
     bool fm_overflow;
     uint8_t fm_registers[2][256], fm_keys[FM_CHANNELS];
+    struct fm_pitch fm_pitch;
     struct dac_sample samples[DAC_PCM_CAPACITY];
     struct fm_write_event fm_writes[FM_FRAME_WRITES];
 } __attribute__((aligned(32)));

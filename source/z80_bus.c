@@ -77,6 +77,18 @@ static void advance_refresh(z80 *cpu, unsigned instructions)
     cpu->r = (cpu->r & 0x80) | ((cpu->r + instructions) & 0x7f);
 }
 
+static void finish_poll(z80 *cpu, unsigned value, unsigned iterations)
+{
+    cpu->a = value;
+    cpu->sf = cpu->hf = cpu->nf = cpu->cf = 0;
+    cpu->zf = value == 0;
+    cpu->yf = (value >> 5) & 1;
+    cpu->xf = (value >> 3) & 1;
+    cpu->pf = !__builtin_parity(value);
+    cpu->mem_ptr = cpu->pc;
+    advance_refresh(cpu, iterations * 3);
+}
+
 static unsigned run_local_delay(struct megadrive *md, unsigned budget)
 {
     z80 *cpu = &md->sound_cpu;
@@ -100,6 +112,18 @@ static unsigned run_local_delay(struct megadrive *md, unsigned budget)
         }
     }
 
+    // LD A,D; OR E; JR Z back to the load. DE can change in an interrupt,
+    // so leave any slice with a pending interrupt to the interpreter.
+    if (offset <= 0x1ffc && !(cpu->d | cpu->e) &&
+        ram[offset] == 0x7a && ram[offset + 1] == 0xb3 &&
+        ram[offset + 2] == 0x28 && ram[offset + 3] == 0xfc) {
+        // The branch may cross the slice boundary once its first eight clocks
+        // have elapsed. The caller carries any resulting debt to the next slice.
+        unsigned iterations = (budget + 11) / 20;
+        finish_poll(cpu, 0, iterations);
+        return iterations * 20;
+    }
+
     // LD A,(HL); OR A; JP P back to the load. Neither processor writes
     // this RAM within the Z80 slice, so a clear sign bit remains clear.
     unsigned hl = (unsigned)cpu->h << 8 | cpu->l;
@@ -112,14 +136,7 @@ static unsigned run_local_delay(struct megadrive *md, unsigned budget)
     if (value & 0x80)
         return 0;
     unsigned iterations = budget / 21;
-    cpu->a = value;
-    cpu->sf = cpu->hf = cpu->nf = cpu->cf = 0;
-    cpu->zf = value == 0;
-    cpu->yf = (value >> 5) & 1;
-    cpu->xf = (value >> 3) & 1;
-    cpu->pf = !__builtin_parity(value);
-    cpu->mem_ptr = cpu->pc;
-    advance_refresh(cpu, iterations * 3);
+    finish_poll(cpu, value, iterations);
     return iterations * 21;
 }
 

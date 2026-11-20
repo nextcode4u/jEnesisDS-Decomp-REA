@@ -92,6 +92,7 @@ struct megadrive {
     uint16_t psg_registers[8];
     uint8_t ym_address[2];
     uint8_t ym_fm_keys[FM_CHANNELS];
+    struct fm_pitch ym_pitch;
     uint8_t ym_registers[2][256];
     unsigned ym_busy_cycles;
     uint32_t ym_timer_clocks[2];

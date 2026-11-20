@@ -183,6 +183,21 @@ static void test_z80_delay_loops(const struct cartridge *cart)
     assert(md.sound_cpu.mem_ptr == expected.mem_ptr && md.sound_cpu.pf == expected.pf);
     assert(md.sound_cpu.xf == expected.xf && md.sound_cpu.yf == expected.yf);
     assert(md.sound_cpu.sf == expected.sf && md.sound_cpu.zf == expected.zf);
+
+    genesis_z80_reset(&md);
+    md.z80_synced_cycle = 0;
+    const uint8_t register_poll[] = {0x7a, 0xb3, 0x28, 0xfc};
+    memcpy(md.z80_ram, register_poll, sizeof(register_poll));
+    md.sound_cpu.a = 0xff;
+    md.sound_cpu.r = 0xfa;
+    expected = md.sound_cpu;
+    while (expected.cyc < 50)
+        z80_step(&expected);
+    genesis_z80_sync(&md, 108);
+    assert(md.sound_cpu.pc == expected.pc && md.sound_cpu.a == expected.a);
+    assert(md.sound_cpu.cyc == expected.cyc && md.sound_cpu.r == expected.r);
+    assert(md.sound_cpu.mem_ptr == expected.mem_ptr && md.z80_instruction_debt == 10);
+    assert(md.sound_cpu.zf && md.sound_cpu.pf && !md.sound_cpu.cf && !md.sound_cpu.sf);
 }
 
 static void test_fm_output(void)
@@ -231,6 +246,45 @@ static void test_fm_output(void)
         fm_sample(&fm, &left, &right);
     }
     assert(left == 0 && right == 0);
+}
+
+static void test_fm_pitch_latches(const struct cartridge *cart)
+{
+    static struct megadrive md;
+    struct fm_chip fm;
+    struct dac_frame frame = {.count = 8};
+    megadrive_reset(&md, cart, GENESIS_REGION_USA);
+    fm_reset(&fm, false);
+    static const struct { uint16_t reg; uint8_t value; } writes[] = {
+        {0x0a4, 0x22}, {0x0ac, 0x19}, {0x1a1, 0x84}, {0x0aa, 0x35},
+        {0x1a5, 0x17}, {0x0a0, 0x56}, {0x0a6, 0x32}, {0x0ad, 0x28},
+    };
+    for (unsigned i = 0; i < sizeof(writes) / sizeof(writes[0]); ++i) {
+        unsigned port = (writes[i].reg >> 8) * 2;
+        megadrive_ym_write(&md, port, writes[i].reg & 0xff);
+        megadrive_ym_write(&md, port + 1, writes[i].value);
+        fm_write(&fm, writes[i].reg, writes[i].value);
+    }
+    assert(fm.pitch.channel[4] == 0x2284 && fm.pitch.channel[0] == 0x1756);
+    assert(fm.pitch.special[2] == 0x1935);
+    assert(fm.pitch.channel_high == 0x32 && fm.pitch.special_high == 0x28);
+    uint32_t phase_step = fm.channels[4].op[0].step;
+    assert(phase_step != 0);
+
+    const char *path = "build/c/boot-test-pitch.jsc";
+    uint32_t identity = savestate_identity(&md);
+    assert(savestate_save(path, identity, &md));
+    memset(&md.ym_pitch, 0, sizeof(md.ym_pitch));
+    assert(savestate_load(path, identity, &md));
+    assert(remove(path) == 0);
+    dac_begin(&md, &frame);
+    dac_end(&md);
+    fm_restore(&fm, false, frame.fm_registers, frame.fm_keys, &frame.fm_pitch);
+    assert(fm.channels[4].op[0].step == phase_step);
+    assert(fm.pitch.special[2] == 0x1935);
+    fm_write(&fm, 0x1a2, 0x78);
+    fm_write(&fm, 0x0a8, 0x9a);
+    assert(fm.pitch.channel[5] == 0x3278 && fm.pitch.special[0] == 0x289a);
 }
 
 static void test_dac_timing(const struct cartridge *cart)
@@ -535,6 +589,62 @@ static void test_idle_loops(struct megadrive *md)
     assert(m68k_skip_idle(cpu, md, 50) == 0);
 }
 
+static void test_m68k_batched_loops(void)
+{
+    static struct megadrive direct, batched;
+    uint8_t code[] = {
+        0x30, 0xc2, 0x30, 0xc3, // move.w d2,(a0)+; move.w d3,(a0)+
+        0x48, 0x43, 0xd6, 0x40, 0x48, 0x43, // swap d3; add.w d0,d3; swap d3
+        0x51, 0xc9, 0xff, 0xf4, // dbra d1,0
+        0x1a, 0x2a, 0x00, 0x20, // move.b $20(a2),d5
+        0x66, 0x00, 0x00, 0x08, // bne.w out of the scan
+        0x45, 0xea, 0x00, 0x40, // lea $40(a2),a2
+        0x51, 0xce, 0xff, 0xf2, // dbra d6,14
+        0x4a, 0x78, 0xf6, 0x44, 0x66, 0xfa, // tst.w $f644; bne.s back
+    };
+    direct.rom = code;
+    direct.rom_size = sizeof(code);
+    for (unsigned wide = 0; wide < 2; ++wide) {
+        code[7] = wide ? 0x80 : 0x40;
+        direct.cpu.pc = 0;
+        direct.cpu.d[0] = wide ? 0x12340020 : 0x0020;
+        direct.cpu.d[1] = 5;
+        direct.cpu.d[2] = 0xcafe;
+        direct.cpu.d[3] = 0xff90beef;
+        direct.cpu.a[0] = 0xffffe0;
+        for (unsigned i = 0; i < 6; ++i)
+            m68k_step(&direct.cpu, &direct);
+        batched = direct;
+        unsigned cycles = 0;
+        for (unsigned i = 0; i < 18; ++i)
+            cycles += m68k_step(&direct.cpu, &direct);
+        assert(cycles == (wide ? 126 : 114));
+        assert(m68k_skip_idle(&batched.cpu, &batched, cycles) == cycles);
+        assert(memcmp(&direct.cpu, &batched.cpu, sizeof(direct.cpu)) == 0);
+        assert(memcmp(direct.ram, batched.ram, sizeof(direct.ram)) == 0);
+    }
+
+    direct.cpu.pc = 14;
+    direct.cpu.d[5] = 0x1234ff99;
+    direct.cpu.d[6] = 5;
+    direct.cpu.a[2] = 0xff8000;
+    direct.ram[0x8120] = 1; // A later object must still go through the interpreter.
+    for (unsigned i = 0; i < 4; ++i)
+        m68k_step(&direct.cpu, &direct);
+    batched = direct;
+    unsigned cycles = 0;
+    for (unsigned i = 0; i < 12; ++i)
+        cycles += m68k_step(&direct.cpu, &direct);
+    assert(cycles == 126 && m68k_skip_idle(&batched.cpu, &batched, 200) == cycles);
+    assert(memcmp(&direct.cpu, &batched.cpu, sizeof(direct.cpu)) == 0);
+    assert(m68k_skip_idle(&batched.cpu, &batched, 200) == 0);
+
+    direct.cpu.pc = 30;
+    direct.ram[0xf645] = 1;
+    assert(m68k_step(&direct.cpu, &direct) == 12 && m68k_step(&direct.cpu, &direct) == 10);
+    assert(m68k_skip_idle(&direct.cpu, &direct, 50) == 44);
+}
+
 static void test_savestate(struct megadrive *md)
 {
     const char *path = "build/c/boot-test.jsc";
@@ -684,6 +794,7 @@ int main(void)
     test_status_immediates();
     test_cartridge_sram();
     test_fm_output();
+    test_fm_pitch_latches(&cartridge);
     test_dac_timing(&cartridge);
     test_z80_dac_writes(&cartridge);
     test_startup_bus(&md);
@@ -707,6 +818,7 @@ int main(void)
     assert(m68k_step(&md.cpu, &md) != 0 && md.cpu.d[1] == 0xffffffeb);
     assert(m68k_step(&md.cpu, &md) != 0 && md.cpu.d[1] == 0xfffffffb);
     test_idle_loops(&md);
+    test_m68k_batched_loops();
     md.cpu.pc = 0x264;
     md.cpu.d[0] = 0x12345678;
     md.cpu.d[1] = 0x89abcdef;
