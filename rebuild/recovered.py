@@ -13,10 +13,15 @@ from generate_z80_dispatch import (
     OUTPUT_NAME as Z80_DISPATCH_SOURCE, PAGES as Z80_PAGES, dispatch_pages,
     write_source as write_z80_dispatch,
 )
+from generate_vdp_timing_tables import (
+    OUTPUT_NAME as VDP_TIMING_SOURCE, TABLES as VDP_TIMING_TABLES, write_source as write_vdp_timing_tables,
+)
 from r20 import check_match, compile_c, run, tool
 from sdk_arm7 import (ARM7_IRQ_TABLE, ARM7_SDK_EXTERNALS, ARM7_SDK_REGIONS, DIVISION_OBJECTS, TOUCH_BSS,
                       stage_arm7_sdk)
-from sdk_arm9 import ARM9_NEWLIB_BSS, ARM9_SDK_EXTERNALS, ARM9_SDK_REGIONS, ARM9_SYSBASE_BSS, stage_arm9_sdk
+from sdk_arm9 import (
+    ARM9_NEWLIB_BSS, ARM9_SDK_EXTERNALS, ARM9_SDK_REGIONS, ARM9_SYSBASE_BSS, stage_arm9_sdk,
+)
 from sdk_libfat import LIBFAT_BSS, LIBFAT_DATA_SYMBOLS, LIBFAT_REGIONS, stage_libfat
 from sdk_source import irq_setup_sections, stage_sdk_bios, stage_sdk_for_reference, stage_sdk_irq_setup
 
@@ -229,6 +234,12 @@ RECOVERED_REGIONS = (
          "vdp_h_interrupt_pending": 0x0B00362D,
          "vdp_v_interrupt_pending": 0x0B00362E,
      }),
+    ("VDP sprite and background layout", "vdp_render_layout.c", None,
+     0x0208E528, 0x0208E5E0, {}),
+    *(
+        (name.replace("_", " "), VDP_TIMING_SOURCE, f".rodata.{name}", start, start + size, {})
+        for name, start, size in VDP_TIMING_TABLES
+    ),
     ("VDP save-state regions", "savestate_vdp.c", "bind_vdp_memory_regions_for_savestate",
      0x02009CB0, 0x02009CF0, {
          "savestate_region_table": 0x023EB348,
@@ -354,6 +365,8 @@ def compile_arm9_source(compiler, work, filename):
         write_m68k_operand_dispatch(work / filename)
     elif filename == Z80_DISPATCH_SOURCE:
         write_z80_dispatch(work / filename)
+    elif filename == VDP_TIMING_SOURCE:
+        write_vdp_timing_tables(work / filename)
     flags = {
         # Keep the last stream read in r0 on decoder exit.
         "lzss_decode.c": ("-fno-tree-vrp",),
