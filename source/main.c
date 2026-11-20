@@ -128,7 +128,8 @@ static void draw_cartridge(const struct application *app)
 {
     const struct m68k *cpu = &app->md.cpu;
     frontend_cursor(2, 4);
-    fputs(app->view == VIEW_PAUSED ? "Paused" : "Now Playing", stdout);
+    fputs(cpu->stopped ? "Cartridge Loaded" :
+          app->view == VIEW_PAUSED ? "Paused" : "Now Playing", stdout);
     frontend_cursor(2, 6);
     printf("%.28s", app->filename);
     frontend_cursor(2, 7);
@@ -298,6 +299,18 @@ static bool handle_menu(struct application *app, uint32_t keys, const touchPosit
     return true;
 }
 
+static uint8_t genesis_buttons(uint32_t keys)
+{
+    return ((keys & KEY_UP) ? GENESIS_UP : 0) |
+           ((keys & KEY_DOWN) ? GENESIS_DOWN : 0) |
+           ((keys & KEY_LEFT) ? GENESIS_LEFT : 0) |
+           ((keys & KEY_RIGHT) ? GENESIS_RIGHT : 0) |
+           ((keys & KEY_Y) ? GENESIS_A : 0) |
+           ((keys & KEY_B) ? GENESIS_B : 0) |
+           ((keys & KEY_A) ? GENESIS_C : 0) |
+           ((keys & KEY_START) ? GENESIS_START : 0);
+}
+
 int main(void)
 {
     frontend_init();
@@ -325,6 +338,7 @@ int main(void)
         if (handle_menu(&app, keys, keys & KEY_TOUCH ? &touch : NULL, &message))
             draw_screen(&app, message);
         if (app.view == VIEW_CARTRIDGE && !app.md.cpu.stopped) {
+            app.md.pad1_pressed = genesis_buttons(keysHeld());
             megadrive_run_frame(&app.md);
             BG_PALETTE[0] = megadrive_backdrop(&app.md);
             if (app.md.cpu.stopped)

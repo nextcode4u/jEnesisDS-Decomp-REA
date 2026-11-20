@@ -6,6 +6,7 @@
 static uint8_t rom[0x250] = {
     0x00, 0xff, 0xfe, 0x00,  // Initial supervisor stack at $fffe00.
     0x00, 0x00, 0x02, 0x00,  // Reset PC at $200.
+    [0x78] = 0x00, 0x00, 0x02, 0x48,            // Level 6 autovector.
     [0x200] =
     0x46, 0xfc, 0x27, 0x00,                    // move.w #$2700,sr
     0x41, 0xf9, 0x00, 0xc0, 0x00, 0x04,        // lea $c00004,a0
@@ -25,7 +26,56 @@ static uint8_t rom[0x250] = {
     0x4b, 0xfa, 0x00, 0x02,                    // lea $23e(pc),a5
     0x4c, 0x9d, 0x20, 0x81,                    // movem.w (a5)+,d0/d7/a5
     0xff, 0xff,                                // Unsupported opcode
+    [0x248] =
+    0x72, 0x07,                                // moveq #7,d1
+    0x4e, 0x73,                                // rte
 };
+
+static void vdp_register(struct megadrive *md, unsigned reg, unsigned value)
+{
+    assert(megadrive_write_word(md, 0xc00004, 0x8000 | (reg << 8) | value));
+}
+
+static void test_startup_bus(struct megadrive *md)
+{
+    assert(!megadrive_write_byte(md, 0xa00000, 0x55));
+    assert(megadrive_write_word(md, 0xa11100, 0x0100));
+    assert(megadrive_read_word(md, 0xa11100) == 0);
+    assert(megadrive_write_byte(md, 0xa00000, 0x55));
+    assert(megadrive_read_byte(md, 0xa02000) == 0x55);
+    assert(megadrive_write_word(md, 0xa11200, 0x0100) && !md->z80_reset);
+    assert(megadrive_write_word(md, 0xa11100, 0) && !md->z80_bus_requested);
+
+    md->pad1_pressed = GENESIS_A | GENESIS_LEFT;
+    assert(megadrive_write_byte(md, 0xa10009, 0x40));
+    assert(megadrive_write_byte(md, 0xa10003, 0x40));
+    assert(megadrive_read_byte(md, 0xa10003) == 0x7b);
+    assert(megadrive_write_byte(md, 0xa10003, 0));
+    assert(megadrive_read_byte(md, 0xa10003) == 0x23);
+}
+
+static void test_vdp_dma(struct megadrive *md)
+{
+    vdp_register(md, 1, 0x14);
+    vdp_register(md, 15, 2);
+    vdp_register(md, 19, 2);
+    assert(megadrive_write_word(md, 0xc00004, 0x4100));
+    assert(megadrive_write_word(md, 0xc00004, 0x0080));
+    assert(md->vram[0x100] == 0 && md->vram[0x101] == 0xff);
+    assert(md->vram[0x102] == 0xfe && md->vram[0x103] == 0);
+    assert(md->vdp_address == 0x104 && md->vdp_registers[19] == 0);
+
+    vdp_register(md, 15, 1);
+    vdp_register(md, 19, 3);
+    vdp_register(md, 23, 0x80);
+    assert(megadrive_write_word(md, 0xc00004, 0x4100));
+    assert(megadrive_write_word(md, 0xc00004, 0x0080));
+    assert(md->vdp_fill_pending);
+    assert(megadrive_write_word(md, 0xc00000, 0));
+    for (unsigned i = 0; i < 5; ++i)
+        assert(md->vram[0x100 + i] == 0);
+    assert(!md->vdp_fill_pending && md->vdp_address == 0x104);
+}
 
 int main(void)
 {
@@ -63,4 +113,14 @@ int main(void)
     megadrive_reset(&md, &cartridge, GENESIS_REGION_EUROPE);
     assert(megadrive_read_byte(&md, 0xa10001) == 0xe1);
     assert(md.frame_cycles > 150000 && !md.cpu.stopped);
+    test_startup_bus(&md);
+    test_vdp_dma(&md);
+
+    assert(m68k_interrupt(&md.cpu, &md, 6) == 0);  // Reset masks level 6.
+    md.cpu.sr = 0x2304;
+    assert(m68k_interrupt(&md.cpu, &md, 6) == 44);
+    assert(md.cpu.sr == 0x2604 && md.cpu.pc == 0x248 && md.cpu.a[7] == 0xfffdfa);
+    assert(m68k_step(&md.cpu, &md) == 4 && md.cpu.d[1] == 7);
+    assert(m68k_step(&md.cpu, &md) == 20);
+    assert(md.cpu.sr == 0x2304 && md.cpu.pc == 0x200 && md.cpu.a[7] == 0xfffe00);
 }

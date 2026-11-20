@@ -15,16 +15,42 @@ enum genesis_region {
     GENESIS_REGION_COUNT,
 };
 
+enum genesis_button {
+    GENESIS_UP = 1 << 0,
+    GENESIS_DOWN = 1 << 1,
+    GENESIS_LEFT = 1 << 2,
+    GENESIS_RIGHT = 1 << 3,
+    GENESIS_B = 1 << 4,
+    GENESIS_C = 1 << 5,
+    GENESIS_A = 1 << 6,
+    GENESIS_START = 1 << 7,
+};
+
 struct megadrive {
     struct m68k cpu;
     const uint8_t *rom;
     size_t rom_size;
     uint8_t ram[0x10000];
+    uint8_t z80_ram[0x2000];
+    bool z80_bus_requested;
+    bool z80_reset;
+    uint8_t port_data[3];
+    uint8_t port_direction[3];
+    uint8_t pad1_pressed;
+    uint8_t vram[0x10000];
     uint16_t cram[64];
+    uint16_t vsram[40];
     uint8_t vdp_registers[24];
     uint16_t vdp_address;
     uint8_t vdp_code;
     bool vdp_command_pending;
+    bool vdp_fill_pending;
+    bool vblank;
+    uint8_t psg_latch;
+    uint16_t psg_registers[8];
+    uint8_t ym_address[2];
+    uint8_t ym_registers[2][256];
+    unsigned ym_busy_cycles;
     uint8_t version;
     unsigned frame_cycles;
     unsigned cycle_carry;
@@ -34,6 +60,7 @@ void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum ge
 void megadrive_run_frame(struct megadrive *md);
 uint16_t megadrive_backdrop(const struct megadrive *md);
 uint8_t megadrive_read_byte(const struct megadrive *md, uint32_t address);
+uint16_t megadrive_read_word(struct megadrive *md, uint32_t address);
 bool megadrive_write_byte(struct megadrive *md, uint32_t address, uint8_t value);
 bool megadrive_write_word(struct megadrive *md, uint32_t address, uint16_t value);
 

@@ -27,12 +27,12 @@ In melonDS, enable a virtual DLDI SD card and add Genesis ROMs to it. The bottom
 - [Bottom-screen interface](source/frontend.c) draws the toolbar, selected row, and status panel with native DS tiles.
 - [ARM7 services](source/arm7/main.c) set up the system FIFO for storage and send input samples to the ARM9.
 - [Cartridge loader](source/cartridge.c) reads raw ROMs, decodes SMD blocks, parses the cartridge header, and computes the Genesis checksum.
-- [68000 interpreter](source/m68k.c) reads the reset vectors, executes the implemented instructions, and reports the address and opcode where execution stops.
-- [Genesis bus and VDP](source/megadrive.c) map the cartridge and mirrored work RAM, handle early I/O reads, and process VDP register and CRAM writes for the backdrop.
+- [68000 interpreter](source/m68k.c) reads the reset vectors, runs the supported instructions, delivers VBlank interrupts, and reports the address and opcode where unsupported work stops execution.
+- [Genesis bus and VDP](source/megadrive.c) map the cartridge and mirrored RAM, handle three-button input and Z80 bus requests, and write VRAM, CRAM, and VSRAM through the VDP.
 
 The C ROM booted in melonDS 1.1 and loaded Sonic the Hedgehog in both BIN and SMD formats from a subdirectory on the virtual SD card. A host check verified that the loader decoded a cartridge from BIN and SMD into identical bytes and rejected truncated and invalid files.
 
-The C build runs the Genesis backdrop diagnostic in melonDS 1.1. Both captured top-screen colors match the original jEnesisDS 0.7.4 frames pixel for pixel. Frame timing, tile and sprite rendering, and commercial-ROM compatibility still need work. Run `make check` for the host regression test covering reset vectors, branches, the mirrored RAM window, and CRAM writes.
+The C build runs the Genesis backdrop diagnostic in melonDS 1.1. Both captured top-screen colors match the original jEnesisDS 0.7.4 frames pixel for pixel. Sonic the Hedgehog passes its cartridge checksum test, initializes video memory and loads its sound driver into Z80 RAM. The C build still stops in the game's startup code. The VDP uses synchronous DMA and backdrop-only rendering. The sound-chip interfaces accept startup writes, and synthesis and Z80 execution still need to be implemented. Run `make check` for host checks of the reset and interrupt paths, controller port, Z80 bus access, and VDP writes and DMA.
 
 ## Gameplay reference
 
