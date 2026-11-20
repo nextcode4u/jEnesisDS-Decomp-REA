@@ -158,6 +158,17 @@ def arm9_region_layout(obj, filename, entry, end_offset):
     return f'"{obj}"({region_section(entry)})'
 
 
+VDP_LINE_CYCLE_SYMBOLS = {
+    "vdp_line_cycle_position": 0x0B003624,
+    "vdp_h_interrupt_serviced_this_line": 0x0B003628,
+    "vdp_v_interrupt_enabled": 0x0B00362C,
+    "vdp_h_interrupt_pending": 0x0B00362D,
+    "vdp_v_interrupt_pending": 0x0B00362E,
+    "vdp_h_interrupt_enabled": 0x0B003644,
+    "queue_m68k_interrupt_level": 0x020004E0,
+}
+
+
 RECOVERED_REGIONS = (
     ("Cartridge region", "cartridge_region.c", "set_genesis_region_and_version_register",
      0x020002E4, 0x0200030C, {"genesis_region": 0x0B000000}),
@@ -196,7 +207,7 @@ RECOVERED_REGIONS = (
     ("68000 execution wrappers", "m68k_execute.c", "update_vdp_timing_and_run_m68k_scanline",
      0x02000538, 0x02000588, {
          "m68k_context": 0x0B0000AC,
-         "update_vdp_timing": 0x0200B284,
+         "update_vdp_line_cycles_and_queue_m68k_interrupts": 0x0200B284,
          "run_m68k": 0x01002F60,
      }),
     ("Z80 cycle scheduler", "z80_cycle_driver.c", "run_remaining_z80_cycles",
@@ -405,11 +416,20 @@ RECOVERED_REGIONS = (
      }),
     ("YM2612 timer status", "ym2612_status.c", "read_ym2612_timer_status",
      0x02005B7C, 0x02005B94, {"sound_context": 0x0B000000}),
+    ("ARM9 DAC buffer submission", "arm9_dac_submit.c", "submit_arm7_dac_sample_buffer",
+     0x020061A8, 0x02006228, {
+         "dac_queue_bytes": 0x02099048,
+         "dac_buffer_ready": 0x0209904C,
+         "DC_FlushRange": 0x020802C4,
+         "send_arm9_fifo_command_and_payload": 0x0200C55C,
+     }),
     ("ARM9 audio controls", "arm9_audio_controls.c", "request_arm7_audio_stop",
      0x020062C4, 0x02006308, {
          "send_arm9_fifo_command_and_payload": 0x0200C55C,
          "clear_sound_mirrors_before_state_load": 0x020059F0,
      }),
+    ("ARM9 audio start", "arm9_audio_start.c", "request_arm7_audio_start",
+     0x020063DC, 0x020063E8, {"send_arm9_fifo_command_and_payload": 0x0200C55C}),
     ("VDP interrupts", "vdp_interrupts.c", "tick_vdp_horizontal_interrupt_counter",
      0x020090E8, 0x02009214, {
          "vdp_timing": 0x0B000000,
@@ -420,6 +440,12 @@ RECOVERED_REGIONS = (
          "vdp_h_interrupt_pending": 0x0B00362D,
          "vdp_v_interrupt_pending": 0x0B00362E,
      }),
+    ("VDP cycle-position interrupt scheduling", "vdp_line_cycles.c",
+     "update_vdp_line_cycles_and_queue_m68k_interrupts", 0x0200B284, 0x0200B354,
+     VDP_LINE_CYCLE_SYMBOLS),
+    ("VDP immediate interrupt callbacks", "vdp_line_cycles_immediate.c",
+     "update_vdp_line_cycles_and_queue_pending_interrupts", 0x0200B354, 0x0200B438,
+     VDP_LINE_CYCLE_SYMBOLS),
     ("VDP sprite and background layout", "vdp_render_layout.c", None,
      0x0208E528, 0x0208E5E0, {}),
     *(
@@ -609,6 +635,9 @@ def compile_arm9_source(compiler, work, filename):
     flags = {
         # Keep the last stream read in r0 on decoder exit.
         "lzss_decode.c": ("-fno-tree-vrp",),
+        "arm9_dac_submit.c": ("-fno-unit-at-a-time",),
+        "vdp_line_cycles.c": ("-fno-unit-at-a-time",),
+        "vdp_line_cycles_immediate.c": ("-fno-unit-at-a-time",),
         "arm9_audio_controls.c": ("-fno-unit-at-a-time",),
         "controller_io_write.c": ("-fno-unit-at-a-time",),
         "controller_write.c": ("-fno-unit-at-a-time",),
@@ -636,8 +665,10 @@ def compile_arm9_source(compiler, work, filename):
     # The page table contains ARM-only entries. The original uses LDR pc
     # instead of an interworking call for accesses through those pointers.
     arm_only = ("frame_h_int_on.c", "m68k_loads.c", "m68k_predecrement_write.c")
+    # The immediate callbacks match the release with GCC's ARM926EJ-S scheduler.
+    tune = "arm926ej-s" if filename == "vdp_line_cycles_immediate.c" else None
     return compile_c([*compiler, *flags], work, Path(filename), 9, "-O2", "-marm",
-                     interwork=filename not in arm_only)
+                     interwork=filename not in arm_only, tune=tune)
 
 
 def compile_arm7_source(compiler, work, filename):

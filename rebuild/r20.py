@@ -55,11 +55,12 @@ def compiler_command(root):
     return command
 
 
-def compile_c(compiler, root, source, cpu, optimization, instruction_set, *, interwork=True):
+def compile_c(compiler, root, source, cpu, optimization, instruction_set, *, interwork=True, tune=None):
     output = source.stem + f"-arm{cpu}-{optimization}.o"
     interwork_flag = "-mthumb-interwork" if interwork else "-mno-thumb-interwork"
+    tuning_flags = [f"-mtune={tune}"] if tune else []
     subprocess.run(
-        [*compiler, optimization, instruction_set, interwork_flag, *CPU_FLAGS[cpu],
+        [*compiler, optimization, instruction_set, interwork_flag, *CPU_FLAGS[cpu], *tuning_flags,
          "-fomit-frame-pointer", "-ffast-math", "-Iinclude", "-c", str(source), "-o", output],
         cwd=root, check=True,
     )

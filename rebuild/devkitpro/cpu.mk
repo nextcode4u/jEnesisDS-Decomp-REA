@@ -85,6 +85,7 @@ m68k_refresh_pages.o: CFLAGS += -fno-tree-loop-optimize
 psg_queue.o: CFLAGS += -fno-strict-aliasing
 m68k_vdp_word_read.o: CFLAGS += -fno-optimize-sibling-calls
 arm7_ipc_fifo.o arm7_pcm_bases.o arm9_audio_controls.o controller_io_write.o controller_write.o m68k_bus_pages.o m68k_io_write.o m68k_page_defaults.o \
-m68k_vdp_write.o z80_bus_lines.o z80_cycle_driver.o z80_memory.o: CFLAGS += -fno-unit-at-a-time
+arm9_dac_submit.o m68k_vdp_write.o vdp_line_cycles.o z80_bus_lines.o z80_cycle_driver.o z80_memory.o: CFLAGS += -fno-unit-at-a-time
+vdp_line_cycles_immediate.o: CFLAGS += -fno-unit-at-a-time -mtune=arm926ej-s
 
 -include $(OFILES:.o=.d) $(RECOVERED_OBJECTS:.o=.d)

@@ -27,7 +27,7 @@ void update_vdp_timing_and_run_m68k_scanline(unsigned cycles);
 void accrue_z80_cycles_for_scanline(unsigned line);
 void set_or_clear_z80_pending_interrupt_bits(Z80Context *, unsigned bits, int asserted);
 void run_remaining_z80_cycles(void);
-void submit_arm7_dac_sample_buffer(void);
+int submit_arm7_dac_sample_buffer(void);
 
 static inline void run_active_scanline(unsigned line, unsigned m68k_cycles)
 {
