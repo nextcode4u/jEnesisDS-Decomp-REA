@@ -8,3 +8,4 @@
 
 # Preserve the exact REA export bytes recorded in the SHA-256 indexes.
 decompiled/** -text
+decompiled/**/*.c whitespace=-blank-at-eol,-blank-at-eof

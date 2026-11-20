@@ -1,0 +1,45 @@
+/* ARM7 bios — grouped REA pseudocode.
+ * Use the processor functions.tsv for names, descriptions and source hashes.
+ */
+
+// 0x037f812c  veneer_to_bios_wait_for_vblank
+
+void thunk_FUN_0380178c(void)
+
+{
+  software_interrupt(5);
+  return;
+}
+
+
+// 0x03801784  bios_delay_cycles
+
+void FUN_03801784(void)
+
+{
+  software_interrupt(3);
+  return;
+}
+
+
+// 0x0380178c  bios_wait_for_vblank
+
+void FUN_0380178c(void)
+
+{
+  software_interrupt(5);
+  return;
+}
+
+
+// 0x038017a2  bios_divide_with_remainder
+
+void FUN_038017a2(undefined4 param_1,undefined4 param_2,undefined4 *param_3,undefined4 *param_4)
+
+{
+  software_interrupt(9);
+  *param_3 = param_1;
+  *param_4 = param_2;
+  return;
+}
+

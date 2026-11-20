@@ -11,8 +11,8 @@ export REA_GHIDRA_STARTUP_TIMEOUT_MS="${REA_GHIDRA_STARTUP_TIMEOUT_MS:-180000}"
 if [[ -x "$tool_cache/node_modules/.bin/rea" ]]; then
     export PATH="$tool_cache/node_modules/.bin:$PATH"
 fi
-export_root="$(realpath -m -- "${REA_OUTPUT_DIR:-decompiled}")"
-report_root="$(realpath -m -- "${REA_EVIDENCE_DIR:-evidence}")"
+export_root="$(realpath -m -- "${REA_OUTPUT_DIR:-build/rea-decompiled}")"
+report_root="$(realpath -m -- "${REA_EVIDENCE_DIR:-build/rea-evidence}")"
 mkdir -p "$export_root" "$report_root"
 
 export_range() {

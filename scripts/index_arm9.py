@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 
 workspace = Path(__file__).resolve().parents[1]
-output = Path(sys.argv[1]) if len(sys.argv) > 1 else workspace / "decompiled/arm9"
+output = Path(sys.argv[1]) if len(sys.argv) > 1 else workspace / "build/rea-decompiled/arm9"
 by_address = {}
 inventory_sizes = set()
 
