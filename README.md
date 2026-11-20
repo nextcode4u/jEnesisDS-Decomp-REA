@@ -23,3 +23,7 @@ The defaults use r20 tools under `~/.cache/jenesisds-decomp/devkitarm-r20/bin/` 
 - [File browser graphics](rebuild/menu.py) generate the tile, font, and palette data used by the DS interface.
 
 The source build was tested in melonDS 1.1 with a virtual DLDI SD card. It loaded a Genesis diagnostic ROM and rendered the expected alternating red and cyan frames.
+
+## Developer note
+
+This project was developed with assistance from AI language models. Some source code was generated or refined using AI, then reviewed, modified and integrated by the project author where appropriate.
