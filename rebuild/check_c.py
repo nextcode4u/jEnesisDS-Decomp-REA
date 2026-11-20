@@ -153,6 +153,9 @@ def build_recovered_regions(compiler, prefix, work, cpu):
         else:
             position = [f"--section-start={section}={start:#x}"]
         run(work, linker, *position, *entry_option, *definitions, "-o", elf.name, obj.name)
+        linked_entry, = struct.unpack_from("<I", elf.read_bytes(), 24)
+        if linked_entry != start:
+            raise ValueError(f"{label} entry should be at {start:#x}, linked at {linked_entry:#x}")
         run(work, objcopy, "-O", "binary", f"--only-section={section}", elf.name, binary.name)
         if binary.stat().st_size != end - start:
             raise ValueError(f"{label} must occupy {end - start} bytes, built {binary.stat().st_size}")

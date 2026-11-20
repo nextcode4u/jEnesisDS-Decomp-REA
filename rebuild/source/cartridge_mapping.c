@@ -1,11 +1,5 @@
 /* Initialize the cartridge and work RAM backing pointers and address masks. */
-typedef struct {
-    unsigned char *backing;
-    unsigned mask;
-} M68kMemoryPage;
-
-extern volatile M68kMemoryPage cartridge_mapping;
-extern volatile M68kMemoryPage genesis_work_ram_mapping;
+#include "m68k_memory_page.h"
 
 extern unsigned char cartridge_rom_bytes[];
 extern unsigned char genesis_work_ram_bytes[];

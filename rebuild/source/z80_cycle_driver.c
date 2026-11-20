@@ -41,7 +41,7 @@ void run_remaining_z80_cycles(void)
     account_for_z80_cycles(cycles);
 }
 
-void accrue_z80_cycles_for_scanline(void)
+void accrue_z80_cycles_for_scanline(unsigned scanline)
 {
     z80_scheduled_cycles += 0xe3;
     unsigned cycles = (unsigned)z80_scheduled_cycles - (unsigned)z80_accounted_cycles;

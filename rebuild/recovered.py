@@ -8,6 +8,10 @@ from generate_m68k_operand_dispatch import (
     OPERAND_CLASSES, OUTPUT_NAME as M68K_OPERAND_SOURCE, read_handler_index,
     write_source as write_m68k_operand_dispatch,
 )
+from generate_ym2612_dispatch import (
+    OUTPUT_NAME as YM2612_DISPATCH_SOURCE, read_handlers as read_ym2612_handlers,
+    write_source as write_ym2612_dispatch,
+)
 from generate_ym2612_tables import OUTPUT_NAME as YM2612_TABLE_SOURCE, write_source as write_ym2612_tables
 from generate_z80_dispatch import (
     OUTPUT_NAME as Z80_DISPATCH_SOURCE, PAGES as Z80_PAGES, dispatch_pages,
@@ -88,11 +92,13 @@ def check_codec_image(original, rebuilt, base):
 DLDI_SOURCE = "dldi_placeholder.c"
 
 
-def alignment_fill(size):
-    return f"FILL(0xffffffff); . += {size:#x}; FILL(0);"
+def alignment_fill(size, pattern=0xffffffff):
+    return f"FILL({pattern:#010x}); . += {size:#x}; FILL(0);"
 
 
 ARM7_ALIGNMENT = (
+    # The original linker aligned the following Thumb object with Thumb NOPs.
+    (0x03801054, 0x03801060, alignment_fill(12, 0xc046c046)),
     (0x03801778, 0x03801780, alignment_fill(8)),
     (0x03806D48, 0x03806D4C, alignment_fill(4)),
 )
@@ -203,6 +209,45 @@ RECOVERED_REGIONS = (
          "z80_reset_released": 0x02099001,
          "z80_bus_request_asserted": 0x02099000,
          "run_z80_cycle_budget": 0x0200DF50,
+     }),
+    ("H-INT frame timing", "frame_h_int_on.c", "run_frame_h_int_on",
+     0x02000A2C, 0x02000BBC, {
+         "frame_timing": 0x0B000000,
+         "z80_context": 0x0B000158,
+         "record_vdp_scanline_state": 0x023DCEA8,
+         "begin_vdp_frame_and_refresh_backgrounds": 0x0200B438,
+         "tick_vdp_horizontal_interrupt_counter": 0x020090E8,
+         "begin_vdp_vertical_blanking": 0x02009144,
+         "reload_vdp_counter_during_vertical_blanking": 0x020091EC,
+         "update_vdp_timing_and_run_m68k_configured": 0x02000568,
+         "update_vdp_timing_and_run_m68k_scanline": 0x02000538,
+         "accrue_z80_cycles_for_scanline": 0x020006B8,
+         "set_or_clear_z80_pending_interrupt_bits": 0x02004EF4,
+         "run_remaining_z80_cycles": 0x02000588,
+         "submit_arm7_dac_sample_buffer": 0x020061A8,
+     }),
+    ("Frame driver selection", "frame_callback_select.c", "run_frame_with_current_h_int",
+     0x02000BBC, 0x02000BFC, {
+         "frame_timing": 0x0B000000,
+         "vdp_h_interrupt_enabled": 0x0B003644,
+         "run_m68k_cycles": 0x02000558,
+         "update_vdp_timing_and_run_m68k_configured": 0x02000568,
+         "run_frame_h_int_off": 0x02000868,
+         "run_frame_h_int_on": 0x02000A2C,
+     }),
+    ("Frame timing callbacks", "frame_callback_setup.c", "configure_frame_timing_callbacks",
+     0x02000D10, 0x02000DAC, {
+         "frame_timing": 0x0B000000,
+         "emulator_option_flags": 0x023CB610,
+         "run_m68k_cycles": 0x02000558,
+         "update_vdp_timing_and_run_m68k_configured": 0x02000568,
+         "run_frame_h_int_off": 0x02000868,
+         "run_frame_h_int_on": 0x02000A2C,
+         "run_frame_with_current_h_int": 0x02000BBC,
+         "update_display_offset_for_current_viewport": 0x02006A58,
+         "mark_background_tile_cache_for_refresh": 0x020075BC,
+         "select_vdp_scanline_render_callback": 0x02009570,
+         "invalidate_viewport_mode_cache": 0x02006A44,
      }),
     ("Z80 reset line", "z80_reset_line.c", "reset_z80_core_state",
      0x02000BFC, 0x02000C08, {
@@ -343,6 +388,8 @@ RECOVERED_REGIONS = (
      }),
     ("68000 packed state", "m68k_context.c", "set_m68k_interrupt_level",
      0x020050CC, 0x02005164, {}),
+    ("68000 PC save state", "savestate_m68k_encode.c", "encode_m68k_program_counter_for_savestate",
+     0x0200526C, 0x020052EC, {}),
     ("Sound mirrors", "sound_state.c", "get_ym2612_bank_0_mirror_for_savestate",
      0x02005AAC, 0x02005AD0, {
          "ym2612_bank_0_mirror": 0x0209907C,
@@ -423,6 +470,15 @@ RECOVERED_REGIONS = (
          "m68k_byte_read_handlers": 0x0B00061C,
          "m68k_word_read_handlers": 0x0B000A1C,
          "cartridge_rom_bytes": 0x020B4CEC,
+     }),
+    ("68000 instruction fetch page", "m68k_fetch_mapping.c", "get_m68k_fetch_mapping",
+     0x02003C88, 0x02003CA4, {
+         "cartridge_mapping": 0x023CB624,
+         "genesis_work_ram_mapping": 0x023CB62C,
+     }),
+    ("68000 longword predecrement write", "m68k_predecrement_write.c",
+     "write_m68k_bus_long_for_predecrement", 0x02003D98, 0x02003DE0, {
+         "m68k_word_write_handlers": 0x0B00121C,
      }),
     ("Cartridge bus", "cartridge_bus.c", "get_cartridge_rom_buffer",
      0x02003CA4, 0x02003CF8, {
@@ -522,6 +578,8 @@ ARM7_REGIONS = (
          "irqSet": 0x037F8114,
          "irqEnable": 0x037F8120,
      }),
+    ("ARM7 YM2612 sample loop dispatch", YM2612_DISPATCH_SOURCE, None,
+     0x03800E50, 0x03801054, dict(read_ym2612_handlers().values())),
     ("ARM7 YM2612 lookup tables", YM2612_TABLE_SOURCE, None,
      0x038026F8, 0x03806D34, {}),
     ("ARM7 PSG attenuation table", "arm7_psg_attenuation.c", None,
@@ -558,6 +616,10 @@ def compile_arm9_source(compiler, work, filename):
         "m68k_default_bus.c": ("-fno-unit-at-a-time", "-fno-optimize-sibling-calls"),
         "m68k_io_read.c": ("-fno-unit-at-a-time", "-fno-optimize-sibling-calls"),
         "m68k_io_write.c": ("-fno-unit-at-a-time",),
+        # The scanline and configured wrappers have identical instructions.
+        # The callbacks still need their distinct release entry addresses.
+        "m68k_execute.c": ("-fno-unit-at-a-time",),
+        "m68k_fetch_mapping.c": ("-fno-schedule-insns",),
         "m68k_loads.c": ("-fno-unit-at-a-time",),
         "m68k_vdp_word_read.c": ("-fno-optimize-sibling-calls",),
         "m68k_vdp_write.c": ("-fno-unit-at-a-time",),
@@ -573,13 +635,16 @@ def compile_arm9_source(compiler, work, filename):
     }.get(filename, ())
     # The page table contains ARM-only entries. The original uses LDR pc
     # instead of an interworking call for accesses through those pointers.
+    arm_only = ("frame_h_int_on.c", "m68k_loads.c", "m68k_predecrement_write.c")
     return compile_c([*compiler, *flags], work, Path(filename), 9, "-O2", "-marm",
-                     interwork=filename != "m68k_loads.c")
+                     interwork=filename not in arm_only)
 
 
 def compile_arm7_source(compiler, work, filename):
     if filename == YM2612_TABLE_SOURCE:
         write_ym2612_tables(work / filename)
+    elif filename == YM2612_DISPATCH_SOURCE:
+        write_ym2612_dispatch(work / filename)
     # Keep the empty-packet branch aimed at the shared return.
     flags = {
         "arm7_ym2612_bank1.c": ("-fno-reorder-blocks",),

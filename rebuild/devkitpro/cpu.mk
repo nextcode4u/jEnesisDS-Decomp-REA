@@ -29,7 +29,7 @@ LIBDIRS := $(LIBNDS)
 LIBS := -lrecovered -lnds$(CPU)
 ifeq ($(CPU),7)
 CPU_FLAGS := -mcpu=arm7tdmi -mtune=arm7tdmi
-SOURCES := $(wildcard $(SOURCE)/arm7_*.c) arm7_ym2612_tables.c
+SOURCES := $(wildcard $(SOURCE)/arm7_*.c) arm7_ym2612_tables.c arm7_ym2612_dispatch.c
 else
 CPU_FLAGS := -march=armv5te -mtune=arm946e-s
 SOURCES := $(filter-out $(SOURCE)/arm7_%.c,$(wildcard $(SOURCE)/*.c)) m68k_operand_dispatch.c z80_dispatch.c vdp_timing_tables.c
@@ -67,6 +67,9 @@ z80_dispatch.c: ../../../rebuild/generate_z80_dispatch.py ../../../decompiled/ar
 vdp_timing_tables.c: ../../../rebuild/generate_vdp_timing_tables.py
 	$(PYTHON) $< $@
 
+arm7_ym2612_dispatch.c: ../../../rebuild/generate_ym2612_dispatch.py ../../../decompiled/arm7/functions.tsv
+	$(PYTHON) $< $@
+
 arm7_ym2612_tables.c: ../../../rebuild/generate_ym2612_tables.py
 	$(PYTHON) $< $@
 
@@ -75,7 +78,9 @@ arm7_ym2612_bank1.o: CFLAGS += -fno-reorder-blocks
 lzss_decode.o: CFLAGS += -fno-tree-vrp
 arm7_fm_reset.o arm7_ipc_init.o: CFLAGS += -fno-optimize-sibling-calls
 m68k_default_bus.o m68k_io_read.o: CFLAGS += -fno-unit-at-a-time -fno-optimize-sibling-calls
-m68k_loads.o: CFLAGS += -fno-unit-at-a-time -mno-thumb-interwork
+m68k_fetch_mapping.o: CFLAGS += -fno-schedule-insns
+frame_h_int_on.o m68k_predecrement_write.o m68k_loads.o: CFLAGS += -mno-thumb-interwork
+m68k_execute.o m68k_loads.o: CFLAGS += -fno-unit-at-a-time
 m68k_refresh_pages.o: CFLAGS += -fno-tree-loop-optimize
 psg_queue.o: CFLAGS += -fno-strict-aliasing
 m68k_vdp_word_read.o: CFLAGS += -fno-optimize-sibling-calls
