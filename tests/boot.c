@@ -649,6 +649,7 @@ static void test_m68k_batched_loops(void)
         0x45, 0xea, 0x00, 0x40, // lea $40(a2),a2
         0x51, 0xce, 0xff, 0xf2, // dbra d6,14
         0x4a, 0x78, 0xf6, 0x44, 0x66, 0xfa, // tst.w $f644; bne.s back
+        0x4a, 0x39, 0x00, 0xff, 0xa6, 0xca, 0x67, 0xf8, // tst.b $ffa6ca; beq.s back
     };
     direct.rom = code;
     direct.rom_size = sizeof(code);
@@ -691,6 +692,16 @@ static void test_m68k_batched_loops(void)
     direct.ram[0xf645] = 1;
     assert(m68k_step(&direct.cpu, &direct) == 12 && m68k_step(&direct.cpu, &direct) == 10);
     assert(m68k_skip_idle(&direct.cpu, &direct, 50) == 44);
+
+    direct.cpu.pc = 36;
+    assert(m68k_step(&direct.cpu, &direct) == 16 && m68k_step(&direct.cpu, &direct) == 10);
+    batched = direct;
+    for (unsigned i = 0; i < 2; ++i)
+        assert(m68k_step(&direct.cpu, &direct) == 16 && m68k_step(&direct.cpu, &direct) == 10);
+    assert(m68k_skip_idle(&batched.cpu, &batched, 77) == 52);
+    assert(memcmp(&direct.cpu, &batched.cpu, sizeof(direct.cpu)) == 0);
+    batched.ram[0xa6ca] = 1;
+    assert(m68k_skip_idle(&batched.cpu, &batched, 77) == 0);
 }
 
 static void test_signed_byte_copy(void)

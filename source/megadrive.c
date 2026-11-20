@@ -68,9 +68,32 @@ void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum ge
     m68k_reset(&md->cpu, md);
 }
 
+enum { Z80_SYNC_CYCLES = 128 };
+
+static unsigned advance_ram_poll(struct megadrive *md, struct m68k *cpu,
+                                 unsigned cycles, unsigned end, unsigned *next_sync)
+{
+    unsigned skipped = m68k_skip_idle(cpu, md, end - cycles);
+    if (!skipped)
+        return cycles;
+    unsigned stop = cycles + skipped;
+    // Keep Z80 checkpoints at the original instruction boundaries.
+    enum { TEST_CYCLES = 16, BRANCH_CYCLES = 10, LOOP_CYCLES = TEST_CYCLES + BRANCH_CYCLES };
+    while (*next_sync <= stop) {
+        unsigned iteration = (*next_sync - cycles - 1) / LOOP_CYCLES;
+        unsigned test_start = cycles + iteration * LOOP_CYCLES;
+        unsigned test_end = test_start + TEST_CYCLES;
+        bool after_test = *next_sync <= test_end;
+        md->frame_cycle = after_test ? test_start : test_end;
+        genesis_z80_sync(md, after_test ? test_end : test_start + LOOP_CYCLES);
+        *next_sync = md->z80_synced_cycle + Z80_SYNC_CYCLES;
+    }
+    md->frame_cycle = stop - BRANCH_CYCLES;
+    return stop;
+}
+
 static ITCM_CODE __attribute__((noinline)) unsigned run_cpu_until(struct megadrive *md, struct m68k *cpu, unsigned cycles, unsigned end)
 {
-    enum { Z80_SYNC_CYCLES = 128 };
     unsigned next_sync = md->z80_synced_cycle + Z80_SYNC_CYCLES;
     bool hint_pending = md->hint_pending;
     while (cycles < end && !cpu->stopped) {
@@ -85,6 +108,7 @@ static ITCM_CODE __attribute__((noinline)) unsigned run_cpu_until(struct megadri
                 break;
         }
         unsigned boundary = next_sync < end ? next_sync : end;
+        bool long_poll = false;
         do {
             md->frame_cycle = cycles;
             unsigned elapsed = m68k_step(cpu, md);
@@ -93,14 +117,18 @@ static ITCM_CODE __attribute__((noinline)) unsigned run_cpu_until(struct megadri
                 elapsed < end - cycles &&
                 ((op & 0xfff8) == 0x51c8 || op == 0x66fa || op == 0x67fa))
                 elapsed += m68k_skip_idle(cpu, md, end - cycles - elapsed);
+            else if (elapsed == 10 && (op == 0x66f8 || op == 0x67f8))
+                long_poll = cpu->pc + 6 == cpu->instruction_address;
             cycles += elapsed;
-        } while (!hint_pending && cycles < boundary && !cpu->stopped);
+        } while (!long_poll && !hint_pending && cycles < boundary && !cpu->stopped);
         if (cycles >= next_sync) {
             // I/O can have synchronized the sound CPU inside an instruction.
             if (cycles - md->z80_synced_cycle >= Z80_SYNC_CYCLES)
                 genesis_z80_sync(md, cycles);
             next_sync = md->z80_synced_cycle + Z80_SYNC_CYCLES;
         }
+        if (long_poll && cycles < end)
+            cycles = advance_ram_poll(md, cpu, cycles, end, &next_sync);
     }
     genesis_z80_sync(md, cycles < end ? end : cycles);
     return cycles;

@@ -1385,25 +1385,39 @@ ITCM_CODE unsigned m68k_skip_idle(struct m68k *cpu, struct megadrive *md, unsign
         set_data(cpu, reg, 2, counter - iterations);
         return iterations * loop_cycles;
     }
-    if ((op != 0x66fa && op != 0x67fa) || cpu->pc + 4 != cpu->instruction_address)
+    unsigned displacement = (uint8_t)op;
+    if ((op >> 8 != 0x66 && op >> 8 != 0x67) ||
+        (displacement != 0xfa && displacement != 0xf8))
         return 0;
-    if (!rom_visible(md, pc, 4))
+    bool full_address = displacement == 0xf8;
+    unsigned length = full_address ? 6 : 4;
+    if (cpu->pc + length != cpu->instruction_address || !rom_visible(md, pc, length))
         return 0;
     uint16_t test = rom_word(md->rom, pc);
-    if (test != 0x4a38 && test != 0x4a78)
+    uint16_t byte_test = full_address ? 0x4a39 : 0x4a38;
+    if (test != byte_test && test != (byte_test | 0x40))
         return 0;
-    // A work-RAM polling loop can run to the next scheduled interrupt.
-    // No other unit currently writes work RAM between 68000 instructions.
-    uint16_t address = rom_word(md->rom, pc + 2);
-    if (!(address & 0x8000) || (test == 0x4a78 && (address & 1)))
+
+    // Only work-RAM polling can skip instructions. The Z80 cannot observe
+    // these reads or write to the address between 68000 instructions.
+    uint32_t address = rom_word(md->rom, pc + 2);
+    if (full_address)
+        address = address << 16 | rom_word(md->rom, pc + 4);
+    else
+        address = (int16_t)address;
+    address &= 0xffffff;
+    bool word = (test & 0x40) != 0;
+    if (address < 0xe00000 || (word && (address & 1)))
         return 0;
-    uint8_t value = md->ram[address];
-    if (test == 0x4a78 && md->ram[address + 1])
+    uint16_t offset = address;
+    uint8_t value = md->ram[offset];
+    if (word && md->ram[offset + 1])
         value |= 1;
     unsigned flags = value == 0 ? CCR_Z : (value & 0x80) ? CCR_N : 0;
-    if ((cpu->sr & 15) != flags || (value == 0) != (op == 0x67fa))
+    if ((cpu->sr & 15) != flags || (value == 0) != (op >> 8 == 0x67))
         return 0;
-    return budget / 22 * 22;
+    unsigned loop_cycles = full_address ? 26 : 22;
+    return budget / loop_cycles * loop_cycles;
 }
 
 void m68k_reset(struct m68k *cpu, struct megadrive *md)
