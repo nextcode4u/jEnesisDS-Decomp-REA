@@ -10,7 +10,7 @@ import subprocess
 import tarfile
 from tempfile import TemporaryDirectory
 
-from build import EXPECTED_ROM_SHA256, tool
+from build import EXPECTED_ROM_SHA256, check_match, run, tool
 
 
 SOURCE = Path(__file__).resolve().parent
@@ -23,6 +23,31 @@ STREAM_FUNCTIONS = {
     "write_bounded_stream_byte": 0x0200C858,
 }
 STREAM_SIZES = {"read_bounded_stream_byte": 44, "write_bounded_stream_byte": 36}
+LZSS_RING = 0x023DDEC0
+RECOVERED_REGIONS = (
+    ("LZSS match tree", "lzss_match_tree.c", "initialize_lzss_match_trees",
+     0x0200C5D8, 0x0200C82C, {
+         "lzss_ring_buffer": LZSS_RING,
+         "lzss_left_child": 0x023DEEE4,
+         "lzss_parent": 0x023E2EEC,
+         "lzss_right_child": 0x023E6EF0,
+         "lzss_match_position": 0x023EB30C,
+         "lzss_match_length": 0x023EB310,
+     }),
+    ("LZSS stream decoder", "lzss_decode.c", "decode_lzss_stream",
+     0x0200CB78, 0x0200CCB4, {
+         **STREAM_FUNCTIONS,
+         "lzss_ring_buffer": LZSS_RING,
+         "lzss_input_stream": 0x023DDEBC,
+         "lzss_output_stream": 0x023EB2F8,
+     }),
+    ("Cartridge bus", "cartridge_bus.c", "get_cartridge_rom_buffer",
+     0x02003CA4, 0x02003CF8, {
+         "cartridge_rom_bytes": 0x020B4CEC,
+         "genesis_work_ram_bytes": 0x023CB634,
+         "z80_cartridge_bank_base": 0x02099008,
+     }),
+)
 TOUCH_FUNCTIONS = {
     "touchRead": 0x03801244,
     "readTouchValue": 0x03801310,
@@ -163,6 +188,21 @@ def compile_c(compiler, root, source, cpu, optimization, instruction_set):
     return root / output
 
 
+def check_recovered_regions(compiler, prefix, work, arm9):
+    linker, objcopy = (tool(prefix, name) for name in ("ld", "objcopy"))
+    base, memory = arm9
+    for label, filename, entry, start, end, symbols in RECOVERED_REGIONS:
+        obj = compile_c(compiler, work, Path(filename), 9, "-O2", "-marm")
+        elf, binary = (obj.with_suffix(ext).name for ext in (".elf", ".bin"))
+        definitions = [f"--defsym={name}={address:#x}" for name, address in symbols.items()]
+        run(work, linker, "-Ttext", f"{start:#x}", "-e", entry, *definitions, "-o", elf, obj.name)
+        run(work, objcopy, "-O", "binary", "--only-section=.text", elf, binary)
+        expected = memory[start - base:end - base]
+        check_match(expected, (work / binary).read_bytes(), label)
+        print(f"  {start:#010x}–{end - 1:#010x} {label}"
+              f" {len(expected)}/{len(expected)} bytes (including linked addresses)")
+
+
 def snapshot(repository, revision, directory, paths):
     directory.mkdir()
     archive = subprocess.check_output(["git", "-C", str(repository), "archive", revision, *paths])
@@ -216,18 +256,19 @@ def main():
     if bool(args.libnds_repo) != bool(args.ndslib_repo):
         parser.error("supply both SDK repositories for the SDK comparison")
     try:
-        compiler = compiler_command(Path(args.r20_root).expanduser().resolve())
+        r20 = Path(args.r20_root).expanduser().resolve()
+        compiler = compiler_command(r20)
         images = rom_images(args.rom)
         build = args.build_dir.resolve()
         build.mkdir(parents=True, exist_ok=True)
         with TemporaryDirectory(prefix="r20-c-", dir=build) as directory:
             work = Path(directory)
-            source = Path("bounded_stream.c")
-            shutil.copyfile(SOURCE / "source" / source, work / source)
-            print("Reconstructed LZSS helpers / ARM9 -O2")
-            obj = compile_c(compiler, work, source, 9, "-O2", "-marm")
+            shutil.copytree(SOURCE / "source", work, dirs_exist_ok=True)
+            print("Reconstructed C / ARM9 -O2")
+            obj = compile_c(compiler, work, Path("bounded_stream.c"), 9, "-O2", "-marm")
             if compare(obj, STREAM_FUNCTIONS, images[9], STREAM_SIZES) != set(STREAM_FUNCTIONS):
-                raise ValueError("Reconstructed LZSS helpers differ from the ROM")
+                raise ValueError("Reconstructed LZSS stream helpers differ from the ROM")
+            check_recovered_regions(compiler, r20 / "bin/arm-eabi-", work, images[9])
             if args.libnds_repo:
                 check_sdk(compiler, work, images, args.libnds_repo, args.ndslib_repo)
     except (OSError, ValueError, subprocess.CalledProcessError) as error:

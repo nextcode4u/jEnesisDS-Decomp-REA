@@ -36,7 +36,7 @@ make check-c R20_ROOT=/mnt/d/tools/devkitARM
 make check-pseudocode
 ```
 
-`check-c` verifies GCC 4.1.1 from r20, compiles the two reconstructed ARM9 LZSS stream helpers, and compares every instruction byte to the original ROM. Use `ROM=/path/to/jEnesisDS.nds` to pass the input from another folder. The full-ROM reference build is available as `make reference`. [Recovered C](rebuild/source/bounded_stream.c) · [SDK source comparison](docs/HANDOFF.md#reproduce-the-sdk-comparison)
+`check-c` compiles ten recovered ARM9 routines with GCC 4.1.1 from r20. It compares all 1,076 bytes against the original ROM, including linked branch targets and global addresses. The routines cover the LZSS match tree, bounded byte streams, the LZSS stream decoder, and cartridge bus access. Use `ROM=/path/to/jEnesisDS.nds` to pass the input from another folder. `make reference` uses the original ROM for the unreconstructed payload. [Recovered C](rebuild/source) · [Verified ranges and SDK comparisons](docs/HANDOFF.md#compile-the-recovered-arm9-c)
 
 ## Matching ROM rebuild in WSL
 

@@ -1,10 +1,5 @@
 /* Bounded byte streams used by the ARM9 LZSS encoder and decoder. */
-typedef struct {
-    unsigned char *cursor;
-    unsigned char *start;
-    unsigned capacity;
-    unsigned position;
-} BoundedStream;
+#include "lzss.h"
 
 int read_bounded_stream_byte(BoundedStream *stream)
 {

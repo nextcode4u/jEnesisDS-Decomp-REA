@@ -55,9 +55,22 @@ For the source comparisons, use GCC 4.1.1 from devkitARM r20. Compile the histor
 
 The r20 startup objects also close two runtime symbol questions. The bytes at ARM9 `0x02000220` and ARM7 `0x037f80d0` are the concatenated `.init` sections of `crti.o` and `crtn.o`, establishing both entries as `_init`. The `isatty` relocation from newlib's `__smakebuf` resolves to ARM9 `0x020850a0`, where the ROM returns zero.
 
+## Compile the recovered ARM9 C
+
+Run `make check-c` with the complete r20 toolchain and the original 0.7.4 ROM. The checker builds these sources in ARM mode with `-O2`, places each linked region at its original ARM9 address, and compares the full bytes, including address literals and branch destinations. [Build setup](../README.md#compile-recovered-c-with-devkitarm-r20)
+
+| Area | Address range (end exclusive) | Verified C |
+| --- | --- | --- |
+| LZSS match tree | `0x0200c5d8–0x0200c82c` | Initialize the first-byte roots, insert and record the longest prefix, and remove outgoing window entries. [Source](../rebuild/source/lzss_match_tree.c) |
+| Bounded streams | `0x0200c82c–0x0200c87c` | Read and write without advancing past stream capacity. [Source](../rebuild/source/bounded_stream.c) |
+| LZSS stream decoder | `0x0200cb78–0x0200ccb4` | Decode literal bytes and overlapping ring-buffer matches using the bounded streams. [Source](../rebuild/source/lzss_decode.c) |
+| Cartridge bus | `0x02003ca4–0x02003cf8` | Return the ROM, work RAM, and Z80 bank-latch addresses, and select backing storage for VDP DMA. [Source](../rebuild/source/cartridge_bus.c) |
+
+The encoder entry at `0x0200c87c` and the prefix-aware decoding entry at `0x0200ccb4` are still in the pseudocode index. [Encoder](../decompiled/arm9/storage/cartridge.c#L465) · [Prefix decoder](../decompiled/arm9/storage/compression/lzss_decode.c#L6)
+
 ## Reproduce the SDK comparison
 
-`make check-sdk` recompiles selected SDK sources from July 2005, April 2006, and October 2007 with GCC 4.1.1 from devkitARM r20. It reports matching bytes at the actual ROM entry addresses and excludes relocation bytes in the SDK objects. The LZSS C check covers the entire 44-byte reader and 36-byte writer with zero relocations. [Build setup](../README.md#compile-recovered-c-with-devkitarm-r20)
+`make check-sdk` runs the recovered C checks and recompiles selected SDK sources from July 2005, April 2006, and October 2007 with GCC 4.1.1 from devkitARM r20. For the SDK objects, it reports matching bytes at the ROM entry addresses and excludes relocation bytes. [Build setup](../README.md#compile-recovered-c-with-devkitarm-r20)
 
 Clone both SDK histories and point the Makefile at the complete r20 toolchain. The default repository paths used here keep the checkouts under the ignored build directory.
 
@@ -105,6 +118,7 @@ To check MPCF, extract `lib/libfat.a` from the archive. Use `arm-none-eabi-ar x 
 | ARM9 boot and emulator | `0x02000000` · `0x020011e4` · [Startup](../decompiled/arm9/system/startup.c#L5) · [Emulator](../decompiled/arm9/system/emulator.c#L343) |
 | Browser and ROM loading | `0x020034b0` · `0x02001d40` · [Browser loop](../decompiled/arm9/frontend/rom_browser.c#L187) · [Cartridge loader](../decompiled/arm9/storage/cartridge.c#L260) |
 | Save states | `0x0200d13c` · `0x0200d4c8` · [Load](../decompiled/arm9/storage/save_states.c#L356) · [Write](../decompiled/arm9/storage/save_states.c#L438) |
+| LZSS compression | `0x0200c87c` · `0x0200cb78` · [Encoder pseudocode](../decompiled/arm9/storage/cartridge.c#L465) · [Recovered stream decoder](../rebuild/source/lzss_decode.c) |
 | CPU dispatch examples | `0x01003d00` · `0x01000020` · [68000 NOP](../decompiled/arm9/cpu/m68k/exceptions_and_control.c#L157) · [Z80 NOP](../decompiled/arm9/cpu/z80/control_and_io/flags_io_and_cpu_control.c#L5) |
 | ARM7 startup and audio | `0x037f8000` · `0x037f81f4` · [Startup](../decompiled/arm7/platform/startup.c#L5) · [Audio service](../decompiled/arm7/audio/service.c#L5) |
 | Sound generation | `0x037f86f4` · `0x037f95fc` · [PSG](../decompiled/arm7/audio/psg.c#L59) · [FM channel](../decompiled/arm7/audio/ym2612/channel_rendering.c#L127) |
