@@ -539,7 +539,7 @@ z80_ix_iy_cb_rl_indexed_memory_to_e:
     ldrgt      pc, [r2, r0, lsl #2]
     b          finish_z80_cycle_budget
 .L_02012464:
-    .word address_0200de20
+    .word z80_result_flags
 
 /* 0x02012468 */
 .global z80_ix_iy_cb_rl_indexed_memory_to_h
@@ -626,7 +626,7 @@ z80_ix_iy_cb_rl_indexed_memory:
     ldrgt      pc, [r2, r0, lsl #2]
     b          finish_z80_cycle_budget
 .L_0201258c:
-    .word address_0200de20
+    .word z80_result_flags
 
 /* 0x02012590 */
 .global z80_ix_iy_cb_rl_indexed_memory_to_a
@@ -1719,4 +1719,4 @@ z80_ix_iy_cb_srl_indexed_memory_to_a:
     ldrgt      pc, [r2, r0, lsl #2]
     b          finish_z80_cycle_budget
 .L_0201340c:
-    .word address_0200de20
+    .word z80_result_flags

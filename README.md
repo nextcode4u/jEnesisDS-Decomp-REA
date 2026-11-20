@@ -56,7 +56,7 @@ make reference-c R20_ROOT="$DEVKITARM"
 make check-pseudocode
 ```
 
-`recovered-c` builds ELF and binary sections under `build/recovered-c/` without opening a ROM. `compare-recovered-c` compares the saved output with the original release. It checks 332,512 bytes across 105 regions, including both CPU dispatch tables, 68000 condition and rotate tables, VDP counters and DS sprite geometry, the YM2612 and PSG lookup tables and YM2612 sample-loop dispatch, and the 32 KiB default DLDI area. `check-c` combines the build and comparison into one command. Put the original ROM in `input/jEnesisDS.nds` for the comparisons and reference rebuilds. `reference-c` links those C objects, the recovered assembly, and the r20 runtime initialization and finalization sections at their original addresses. It generates the zero-filled ARM9 DTCM image and launcher banner, then uses r20’s `ndstool` to generate the header, name table, and padding. It verifies the entire result at `build/reference-c/jEnesisDS-0.7.4-rebuilt.nds` and uses the original ROM for the remaining processor code and data. Use `ROM=/path/to/jEnesisDS.nds` if the input is stored elsewhere. [Recovered C](rebuild/source) · [Verified ranges](docs/HANDOFF.md#compile-the-recovered-arm9-c)
+`recovered-c` builds ELF and binary sections under `build/recovered-c/` without opening a ROM. `compare-recovered-c` compares the saved output with the original release. It checks 333,024 bytes across 107 regions, including both CPU dispatch tables, 68000 condition and rotate tables, VDP counters and DS sprite geometry, the YM2612 and PSG lookup tables and YM2612 sample-loop dispatch, and the 32 KiB default DLDI area. `check-c` combines the build and comparison into one command. Put the original ROM in `input/jEnesisDS.nds` for the comparisons and reference rebuilds. `reference-c` links those C objects, the recovered assembly, and the r20 runtime initialization and finalization sections at their original addresses. It generates the zero-filled ARM9 DTCM image and launcher banner, then uses r20’s `ndstool` to generate the header, name table, and padding. It verifies the entire result at `build/reference-c/jEnesisDS-0.7.4-rebuilt.nds` and uses the original ROM for the remaining processor code and data. Use `ROM=/path/to/jEnesisDS.nds` if the input is stored elsewhere. [Recovered C](rebuild/source) · [Verified ranges](docs/HANDOFF.md#compile-the-recovered-arm9-c)
 
 `make check-lzss` uses Python Unicorn to compare the recovered compression and file-entry code with the original ARM9 routines. `make check-sdk` recompiles and compares selected period ndslib and libnds sources. [Test setup](docs/HANDOFF.md#verify-lzss-behavior) · [SDK comparison](docs/HANDOFF.md#reproduce-the-sdk-comparison)
 
@@ -73,7 +73,16 @@ make recovered-native R20_ROOT="$DEVKITARM"
 make compare-recovered-native ROM=input/jEnesisDS.nds
 ```
 
-The first command assembles **202,652 bytes** without opening the original ROM. It builds the ARM9 68000 handlers, Z80 execution and prefix handlers, ITCM code, VDP frame and scanline routines, and ARM7 YM2612 setup and rendering. The comparison checks the linked bytes at the release addresses. The SDK reference build links these seven ranges from source and still uses the original ROM for **82,460 bytes**. [Native source](rebuild/source/native) · [Layout and test details](docs/HANDOFF.md#assemble-the-recovered-native-regions)
+The first command assembles **237,876 bytes** without opening the original ROM. It builds the ARM9 CPU engines, cartridge and save-state routines, VDP and rendering code, and ARM7 audio and startup routines. The comparison checks the linked bytes at the release addresses. The SDK reference build links these 43 ranges from source and still uses the original ROM for **46,724 ARM9 bytes**. [Native source](rebuild/source/native) · [Layout and test details](docs/HANDOFF.md#assemble-the-recovered-native-regions)
+
+## Build the complete ARM7 image
+
+```sh
+make arm7-image R20_ROOT="$DEVKITARM" LIBNDS_REPO=build/sdk-sources/libnds
+make compare-arm7-image ROM=input/jEnesisDS.nds
+```
+
+The first command emits `build/arm7-image/arm7.bin`, an ELF, and a linker map using the period SDK and repository sources. The full 60,820-byte image builds without the original ROM. The comparison checks it separately. [ARM7 build details](docs/HANDOFF.md#build-the-complete-arm7-image)
 
 ## Matching ROM rebuild in WSL
 

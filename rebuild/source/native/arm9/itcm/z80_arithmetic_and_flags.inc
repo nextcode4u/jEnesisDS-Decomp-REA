@@ -974,7 +974,7 @@ z80_or_a_a:
     ldrgt      pc, [r2, r0, lsl #2]
     b          finish_z80_cycle_budget
 .L_01001e44:
-    .word address_0200de20
+    .word z80_result_flags
     andeq      r0, r0, r0
     andeq      r0, r0, r0
 

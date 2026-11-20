@@ -90,8 +90,9 @@ def main():
             compiler = compiler_command(r20)
             shutil.copytree(SOURCE / "source", work, dirs_exist_ok=True)
             runtime = stage_c_runtime_sections(work, r20, objcopy)
+            arm7_input = None if args.libnds_repo else arm7
             objects[7] = prepare_reference_arm7(
-                work, compiler, arm7, arm7_base, runtime, r20, args.libnds_repo)
+                work, compiler, arm7_input, arm7_base, runtime, r20, args.libnds_repo)
             objects[9] = prepare_reference_arm9(
                 work, with_libnds_headers(compiler, r20), arm9, arm9_base, runtime, r20, args.libnds_repo,
                 libfat=libfat, replace_codec=args.replace_codec)

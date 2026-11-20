@@ -462,7 +462,7 @@ z80_ed_rrd:
     ldrgt      pc, [r2, r0, lsl #2]
     b          finish_z80_cycle_budget
 .L_020107a4:
-    .word address_0200dd20
+    .word z80_parity_flags
 
 /* 0x020107a8 */
 .global z80_ed_in_l_port_c
@@ -553,7 +553,7 @@ z80_ed_rld:
     ldrgt      pc, [r2, r0, lsl #2]
     b          finish_z80_cycle_budget
 .L_020108bc:
-    .word address_0200dd20
+    .word z80_parity_flags
 
 /* 0x020108c0 */
 .global z80_ed_in_via_hl_port_c

@@ -1091,4 +1091,4 @@ z80_cb_srl_a:
     ldrgt      pc, [r2, r0, lsl #2]
     b          finish_z80_cycle_budget
 .L_0200ee68:
-    .word address_0200de20
+    .word z80_result_flags

@@ -107,7 +107,7 @@ Run `make recovered-c` with the complete r20 toolchain. It compiles the sources 
 
 Run `make reference-c` to link the verified C and assembly regions into their processor images. The linker maps in `build/reference-c/` record the input objects and original addresses. The linker emits the 14,060-byte zero-filled ARM9 DTCM load image. The launcher banner builds from a 32-pixel-square indexed icon, its RGB555 palette, and UTF-16LE titles, with a generated CRC. The r20 `ndstool` emits the header, empty file name table, and alignment padding. The target compares the complete ROM with the release and still reads the unrecovered processor code and data from the release. [Build setup](../README.md#compile-recovered-c-with-devkitarm-r20) · [Launcher banner source](../rebuild/banner.py)
 
-In the SDK reference build, the linker maps account for 79,060 ARM9 bytes across 35 ranges and 3,400 ARM7 bytes across 7 ranges still supplied by the release. The remaining ARM9 code includes bus and scheduler glue, graphics, and the frontend. The biggest ARM9 range is 35,608 bytes of initialized data at `0x02085a10–0x0208e528`. The remaining ARM7 routines include PSG synthesis, PCM and DAC servicing, and startup. [ROM gap placement](../rebuild/recovered.py) · [ROM packaging](../rebuild/build.py)
+The SDK reference build supplies the entire ARM7 image from source and the period SDK. Its linker maps show 46,724 ROM-backed ARM9 bytes across 14 ranges. The largest range spans 35,608 bytes at `0x02085a10–0x0208e528` and includes frontend graphics and associated data. Other ranges include the frontend and startup code, interface strings, and interworking veneers. [ROM gap placement](../rebuild/recovered.py) · [ROM packaging](../rebuild/build.py)
 
 The original author described the 68000 engine as his own ARM assembly and described the Z80 engine as assembly in the release thread. The recovered assembly retains the original register conventions and dispatch layout. [Lordus’s development and release thread](https://gbadev.net/forum-archive/thread/23/13632.html)
 
@@ -134,9 +134,9 @@ The SDK reference build uses matching ARM code from the r20 `libc.a` and `libgcc
 
 ## Assemble the recovered native regions
 
-Run `make recovered-native R20_ROOT="$DEVKITARM"` to assemble and link the seven ranges below. It writes one ELF per processor and one binary per range under `build/recovered-native/`. Run `make compare-recovered-native ROM=/path/to/jEnesisDS.nds` separately. The comparison checks instructions, literal data, and branch destinations. The ITCM comparison reads the ROM bytes at the load address while the linker uses the address at which the code runs. [Assembler and comparison](../rebuild/check_native.py) · [Region definitions](../rebuild/native.py)
+Run `make recovered-native R20_ROOT="$DEVKITARM"` to assemble and link the 43 native ranges, totaling 237,876 bytes. It writes one ELF per processor and one binary per range under `build/recovered-native/`. Run `make compare-recovered-native ROM=/path/to/jEnesisDS.nds` separately. The comparison checks instructions, literal data, and branch destinations. The ITCM comparison reads the ROM bytes at the load address while the linker uses the address at which the code runs. [Assembler and comparison](../rebuild/check_native.py) · [Region definitions](../rebuild/native.py)
 
-| Range (end exclusive) | Bytes | Contents |
+| Selected range (end exclusive) | Bytes | Contents |
 | --- | ---: | --- |
 | ARM9 `0x0200b438–0x0200c4a8` | 4,208 | Reset VDP state, refresh backgrounds at the start of a frame, and record scaled or unscaled scanlines. [Source](../rebuild/source/native/arm9/vdp) |
 | ARM9 `0x0200df50–0x020153f0` | 29,856 | Z80 execution loop and most prefixed opcode handlers. [Source](../rebuild/source/native/arm9/z80) |
@@ -146,10 +146,21 @@ Run `make recovered-native R20_ROOT="$DEVKITARM"` to assemble and link the seven
 | ARM7 `0x037f93e8–0x037fbc10` | 10,280 | Initialize FM tables and channels, accept bank 0 writes, mix six channels, and program DS audio channels and timers. [Source](../rebuild/source/native/arm7/ym2612_mixer) |
 | ARM7 `0x037fc590–0x03800e50` | 18,624 | YM2612 PCM loops for all eight FM algorithms and the shared return path. [Source](../rebuild/source/native/arm7/ym2612) |
 
-The assembly was transcribed from the native instructions and grouped by opcode family, video routine, or synthesis stage. Use the address comments and matching `functions.tsv` to cross-reference a handler with its pseudocode. The included files assemble as one section per range so branches can cross file boundaries. Literal pools and alignment stay in the source. The C dispatch tables can resolve directly to the assembled handler labels. The standalone link uses the release addresses in the processor import files for routines and tables outside the seven ranges. [ARM9 function index](../decompiled/arm9/functions.tsv) · [ARM7 function index](../decompiled/arm7/functions.tsv) · [ARM9 linker imports](../rebuild/source/native/arm9_imports.ld) · [ARM7 linker imports](../rebuild/source/native/arm7_imports.ld)
+The assembly was transcribed from the native instructions and grouped by opcode family, video routine, or synthesis stage. Use the address comments and matching `functions.tsv` to cross-reference a handler with its pseudocode. The included files assemble in one assembler object per subsystem. Each release range keeps its own section. Literal pools and alignment stay in the source. The C dispatch tables can resolve directly to the assembled handler labels. The standalone link uses the release addresses in the processor import files for routines and tables outside the native ranges. [ARM9 function index](../decompiled/arm9/functions.tsv) · [ARM7 function index](../decompiled/arm7/functions.tsv) · [ARM9 linker imports](../rebuild/source/native/arm9_imports.ld) · [ARM7 linker imports](../rebuild/source/native/arm7_imports.ld)
+Other ARM9 assembly ranges cover frame scheduling, controller input, bus routing, cartridge and save-state I/O, VDP ports and DMA, tile and sprite drawing, and the release LZSS routines. The Z80 parity and result-flag tables at `0x0200dd20–0x0200df20` are computed as C constant expressions. The adjacent ARM entry installs the decoder page pointers. [Machine routines](../rebuild/source/native/arm9/machine) · [Renderer](../rebuild/source/native/arm9/renderer) · [VDP ports](../rebuild/source/native/arm9/vdp_ports) · [Z80 flag tables](../rebuild/source/z80_flag_tables.c)
+
+## Build the complete ARM7 image
+
+```sh
+make arm7-image R20_ROOT="$DEVKITARM" LIBNDS_REPO=build/sdk-sources/libnds
+make compare-arm7-image ROM=input/jEnesisDS.nds
+```
+
+The standalone ARM7 target links startup and interworking veneers, PCM and DAC servicing, IPC audio commands, PSG and YM2612 engines, tables, and the period libnds and devkitARM runtime. It writes a 60,820-byte load image, ELF, and map under `build/arm7-image/`. The linker setup rejects any uncovered range during a ROM-free build. The SDK reference build also uses that check for ARM7. [Build script](../rebuild/arm7_image.py) · [ARM7 assembly](../rebuild/source/native/arm7/service)
+
 ## Verify LZSS behavior
 
-The encoder and buffer and file entries pass 135 behavioral comparisons against the original ARM9 code. The memory entry now matches the ROM bytes. The encoder at `0x0200c87c` and the file entries at `0x0200cda4` and `0x0200cf28` still generate different instructions with r20. Both prefix-aware read paths transfer control to the shared stream decoder at `0x0200cb78`. The file writer copies the prefix, encodes the remainder, and writes the output stream to a file. [Encoder](../rebuild/source/lzss_encode.c) · [Memory decoder](../rebuild/source/lzss_memory.c) · [File entry points](../rebuild/source/lzss_buffers.c)
+The encoder and buffer and file entries pass 135 behavioral comparisons against the original ARM9 code. The memory entry now matches the ROM bytes. The behavior-test C encoder and file entries compile to different instructions with r20. The matching reference build assembles the release routines at `0x0200c87c`, `0x0200cda4`, and `0x0200cf28`. Both prefix-aware read paths transfer control to the shared stream decoder at `0x0200cb78`. The file writer copies the prefix, encodes the remainder, and writes the output stream to a file. [Encoder](../rebuild/source/lzss_encode.c) · [Memory decoder](../rebuild/source/lzss_memory.c) · [File entry points](../rebuild/source/lzss_buffers.c)
 
 
 Install the Python `unicorn` package in the interpreter used for this check, then run:

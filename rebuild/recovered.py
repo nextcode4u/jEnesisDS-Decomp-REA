@@ -20,7 +20,7 @@ from generate_z80_dispatch import (
 from generate_vdp_timing_tables import (
     OUTPUT_NAME as VDP_TIMING_SOURCE, TABLES as VDP_TIMING_TABLES, write_source as write_vdp_timing_tables,
 )
-from native import ARM9_ITCM, NATIVE_REGIONS, assemble_native, native_imports, selector
+from native import ARM7_IMAGE_SIZE, ARM9_ITCM, NATIVE_REGIONS, assemble_native, native_imports, selector
 from r20 import check_match, compile_c, run, tool
 from sdk_arm7 import (ARM7_IRQ_TABLE, ARM7_SDK_EXTERNALS, ARM7_SDK_REGIONS, DIVISION_OBJECTS, TOUCH_BSS,
                       stage_arm7_sdk)
@@ -396,6 +396,10 @@ RECOVERED_REGIONS = (
          "read_z80_banked_cartridge_byte": 0x02004458,
          "read_ym2612_timer_status": 0x02005B7C,
      }),
+    ("Z80 parity flags", "z80_flag_tables.c", ".rodata.z80_parity_flags",
+     0x0200DD20, 0x0200DE20, {}),
+    ("Z80 result flags", "z80_flag_tables.c", ".rodata.z80_result_flags",
+     0x0200DE20, 0x0200DF20, {}),
     ("Z80 RAM reset", "z80_clear.c", "clear_z80_work_ram",
      0x02004D94, 0x02004DCC, {
          "z80_work_ram": 0x0B00161C,
@@ -793,6 +797,8 @@ def write_payload_layout(work, core, image, base, begin, end, veneer, regions, *
     def add_gap(start, end):
         if start >= end:
             return
+        if image is None:
+            raise ValueError(f"{core} still has a ROM dependency at {start:#x}–{end:#x}")
         gap = f"rom-gap-{start:08x}"
         (work / f"{gap}.bin").write_bytes(image[start - base:end - base])
         assembly.append(f'.section .text.{gap}, "ax", %progbits')
@@ -848,7 +854,8 @@ def prepare_reference_arm7(work, compiler, image, base, runtime, r20, libnds=Non
                                 "        irq-setup-arm7.o(COMMON)\n"
                                 "        . = 0x0380becc - 0x03806d94;")
         source = source.replace("    arm7_main =", "    /DISCARD/ : { irq-setup-arm7.o(.text.irqDummy) }\n    arm7_main =")
-    layout = write_payload_layout(work, "arm7", image, base, 0xd0, len(image), 0x037f80f0, regions)
+    size = ARM7_IMAGE_SIZE if image is None else len(image)
+    layout = write_payload_layout(work, "arm7", image, base, 0xd0, size, 0x037f80f0, regions)
     definitions = "".join(f"PROVIDE({name} = {address:#x});\n" for name, address in externals.items())
     script.write_text(source.replace("*(.text.payload)", layout) + definitions + native_imports(work, 7))
     return objects
@@ -860,11 +867,11 @@ def prepare_reference_arm9(work, compiler, image, base, runtime, r20, libnds=Non
     regions, externals = runtime_layout(
         base, 0x02000220, 0x020859F0, 0x02000240, 0x02082324, 0x0208F330)
     regions.extend(ARM9_ALIGNMENT)
-    objects = [*runtime, *assemble_native(work, r20 / "bin/arm-eabi-", 9)]
-    regions.extend(
-        (region.start, region.end, selector(region)) for region in NATIVE_REGIONS[9]
-        if region != ARM9_ITCM
-    )
+    native_regions = tuple(region for region in NATIVE_REGIONS[9]
+                           if not (replace_codec and region.source == "arm9_codec"))
+    objects = [*runtime, *assemble_native(work, r20 / "bin/arm-eabi-", 9, native_regions)]
+    regions.extend((region.start, region.end, selector(region))
+                   for region in native_regions if region != ARM9_ITCM)
     assembly = []
 
     compiled = {}

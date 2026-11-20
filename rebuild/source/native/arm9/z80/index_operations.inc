@@ -1112,7 +1112,7 @@ z80_ix_iy_or_a_indexed_memory:
     ldrgt      pc, [r2, r0, lsl #2]
     b          finish_z80_cycle_budget
 .L_02011b9c:
-    .word address_0200de20
+    .word z80_result_flags
 
 /* 0x02011ba0 */
 .global z80_ix_iy_cp_a_index_high

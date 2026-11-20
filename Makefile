@@ -10,7 +10,7 @@ NDSLIB_REPO ?= build/sdk-sources/ndslib-archive
 
 LZSS_SOURCES = bounded_stream lzss_match_tree lzss_encode lzss_decode lzss_memory lzss_buffers lzss_state
 
-.PHONY: r20-homebrew recovered-c compare-recovered-c recovered-native compare-recovered-native check-c check-lzss check-lzss-standalone check-codec-rom check-sdk check-pseudocode arm7-sdk check-arm7-sdk \
+.PHONY: r20-homebrew recovered-c compare-recovered-c recovered-native compare-recovered-native check-c check-lzss check-lzss-standalone check-codec-rom check-sdk check-pseudocode arm7-sdk check-arm7-sdk arm7-image compare-arm7-image \
 	reference reference-c reference-c-sdk reference-c-codec
 
 r20-homebrew:
@@ -49,6 +49,12 @@ check-sdk:
 
 arm7-sdk:
 	$(PYTHON) rebuild/sdk_arm7.py --r20-root "$(R20_ROOT)" --libnds-repo "$(LIBNDS_REPO)" --output "$(R20_BUILD_DIR)/arm7-sdk"
+
+arm7-image:
+	$(PYTHON) rebuild/arm7_image.py --r20-root "$(R20_ROOT)" --libnds-repo "$(LIBNDS_REPO)" --build-dir "$(R20_BUILD_DIR)"
+
+compare-arm7-image:
+	$(PYTHON) rebuild/arm7_image.py --rom "$(ROM)" --build-dir "$(R20_BUILD_DIR)"
 
 check-arm7-sdk: arm7-sdk
 	$(PYTHON) rebuild/sdk_arm7.py --output "$(R20_BUILD_DIR)/arm7-sdk" --compare "$(ROM)"
