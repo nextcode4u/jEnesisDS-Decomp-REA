@@ -14,11 +14,17 @@ make
 
 This compiles and links both CPUs into ELFs under `build/c/`, then packages them into `build/jEnesisDS-C.nds`. The fresh build requires only this checkout and the installed SDK and toolchain. Set `WONDERFUL_TOOLCHAIN` or `BLOCKSDS` to use a custom installation.
 
-In melonDS, enable a virtual DLDI SD card and add Genesis ROMs to it. Use the D-pad and **A** to open a folder or cartridge, **Start** to run a loaded cartridge, and **B** to go back.
+In melonDS, enable a virtual DLDI SD card and add Genesis ROMs to it. The bottom screen uses the original menu arrangement with a newly drawn theme.
+
+- In the ROM browser, use **Up** and **Down** to highlight an entry, **Left** and **Right** to change pages, **A** to open or run the selection, and **B** to open the parent folder.
+- During emulation, touch the panel to pause and touch again or press **SELECT** to resume. Press **SELECT** while running or tap **ROM** to open the browser. Press **SELECT** in the browser to return to the current cartridge.
+- Tap **SET** to open configuration. Use **A** or tap **Country** to cycle the region for the next cartridge.
+- The two save-slot controls show their status when tapped. Save and load operations are pending.
 
 ## C sources
 
 - [ROM browser](source/main.c) mounts the SD card through libnds and browses directories using standard file APIs.
+- [Bottom-screen interface](source/frontend.c) draws the toolbar, selected row, and status panel with native DS tiles.
 - [ARM7 services](source/arm7/main.c) set up the system FIFO for storage and send input samples to the ARM9.
 - [Cartridge loader](source/cartridge.c) reads raw ROMs, decodes SMD blocks, parses the cartridge header, and computes the Genesis checksum.
 - [68000 interpreter](source/m68k.c) reads the reset vectors, executes the implemented instructions, and reports the address and opcode where execution stops.

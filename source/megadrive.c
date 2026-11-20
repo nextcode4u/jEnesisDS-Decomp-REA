@@ -22,12 +22,18 @@ static uint8_t detect_region(const char *region)
     }
 }
 
-void megadrive_reset(struct megadrive *md, const struct cartridge *cart)
+void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum genesis_region region)
 {
     memset(md, 0, sizeof(*md));
     md->rom = cart->data;
     md->rom_size = cart->size;
     md->version = detect_region(cart->region);
+    if (region == GENESIS_REGION_USA)
+        md->version = 0xa1;
+    else if (region == GENESIS_REGION_JAPAN)
+        md->version = 0x21;
+    else if (region == GENESIS_REGION_EUROPE)
+        md->version = 0xe1;
     // A scanline is 3420 master clocks and one 68000 cycle is seven.
     unsigned lines = (md->version & 0x40) ? 313 : 262;
     md->frame_cycles = 3420 * lines / 7;

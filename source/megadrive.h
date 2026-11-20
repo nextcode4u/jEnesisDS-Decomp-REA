@@ -7,6 +7,14 @@
 
 struct cartridge;
 
+enum genesis_region {
+    GENESIS_REGION_AUTO,
+    GENESIS_REGION_USA,
+    GENESIS_REGION_JAPAN,
+    GENESIS_REGION_EUROPE,
+    GENESIS_REGION_COUNT,
+};
+
 struct megadrive {
     struct m68k cpu;
     const uint8_t *rom;
@@ -22,7 +30,7 @@ struct megadrive {
     unsigned cycle_carry;
 };
 
-void megadrive_reset(struct megadrive *md, const struct cartridge *cart);
+void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum genesis_region region);
 void megadrive_run_frame(struct megadrive *md);
 uint16_t megadrive_backdrop(const struct megadrive *md);
 uint8_t megadrive_read_byte(const struct megadrive *md, uint32_t address);

@@ -31,7 +31,7 @@ int main(void)
 {
     static struct megadrive md;
     const struct cartridge cartridge = {.data = rom, .size = sizeof(rom), .region = "JUE"};
-    megadrive_reset(&md, &cartridge);
+    megadrive_reset(&md, &cartridge, GENESIS_REGION_AUTO);
     assert(md.cpu.pc == 0x200 && md.cpu.a[7] == 0xfffe00);
     assert(megadrive_read_byte(&md, 0xa10001) == 0xa1);
 
@@ -59,4 +59,8 @@ int main(void)
     assert(md.cpu.a[5] == 0x244 && md.cpu.d[0] == 0x4c9d && md.cpu.d[7] == 0x2081);
     assert(m68k_step(&md.cpu, &md) == 0 && md.cpu.stopped);
     assert(md.cpu.instruction_address == 0x242);
+
+    megadrive_reset(&md, &cartridge, GENESIS_REGION_EUROPE);
+    assert(megadrive_read_byte(&md, 0xa10001) == 0xe1);
+    assert(md.frame_cycles > 150000 && !md.cpu.stopped);
 }
