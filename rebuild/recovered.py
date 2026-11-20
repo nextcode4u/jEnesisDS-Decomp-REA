@@ -1,11 +1,14 @@
 """Recovered sections and the ROM addresses of their external symbols."""
+import os
 from pathlib import Path
 import shutil
+import subprocess
 
 from r20 import check_match, compile_c, run
 from sdk_arm7 import (ARM7_SDK_EXTERNALS, ARM7_SDK_REGIONS, DIVISION_OBJECTS, TOUCH_BSS,
                       stage_arm7_sdk)
 from sdk_arm9 import ARM9_SDK_REGIONS, stage_arm9_sdk
+from sdk_libfat import LIBFAT_BSS, LIBFAT_DATA_SYMBOLS, LIBFAT_REGIONS, stage_libfat
 from sdk_source import stage_sdk_bios, stage_sdk_for_reference
 
 
@@ -216,6 +219,17 @@ ARM7_REGIONS = (
 )
 
 
+def with_libnds_headers(compiler, r20):
+    libnds = Path(os.environ.get("LIBNDS") or r20.parent / "libnds").expanduser().resolve()
+    include = libnds / "include"
+    if not (include / "nds" / "ipc.h").is_file():
+        raise FileNotFoundError(f"Cannot find period libnds headers in {include}. Set LIBNDS to its installation.")
+    path = str(include)
+    if compiler[0].endswith(".exe") and os.name != "nt":
+        path = subprocess.check_output(["wslpath", "-w", path], text=True).strip()
+    return [*compiler, "-isystem", path]
+
+
 def compile_arm9_source(compiler, work, filename):
     flags = {
         # Keep the last stream read in r0 on decoder exit.
@@ -307,7 +321,8 @@ def prepare_reference_arm7(work, compiler, image, base, runtime, r20, libnds=Non
     return objects
 
 
-def prepare_reference_arm9(work, compiler, image, base, runtime, r20, libnds=None, *, replace_codec=False):
+def prepare_reference_arm9(work, compiler, image, base, runtime, r20, libnds=None, *,
+                           libfat=None, replace_codec=False):
     """Generate ROM gaps and link input for rebuilding with matched C objects."""
     regions = [init_region(base, 0x220, runtime)]
     objects = list(runtime)
@@ -342,6 +357,10 @@ def prepare_reference_arm9(work, compiler, image, base, runtime, r20, libnds=Non
         objects.extend((keys, irq, bios, *DIVISION_OBJECTS))
         objects.extend(stage_arm9_sdk(work, compiler, r20, libnds))
         regions.extend(ARM9_SDK_REGIONS)
+        if libfat:
+            objects.extend(stage_libfat(work, r20, libfat))
+            regions.extend(LIBFAT_REGIONS)
+            externals.update(LIBFAT_DATA_SYMBOLS)
         key_sections = " ".join(f'"{keys}"(.text.{name})'
                                 for name in ("keysHeld", "keysDown", "scanKeys"))
         regions.extend((
@@ -358,8 +377,10 @@ def prepare_reference_arm9(work, compiler, image, base, runtime, r20, libnds=Non
             assembly.extend([f'.section .itcm.{side}, "ax", %progbits',
                              f'.incbin "itcm-{side}-irq.bin"'])
         source = source.replace("*(.itcm)", f'*(.itcm.before) "{irq}"(.itcm) *(.itcm.after)')
+        fat_bss = "".join(f". = {address:#x} - 0x02098f70;\n        fat-{member}.o(.bss)\n        "
+                          for address, member in LIBFAT_BSS) if libfat else ""
         source = source.replace(". += 0x023eb350 - 0x02098f70;",
-                                f'. = 0x020b4ca0 - 0x02098f70;\n        "{keys}"(.bss)\n'
+                                fat_bss + f'. = 0x020b4ca0 - 0x02098f70;\n        "{keys}"(.bss)\n'
                                 "        . = 0x023eb350 - 0x02098f70;")
         source = source.replace("    arm9_main =", f'    /DISCARD/ : {{ "{keys}"(.text.*) }}\n    arm9_main =')
         externals.update(irqTable=0x010056E0, __irq_flags=0x0B003FF8)

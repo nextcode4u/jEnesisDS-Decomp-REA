@@ -10,7 +10,7 @@ This branch groups the static REA and Ghidra analysis of jEnesisDS 0.7.4 into 25
 | Find a routine or check what an opcode does | [Worked trace](docs/VERIFYING-A-TRACE.md) |
 | Orient myself in the repository or reproduce the analysis | [Handoff and folder map](docs/HANDOFF.md) |
 
-You can browse the code and run routine lookups with Python 3 and the files in this branch. The recovered C regions build with the r20 toolchain alone. The original release is needed for byte comparison and for supplying the remaining payload in the reference rebuild.
+You can browse the code and run routine lookups with Python 3 and the files in this branch. The recovered C regions build with the r20 toolchain and the period libnds headers. The original release is needed for byte comparison and for supplying the remaining payload in the reference rebuild.
 
 ```sh
 python3 scripts/find_routine.py open_rom_from_browser_selection --show
@@ -27,14 +27,32 @@ The result points to the ROM browser's selection handler in [cartridge.c](decomp
 
 The [ARM9 index](decompiled/arm9/functions.tsv) and [ARM7 index](decompiled/arm7/functions.tsv) map each address to its module and starting line. Run `python3 scripts/check_pseudocode.py` to verify all indexed bodies.
 
-## Compile recovered C with devkitARM r20
+## Build with the period devkitPro SDK
 
-Extract the complete r20 Win32 toolchain. In WSL, run Make from a Windows-mounted working folder, or set `R20_BUILD_DIR` to a Windows-mounted directory. The compiler needs the full installation, including its C compiler and headers. [Archived devkitARM r20](https://wii.leseratte10.de/devkitPro/devkitARM/r20%20%282007%29/)
+Install these archives as sibling directories under a devkitPro root. With the archived Win32 toolchain in WSL, use a Windows-mounted checkout and an SDK installation path without spaces.
+
+| Directory | Package |
+| --- | --- |
+| `devkitARM/` | [devkitARM r20 Win32](https://wii.leseratte10.de/devkitPro/devkitARM/r20%20%282007%29/) |
+| `libnds/` | [libnds 20071023](https://wii.leseratte10.de/devkitPro/libnds/libnds-20071023.tar.bz2) |
+| `libfat/` | [libfat-nds 20070127](https://wii.leseratte10.de/devkitPro/libfat/libfat-nds-20070127.tar.bz2) |
 
 ```sh
-make recovered-c R20_ROOT=/mnt/d/tools/devkitARM
+export DEVKITPRO=/mnt/d/tools/devkitPro
+export DEVKITARM="$DEVKITPRO/devkitARM"
+make r20-homebrew
+```
+
+The target uses the installed `ds_rules` and `ds_arm7.specs` and `ds_arm9.specs`, then packages both processors with r20's `ndstool`. It compiles the recovered C into two archives and links the routines used by a standalone SDK validation program at `build/r20-homebrew/sdk-check.nds`. The program exercises the recovered ARM9 FIFO with ARM7 and initializes libfat through `fatInitDefault`. [Build and test details](docs/HANDOFF.md#build-and-test-the-period-devkitpro-sdk)
+
+## Compile recovered C with devkitARM r20
+
+Set `R20_ROOT` to the same `devkitARM` directory. The fixed-address recovered C checks use the installed libnds headers. They look for `libnds` beside the toolchain or at the `LIBNDS` path you supply. In WSL, run Make from a Windows-mounted working folder or set `R20_BUILD_DIR` to a Windows-mounted directory.
+
+```sh
+make recovered-c R20_ROOT="$DEVKITARM"
 make compare-recovered-c ROM=input/jEnesisDS.nds
-make reference-c R20_ROOT=/mnt/d/tools/devkitARM
+make reference-c R20_ROOT="$DEVKITARM"
 make check-pseudocode
 ```
 
@@ -42,7 +60,7 @@ make check-pseudocode
 
 `make check-lzss` uses Python Unicorn to compare the recovered compression and file-entry code with the original ARM9 routines. `make check-sdk` recompiles and compares selected period ndslib and libnds sources. [Test setup](docs/HANDOFF.md#verify-lzss-behavior) · [SDK comparison](docs/HANDOFF.md#reproduce-the-sdk-comparison)
 
-Use `make arm7-sdk` with `R20_ROOT` and a `LIBNDS_REPO` history checkout to build the recovered ARM7 SDK ranges without a ROM input. `make check-arm7-sdk` builds those ranges and then compares them with `ROM`. `make reference-c-sdk` links the recovered regions for both processors into the byte-identical ROM and still uses the release for the unrecovered payload. [SDK source build](docs/HANDOFF.md#link-the-period-libnds-sources)
+Use `make arm7-sdk` with `R20_ROOT` and a `LIBNDS_REPO` history checkout to build the recovered ARM7 SDK ranges without a ROM input. `make check-arm7-sdk` builds those ranges and then compares them with `ROM`. `make reference-c-sdk` links the recovered regions for both processors, including 20 matching members of the period libfat archive. The byte-identical reference still uses the release for the unrecovered payload. [SDK source build](docs/HANDOFF.md#link-the-period-libnds-sources)
 
 `make check-codec-rom` builds a ROM with the full recovered LZSS codec in place and runs the 135 Unicorn comparisons against its linked entries. It writes `build/reference-c-codec/jEnesisDS-codec-test.nds`. [Codec ROM verification](docs/HANDOFF.md#verify-lzss-behavior)
 

@@ -56,6 +56,14 @@ For the source comparisons, use GCC 4.1.1 from devkitARM r20. Compile the histor
 
 The r20 startup objects also close two runtime symbol questions. The bytes at ARM9 `0x02000220` and ARM7 `0x037f80d0` are the concatenated `.init` sections of `crti.o` and `crtn.o`, establishing both entries as `_init`. The `isatty` relocation from newlib's `__smakebuf` resolves to ARM9 `0x020850a0`, where the ROM returns zero.
 
+## Build and test the period devkitPro SDK
+
+Install the three packages in the [SDK setup table](../README.md#build-with-the-period-devkitpro-sdk), then run `make r20-homebrew` from the repository root. The top-level Makefile follows the period combined ARM7 and ARM9 template. Each processor includes the installed `ds_rules`, uses its own DS specs, and builds a recovered C archive before linking the test program. ARM7 links `-lnds7`. ARM9 links `-lfat -lnds9`. The compiler and linker read the installed headers and archives directly. [Combined template](https://github.com/devkitPro/nds-examples/blob/c2d749f9d250c68e4efd709ed2cc74cce9222426/templates/combined/Makefile) · [Processor Makefile](../rebuild/devkitpro/cpu.mk)
+
+The target writes `sdk-check.nds` and per-processor ELF, archive, and linker map files under `build/r20-homebrew/`. Open the test ROM in melonDS as ordinary DS homebrew. The test prints `ARM7 FIFO: OK` after a round trip through the recovered ARM9 FIFO code and ARM7 PSG table. With DLDI enabled and a FAT image, it prints `libfat: mounted`. Add a file named `sdkcheck.txt` to the root of that image with `R` as its first byte to exercise a read through newlib and libfat. Both the FIFO round trip and the FAT file read passed in melonDS 1.1. [ARM9 check](../rebuild/devkitpro/sdk_check_arm9.c) · [ARM7 check](../rebuild/devkitpro/sdk_check_arm7.c)
+
+The test ROM exercises a subset of the recovered code. The complete emulator still requires unrecovered code and data. The byte-matching targets below use the original layout and compare those independent regions with the release.
+
 ## Compile the recovered ARM9 C
 
 Run `make recovered-c` with the complete r20 toolchain. It compiles the sources in ARM mode with `-O2` and places each region at its original address. The output consists of ELF and binary files under `build/recovered-c/`. Run `make compare-recovered-c ROM=/path/to/jEnesisDS.nds` to compare the saved binaries with the original 0.7.4 ROM, including address literals and branch destinations. `make check-c` runs both steps in one command. The stream decoder uses `-fno-tree-vrp` to return the last read value in r0 with the original instructions. [Build setup](../README.md#compile-recovered-c-with-devkitarm-r20)
@@ -81,7 +89,7 @@ Run `make recovered-c` with the complete r20 toolchain. It compiles the sources 
 
 Run `make reference-c` to link all verified C regions into their processor images. The linker maps in `build/reference-c/` record the input objects and original addresses. The linker emits the 14,060-byte zero-filled ARM9 DTCM load image. The r20 `ndstool` emits the header, empty file name table, and alignment padding. The target compares the complete ROM with the release and still reads the launcher banner and unrecovered processor code and data from the release. [Build setup](../README.md#compile-recovered-c-with-devkitarm-r20)
 
-In the SDK reference build, the linker maps account for 568,073 ARM9 bytes and 55,416 ARM7 bytes still supplied by the release. The ARM9 count includes 22,440 ITCM bytes. These ranges contain the remaining CPU engines and dispatch tables, graphics and audio code, frontend code, and initialized data. The launcher banner adds 2,112 bytes outside the processor images. [ROM gap placement](../rebuild/recovered.py) · [ROM packaging](../rebuild/build.py)
+In the SDK reference build, the linker maps account for 551,177 ARM9 bytes and 55,416 ARM7 bytes still supplied by the release. The ARM9 count includes 22,440 ITCM bytes. These ranges contain the remaining CPU engines and dispatch tables, graphics and audio code, frontend code, and initialized data. The launcher banner adds 2,112 bytes outside the processor images. [ROM gap placement](../rebuild/recovered.py) · [ROM packaging](../rebuild/build.py)
 
 The FIFO receive ISR reads `REG_IPC_FIFO_RX` once per message and splits that word into a command and a payload. The nonblocking sender clears the send FIFO and returns zero when full. The waiting sender at `0x0200c530` was identified from ARM instructions between the indexed callback setter and nonblocking sender. [Indexed pseudocode](../decompiled/arm9/system/ipc.c#L449) · [Verified C](../rebuild/source/arm9_fifo.c)
 
@@ -101,13 +109,13 @@ The encoder and buffer and file entries pass 135 behavioral comparisons against 
 Install the Python `unicorn` package in the interpreter used for this check, then run:
 
 ```sh
-make check-lzss R20_ROOT=/mnt/d/tools/devkitARM
+make check-lzss R20_ROOT="$DEVKITARM"
 ```
 
 The check links all recovered codec routines together and executes the resulting ARM code and the released routines on the same inputs. It compares output bytes, stream state, dictionary state, and counters. The file tests also compare call order, output written, and return values using simulated stdio calls. Cases include ring wraparound, output exhaustion, truncated input, and failed file operations. [Behavior checker](../rebuild/check_lzss.py)
 
 ```sh
-make check-codec-rom R20_ROOT=/mnt/d/tools/devkitARM
+make check-codec-rom R20_ROOT="$DEVKITARM"
 ```
 
 The codec ROM uses `-Os` for the encoder and both file wrappers so their C objects fit at the original ARM9 entry addresses. The build checks that every other byte in the ARM9 and ARM7 images matches the release. `check-codec-rom` runs the 135 comparisons with those entries in place. The ROM booted Sonic into Green Hill Zone Act 1 in melonDS 1.1. Moving after saving and loading slot 1 restored Sonic's earlier position and timer. The original emulator's save-state UI uses the uncompressed version 3 format. The codec itself is exercised by the Unicorn checks. [Codec entry locations](../rebuild/recovered.py)
@@ -128,7 +136,7 @@ Clone both SDK histories and point the Makefile at the complete r20 toolchain. T
 mkdir -p build/sdk-sources
 git clone https://codeberg.org/SkyLyrac/ndslib-archive.git build/sdk-sources/ndslib-archive
 git clone https://github.com/devkitPro/libnds.git build/sdk-sources/libnds
-make check-sdk R20_ROOT=/mnt/d/tools/devkitARM
+make check-sdk R20_ROOT="$DEVKITARM"
 ```
 
 The Codeberg mirror keeps its CVS import on the `history` branch. The July 2005 checkout matches `keysHeld`, `keysDown`, and `touchReadTemperature`. April 2006 reproduces all four tested ARM7 touch routines and the tested RTC and Slot-1 routines. October 2007 reproduces the IRQ setup functions, including `irqEnable` with `-Os`. The unmodified October 2007 `scanKeys` differs by four instruction bytes at the two shared button reads. [SourceForge ndslib project](https://sourceforge.net/projects/ndslib/) · [CVS mirror snapshot](https://codeberg.org/SkyLyrac/ndslib-archive/src/commit/eafb2703db6e2b6b414a2fa15107212522666bff) · [April 2006 libnds](https://github.com/devkitPro/libnds/tree/79e4f563e2ed88f404b72e0d8a4f8b079b2abe2a) · [October 2007 libnds](https://github.com/devkitPro/libnds/tree/8ea06b95fe716cfceff0bce34232217a61e0e6c9)
@@ -136,12 +144,12 @@ The Codeberg mirror keeps its CVS import on the `history` branch. The July 2005 
 ### Link the period libnds sources
 
 ```sh
-make arm7-sdk R20_ROOT=/mnt/d/tools/devkitARM LIBNDS_REPO=build/sdk-sources/libnds
-make check-arm7-sdk R20_ROOT=/mnt/d/tools/devkitARM LIBNDS_REPO=build/sdk-sources/libnds
-make reference-c-sdk R20_ROOT=/mnt/d/tools/devkitARM LIBNDS_REPO=build/sdk-sources/libnds
+make arm7-sdk R20_ROOT="$DEVKITARM" LIBNDS_REPO=build/sdk-sources/libnds
+make check-arm7-sdk R20_ROOT="$DEVKITARM" LIBNDS_REPO=build/sdk-sources/libnds
+make reference-c-sdk R20_ROOT="$DEVKITARM" LIBNDS_REPO=build/sdk-sources/libnds
 ```
 
-`arm7-sdk` builds the five ranges below from libnds source, r20 runtime objects, and the reconstructed interworking entry and division-by-zero hook. It writes an ELF, a linker map, and one file per range under `build/arm7-sdk/`. `check-arm7-sdk` opens the original ROM after the build to compare all 2,236 bytes, including calls, pointer literals, and padding. [ARM7 SDK build](../rebuild/sdk_arm7.py)
+`arm7-sdk` builds the seven ranges below from libnds source, r20 runtime objects, and the reconstructed interworking entry and division-by-zero hook. It writes an ELF, a linker map, and one file per range under `build/arm7-sdk/`. `check-arm7-sdk` opens the original ROM after the build to compare all 5,012 bytes, including calls, pointer literals, and padding. [ARM7 SDK build](../rebuild/sdk_arm7.py)
 
 | ARM7 range (end exclusive) | Contents |
 | --- | --- |
@@ -150,8 +158,12 @@ make reference-c-sdk R20_ROOT=/mnt/d/tools/devkitARM LIBNDS_REPO=build/sdk-sourc
 | `0x03801780–0x03801800` | October 2007 libnds BIOS calls. |
 | `0x03801800–0x038018d8` | April 2006 libnds interrupt dispatcher, linked to the ARM7 flags and handler table. |
 | `0x038018d8–0x03801b34` | Signed and unsigned division and remainder from the r20 runtime, with the recovered `__div0` hook. |
+| `0x03801b34–0x038024d8` | r20 interworking and double-precision arithmetic. |
+| `0x038025ac–0x038026e0` | r20 newlib memory operations. |
 
-`reference-c-sdk` links those ARM7 ranges and the ARM9 key routines, ITCM dispatcher, Slot-1 code and its command data, video bank control, data-cache maintenance, BIOS calls, division, and newlib `memcpy`. The output ROM and linker maps are under `build/reference-c-sdk/`. The reference build still uses the original ROM for the remaining regions. [ARM9 SDK staging](../rebuild/sdk_arm9.py)
+`reference-c-sdk` links those ARM7 ranges and the ARM9 key routines, ITCM dispatcher, Slot-1 code, video bank control, data-cache maintenance, BIOS calls, and r20 runtime objects. It also links 20 members of libfat-nds 20070127, replacing 16,896 bytes of code and initialized data with the archived objects. Thumb calls use the original entry points, including the veneers for ARM newlib functions. The directory object's pooled strings and code still come from the release in the byte-matching build. [ARM9 SDK staging](../rebuild/sdk_arm9.py) · [libfat placement and imports](../rebuild/sdk_libfat.py)
+
+The `LIBFAT` path defaults to the `libfat` directory beside devkitARM. The output ROM and linker maps are under `build/reference-c-sdk/`. The reference build still uses the original ROM for the remaining regions.
 
 Compiler selection, source revision, and per-file optimization can each affect a match. The ROM's libnds routines have matching code from different points in SDK history. The reconstructed C check isolates functions so each match demonstrates what the compiler produced from source.
 

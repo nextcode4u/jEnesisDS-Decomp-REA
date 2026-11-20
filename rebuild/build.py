@@ -2,6 +2,7 @@
 """Reassemble the jEnesisDS startup code and link it with the preserved payload."""
 import argparse
 from hashlib import sha256
+import os
 from pathlib import Path
 import shutil
 import struct
@@ -9,7 +10,7 @@ from tempfile import TemporaryDirectory
 
 from r20 import EXPECTED_ROM_SHA256, check_match, compiler_command, run, tool
 from recovered import (check_codec_image, prepare_reference_arm7, prepare_reference_arm9,
-                       stage_c_runtime_init)
+                       stage_c_runtime_init, with_libnds_headers)
 
 SOURCE = Path(__file__).resolve().parent
 WORKSPACE = SOURCE.parent
@@ -61,6 +62,12 @@ def main():
         parser.error("the SDK and codec variants require --r20-root")
     r20 = args.r20_root.expanduser().resolve() if args.r20_root else None
     prefix = r20 / "bin/arm-eabi-" if r20 else args.tool_prefix.expanduser().absolute()
+    libfat = None
+    if args.libnds_repo:
+        libfat_root = Path(os.environ.get("LIBFAT") or r20.parent / "libfat").expanduser()
+        libfat = libfat_root.resolve() / "lib/libfat.a"
+        if not libfat.is_file():
+            parser.error(f"Cannot find period libfat archive at {libfat}. Set LIBFAT to its installation.")
     assembler, linker, objcopy = (tool(prefix, name) for name in ("as", "ld", "objcopy"))
 
     rom = args.rom.read_bytes()
@@ -86,8 +93,8 @@ def main():
             objects[7] = prepare_reference_arm7(
                 work, compiler, arm7, arm7_base, runtime, r20, args.libnds_repo)
             objects[9] = prepare_reference_arm9(
-                work, compiler, arm9, arm9_base, runtime, r20, args.libnds_repo,
-                replace_codec=args.replace_codec)
+                work, with_libnds_headers(compiler, r20), arm9, arm9_base, runtime, r20, args.libnds_repo,
+                libfat=libfat, replace_codec=args.replace_codec)
         else:
             (work / "arm9-main.bin").write_bytes(arm9[0x220:0x90004])
             (work / "arm7-main.bin").write_bytes(arm7[0xd0:])

@@ -10,7 +10,7 @@ from tempfile import TemporaryDirectory
 
 from r20 import EXPECTED_ROM_SHA256, check_match, compile_c, compiler_command, run, tool
 from recovered import (ARM7_REGIONS, DLDI_SOURCE, RECOVERED_REGIONS, SOURCE,
-                       arm9_region_layout, compile_arm9_source)
+                       arm9_region_layout, compile_arm9_source, with_libnds_headers)
 from sdk_source import (LIBNDS_APR_2006, LIBNDS_ITCM_APR_2006, LIBNDS_OCT_2007, assemble_sdk_irq,
                         compile_sdk_keys, snapshot)
 
@@ -264,8 +264,9 @@ def main():
         with TemporaryDirectory(prefix="r20-c-", dir=build) as directory:
             work = Path(directory)
             shutil.copytree(SOURCE / "source", work, dirs_exist_ok=True)
+            recovered_compiler = with_libnds_headers(compiler, r20)
             for cpu in REGIONS_BY_CPU:
-                build_recovered_regions(compiler, prefix, work, cpu)
+                build_recovered_regions(recovered_compiler, prefix, work, cpu)
             if args.build_only:
                 output.mkdir(exist_ok=True)
                 for cpu in REGIONS_BY_CPU:

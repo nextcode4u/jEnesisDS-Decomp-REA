@@ -1,5 +1,6 @@
 """Common devkitARM r20 tool and binary comparison helpers."""
 from pathlib import Path
+import os
 import subprocess
 
 
@@ -36,7 +37,7 @@ def check_match(original, rebuilt, label):
 def compiler_command(root):
     gcc = tool(root / "bin/arm-eabi-", "gcc")
     command = [gcc]
-    if gcc.endswith(".exe"):
+    if gcc.endswith(".exe") and os.name != "nt":
         # r20 Win32 derives search paths from argv[0]. Give it its host paths
         # explicitly when starting it from a WSL shell.
         for option, directory in (

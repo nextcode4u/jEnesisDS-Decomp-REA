@@ -1,25 +1,9 @@
 /* ARM9 transmit and receive routines for the emulator’s two-CPU protocol. */
 
-/* Register names and bit assignments follow the period libnds ipc.h. */
+#include <nds/ipc.h>
+#include <nds/interrupts.h>
 
-#define REG_IPC_FIFO_CR (*(volatile unsigned short *)0x04000184)
-#define REG_IPC_FIFO_TX (*(volatile unsigned *)0x04000188)
-#define REG_IPC_FIFO_RX (*(volatile unsigned *)0x04100000)
-
-enum {
-    IPC_FIFO_SEND_FULL = 1 << 1,
-    IPC_FIFO_SEND_CLEAR = 1 << 3,
-    IPC_FIFO_RECV_EMPTY = 1 << 8,
-    IPC_FIFO_RECV_IRQ = 1 << 10,
-    IPC_FIFO_ENABLE = 1 << 15,
-    IRQ_FIFO_NOT_EMPTY = 1 << 18,
-};
-
-typedef void (*ReceiveCallback)(unsigned command, unsigned *payload);
-extern ReceiveCallback ipc_receive_callback;
-extern unsigned ipc_received_command, ipc_received_payload;
-void irqSet(unsigned mask, void (*handler)(void));
-void irqEnable(unsigned mask);
+#include "arm9_fifo.h"
 
 void dispatch_arm9_fifo_receive_interrupt(void)
 {
