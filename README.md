@@ -27,6 +27,17 @@ The result points to the ROM browser's selection handler in [cartridge.c](decomp
 
 The [ARM9 index](decompiled/arm9/functions.tsv) and [ARM7 index](decompiled/arm7/functions.tsv) map each address to its module and starting line. Run `python3 scripts/check_pseudocode.py` to verify all indexed bodies.
 
+## Compile recovered C with devkitARM r20
+
+Extract the complete r20 Win32 toolchain and put the original ROM in `input/jEnesisDS.nds`. In WSL, run Make from a Windows-mounted working folder, or set `R20_BUILD_DIR` to a Windows-mounted directory. The compiler needs the full installation, including its C compiler and headers. [Archived devkitARM r20](https://wii.leseratte10.de/devkitPro/devkitARM/r20%20%282007%29/)
+
+```sh
+make check-c R20_ROOT=/mnt/d/tools/devkitARM
+make check-pseudocode
+```
+
+`check-c` verifies GCC 4.1.1 from r20, compiles the two reconstructed ARM9 LZSS stream helpers, and compares every instruction byte to the original ROM. Use `ROM=/path/to/jEnesisDS.nds` to pass the input from another folder. The full-ROM reference build is available as `make reference`. [Recovered C](rebuild/source/bounded_stream.c) · [SDK source comparison](docs/HANDOFF.md#reproduce-the-sdk-comparison)
+
 ## Matching ROM rebuild in WSL
 
 1. Extract `jEnesisDS.nds` from the original 0.7.4 archive into `input/`. Its SHA-256 is `cc2ab8b1153cd115978a68c1490e6fe0ea578832f877e7cf3169cbd920cf8104`. [Original release listing](https://db.universal-team.net/ds/jenesisds)

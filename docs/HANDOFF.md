@@ -55,6 +55,23 @@ For the source comparisons, use GCC 4.1.1 from devkitARM r20. Compile the histor
 
 The r20 startup objects also close two runtime symbol questions. The bytes at ARM9 `0x02000220` and ARM7 `0x037f80d0` are the concatenated `.init` sections of `crti.o` and `crtn.o`, establishing both entries as `_init`. The `isatty` relocation from newlib's `__smakebuf` resolves to ARM9 `0x020850a0`, where the ROM returns zero.
 
+## Reproduce the SDK comparison
+
+`make check-sdk` recompiles selected SDK sources from July 2005, April 2006, and October 2007 with GCC 4.1.1 from devkitARM r20. It reports matching bytes at the actual ROM entry addresses and excludes relocation bytes in the SDK objects. The LZSS C check covers the entire 44-byte reader and 36-byte writer with zero relocations. [Build setup](../README.md#compile-recovered-c-with-devkitarm-r20)
+
+Clone both SDK histories and point the Makefile at the complete r20 toolchain. The default repository paths used here keep the checkouts under the ignored build directory.
+
+```sh
+mkdir -p build/sdk-sources
+git clone https://codeberg.org/SkyLyrac/ndslib-archive.git build/sdk-sources/ndslib-archive
+git clone https://github.com/devkitPro/libnds.git build/sdk-sources/libnds
+make check-sdk R20_ROOT=/mnt/d/tools/devkitARM
+```
+
+The Codeberg mirror keeps its CVS import on the `history` branch. The July 2005 checkout matches `keysHeld`, `keysDown`, and `touchReadTemperature`, while its `scanKeys` and IRQ routines differ and it lacks `touchReadXY`. April 2006 reproduces all four tested ARM7 touch routines and the tested RTC and Slot-1 routines. October 2007 reproduces the IRQ setup functions, including `irqEnable` with `-Os`. Its ARM9 `scanKeys` differs by four instruction bytes, corresponding to the offset of the shared ARM7 key halfword. [SourceForge ndslib project](https://sourceforge.net/projects/ndslib/) · [CVS mirror snapshot](https://codeberg.org/SkyLyrac/ndslib-archive/src/commit/eafb2703db6e2b6b414a2fa15107212522666bff) · [April 2006 libnds](https://github.com/devkitPro/libnds/tree/79e4f563e2ed88f404b72e0d8a4f8b079b2abe2a) · [October 2007 libnds](https://github.com/devkitPro/libnds/tree/8ea06b95fe716cfceff0bce34232217a61e0e6c9)
+
+Compiler selection, source revision, and per-file optimization can each affect a match. The ROM's libnds routines have matching code from different points in SDK history. The reconstructed C check isolates functions so each match demonstrates what the compiler produced from source.
+
 ## Use the period SDK names
 
 Use the function name and capitalization from the matching libnds source or object. Use the matching devkitARM r20 and period libfat symbols for runtime and filesystem functions. The ROM browser now calls `scanKeys`, `keysHeld`, and `swiWaitForVBlank`. The May 2008 libnds sprite example uses those same names. The period ARM7 template also calls `touchReadXY`, which differs from the later `touchRead` API. [Browser calls](../decompiled/arm9/frontend/rom_browser.c#L187) · [May 2008 sprite example](https://github.com/devkitPro/nds-examples/blob/c2d749f9d250c68e4efd709ed2cc74cce9222426/Graphics/2D/SimpleSprite/source/template.c#L44) · [May 2008 ARM7 template](https://github.com/devkitPro/nds-examples/blob/c2d749f9d250c68e4efd709ed2cc74cce9222426/templates/combined/arm7/source/template.c#L63)
