@@ -54,7 +54,7 @@ The released ROM uses routines from several points in libnds history. The eviden
 
 For the source comparisons, use GCC 4.1.1 from devkitARM r20. Compile the historical files with `-Iinclude -fomit-frame-pointer -ffast-math -mthumb -mthumb-interwork` and the optimization above. Use `-DARM7 -mcpu=arm7tdmi -mtune=arm7tdmi` or `-DARM9 -march=armv5te -mtune=arm946e-s`. In the object listing, compare each symbol's instruction bytes and account for the relocations shown by `arm-none-eabi-objdump -dr`. For archived sections, extract members with `arm-none-eabi-ar x` and inspect the code and relocations the same way.
 
-The r20 startup objects also close two runtime symbol questions. The bytes at ARM9 `0x02000220` and ARM7 `0x037f80d0` are the concatenated `.init` sections of `crti.o` and `crtn.o`, establishing both entries as `_init`. The `isatty` relocation from newlib's `__smakebuf` resolves to ARM9 `0x020850a0`, where the ROM returns zero.
+The bytes at ARM9 `0x02000220` and ARM7 `0x037f80d0` are the concatenated `.init` sections of r20’s `crti.o` and `crtn.o`. Their matching `.fini` sections are at ARM9 `0x020859f0` and ARM7 `0x038026e0`. The `isatty` relocation from newlib's `__smakebuf` resolves to ARM9 `0x020850a0`, where the ROM returns zero.
 
 ## Build and test the period devkitPro SDK
 
@@ -71,6 +71,7 @@ Run `make recovered-c` with the complete r20 toolchain. It compiles the sources 
 | Area | Address range (end exclusive) | Verified C |
 | --- | --- | --- |
 | Cartridge region and byte order | `0x020002e4–0x0200030c`, `0x0200157c–0x020015c0` | Set the Genesis version register and NTSC flag, and swap adjacent bytes while preserving an odd trailing byte. [Region](../rebuild/source/cartridge_region.c) · [Byte order](../rebuild/source/cartridge_byte_order.c) |
+| Controller read and 68000 execution | `0x020004c8–0x020004e0`, `0x02000538–0x02000588` | Narrow the Genesis controller read to one byte and run a 68000 cycle budget, with VDP timing updates where the caller needs them. [Controller read](../rebuild/source/controller_io.c) · [Execution wrappers](../rebuild/source/m68k_execute.c) |
 | 68000 timing | `0x020004e0–0x02000538` | Queue an interrupt level, return the current cycle counter, and calculate cycles per scanline. Before the first completed frame, the average-cycle routine returns the startup setting. [Source](../rebuild/source/m68k_timing.c) |
 | 68000 context | `0x02000310–0x0200037c`, `0x020050cc–0x02005164` | Derive the guest PC from the mapped pointer and page bits, update the pending IRQ, and read the cycle counter and selected status flags. [Guest PC](../rebuild/source/m68k_program_counter.c) · [Context](../rebuild/source/m68k_context.c) |
 | Z80 cartridge bank and work RAM | `0x02004438–0x02004484`, `0x02004c18–0x02004c44` | Preserve the bank latch, read the banked ROM in 68000 word order, and access work RAM directly. [Cartridge bank](../rebuild/source/z80_bank_state.c) · [Work RAM](../rebuild/source/z80_work_ram.c) |
@@ -89,15 +90,17 @@ Run `make recovered-c` with the complete r20 toolchain. It compiles the sources 
 
 Run `make reference-c` to link all verified C regions into their processor images. The linker maps in `build/reference-c/` record the input objects and original addresses. The linker emits the 14,060-byte zero-filled ARM9 DTCM load image. The r20 `ndstool` emits the header, empty file name table, and alignment padding. The target compares the complete ROM with the release and still reads the launcher banner and unrecovered processor code and data from the release. [Build setup](../README.md#compile-recovered-c-with-devkitarm-r20)
 
-In the SDK reference build, the linker maps account for 551,177 ARM9 bytes and 55,416 ARM7 bytes still supplied by the release. The ARM9 count includes 22,440 ITCM bytes. These ranges contain the remaining CPU engines and dispatch tables, graphics and audio code, frontend code, and initialized data. The launcher banner adds 2,112 bytes outside the processor images. [ROM gap placement](../rebuild/recovered.py) · [ROM packaging](../rebuild/build.py)
+In the SDK reference build, the linker maps account for 549,937 ARM9 bytes and 35,984 ARM7 bytes still supplied by the release. The ARM9 count includes 22,240 ITCM bytes. These ranges contain the remaining CPU engines and dispatch tables, graphics and audio code, frontend code, and initialized data. The launcher banner adds 2,112 bytes outside the processor images. [ROM gap placement](../rebuild/recovered.py) · [ROM packaging](../rebuild/build.py)
 
 The FIFO receive ISR reads `REG_IPC_FIFO_RX` once per message and splits that word into a command and a payload. The nonblocking sender clears the send FIFO and returns zero when full. The waiting sender at `0x0200c530` was identified from ARM instructions between the indexed callback setter and nonblocking sender. [Indexed pseudocode](../decompiled/arm9/system/ipc.c#L449) · [Verified C](../rebuild/source/arm9_fifo.c)
 
 ### ARM7 and runtime initialization
 
-The ARM7 PSG clock and ring setup at `0x037f8a30–0x037f8a88` matches all 88 bytes. It calculates the fixed-point clock step, calls the channel reset, and records the ring length. The PSG attenuation table at `0x03806d4c–0x03806d8c` matches all 64 bytes. Its first 15 entries follow a 2 dB step rounded from a starting amplitude of 6553. The last entry is mute. [Attenuation table](../rebuild/source/arm7_psg_attenuation.c)
+The ARM7 PSG register writers match all 496 bytes at `0x037f8504–0x037f86f4`. They handle latch and data bytes, normalize zero tone periods, and reseed noise. The batch and single-write entries preserve their respective order for updating the noise period and shift register. Clock and ring setup at `0x037f8a30–0x037f8a88` matches all 88 bytes. The PSG attenuation table at `0x03806d4c–0x03806d8c` matches all 64 bytes. Its first 15 entries follow a 2 dB step rounded from a starting amplitude of 6553. The last entry is mute. [Batch writer](../rebuild/source/arm7_psg_batch.c) · [Single writer](../rebuild/source/arm7_psg_write.c) · [Clock source](../rebuild/source/arm7_psg_clock.c) · [PSG attenuation](../rebuild/source/arm7_psg_attenuation.c)
 
-The matched builds also link the `.init` sections from r20's own `crti.o` and `crtn.o` at ARM9 `0x02000220` and ARM7 `0x037f80d0`. [ARM7 source](../rebuild/source/arm7_psg_clock.c)
+The ARM7 YM2612 lookup data at `0x038026f8–0x03806d34` generates during the build. It contains the 1,024-entry half-step logarithmic sine, 3,328 packed attenuation-to-sample entries, and the envelope, pitch, and pan tables. All 17,980 bytes match. The generator has no ROM input. [YM2612 table generator](../rebuild/generate_ym2612_tables.py)
+
+The r20 compiler and newlib objects supply the startup callbacks, constructor and destructor arrays, and `_init` and `_fini` routines for both processors. [Runtime placement](../rebuild/recovered.py)
 
 The SDK reference build uses matching ARM code from the r20 `libc.a` and `libgcc.a` archives for both processors, including the ARM9 `memset` called by the Z80 reset and the ARM7 floating-point routines. [ARM9 ranges](../rebuild/sdk_arm9.py) · [ARM7 ranges](../rebuild/sdk_arm7.py)
 
@@ -149,19 +152,20 @@ make check-arm7-sdk R20_ROOT="$DEVKITARM" LIBNDS_REPO=build/sdk-sources/libnds
 make reference-c-sdk R20_ROOT="$DEVKITARM" LIBNDS_REPO=build/sdk-sources/libnds
 ```
 
-`arm7-sdk` builds the seven ranges below from libnds source, r20 runtime objects, and the reconstructed interworking entry and division-by-zero hook. It writes an ELF, a linker map, and one file per range under `build/arm7-sdk/`. `check-arm7-sdk` opens the original ROM after the build to compare all 5,012 bytes, including calls, pointer literals, and padding. [ARM7 SDK build](../rebuild/sdk_arm7.py)
+`arm7-sdk` builds the eight ranges below from libnds source, r20 runtime objects, and the reconstructed interworking entry, the division-by-zero hook, and the padded empty IRQ callback. It writes an ELF, a linker map, and one file per range under `build/arm7-sdk/`. `check-arm7-sdk` opens the original ROM after the build to compare all 5,548 bytes, including calls, pointer literals, and padding. [ARM7 SDK build](../rebuild/sdk_arm7.py)
 
 | ARM7 range (end exclusive) | Contents |
 | --- | --- |
 | `0x037f8144–0x037f814c` | Thumb entry for the ARM division routine. |
 | `0x03801060–0x03801560` | April 2006 libnds RTC and touchscreen code, with calibration state at `0x0380bb0c`. |
+| `0x03801560–0x03801778` | October 2007 libnds IRQ setup and enable/disable functions. The empty Thumb callback has two zero padding bytes. |
 | `0x03801780–0x03801800` | October 2007 libnds BIOS calls. |
 | `0x03801800–0x038018d8` | April 2006 libnds interrupt dispatcher, linked to the ARM7 flags and handler table. |
 | `0x038018d8–0x03801b34` | Signed and unsigned division and remainder from the r20 runtime, with the recovered `__div0` hook. |
 | `0x03801b34–0x038024d8` | r20 interworking and double-precision arithmetic. |
 | `0x038025ac–0x038026e0` | r20 newlib memory operations. |
 
-`reference-c-sdk` links those ARM7 ranges and the ARM9 key routines, ITCM dispatcher, Slot-1 code, video bank control, data-cache maintenance, BIOS calls, and r20 runtime objects. It also links 20 members of libfat-nds 20070127, replacing 16,896 bytes of code and initialized data with the archived objects. Thumb calls use the original entry points, including the veneers for ARM newlib functions. The directory object's pooled strings and code still come from the release in the byte-matching build. [ARM9 SDK staging](../rebuild/sdk_arm9.py) · [libfat placement and imports](../rebuild/sdk_libfat.py)
+`reference-c-sdk` links those ARM7 ranges and the ARM9 key routines, IRQ setup, ITCM IRQ table and dispatcher, Slot-1 code, video bank control, data-cache maintenance, BIOS calls, and r20 runtime objects. It also links 20 members of libfat-nds 20070127, replacing 16,896 bytes of code and initialized data with the archived objects. Thumb calls use the original entry points, including the veneers for ARM newlib functions. The directory object's pooled strings and code still come from the release in the byte-matching build. [ARM9 SDK staging](../rebuild/sdk_arm9.py) · [libfat placement and imports](../rebuild/sdk_libfat.py)
 
 The `LIBFAT` path defaults to the `libfat` directory beside devkitARM. The output ROM and linker maps are under `build/reference-c-sdk/`. The reference build still uses the original ROM for the remaining regions.
 

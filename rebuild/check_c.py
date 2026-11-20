@@ -10,7 +10,7 @@ from tempfile import TemporaryDirectory
 
 from r20 import EXPECTED_ROM_SHA256, check_match, compile_c, compiler_command, run, tool
 from recovered import (ARM7_REGIONS, DLDI_SOURCE, RECOVERED_REGIONS, SOURCE,
-                       arm9_region_layout, compile_arm9_source, with_libnds_headers)
+                       arm9_region_layout, compile_arm7_source, compile_arm9_source, with_libnds_headers)
 from sdk_source import (LIBNDS_APR_2006, LIBNDS_ITCM_APR_2006, LIBNDS_OCT_2007, assemble_sdk_irq,
                         compile_sdk_keys, snapshot)
 
@@ -136,7 +136,7 @@ def build_recovered_regions(compiler, prefix, work, cpu):
         if cpu == 9:
             obj = compile_arm9_source(compiler, work, filename)
         else:
-            obj = compile_c(compiler, work, Path(filename), cpu, "-O2", "-marm")
+            obj = compile_arm7_source(compiler, work, filename)
         definitions = [f"--defsym={name}={address:#x}" for name, address in symbols.items()]
         section = ".text" if entry else ".rodata"
         entry_option = ["-e", entry] if entry else ["-e", f"{start:#x}"]

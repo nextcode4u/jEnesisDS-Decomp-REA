@@ -10,7 +10,7 @@ from tempfile import TemporaryDirectory
 
 from r20 import EXPECTED_ROM_SHA256, check_match, compiler_command, run, tool
 from recovered import (check_codec_image, prepare_reference_arm7, prepare_reference_arm9,
-                       stage_c_runtime_init, with_libnds_headers)
+                       stage_c_runtime_sections, with_libnds_headers)
 
 SOURCE = Path(__file__).resolve().parent
 WORKSPACE = SOURCE.parent
@@ -89,7 +89,7 @@ def main():
         if r20:
             compiler = compiler_command(r20)
             shutil.copytree(SOURCE / "source", work, dirs_exist_ok=True)
-            runtime = stage_c_runtime_init(work, r20, objcopy)
+            runtime = stage_c_runtime_sections(work, r20, objcopy)
             objects[7] = prepare_reference_arm7(
                 work, compiler, arm7, arm7_base, runtime, r20, args.libnds_repo)
             objects[9] = prepare_reference_arm9(

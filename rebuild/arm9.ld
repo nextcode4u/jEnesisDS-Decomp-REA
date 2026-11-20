@@ -30,7 +30,8 @@ SECTIONS
     .bss 0x02098f70 (NOLOAD) :
     {
         __bss_start = .;
-        . += 0x023eb350 - 0x02098f70;
+        *crtbegin.o(.bss)
+        . = 0x023eb350 - 0x02098f70;
         __bss_end = .;
     }
 

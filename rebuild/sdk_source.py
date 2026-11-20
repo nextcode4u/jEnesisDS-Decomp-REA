@@ -5,7 +5,7 @@ import subprocess
 import tarfile
 from pathlib import Path
 
-from r20 import compile_c, run
+from r20 import compile_c, run, tool
 
 
 LIBNDS_APR_2006 = "79e4f563e2ed88f404b72e0d8a4f8b079b2abe2a"
@@ -57,3 +57,37 @@ def stage_sdk_for_reference(compiler, work, repository):
     for obj in (compile_sdk_keys(compiler, keys), assemble_sdk_irq(compiler, irq)):
         shutil.copyfile(obj, work / obj.name)
         yield obj.name
+
+
+def irq_setup_sections(cpu):
+    setup = f"irq-setup-arm{cpu}.o"
+    names = ("irqSet", "irqInit", "irqClear", "irqInitHandler")
+    return " ".join([f"irq-dummy-arm{cpu}.o(.text.irqDummy)",
+                     *(f"{setup}(.text.{name})" for name in names),
+                     f"irq-enable-arm{cpu}.o(.text.irqEnable)", f"{setup}(.text.irqDisable)"])
+
+
+def stage_sdk_irq_setup(work, compiler, r20, repository, cpu):
+    sdk = work / f"irq-setup-arm{cpu}"
+    source = Path("source/common/interrupts.c")
+    snapshot(repository, LIBNDS_OCT_2007, sdk, ("include", source))
+    prefix = r20 / "bin/arm-eabi-"
+    objcopy = tool(prefix, "objcopy")
+    opts = [*compiler, "-ffunction-sections"]
+    setup = compile_c(opts, sdk, source, cpu, "-O2", "-mthumb")
+    enable = compile_c(opts, sdk, source, cpu, "-Os", "-mthumb")
+    setup_name, enable_name = f"irq-setup-arm{cpu}.o", f"irq-enable-arm{cpu}.o"
+    run(sdk, objcopy, "--remove-section=.text.irqEnable", "--weaken-symbol=irqDummy",
+        *(["--redefine-sym", "irqSet=arm9_thumb_irqSet"] if cpu == 9 else ()),
+        setup.name, setup_name)
+    run(sdk, objcopy, "--only-section=.text.irqEnable",
+        *(["--redefine-sym", "irqEnable=arm9_thumb_irqEnable"] if cpu == 9 else ()),
+        enable.name, enable_name)
+    for output in (setup_name, enable_name):
+        shutil.copyfile(sdk / output, work / output)
+    dummy_name = f"irq-dummy-arm{cpu}.o"
+    shutil.copyfile(Path(__file__).with_name("irq_dummy.s"), sdk / "irq_dummy.s")
+    processor = "arm946e-s" if cpu == 9 else "arm7tdmi"
+    run(sdk, tool(prefix, "as"), f"-mcpu={processor}", "-o", dummy_name, "irq_dummy.s")
+    shutil.copyfile(sdk / dummy_name, work / dummy_name)
+    return setup_name, enable_name, dummy_name

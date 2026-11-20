@@ -4,12 +4,13 @@ from pathlib import Path
 import shutil
 import subprocess
 
-from r20 import check_match, compile_c, run
-from sdk_arm7 import (ARM7_SDK_EXTERNALS, ARM7_SDK_REGIONS, DIVISION_OBJECTS, TOUCH_BSS,
+from generate_ym2612_tables import OUTPUT_NAME as YM2612_TABLE_SOURCE, write_source as write_ym2612_tables
+from r20 import check_match, compile_c, run, tool
+from sdk_arm7 import (ARM7_IRQ_TABLE, ARM7_SDK_EXTERNALS, ARM7_SDK_REGIONS, DIVISION_OBJECTS, TOUCH_BSS,
                       stage_arm7_sdk)
 from sdk_arm9 import ARM9_SDK_REGIONS, stage_arm9_sdk
 from sdk_libfat import LIBFAT_BSS, LIBFAT_DATA_SYMBOLS, LIBFAT_REGIONS, stage_libfat
-from sdk_source import stage_sdk_bios, stage_sdk_for_reference
+from sdk_source import irq_setup_sections, stage_sdk_bios, stage_sdk_for_reference, stage_sdk_irq_setup
 
 
 SOURCE = Path(__file__).resolve().parent
@@ -85,6 +86,8 @@ RECOVERED_REGIONS = (
      0x020002E4, 0x0200030C, {"genesis_region": 0x0B000000}),
     ("68000 guest PC", "m68k_program_counter.c", "read_m68k_program_counter",
      0x02000310, 0x0200037C, {"m68k_context": 0x0B0000AC}),
+    ("Genesis I/O read wrapper", "controller_io.c", "read_genesis_io_as_u8",
+     0x020004C8, 0x020004E0, {"read_genesis_io_register_byte": 0x020003F4}),
     ("68000 interrupt and cycle wrappers", "m68k_timing.c", "queue_m68k_interrupt_level",
      0x020004E0, 0x02000538, {
          "__aeabi_uidiv": 0x02080380,
@@ -92,6 +95,12 @@ RECOVERED_REGIONS = (
          "get_m68k_cycle_counter_field": 0x02005144,
          "m68k_context": 0x0B0000AC,
          "set_m68k_interrupt_level": 0x020050CC,
+     }),
+    ("68000 execution wrappers", "m68k_execute.c", "update_vdp_timing_and_run_m68k_scanline",
+     0x02000538, 0x02000588, {
+         "m68k_context": 0x0B0000AC,
+         "update_vdp_timing": 0x0200B284,
+         "run_m68k": 0x01002F60,
      }),
     ("Cartridge byte order", "cartridge_byte_order.c", "swap_adjacent_bytes_in_backing_buffer",
      0x0200157C, 0x020015C0, {}),
@@ -207,6 +216,10 @@ RECOVERED_REGIONS = (
 
 
 ARM7_REGIONS = (
+    ("ARM7 PSG register batch", "arm7_psg_batch.c", "apply_psg_latch_and_data_bytes",
+     0x037F8504, 0x037F8614, {"psg": 0x03806DBC}),
+    ("ARM7 PSG register write", "arm7_psg_write.c", "write_psg_register_byte",
+     0x037F8614, 0x037F86F4, {"psg_single_write_state": 0x03806DBC}),
     ("ARM7 PSG clock and ring setup", "arm7_psg_clock.c", "initialize_psg_clock_and_state",
      0x037F8A30, 0x037F8A88, {
          "__aeabi_idiv": 0x038019EC,
@@ -214,6 +227,8 @@ ARM7_REGIONS = (
          "psg_ring_samples": 0x03806DB8,
          "reset_psg_channel_state": 0x037F89BC,
      }),
+    ("ARM7 YM2612 lookup tables", YM2612_TABLE_SOURCE, None,
+     0x038026F8, 0x03806D34, {}),
     ("ARM7 PSG attenuation table", "arm7_psg_attenuation.c", None,
      0x03806D4C, 0x03806D8C, {}),
 )
@@ -240,21 +255,49 @@ def compile_arm9_source(compiler, work, filename):
     return compile_c([*compiler, *flags], work, Path(filename), 9, "-O2", "-marm")
 
 
-def stage_c_runtime_init(work, r20, objcopy):
+def compile_arm7_source(compiler, work, filename):
+    if filename == YM2612_TABLE_SOURCE:
+        write_ym2612_tables(work / filename)
+    return compile_c(compiler, work, Path(filename), 7, "-O2", "-marm")
+
+
+def stage_c_runtime_sections(work, r20, objcopy):
     lib = r20 / "lib/gcc/arm-eabi/4.1.1"
     objects = []
     for part in ("crti", "crtn"):
         source = f"{part}.o"
-        output = f"{part}-init.o"
+        output = f"{part}-runtime.o"
         shutil.copyfile(lib / source, work / source)
-        run(work, objcopy, "--only-section=.init", source, output)
+        run(work, objcopy, "--only-section=.init", "--only-section=.fini", source, output)
         objects.append(output)
-    return objects
+    for name in ("crtbegin.o", "crtend.o"):
+        shutil.copyfile(lib / name, work / name)
+        objects.append(name)
+    shutil.copyfile(r20 / "arm-eabi/lib/libc.a", work / "libc.a")
+    run(work, tool(r20 / "bin/arm-eabi-", "ar"), "x", "libc.a", "lib_a-init.o")
+    return [*objects, "lib_a-init.o"]
 
 
-def init_region(base, offset, runtime):
-    sections = " ".join(f'"{obj}"(.init)' for obj in runtime)
-    return base + offset, base + offset + 0x20, f"{sections} . = {offset + 0x20:#x};"
+def runtime_layout(base, init, fini, crtbegin, libc_init, init_array):
+    init_sections = "crti-runtime.o(.init) crtn-runtime.o(.init)"
+    fini_sections = "crti-runtime.o(.fini) crtn-runtime.o(.fini)"
+    regions = [
+        (init, init + 0x20, f"{init_sections} . = {init + 0x20 - base:#x};"),
+        (fini, fini + 0x18, fini_sections),
+        (crtbegin, crtbegin + 0xA4, "crtbegin.o(.text)"),
+        (libc_init, libc_init + 0xD4, "lib_a-init.o(.text)"),
+        (init_array, init_array + 0x14, "crtbegin.o(.init_array) crtbegin.o(.fini_array) "
+         "crtbegin.o(.eh_frame) crtend.o(.eh_frame) crtbegin.o(.jcr) crtend.o(.jcr) crtbegin.o(.data)"),
+    ]
+    externals = {
+        "__preinit_array_start": init_array,
+        "__preinit_array_end": init_array,
+        "__init_array_start": init_array,
+        "__init_array_end": init_array + 4,
+        "__fini_array_start": init_array + 4,
+        "__fini_array_end": init_array + 8,
+    }
+    return regions, externals
 
 
 def write_payload_layout(work, core, image, base, begin, end, veneer, regions, *, assembly=None):
@@ -296,11 +339,11 @@ def write_payload_layout(work, core, image, base, begin, end, veneer, regions, *
 
 
 def prepare_reference_arm7(work, compiler, image, base, runtime, r20, libnds=None):
-    regions = [init_region(base, 0xd0, runtime)]
+    regions, externals = runtime_layout(
+        base, 0x037F80D0, 0x038026E0, 0x037F814C, 0x038024D8, 0x03806D34)
     objects = list(runtime)
-    externals = {}
     for _, filename, entry, start, end, symbols in ARM7_REGIONS:
-        obj = compile_c(compiler, work, Path(filename), 7, "-O2", "-marm").name
+        obj = compile_arm7_source(compiler, work, filename).name
         objects.append(obj)
         section = ".text" if entry else ".rodata"
         regions.append((start, end, f'"{obj}"({section})'))
@@ -311,10 +354,13 @@ def prepare_reference_arm7(work, compiler, image, base, runtime, r20, libnds=Non
         objects.extend(stage_arm7_sdk(work, compiler, r20, libnds))
         regions.extend((start, end, selectors) for start, end, _, selectors in ARM7_SDK_REGIONS)
         externals.update(ARM7_SDK_EXTERNALS)
-        source = source.replace(". += 0x0380becc - 0x03806d94;",
+        source = source.replace(". = 0x0380becc - 0x03806d94;",
                                 f". = {TOUCH_BSS:#x} - 0x03806d94;\n"
                                 "        arm7-touch.o(.bss)\n"
+                                f"        . = {ARM7_IRQ_TABLE:#x} - 0x03806d94;\n"
+                                "        irq-setup-arm7.o(COMMON)\n"
                                 "        . = 0x0380becc - 0x03806d94;")
+        source = source.replace("    arm7_main =", "    /DISCARD/ : { irq-setup-arm7.o(.text.irqDummy) }\n    arm7_main =")
     layout = write_payload_layout(work, "arm7", image, base, 0xd0, len(image), 0x037f80f0, regions)
     definitions = "".join(f"PROVIDE({name} = {address:#x});\n" for name, address in externals.items())
     script.write_text(source.replace("*(.text.payload)", layout) + definitions)
@@ -324,10 +370,10 @@ def prepare_reference_arm7(work, compiler, image, base, runtime, r20, libnds=Non
 def prepare_reference_arm9(work, compiler, image, base, runtime, r20, libnds=None, *,
                            libfat=None, replace_codec=False):
     """Generate ROM gaps and link input for rebuilding with matched C objects."""
-    regions = [init_region(base, 0x220, runtime)]
+    regions, externals = runtime_layout(
+        base, 0x02000220, 0x020859F0, 0x02000240, 0x02082324, 0x0208F330)
     objects = list(runtime)
     assembly = []
-    externals = {}
 
     for _, filename, _, start, end, symbols in RECOVERED_REGIONS:
         obj = compile_arm9_source(compiler, work, filename).name
@@ -356,6 +402,7 @@ def prepare_reference_arm9(work, compiler, image, base, runtime, r20, libnds=Non
         bios = stage_sdk_bios(work, compiler, libnds, 9)
         objects.extend((keys, irq, bios, *DIVISION_OBJECTS))
         objects.extend(stage_arm9_sdk(work, compiler, r20, libnds))
+        objects.extend(stage_sdk_irq_setup(work, compiler, r20, libnds, 9))
         regions.extend(ARM9_SDK_REGIONS)
         if libfat:
             objects.extend(stage_libfat(work, r20, libfat))
@@ -365,25 +412,26 @@ def prepare_reference_arm9(work, compiler, image, base, runtime, r20, libnds=Non
                                 for name in ("keysHeld", "keysDown", "scanKeys"))
         regions.extend((
             (0x0207FB70, 0x0207FC24, key_sections),
+            (0x02080094, 0x02080298, irq_setup_sections(9)),
             (0x02080310, 0x02080380, f'"{bios}"(.text)'),
             (0x02080380, 0x020805DC, " ".join(f'"{obj}"(.text)' for obj in DIVISION_OBJECTS)),
             (0x0208F390, 0x0208F393, f'"{keys}"(.data)'),
         ))
         # IntrMain runs in ITCM, whose load image begins at 0x020936f0.
         itcm = image[0x936F0:]
-        (work / "itcm-before-irq.bin").write_bytes(itcm[:0x57A8])
+        (work / "itcm-before-irq.bin").write_bytes(itcm[:0x56E0])
         (work / "itcm-after-irq.bin").write_bytes(itcm[0x5880:])
         for side in ("before", "after"):
             assembly.extend([f'.section .itcm.{side}, "ax", %progbits',
                              f'.incbin "itcm-{side}-irq.bin"'])
-        source = source.replace("*(.itcm)", f'*(.itcm.before) "{irq}"(.itcm) *(.itcm.after)')
+        source = source.replace("*(.itcm)", f'*(.itcm.before) irq-setup-arm9.o(.itcm) "{irq}"(.itcm) *(.itcm.after)')
         fat_bss = "".join(f". = {address:#x} - 0x02098f70;\n        fat-{member}.o(.bss)\n        "
                           for address, member in LIBFAT_BSS) if libfat else ""
-        source = source.replace(". += 0x023eb350 - 0x02098f70;",
+        source = source.replace(". = 0x023eb350 - 0x02098f70;",
                                 fat_bss + f'. = 0x020b4ca0 - 0x02098f70;\n        "{keys}"(.bss)\n'
                                 "        . = 0x023eb350 - 0x02098f70;")
-        source = source.replace("    arm9_main =", f'    /DISCARD/ : {{ "{keys}"(.text.*) }}\n    arm9_main =')
-        externals.update(irqTable=0x010056E0, __irq_flags=0x0B003FF8)
+        source = source.replace("    arm9_main =", f'    /DISCARD/ : {{ "{keys}"(.text.*) irq-setup-arm9.o(.text.irqDummy) }}\n    arm9_main =')
+        externals.update(__irq_flags=0x0B003FF8, __irq_vector=0x0B003FFC)
 
     layout = write_payload_layout(work, "arm9", image, base, 0x220, 0x90004,
                                   0x02085898, regions, assembly=assembly)

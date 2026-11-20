@@ -14,7 +14,8 @@ SECTIONS
     .bss 0x03806d94 (NOLOAD) :
     {
         __bss_start = .;
-        . += 0x0380becc - 0x03806d94;
+        *crtbegin.o(.bss)
+        . = 0x0380becc - 0x03806d94;
         __bss_end = .;
     }
 
