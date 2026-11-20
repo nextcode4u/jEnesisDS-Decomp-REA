@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reassemble the jEnesisDS startup code and link it with the preserved payload."""
+"""Assemble the recovered CPU sources and package a Nintendo DS ROM."""
 import argparse
 from hashlib import sha256
 from pathlib import Path
@@ -8,89 +8,81 @@ import struct
 import subprocess
 from tempfile import TemporaryDirectory
 
-SOURCE = Path(__file__).resolve().parent
-WORKSPACE = SOURCE.parent
-EXPECTED_ROM_SHA256 = "cc2ab8b1153cd115978a68c1490e6fe0ea578832f877e7cf3169cbd920cf8104"
+from menu import write_menu_sources
+
+STARTUP = Path(__file__).resolve().parent
+ROOT = STARTUP.parent
 DEFAULT_PREFIX = Path.home() / ".cache/jenesisds-decomp/devkitarm-r20/bin/arm-eabi-"
+DEFAULT_NDSTOOL = Path("/opt/devkitpro/tools/bin/ndstool")
+IMAGES = {
+    "arm9": (0x02000000, 0x98f70, "arm946e-s"),
+    "arm7": (0x037f8000, 0xed94, "arm7tdmi"),
+}
 
 
 def tool(prefix, name):
     for suffix in ("", ".exe"):
-        executable = Path(f"{prefix}{name}{suffix}")
-        if executable.is_file():
-            return str(executable)
+        candidate = Path(f"{prefix}{name}{suffix}")
+        if candidate.is_file():
+            return str(candidate)
     raise FileNotFoundError(f"Could not find {prefix}{name}")
 
 
-def run(work, executable, *args):
+def run(executable, *args, work):
     subprocess.run([executable, *args], cwd=work, check=True)
 
 
-def check_match(original, rebuilt, label):
-    if len(original) != len(rebuilt):
-        raise ValueError(f"{label} length {len(rebuilt):#x} != {len(original):#x}")
-    if original != rebuilt:
-        for offset, (expected, actual) in enumerate(zip(original, rebuilt)):
-            if expected != actual:
-                raise ValueError(
-                    f"{label} differs at {offset:#x}: {actual:#04x} instead of {expected:#04x}"
-                )
+def verify_nds(path, work):
+    rom = path.read_bytes()
+    for cpu, header in (("arm9", 0x20), ("arm7", 0x30)):
+        offset, entry, load, size = struct.unpack_from("<4I", rom, header)
+        expected_address, expected_size, _ = IMAGES[cpu]
+        if (entry, load, size) != (expected_address, expected_address, expected_size):
+            raise ValueError(f"{cpu} NDS header does not match linked layout")
+        if rom[offset:offset+size] != (work / f"{cpu}.bin").read_bytes():
+            raise ValueError(f"{cpu} NDS payload does not match linked image")
+    return sha256(rom).hexdigest()
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--tool-prefix", type=Path, default=DEFAULT_PREFIX,
-        help="Absolute path prefix ending in arm-eabi- for devkitARM r20 binutils",
-    )
+    parser.add_argument("--tool-prefix", type=Path, default=DEFAULT_PREFIX,
+                        help="Path prefix for GNU ARM binutils, such as /path/bin/arm-eabi-")
+    parser.add_argument("--ndstool", type=Path,
+                        default=Path(shutil.which("ndstool") or DEFAULT_NDSTOOL),
+                        help="Path to ndstool")
     args = parser.parse_args()
     prefix = args.tool_prefix.expanduser().absolute()
+    ndstool = str(args.ndstool.expanduser().absolute())
     assembler, linker, objcopy = (tool(prefix, name) for name in ("as", "ld", "objcopy"))
+    output = ROOT / "build"
+    output.mkdir(exist_ok=True)
 
-    rom = (WORKSPACE / "input/jEnesisDS.nds").read_bytes()
-    if sha256(rom).hexdigest() != EXPECTED_ROM_SHA256:
-        raise ValueError("Expected the original jEnesisDS 0.7.4 ROM")
-    arm9_offset, _, _, arm9_size = struct.unpack_from("<4I", rom, 0x20)
-    arm7_offset, _, _, arm7_size = struct.unpack_from("<4I", rom, 0x30)
-    arm9 = rom[arm9_offset:arm9_offset + arm9_size]
-    arm7 = rom[arm7_offset:arm7_offset + arm7_size]
+    with TemporaryDirectory(prefix=".rebuild-", dir=output) as temp:
+        work = Path(temp)
+        startup_files = ("arm9.s", "arm7.s", "startup.inc", "arm9.ld", "arm7.ld")
+        for name in startup_files:
+            shutil.copyfile(STARTUP / name, work / name)
+        for source in sorted((ROOT / "recovered").glob("*.s")):
+            shutil.copyfile(source, work / source.name)
+        write_menu_sources(work)
 
-    with TemporaryDirectory(prefix=".rebuild-", dir=WORKSPACE) as scratch:
-        work = Path(scratch)
-        for name in ("arm9.s", "arm7.s", "startup.inc", "arm9.ld", "arm7.ld"):
-            shutil.copyfile(SOURCE / name, work / name)
+        for cpu, (_, size, arch) in IMAGES.items():
+            run(assembler, f"-mcpu={arch}", "-o", f"{cpu}.o", f"{cpu}.s", work=work)
+            run(linker, "-T", f"{cpu}.ld", "-Map", f"{cpu}.map", "-o", f"{cpu}.elf",
+                f"{cpu}.o", work=work)
+            run(objcopy, "-O", "binary", f"{cpu}.elf", f"{cpu}.bin", work=work)
+            if (work / f"{cpu}.bin").stat().st_size != size:
+                raise ValueError(f"{cpu} image changed size")
 
-        # Startup bytes are excluded from the code and data passed to the assembler.
-        (work / "arm9-main.bin").write_bytes(arm9[0x220:0x90004])
-        (work / "arm9-dtcm.bin").write_bytes(arm9[0x90004:0x936f0])
-        (work / "arm9-itcm.bin").write_bytes(arm9[0x936f0:])
-        (work / "arm7-main.bin").write_bytes(arm7[0xd0:])
-
-        for core, cpu in (("arm9", "arm946e-s"), ("arm7", "arm7tdmi")):
-            run(work, assembler, f"-mcpu={cpu}", "-o", f"{core}.o", f"{core}.s")
-            run(work, linker, "-T", f"{core}.ld", "-Map", f"{core}.map",
-                "-o", f"{core}.elf", f"{core}.o")
-            run(work, objcopy, "-O", "binary", f"{core}.elf", f"{core}.bin")
-
-        rebuilt9 = (work / "arm9.bin").read_bytes()
-        rebuilt7 = (work / "arm7.bin").read_bytes()
-        check_match(arm9, rebuilt9, "ARM9 image")
-        check_match(arm7, rebuilt7, "ARM7 image")
-        rebuilt_rom = (
-            rom[:arm9_offset] + rebuilt9 +
-            rom[arm9_offset + arm9_size:arm7_offset] + rebuilt7 +
-            rom[arm7_offset + arm7_size:]
-        )
-        check_match(rom, rebuilt_rom, "NDS ROM")
-
-        output = WORKSPACE / "build"
-        output.mkdir(exist_ok=True)
-        for name in ("arm9.elf", "arm9.map", "arm7.elf", "arm7.map"):
-            shutil.copyfile(work / name, output / name)
-        result = "jEnesisDS-0.7.4-rebuilt.nds"
-        (work / result).write_bytes(rebuilt_rom)
-        (work / result).replace(output / result)
-        print(f"{sha256(rebuilt_rom).hexdigest()}  build/{result}")
+        name = "GenesisPlayer.nds"
+        run(ndstool, "-c", name, "-9", "arm9.bin", "-7", "arm7.bin", "-h", "0x200",
+            "-r9", "0x02000000", "-e9", "0x02000000", "-r7", "0x037f8000",
+            "-e7", "0x037f8000", "-g", "####", "00", "GENESIS", work=work)
+        digest = verify_nds(work / name, work)
+        for result in (name, "arm9.elf", "arm9.map", "arm7.elf", "arm7.map"):
+            (work / result).replace(output / result)
+        print(f"{digest}  build/{name}")
 
 
 if __name__ == "__main__":

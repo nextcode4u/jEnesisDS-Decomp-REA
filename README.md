@@ -1,16 +1,25 @@
-# jEnesisDS 0.7.4 minimal rebuild
+# jEnesisDS source rebuild
 
-This branch contains the recovered ARM7 and ARM9 startup assembly, linker scripts, and build script. The build takes the remaining emulator code and data from a local copy of the original ROM.
+This branch builds a Nintendo DS ROM from recovered ARM and Thumb assembly and data declarations. The build inputs are the files in this checkout. The ROM is packaged from the linked ARM7 and ARM9 images and uses a new file browser theme.
 
 ## Build in WSL
 
-1. Place the original 0.7.4 ROM at `input/jEnesisDS.nds`. Its SHA-256 is `cc2ab8b1153cd115978a68c1490e6fe0ea578832f877e7cf3169cbd920cf8104`. [Original release archive](https://db.universal-team.net/ds/jenesisds)
-2. Extract devkitARM r20 with 7-Zip. The builder uses its GNU binutils 2.17 programs `arm-eabi-as`, `arm-eabi-ld`, and `arm-eabi-objcopy`. The Win32 `.exe` files work through WSL interop. Set their execute bits in WSL if needed. [devkitARM r20 archive](https://wii.leseratte10.de/devkitPro/devkitARM/r20%20%282007%29/)
-3. From the repository root, run the build with Python 3.
+Install Python 3, GNU ARM binutils from devkitARM r20, and `ndstool`. The tested versions were GNU binutils 2.17 and `ndstool` 2.3.1. The r20 archive contains `arm-eabi-as.exe`, `arm-eabi-ld.exe`, and `arm-eabi-objcopy.exe`, which work through WSL interop with their execute bits set. [devkitARM r20 archive](https://wii.leseratte10.de/devkitPro/devkitARM/r20%20%282007%29/)
+
+From the repository root, run the builder with the toolchain prefix and path to `ndstool`.
 
 ```bash
-python3 rebuild/build.py --tool-prefix /path/to/devkitARM/bin/arm-eabi-
-cmp input/jEnesisDS.nds build/jEnesisDS-0.7.4-rebuilt.nds
+python3 rebuild/build.py \
+  --tool-prefix /path/to/devkitARM/bin/arm-eabi- \
+  --ndstool /path/to/ndstool
 ```
 
-The tool prefix is optional if the tools are installed under `~/.cache/jenesisds-decomp/devkitarm-r20/bin/`. A successful build produces the verified byte-identical ROM, linked ELFs, and linker maps in the ignored `build/` directory.
+The defaults use r20 tools under `~/.cache/jenesisds-decomp/devkitarm-r20/bin/` and find `ndstool` on `PATH` or under `/opt/devkitpro/tools/bin/`. The builder writes `build/GenesisPlayer.nds` along with linked ELFs and linker maps. Git ignores the output directory.
+
+## Sources
+
+- [Startup and linker scripts](rebuild/) set up the processors and preserve the emulator’s original RAM and TCM addresses.
+- [Recovered assembly and data](recovered/) contain the emulator payload. Instructions that needed their original encodings are expressed with word or halfword directives and disassembly comments. Dispatch tables and other fixed data have explicit declarations.
+- [File browser graphics](rebuild/menu.py) generate the tile, font, and palette data used by the DS interface.
+
+The source build was tested in melonDS 1.1 with a virtual DLDI SD card. It loaded a Genesis diagnostic ROM and rendered the expected alternating red and cyan frames.

@@ -135,15 +135,6 @@ _start:
 .Lreturn_address:           .word 0x027ffe78
 .size _start, . - _start
 
-.section .text.payload, "ax", %progbits
-.global arm9_call_via_r3
-    .incbin "arm9-main.bin", 0, 0x85678
-.type arm9_call_via_r3, %function
-arm9_call_via_r3:
-    .incbin "arm9-main.bin", 0x85678
-
-.section .dtcm, "aw", %progbits
-    .incbin "arm9-dtcm.bin"
-
-.section .itcm, "ax", %progbits
-    .incbin "arm9-itcm.bin"
+.include "arm9_main.s"
+.include "arm9_dtcm.s"
+.include "arm9_itcm.s"
