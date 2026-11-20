@@ -43,6 +43,8 @@ struct megadrive {
     bool z80_reset;
     uint8_t port_data[3];
     uint8_t port_direction[3];
+    uint8_t serial_tx[3];
+    uint8_t serial_control[3];
     uint8_t pad1_pressed;
     uint8_t vram[0x10000];
     uint16_t cram[64];
@@ -69,6 +71,7 @@ struct megadrive {
     unsigned frame_cycle;
 };
 
+void megadrive_reset_serial(struct megadrive *md);
 void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum genesis_region region);
 void megadrive_run_frame(struct megadrive *md);
 uint16_t megadrive_backdrop(const struct megadrive *md);

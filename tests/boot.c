@@ -54,6 +54,34 @@ static uint8_t rom[0x27c] = {
     0x60, 0xfe,                                // bra.s to self
 };
 
+static void test_status_immediates(void)
+{
+    static struct megadrive md;
+    static uint8_t code[] = {
+        0x00, 0x7c, 0x07, 0x01, // ORI #$0701,SR
+        0x02, 0x3c, 0x00, 0x1e, // ANDI #$1e,CCR
+        0x0a, 0x3c, 0xff, 0xf4, // EORI #$f4,CCR
+        0xd3, 0x40,             // ADDX.W D0,D1
+        0x93, 0x40,             // SUBX.W D0,D1
+        0x48, 0x7a, 0x00, 0x06, // PEA 6(PC)
+    };
+    md.rom = code;
+    md.rom_size = sizeof(code);
+    md.cpu.sr = 0x2000;
+    assert(m68k_step(&md.cpu, &md) == 20 && md.cpu.sr == 0x2701);
+    assert(m68k_step(&md.cpu, &md) == 20 && md.cpu.sr == 0x2700);
+    assert(m68k_step(&md.cpu, &md) == 20 && md.cpu.sr == 0x2714);
+    md.cpu.d[0] = 0xffff;
+    md.cpu.d[1] = 0x12340000;
+    assert(m68k_step(&md.cpu, &md) == 4 && md.cpu.sr == 0x2715);
+    assert(md.cpu.d[1] == 0x12340000);
+    assert(m68k_step(&md.cpu, &md) == 4 && md.cpu.sr == 0x2715);
+    assert(md.cpu.d[1] == 0x12340000);
+    md.cpu.a[7] = 0xfffffc;
+    assert(m68k_step(&md.cpu, &md) == 16 && md.cpu.a[7] == 0xfffff8);
+    assert(megadrive_read_word(&md, 0xfffff8) == 0 && megadrive_read_word(&md, 0xfffffa) == 24);
+}
+
 static void vdp_register(struct megadrive *md, unsigned reg, unsigned value)
 {
     assert(megadrive_write_word(md, 0xc00004, 0x8000 | (reg << 8) | value));
@@ -75,6 +103,13 @@ static void test_startup_bus(struct megadrive *md)
     assert(megadrive_read_byte(md, 0xa10003) == 0x7b);
     assert(megadrive_write_byte(md, 0xa10003, 0));
     assert(megadrive_read_byte(md, 0xa10003) == 0x23);
+    assert(megadrive_read_byte(md, 0xa1000f) == 0xff);
+    assert(megadrive_write_byte(md, 0xa1000f, 0x12));
+    assert(megadrive_read_byte(md, 0xa1000e) == 0x12);
+    assert(megadrive_write_byte(md, 0xa10011, 0xff));
+    assert(megadrive_read_byte(md, 0xa10011) == 0);
+    assert(megadrive_write_byte(md, 0xa10013, 0xff));
+    assert(megadrive_read_byte(md, 0xa10012) == 0xf8);
 }
 
 static void test_z80_delay_loops(const struct cartridge *cart)
@@ -87,6 +122,7 @@ static void test_z80_delay_loops(const struct cartridge *cart)
     md.sound_cpu.b = 12;
     md.sound_cpu.r = 0xfd;
     z80 expected = md.sound_cpu;
+    expected.ram_limit = 0;
     for (unsigned i = 0; i < 7; ++i)
         z80_step(&expected);
     genesis_z80_sync(&md, 195);
@@ -101,6 +137,7 @@ static void test_z80_delay_loops(const struct cartridge *cart)
     md.sound_cpu.l = 0x20;
     md.z80_ram[0x20] = 0x29;
     expected = md.sound_cpu;
+    expected.ram_limit = 0;
     for (unsigned i = 0; i < 9; ++i)
         z80_step(&expected);
     genesis_z80_sync(&md, 135);
@@ -254,6 +291,7 @@ static void test_savestate(struct megadrive *md)
     assert(md->cpu.pc == pc && md->ram[75] == 0x81 && md->vram[5] == 0x93);
     assert(md->hint_pending);
     assert(md->sound_cpu.userdata == md && md->sound_cpu.pc == 0x1234);
+    assert(md->sound_cpu.mirrored_ram == md->z80_ram);
     assert(md->ym_timer_clocks[0] == timer_a && timer_a != 0);
     FILE *file = fopen(path, "ab");
     assert(file && fputc(0xff, file) != EOF && fclose(file) == 0);
@@ -317,6 +355,7 @@ int main(void)
     megadrive_reset(&md, &cartridge, GENESIS_REGION_EUROPE);
     assert(megadrive_read_byte(&md, 0xa10001) == 0xe1);
     assert(md.frame_cycles > 150000 && !md.cpu.stopped);
+    test_status_immediates();
     test_startup_bus(&md);
     test_z80_delay_loops(&cartridge);
     test_z80_and_ym(&md);

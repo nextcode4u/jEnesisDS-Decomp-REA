@@ -5,6 +5,7 @@
 #include <nds/ndstypes.h>
 #else
 #define ITCM_CODE
+#define DTCM_DATA
 #endif
 enum {
     CCR_C = 1, CCR_V = 2, CCR_Z = 4, CCR_N = 8, CCR_X = 16,
@@ -117,20 +118,18 @@ static void set_logic_flags(struct m68k *cpu, unsigned size, uint32_t value)
 
 static bool condition_true(uint16_t sr, unsigned condition)
 {
-    bool c = (sr & CCR_C) != 0, v = (sr & CCR_V) != 0;
-    bool z = (sr & CCR_Z) != 0, n = (sr & CCR_N) != 0;
-    bool base;
-    switch (condition >> 1) {
-    case 0: base = true; break;
-    case 1: base = !c && !z; break;
-    case 2: base = !c; break;
-    case 3: base = !z; break;
-    case 4: base = !v; break;
-    case 5: base = !n; break;
-    case 6: base = n == v; break;
-    default: base = !z && n == v; break;
-    }
-    return base != (bool)(condition & 1);
+    // A bit per NZVC state, indexed by the instruction's condition field.
+    static const uint16_t masks[16] DTCM_DATA = {
+        0xffff, 0x0000, // T, F
+        0x0505, 0xfafa, // HI, LS
+        0x5555, 0xaaaa, // CC, CS
+        0x0f0f, 0xf0f0, // NE, EQ
+        0x3333, 0xcccc, // VC, VS
+        0x00ff, 0xff00, // PL, MI
+        0xcc33, 0x33cc, // GE, LT
+        0x0c03, 0xf3fc, // GT, LE
+    };
+    return (masks[condition] >> (sr & 15)) & 1;
 }
 
 static ITCM_CODE bool address_operand(struct m68k *cpu, struct megadrive *md,
@@ -341,8 +340,32 @@ static unsigned store_multiple(struct m68k *cpu, struct megadrive *md, uint16_t 
     return cycles;
 }
 
+static unsigned immediate_status(struct m68k *cpu, struct megadrive *md, uint16_t op)
+{
+    bool whole_status = (op & 0x40) != 0;
+    if (whole_status && !(cpu->sr & SR_SUPERVISOR)) {
+        cpu->pc = cpu->instruction_address;
+        return enter_exception(cpu, md, 8, cpu->sr) ? 34 : 0;
+    }
+
+    uint16_t operand = fetch(cpu, md, 2);
+    uint16_t changed;
+    switch (op & 0xff00) {
+    case 0x0000: changed = cpu->sr | operand; break;
+    case 0x0200: changed = cpu->sr & operand; break;
+    default: changed = cpu->sr ^ operand; break;
+    }
+    if (whole_status)
+        set_status(cpu, changed);
+    else
+        cpu->sr = (cpu->sr & ~31) | (changed & 31);
+    return 20;
+}
+
 static unsigned immediate_logic(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
+    if ((op & 0xbf) == 0x3c)
+        return immediate_status(cpu, md, op);
     unsigned encoding = (op >> 6) & 3, mode = (op >> 3) & 7, reg = op & 7;
     if (encoding == 3 || mode == 1 || (mode == 7 && reg > 1))
         return 0;
@@ -387,6 +410,47 @@ static uint32_t arithmetic_flags(struct m68k *cpu, unsigned size, uint32_t left,
     if (!preserve_x)
         cpu->sr = (cpu->sr & ~CCR_X) | (carry ? CCR_X : 0);
     return result;
+}
+
+static unsigned extend_arithmetic(struct m68k *cpu, struct megadrive *md, uint16_t op)
+{
+    unsigned size = 1U << ((op >> 6) & 3);
+    unsigned src = op & 7, dst = (op >> 9) & 7;
+    bool memory = (op & 8) != 0, subtract = !(op & 0x4000);
+    uint32_t left = cpu->d[dst], right = cpu->d[src], address = 0;
+    if (memory) {
+        uint32_t source_address;
+        address_operand(cpu, md, 4, src, size, &source_address);
+        if (size != 1 && (source_address & 1))
+            return 0;
+        right = read_memory(md, source_address, size);
+        address_operand(cpu, md, 4, dst, size, &address);
+        if (size != 1 && (address & 1))
+            return 0;
+        left = read_memory(md, address, size);
+    }
+
+    unsigned extend = (cpu->sr & CCR_X) != 0;
+    uint32_t mask = size_mask(size), sign = (mask >> 1) + 1;
+    left &= mask;
+    right &= mask;
+    uint32_t result = (subtract ? left - right - extend : left + right + extend) & mask;
+    bool carry = subtract ? left < right || (extend && left == right) :
+                            result < left || (extend && result == left);
+    uint32_t overflow = (subtract ? left ^ right : ~(left ^ right)) & (left ^ result);
+    if (memory) {
+        if (!write_memory(md, address, size, result))
+            return 0;
+    } else {
+        set_data(cpu, dst, size, result);
+    }
+
+    uint16_t flags = (result & sign ? CCR_N : 0) |
+                     (result ? 0 : cpu->sr & CCR_Z) |
+                     (overflow & sign ? CCR_V : 0) |
+                     (carry ? CCR_X | CCR_C : 0);
+    cpu->sr = (cpu->sr & ~31) | flags;
+    return memory ? (size == 4 ? 30 : 18) : (size == 4 ? 8 : 4);
 }
 
 static unsigned quick_arithmetic(struct m68k *cpu, struct megadrive *md, uint16_t op)
@@ -711,6 +775,19 @@ static unsigned execute_misc(struct m68k *cpu, struct megadrive *md, uint16_t op
         set_logic_flags(cpu, 4, cpu->d[reg]);
         return 4;
     }
+    if ((op & 0xffc0) == 0x4840) {
+        unsigned mode = (op >> 3) & 7, reg = op & 7;
+        uint32_t address;
+        if (mode == 0 || mode == 1 || mode == 3 || mode == 4 ||
+            (mode == 7 && reg > 3) || !address_operand(cpu, md, mode, reg, 0, &address))
+            return 0;
+        cpu->a[7] -= 4;
+        if (!write_memory(md, cpu->a[7], 4, address))
+            return 0;
+        if (mode == 2)
+            return 12;
+        return (mode == 5 || (mode == 7 && (reg == 0 || reg == 2))) ? 16 : 20;
+    }
     if ((op & 0xffc0) == 0x40c0) {
         unsigned mode = (op >> 3) & 7, reg = op & 7;
         if (mode == 0) {
@@ -882,6 +959,8 @@ static unsigned execute(struct m68k *cpu, struct megadrive *md, uint16_t op)
         return data_alu(cpu, md, op);
     case 9:
     case 13:
+        if ((op & 0x130) == 0x100 && (op & 0xc0) != 0xc0)
+            return extend_arithmetic(cpu, md, op);
         return data_alu(cpu, md, op);
     case 14:
         return (op & 0xc0) != 0xc0 ? shift_register(cpu, op) : shift_memory(cpu, md, op);

@@ -30,6 +30,13 @@ static uint8_t detect_region(const char *region)
     }
 }
 
+void megadrive_reset_serial(struct megadrive *md)
+{
+    md->serial_tx[0] = md->serial_tx[1] = 0xff;
+    md->serial_tx[2] = 0xfb;
+    memset(md->serial_control, 0, sizeof(md->serial_control));
+}
+
 void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum genesis_region region)
 {
     memset(md, 0, sizeof(*md));
@@ -37,6 +44,7 @@ void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum ge
     md->rom_size = cart->size;
     md->z80_reset = true;
     genesis_z80_reset(md);
+    megadrive_reset_serial(md);
     for (unsigned i = 1; i < 8; i += 2)
         md->psg_registers[i] = 15;
     md->version = detect_region(cart->region);
@@ -189,6 +197,25 @@ static uint8_t read_port(const struct megadrive *md, unsigned port)
     return (output & direction) | (pins & ~direction);
 }
 
+static uint8_t read_serial(const struct megadrive *md, unsigned reg)
+{
+    unsigned port = reg / 3;
+    switch (reg % 3) {
+    case 0: return md->serial_tx[port];
+    case 1: return 0;
+    default: return md->serial_control[port];
+    }
+}
+
+static void write_serial(struct megadrive *md, unsigned reg, uint8_t value)
+{
+    unsigned port = reg / 3;
+    switch (reg % 3) {
+    case 0: md->serial_tx[port] = value; break;
+    case 2: md->serial_control[port] = value & 0xf8; break;
+    }
+}
+
 uint8_t megadrive_read_byte(struct megadrive *md, uint32_t address)
 {
     address &= 0xffffff;
@@ -204,6 +231,8 @@ uint8_t megadrive_read_byte(struct megadrive *md, uint32_t address)
     }
     if (address >= 0xa10002 && address <= 0xa10007)
         return read_port(md, (address - 0xa10002) >> 1);
+    if (address >= 0xa1000e && address <= 0xa1001f)
+        return read_serial(md, (address - 0xa1000e) >> 1);
     // The recovered I/O handler decodes the byte pair by masking bit zero.
     switch (address & 0xfffffe) {
     case 0xa10000:
@@ -239,6 +268,9 @@ uint16_t megadrive_read_word(struct megadrive *md, uint32_t address)
            megadrive_read_byte(md, address + 1);
 }
 
+static bool vdp_write_data(struct megadrive *md, uint16_t value);
+static bool vdp_write_control(struct megadrive *md, uint16_t value);
+
 bool megadrive_write_byte(struct megadrive *md, uint32_t address, uint8_t value)
 {
     address &= 0xffffff;
@@ -267,6 +299,10 @@ bool megadrive_write_byte(struct megadrive *md, uint32_t address, uint8_t value)
         md->port_direction[(address - 0xa10008) >> 1] = value;
         return true;
     }
+    if (address >= 0xa1000e && address <= 0xa1001f) {
+        write_serial(md, (address - 0xa1000e) >> 1, value);
+        return true;
+    }
     if (address == 0xa11100 || address == 0xa11200) {
         genesis_z80_sync(md, md->frame_cycle);
         if (address == 0xa11100)
@@ -277,6 +313,10 @@ bool megadrive_write_byte(struct megadrive *md, uint32_t address, uint8_t value)
             md->z80_reset = (value & 1) == 0;
         }
         return true;
+    }
+    if (address >= 0xc00000 && address <= 0xc00007) {
+        uint16_t word = (uint16_t)value * 0x101;
+        return (address & 4) ? vdp_write_control(md, word) : vdp_write_data(md, word);
     }
     if (address >= 0xc00011 && address <= 0xc00017 && (address & 1)) {
         if (value & 0x80)

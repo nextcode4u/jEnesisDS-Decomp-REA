@@ -46,21 +46,25 @@ static const uint8_t cyc_ddfd[256] = {4, 4, 4, 4, 4, 4, 4, 4, 4, 15, 4, 4, 4, 4,
 #define GET_BIT(n, val) (((val) >> (n)) & 1)
 
 static inline uint8_t rb(z80* const z, uint16_t addr) {
+  if (addr < z->ram_limit)
+    return z->mirrored_ram[addr & z->ram_mask];
   return z->read_byte(z->userdata, addr);
 }
 
 static inline void wb(z80* const z, uint16_t addr, uint8_t val) {
-  z->write_byte(z->userdata, addr, val);
+  if (addr < z->ram_limit)
+    z->mirrored_ram[addr & z->ram_mask] = val;
+  else
+    z->write_byte(z->userdata, addr, val);
 }
 
 static inline uint16_t rw(z80* const z, uint16_t addr) {
-  return (z->read_byte(z->userdata, addr + 1) << 8) |
-         z->read_byte(z->userdata, addr);
+  return (rb(z, addr + 1) << 8) | rb(z, addr);
 }
 
 static inline void ww(z80* const z, uint16_t addr, uint16_t val) {
-  z->write_byte(z->userdata, addr, val & 0xFF);
-  z->write_byte(z->userdata, addr + 1, val >> 8);
+  wb(z, addr, val & 0xFF);
+  wb(z, addr + 1, val >> 8);
 }
 
 static inline void pushw(z80* const z, uint16_t val) {
@@ -708,6 +712,9 @@ void z80_init(z80* const z) {
   z->port_in = NULL;
   z->port_out = NULL;
   z->userdata = NULL;
+  z->mirrored_ram = NULL;
+  z->ram_limit = 0;
+  z->ram_mask = 0;
 
   z->cyc = 0;
 
