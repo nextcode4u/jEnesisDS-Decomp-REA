@@ -1,8 +1,15 @@
 #include "megadrive.h"
 #include "cartridge.h"
 #include "vdp_render.h"
+#include "z80_bus.h"
 
 #include <string.h>
+
+#ifdef __NDS__
+#include <nds/ndstypes.h>
+#else
+#define ITCM_CODE
+#endif
 
 static uint8_t detect_region(const char *region)
 {
@@ -29,6 +36,7 @@ void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum ge
     md->rom = cart->data;
     md->rom_size = cart->size;
     md->z80_reset = true;
+    genesis_z80_reset(md);
     for (unsigned i = 1; i < 8; i += 2)
         md->psg_registers[i] = 15;
     md->version = detect_region(cart->region);
@@ -44,14 +52,13 @@ void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum ge
     m68k_reset(&md->cpu, md);
 }
 
-static unsigned run_cpu_until(struct megadrive *md, unsigned cycles, unsigned end)
+static ITCM_CODE __attribute__((noinline)) unsigned run_cpu_until(struct megadrive *md, unsigned cycles, unsigned end)
 {
     while (cycles < end && !md->cpu.stopped) {
         if ((md->vdp_registers[0] & 0x10) && md->hint_pending && (md->cpu.sr & 0x0700) < 0x0400) {
             unsigned elapsed = m68k_interrupt(&md->cpu, md, 4);
             if (elapsed) {
                 md->hint_pending = false;
-                md->ym_busy_cycles = md->ym_busy_cycles > elapsed ? md->ym_busy_cycles - elapsed : 0;
                 cycles += elapsed;
                 continue;
             }
@@ -65,15 +72,19 @@ static unsigned run_cpu_until(struct megadrive *md, unsigned cycles, unsigned en
             elapsed < end - cycles &&
             ((op & 0xfff8) == 0x51c8 || op == 0x66fa || op == 0x67fa))
             elapsed += m68k_skip_idle(&md->cpu, md, end - cycles - elapsed);
-        md->ym_busy_cycles = md->ym_busy_cycles > elapsed ? md->ym_busy_cycles - elapsed : 0;
         cycles += elapsed;
+        if (cycles - md->z80_synced_cycle >= 128)
+            genesis_z80_sync(md, cycles);
     }
+    genesis_z80_sync(md, cycles < end ? end : cycles);
     return cycles;
 }
 
 void megadrive_run_frame(struct megadrive *md)
 {
     unsigned cycles = md->cycle_carry;
+    md->z80_synced_cycle = 0;
+    md->frame_cycle = cycles;
     unsigned active_lines = (md->vdp_registers[1] & 8) ? 240 : 224;
     md->vblank = false;
     // Run to each counter expiration. Reload from R10 at the start of
@@ -86,10 +97,76 @@ void megadrive_run_frame(struct megadrive *md)
     }
     cycles = run_cpu_until(md, cycles, 3420 * active_lines / 7);
     md->vblank = true;
+    genesis_z80_vblank(md, cycles);
     if (!md->cpu.stopped && (md->vdp_registers[1] & 0x20))
         cycles += m68k_interrupt(&md->cpu, md, 6);
     cycles = run_cpu_until(md, cycles, md->frame_cycles);
     md->cycle_carry = cycles >= md->frame_cycles ? cycles - md->frame_cycles : 0;
+    md->frame_cycle = 0;
+}
+
+static unsigned ym_timer_period(const struct megadrive *md, unsigned timer)
+{
+    enum { MASTER_CLOCKS_PER_FM_SAMPLE = 7 * 144 };
+    const uint8_t *regs = md->ym_registers[0];
+    if (timer == 0) {
+        unsigned value = (unsigned)regs[0x24] << 2 | (regs[0x25] & 3);
+        return (1024 - value) * MASTER_CLOCKS_PER_FM_SAMPLE;
+    }
+    return (256 - regs[0x26]) * 16 * MASTER_CLOCKS_PER_FM_SAMPLE;
+}
+
+void megadrive_ym_advance(struct megadrive *md, unsigned master_clocks)
+{
+    unsigned m68k_cycles = master_clocks / 7;
+    md->ym_busy_cycles = m68k_cycles < md->ym_busy_cycles ?
+                         md->ym_busy_cycles - m68k_cycles : 0;
+    uint8_t mode = md->ym_registers[0][0x27];
+    if (!(mode & 3))
+        return;
+    for (unsigned timer = 0; timer < 2; ++timer) {
+        if (!(mode & (1 << timer)))
+            continue;
+        uint32_t *remaining = &md->ym_timer_clocks[timer];
+        if (master_clocks < *remaining) {
+            *remaining -= master_clocks;
+        } else {
+            if (mode & (4 << timer))
+                md->ym_timer_flags |= 1 << timer;
+            unsigned period = ym_timer_period(md, timer);
+            unsigned overrun = master_clocks - *remaining;
+            *remaining = period - (overrun < period ? overrun : overrun % period);
+        }
+    }
+}
+
+uint8_t megadrive_ym_status(const struct megadrive *md)
+{
+    return (md->ym_busy_cycles ? 0x80 : 0) | md->ym_timer_flags;
+}
+
+void megadrive_ym_write(struct megadrive *md, unsigned port, uint8_t data)
+{
+    unsigned bank = port >> 1;
+    if (!(port & 1)) {
+        md->ym_address[bank] = data;
+        return;
+    }
+
+    unsigned reg = md->ym_address[bank];
+    if (!bank && reg == 0x27) {
+        uint8_t prior = md->ym_registers[0][reg];
+        for (unsigned timer = 0; timer < 2; ++timer) {
+            unsigned running = (data >> timer) & 1;
+            if (!running)
+                md->ym_timer_clocks[timer] = 0;
+            else if (!(prior & (1 << timer)))
+                md->ym_timer_clocks[timer] = ym_timer_period(md, timer);
+        }
+        md->ym_timer_flags &= ~(data >> 4 & 3);
+    }
+    md->ym_registers[bank][reg] = data;
+    md->ym_busy_cycles = 32;
 }
 
 uint16_t megadrive_backdrop(const struct megadrive *md)
@@ -112,7 +189,7 @@ static uint8_t read_port(const struct megadrive *md, unsigned port)
     return (output & direction) | (pins & ~direction);
 }
 
-uint8_t megadrive_read_byte(const struct megadrive *md, uint32_t address)
+uint8_t megadrive_read_byte(struct megadrive *md, uint32_t address)
 {
     address &= 0xffffff;
     if (address < md->rom_size)
@@ -121,8 +198,10 @@ uint8_t megadrive_read_byte(const struct megadrive *md, uint32_t address)
         return md->ram[address & 0xffff];
     if (address >= 0xa00000 && address < 0xa04000 && md->z80_bus_requested)
         return md->z80_ram[address & 0x1fff];
-    if (address >= 0xa04000 && address <= 0xa04003 && md->z80_bus_requested)
-        return md->ym_busy_cycles ? 0x80 : 0;
+    if (address >= 0xa04000 && address < 0xa06000 && md->z80_bus_requested) {
+        genesis_z80_sync(md, md->frame_cycle);
+        return megadrive_ym_status(md);
+    }
     if (address >= 0xa10002 && address <= 0xa10007)
         return read_port(md, (address - 0xa10002) >> 1);
     // The recovered I/O handler decodes the byte pair by masking bit zero.
@@ -171,14 +250,13 @@ bool megadrive_write_byte(struct megadrive *md, uint32_t address, uint8_t value)
         md->z80_ram[address & 0x1fff] = value;
         return true;
     }
-    if (address >= 0xa04000 && address <= 0xa04003 && md->z80_bus_requested) {
-        unsigned bank = (address >> 1) & 1;
-        if (address & 1) {
-            md->ym_registers[bank][md->ym_address[bank]] = value;
-            md->ym_busy_cycles = 32;
-        } else {
-            md->ym_address[bank] = value;
-        }
+    if (address >= 0xa04000 && address < 0xa06000 && md->z80_bus_requested) {
+        genesis_z80_sync(md, md->frame_cycle);
+        megadrive_ym_write(md, address & 3, value);
+        return true;
+    }
+    if (address >= 0xa06000 && address < 0xa06100 && md->z80_bus_requested) {
+        md->z80_bank = md->z80_bank >> 1 | (value & 1) << 8;
         return true;
     }
     if (address >= 0xa10002 && address <= 0xa10007) {
@@ -190,10 +268,14 @@ bool megadrive_write_byte(struct megadrive *md, uint32_t address, uint8_t value)
         return true;
     }
     if (address == 0xa11100 || address == 0xa11200) {
+        genesis_z80_sync(md, md->frame_cycle);
         if (address == 0xa11100)
             md->z80_bus_requested = (value & 1) != 0;
-        else
+        else {
+            if (!md->z80_reset && !(value & 1))
+                genesis_z80_reset(md);
             md->z80_reset = (value & 1) == 0;
+        }
         return true;
     }
     if (address >= 0xc00011 && address <= 0xc00017 && (address & 1)) {

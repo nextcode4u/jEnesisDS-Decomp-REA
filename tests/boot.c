@@ -3,6 +3,7 @@
 #include "psg.h"
 #include "savestate.h"
 #include "vdp_render.h"
+#include "z80_bus.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -74,6 +75,68 @@ static void test_startup_bus(struct megadrive *md)
     assert(megadrive_read_byte(md, 0xa10003) == 0x7b);
     assert(megadrive_write_byte(md, 0xa10003, 0));
     assert(megadrive_read_byte(md, 0xa10003) == 0x23);
+}
+
+static void test_z80_delay_loops(const struct cartridge *cart)
+{
+    static struct megadrive md;
+    megadrive_reset(&md, cart, GENESIS_REGION_AUTO);
+    md.z80_reset = false;
+    md.z80_ram[0] = 0x10;
+    md.z80_ram[1] = 0xfe;
+    md.sound_cpu.b = 12;
+    md.sound_cpu.r = 0xfd;
+    z80 expected = md.sound_cpu;
+    for (unsigned i = 0; i < 7; ++i)
+        z80_step(&expected);
+    genesis_z80_sync(&md, 195);
+    assert(md.sound_cpu.b == expected.b && md.sound_cpu.pc == expected.pc);
+    assert(md.sound_cpu.cyc == expected.cyc && md.sound_cpu.r == expected.r);
+    assert(md.sound_cpu.mem_ptr == expected.mem_ptr);
+
+    genesis_z80_reset(&md);
+    md.z80_synced_cycle = 0;
+    const uint8_t poll[] = {0x7e, 0xb7, 0xf2, 0, 0};
+    memcpy(md.z80_ram, poll, sizeof(poll));
+    md.sound_cpu.l = 0x20;
+    md.z80_ram[0x20] = 0x29;
+    expected = md.sound_cpu;
+    for (unsigned i = 0; i < 9; ++i)
+        z80_step(&expected);
+    genesis_z80_sync(&md, 135);
+    assert(md.sound_cpu.a == expected.a && md.sound_cpu.pc == expected.pc);
+    assert(md.sound_cpu.cyc == expected.cyc && md.sound_cpu.r == expected.r);
+    assert(md.sound_cpu.mem_ptr == expected.mem_ptr && md.sound_cpu.pf == expected.pf);
+    assert(md.sound_cpu.xf == expected.xf && md.sound_cpu.yf == expected.yf);
+    assert(md.sound_cpu.sf == expected.sf && md.sound_cpu.zf == expected.zf);
+}
+
+static void test_z80_and_ym(struct megadrive *md)
+{
+    static const uint8_t program[] = {
+        0x3e, 0x24,                    // ld a,$24
+        0x32, 0x00, 0x40,              // ld ($4000),a
+        0x3e, 0xff,                    // ld a,$ff
+        0x32, 0x01, 0x40,              // ld ($4001),a
+        0x76,                          // halt
+    };
+    memcpy(md->z80_ram, program, sizeof(program));
+    genesis_z80_sync(md, 200);
+    assert(md->sound_cpu.halted && md->ym_registers[0][0x24] == 0xff);
+    assert(megadrive_write_byte(md, 0xa11100, 1));
+    assert(megadrive_write_byte(md, 0xa04000, 0x25));
+    assert(megadrive_write_byte(md, 0xa04001, 3));
+    assert(megadrive_write_byte(md, 0xa04000, 0x27));
+    assert(megadrive_write_byte(md, 0xa04001, 5));
+    assert(megadrive_read_byte(md, 0xa04000) == 0x80);
+    megadrive_ym_advance(md, 1007);
+    assert(megadrive_read_byte(md, 0xa04000) == 0);
+    megadrive_ym_advance(md, 1);
+    assert(megadrive_read_byte(md, 0xa04000) == 1);
+    assert(megadrive_write_byte(md, 0xa04001, 0x15));
+    assert(megadrive_read_byte(md, 0xa04000) == 0x80);
+    assert(megadrive_write_byte(md, 0xa04001, 0));
+    assert(megadrive_write_byte(md, 0xa11100, 0));
 }
 
 static void test_vdp_dma(struct megadrive *md)
@@ -173,16 +236,25 @@ static void test_savestate(struct megadrive *md)
     md->ram[75] = 0x81;
     md->vram[5] = 0x93;
     md->hint_pending = true;
+    md->sound_cpu.pc = 0x1234;
+    md->ym_address[0] = 0x27;
+    megadrive_ym_write(md, 1, 5);
+    megadrive_ym_advance(md, 90);
+    const uint32_t timer_a = md->ym_timer_clocks[0];
     assert(savestate_save(path, identity, md));
     assert(savestate_exists(path));
     md->ram[75] = md->vram[5] = 0;
     md->cpu.pc = 0;
     md->hint_pending = false;
+    md->sound_cpu.pc = 0;
+    md->ym_timer_clocks[0] = 0;
     assert(!savestate_load(path, identity ^ 1, md));
     assert(md->cpu.pc == 0 && md->ram[75] == 0);
     assert(savestate_load(path, identity, md));
     assert(md->cpu.pc == pc && md->ram[75] == 0x81 && md->vram[5] == 0x93);
     assert(md->hint_pending);
+    assert(md->sound_cpu.userdata == md && md->sound_cpu.pc == 0x1234);
+    assert(md->ym_timer_clocks[0] == timer_a && timer_a != 0);
     FILE *file = fopen(path, "ab");
     assert(file && fputc(0xff, file) != EOF && fclose(file) == 0);
     assert(!savestate_load(path, identity, md));
@@ -246,6 +318,8 @@ int main(void)
     assert(megadrive_read_byte(&md, 0xa10001) == 0xe1);
     assert(md.frame_cycles > 150000 && !md.cpu.stopped);
     test_startup_bus(&md);
+    test_z80_delay_loops(&cartridge);
+    test_z80_and_ym(&md);
     test_vdp_dma(&md);
     test_vdp_render(&md);
 

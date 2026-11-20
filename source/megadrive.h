@@ -2,6 +2,7 @@
 #define JENESIS_MEGADRIVE_H
 
 #include "m68k.h"
+#include "third_party/z80/z80.h"
 
 #include <stddef.h>
 
@@ -32,6 +33,12 @@ struct megadrive {
     size_t rom_size;
     uint8_t ram[0x10000];
     uint8_t z80_ram[0x2000];
+    z80 sound_cpu;
+    uint16_t z80_bank;
+    uint8_t z80_clock_phase;
+    uint8_t z80_irq_clocks;
+    uint32_t z80_instruction_debt;
+    unsigned z80_synced_cycle;
     bool z80_bus_requested;
     bool z80_reset;
     uint8_t port_data[3];
@@ -54,6 +61,8 @@ struct megadrive {
     uint8_t ym_address[2];
     uint8_t ym_registers[2][256];
     unsigned ym_busy_cycles;
+    uint32_t ym_timer_clocks[2];
+    uint8_t ym_timer_flags;
     uint8_t version;
     unsigned frame_cycles;
     unsigned cycle_carry;
@@ -63,7 +72,7 @@ struct megadrive {
 void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum genesis_region region);
 void megadrive_run_frame(struct megadrive *md);
 uint16_t megadrive_backdrop(const struct megadrive *md);
-uint8_t megadrive_read_byte(const struct megadrive *md, uint32_t address);
+uint8_t megadrive_read_byte(struct megadrive *md, uint32_t address);
 uint16_t megadrive_read_word(struct megadrive *md, uint32_t address);
 bool megadrive_write_byte(struct megadrive *md, uint32_t address, uint8_t value);
 bool megadrive_write_word(struct megadrive *md, uint32_t address, uint16_t value);

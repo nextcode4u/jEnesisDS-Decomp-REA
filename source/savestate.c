@@ -1,5 +1,6 @@
 #include "savestate.h"
 #include "megadrive.h"
+#include "z80_bus.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,7 +8,7 @@
 
 enum { FNV_PRIME = 16777619 };
 static const uint32_t fnv_start = UINT32_C(2166136261);
-static const uint8_t magic[4] = {'J', 'S', 'C', 2};
+static const uint8_t magic[4] = {'J', 'S', 'C', 4};
 
 struct state_io {
     FILE *file;
@@ -92,6 +93,37 @@ static void transfer_state(struct state_io *io, struct megadrive *md, unsigned v
         SCALAR(md->hint_pending);
     else
         md->hint_pending = false;
+    if (version >= 3) {
+        z80 *cpu = &md->sound_cpu;
+        SCALAR(md->z80_bank);
+        SCALAR(md->z80_clock_phase);
+        SCALAR(md->z80_irq_clocks);
+        SCALAR(md->z80_instruction_debt);
+        SCALAR(cpu->cyc);
+        SCALAR(cpu->pc); SCALAR(cpu->sp); SCALAR(cpu->ix); SCALAR(cpu->iy);
+        SCALAR(cpu->mem_ptr);
+        SCALAR(cpu->a); SCALAR(cpu->b); SCALAR(cpu->c); SCALAR(cpu->d);
+        SCALAR(cpu->e); SCALAR(cpu->h); SCALAR(cpu->l);
+        SCALAR(cpu->a_); SCALAR(cpu->b_); SCALAR(cpu->c_); SCALAR(cpu->d_);
+        SCALAR(cpu->e_); SCALAR(cpu->h_); SCALAR(cpu->l_); SCALAR(cpu->f_);
+        SCALAR(cpu->i); SCALAR(cpu->r);
+        SCALAR(cpu->sf); SCALAR(cpu->zf); SCALAR(cpu->yf); SCALAR(cpu->hf);
+        SCALAR(cpu->xf); SCALAR(cpu->pf); SCALAR(cpu->nf); SCALAR(cpu->cf);
+        SCALAR(cpu->iff_delay);
+        SCALAR(cpu->interrupt_mode);
+        SCALAR(cpu->int_data);
+        SCALAR(cpu->iff1); SCALAR(cpu->iff2); SCALAR(cpu->halted);
+        SCALAR(cpu->int_pending); SCALAR(cpu->nmi_pending);
+    }
+    if (version >= 4) {
+        SCALAR(md->ym_timer_flags);
+        SCALAR(md->ym_timer_clocks[0]);
+        SCALAR(md->ym_timer_clocks[1]);
+    } else {
+        md->ym_timer_flags = 0;
+        memset(md->ym_timer_clocks, 0, sizeof(md->ym_timer_clocks));
+        md->ym_registers[0][0x27] &= ~3;
+    }
 #undef SCALAR
 #undef ARRAY_BYTES
 }
@@ -105,7 +137,7 @@ static bool transfer_file(FILE *file, uint32_t identity, struct megadrive *md, b
     uint32_t rom_size = transfer_u32(&io, md->rom_size);
     uint32_t stored_identity = transfer_u32(&io, identity);
     if (!io.ok || memcmp(header, magic, sizeof(header) - 1) ||
-        (header[3] != 1 && header[3] != magic[3]) ||
+        (header[3] < 1 || header[3] > magic[3]) ||
         rom_size != md->rom_size || stored_identity != identity)
         return false;
     transfer_state(&io, md, header[3]);
@@ -190,6 +222,7 @@ bool savestate_load(const char *path, uint32_t identity, struct megadrive *md)
         return false;
     loaded->rom = md->rom;
     loaded->rom_size = md->rom_size;
+    genesis_z80_reset(loaded);
     bool ok = load_file(path, identity, loaded);
     if (!ok) {
         char *backup = with_suffix(path, ".bak");
@@ -198,9 +231,15 @@ bool savestate_load(const char *path, uint32_t identity, struct megadrive *md)
     }
     if (ok && loaded->psg_latch < 8 &&
         (loaded->frame_cycles == 3420 * 262 / 7 || loaded->frame_cycles == 3420 * 313 / 7) &&
-        loaded->cycle_carry < loaded->frame_cycles) {
+        loaded->cycle_carry < loaded->frame_cycles &&
+        loaded->z80_bank <= 0x1ff && loaded->z80_clock_phase < 15 &&
+        loaded->z80_irq_clocks <= 32 && loaded->ym_timer_flags <= 3 &&
+        loaded->ym_timer_clocks[0] <= 1024 * 144 * 7 &&
+        loaded->ym_timer_clocks[1] <= 256 * 16 * 144 * 7 &&
+        loaded->sound_cpu.interrupt_mode <= 2 && loaded->sound_cpu.iff_delay <= 2) {
         loaded->video_revision = md->video_revision + 1;
         *md = *loaded;
+        genesis_z80_bind(md);
     } else {
         ok = false;
     }

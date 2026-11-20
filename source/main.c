@@ -109,6 +109,7 @@ struct application {
     uint32_t save_identity;
     uint16_t sound_generation;
     unsigned save_slot;
+    unsigned measured_fps;
     int save_line;
     bool slots[2];
     enum frontend_view view;
@@ -211,7 +212,7 @@ static void draw_browser(const struct browser *browser)
 {
     if (!browser->count) {
         frontend_cursor(2, MENU_FIRST_ROW);
-        fputs("No ROMs in this folder", stdout);
+        frontend_write("No ROMs in this folder");
     }
     for (size_t row = 0; row < MENU_ROW_COUNT; ++row) {
         size_t index = browser->first_visible + row;
@@ -219,75 +220,68 @@ static void draw_browser(const struct browser *browser)
             break;
         const struct entry *entry = &browser->entries[index];
         frontend_cursor(1, MENU_FIRST_ROW + (int)row);
-        printf("%s%.28s", entry->directory ? "/" : "", entry->name);
+        frontend_printf("%s%.28s", entry->directory ? "/" : "", entry->name);
     }
-    frontend_cursor(2, 21);
-    fputs("A Open      B Parent folder", stdout);
 }
 
 static void draw_cartridge(const struct application *app)
 {
     const struct m68k *cpu = &app->md.cpu;
-    frontend_cursor(2, 4);
-    fputs(cpu->stopped ? "Cartridge Loaded" :
-          app->view == VIEW_PAUSED ? "Paused" : "Now Playing", stdout);
-    frontend_cursor(2, 6);
-    printf("%.28s", app->filename);
-    frontend_cursor(2, 7);
-    printf("%.28s", app->cart.international_title);
-    frontend_cursor(2, 9);
-    printf("ROM Size      %lu", (unsigned long)app->cart.size);
-    frontend_cursor(2, 10);
-    printf("ROM Checksum  %04X", (unsigned)app->cart.header_checksum);
-    frontend_cursor(2, 11);
-    printf("ROM Type      %s", app->cart.format == CARTRIDGE_SMD ? "SMD" : "BIN");
+    frontend_cursor(1, 6);
+    frontend_write(cpu->stopped ? "Cartridge Loaded" :
+                   app->view == VIEW_PAUSED ? "-= PAUSED =-" : "Now Playing:");
+    frontend_cursor(1, 7);
+    frontend_printf("%.28s", app->filename);
+    frontend_cursor(1, 9);
+    frontend_printf("Rom Size:     %lu", (unsigned long)app->cart.size);
+    frontend_cursor(1, 10);
+    frontend_printf("Rom Checksum: %04X", (unsigned)app->cart.header_checksum);
+    frontend_cursor(1, 11);
+    frontend_printf("Rom Type:     %s", app->cart.format == CARTRIDGE_SMD ? "SMD" : "BIN");
+    frontend_cursor(1, 13);
+    frontend_write("______________________________");
     if (cpu->stopped) {
-        frontend_cursor(2, 14);
-        printf("Stopped at %06lX (%04X)", (unsigned long)(cpu->instruction_address & 0xffffff),
-               (unsigned)cpu->opcode);
-    }
-    if (!cpu->stopped) {
-        frontend_cursor(2, 18);
-        fputs(app->view == VIEW_PAUSED ? "Touch or SELECT to resume" : "Touch the panel to pause", stdout);
+        frontend_cursor(1, 16);
+        frontend_printf("Stopped at %06lX (%04X)", (unsigned long)(cpu->instruction_address & 0xffffff),
+                        (unsigned)cpu->opcode);
+    } else if (app->view != VIEW_SAVE) {
+        frontend_cursor(4, 16);
+        frontend_write(app->view == VIEW_PAUSED ? "Continue with [SELECT]" : "[SELECT]:Open File Menu");
+        frontend_cursor(5, 17);
+        frontend_write(app->view == VIEW_PAUSED ? "or TOUCH BOTTOM" : "TOUCH screen to pause");
     }
 
-    frontend_cursor(2, 21);
-    fputs((app->md.version & 0x40) ? "PAL" : "NTSC", stdout);
-    frontend_cursor(15, 21);
-    fputs("SAVE", stdout);
-    frontend_cursor(20, 21);
-    fputs("[1][2]", stdout);
+    unsigned region = (app->md.version & 0x40) ? 2 : (app->md.version & 0x80) ? 1 : 0;
+    frontend_draw_indicators(region, app->slots);
+    frontend_draw_fps(app->measured_fps);
 }
 
 static void draw_settings(enum genesis_region region)
 {
     static const char *const regions[] = {"Auto", "USA", "Japan", "Europe"};
     frontend_cursor(2, 5);
-    fputs("Configuration", stdout);
+    frontend_write("Configuration");
     frontend_cursor(2, 8);
-    printf("Country          %s", regions[region]);
+    frontend_printf("Country          %s", regions[region]);
     frontend_cursor(2, 11);
-    fputs("Applies to the next ROM", stdout);
+    frontend_write("Applies to the next ROM");
     frontend_cursor(2, 21);
-    fputs("A Change       SELECT Back", stdout);
+    frontend_write("A Change       SELECT Back");
 }
 
 static void draw_save_menu(const struct application *app)
 {
-    frontend_cursor(2, 6);
-    printf("Savestate Slot %u", app->save_slot + 1);
-    frontend_cursor(2, 8);
-    printf("%.28s", app->filename);
+    draw_cartridge(app);
+    frontend_cursor(8, 14);
+    frontend_printf("Savestate Slot %u", app->save_slot + 1);
     if (app->slots[app->save_slot]) {
-        frontend_cursor(2, 16);
-        fputs("LOAD", stdout);
+        frontend_cursor(14, SAVE_LOAD_ROW);
+        frontend_write("LOAD");
     }
-    frontend_cursor(2, 17);
-    fputs("SAVE", stdout);
-    frontend_cursor(2, 18);
-    fputs("CANCEL", stdout);
-    frontend_cursor(2, 21);
-    fputs("A Choose       SELECT Back", stdout);
+    frontend_cursor(14, SAVE_WRITE_ROW);
+    frontend_write("SAVE");
+    frontend_cursor(13, SAVE_CANCEL_ROW);
+    frontend_write("CANCEL");
 }
 
 static void draw_screen(const struct application *app, const char *message)
@@ -299,21 +293,24 @@ static void draw_screen(const struct application *app, const char *message)
         selected = MENU_FIRST_ROW + (int)(browser->selected - browser->first_visible);
     if (app->view == VIEW_SETTINGS)
         selected = 8;
+    if (app->view == VIEW_CARTRIDGE || app->view == VIEW_PAUSED)
+        selected = 7;
     if (app->view == VIEW_SAVE)
         selected = app->save_line;
 
-    frontend_draw(app->view, selected);
+    frontend_draw(selected);
     switch (app->view) {
     case VIEW_BROWSER:
         draw_browser(browser);
-        if (!message && app->cart.data)
-            message = "SELECT  Continue";
+        if (!message && app->cart.data) {
+            frontend_cursor(1, 21);
+            frontend_write("[A]     : Start Game");
+            message = "[SELECT]: Continue";
+        }
         break;
     case VIEW_CARTRIDGE:
     case VIEW_PAUSED:
         draw_cartridge(app);
-        if (!message)
-            message = app->view == VIEW_PAUSED ? "SELECT  Continue" : "SELECT  ROM browser";
         break;
     case VIEW_SETTINGS:
         draw_settings(app->region);
@@ -323,14 +320,15 @@ static void draw_screen(const struct application *app, const char *message)
         break;
     }
     if (message) {
-        frontend_cursor(2, 22);
-        printf("%.28s", message);
+        int row = app->view == VIEW_CARTRIDGE || app->view == VIEW_PAUSED ? 19 : 22;
+        frontend_cursor(1, row);
+        frontend_printf("%.28s", message);
     }
     if (app->view == VIEW_BROWSER && browser->count && !has_notice) {
         unsigned current = browser->first_visible / MENU_ROW_COUNT + 1;
         unsigned total = (browser->count - 1) / MENU_ROW_COUNT + 1;
-        frontend_cursor(20, 22);
-        printf("%u / %u", current, total);
+        frontend_cursor(26, 21);
+        frontend_printf("%u / %u", current, total);
     }
 }
 
@@ -414,16 +412,16 @@ static void change_selection(struct browser *browser, uint32_t keys)
 
 static bool handle_save_menu(struct application *app, uint32_t keys, const char **message)
 {
-    int first = app->slots[app->save_slot] ? 16 : 17;
+    int first = app->slots[app->save_slot] ? SAVE_LOAD_ROW : SAVE_WRITE_ROW;
     if (keys & (KEY_SELECT | KEY_B)) {
         app->view = app->before_save;
     } else if ((keys & KEY_UP) && app->save_line > first) {
         --app->save_line;
-    } else if ((keys & KEY_DOWN) && app->save_line < 18) {
+    } else if ((keys & KEY_DOWN) && app->save_line < SAVE_CANCEL_ROW) {
         ++app->save_line;
     } else if (keys & KEY_A) {
         select_save_path(app, app->save_slot);
-        if (app->save_line == 16) {
+        if (app->save_line == SAVE_LOAD_ROW) {
             bool loaded = savestate_load(app->save_path, app->save_identity, &app->md);
             if (loaded) {
                 ++app->sound_generation;
@@ -431,7 +429,7 @@ static bool handle_save_menu(struct application *app, uint32_t keys, const char 
                 draw_game_frame(&app->md);
             }
             *message = loaded ? "State loaded" : "Unable to load state";
-        } else if (app->save_line == 17) {
+        } else if (app->save_line == SAVE_WRITE_ROW) {
             bool saved = savestate_save(app->save_path, app->save_identity, &app->md);
             if (saved)
                 app->slots[app->save_slot] = true;
@@ -497,7 +495,7 @@ static bool handle_menu(struct application *app, uint32_t keys, const touchPosit
         } else {
             app->before_save = app->view;
             app->save_slot = touch->px < 184 ? 0 : 1;
-            app->save_line = 18;
+            app->save_line = SAVE_CANCEL_ROW;
             app->view = VIEW_SAVE;
         }
     } else if (!app->md.cpu.stopped) {
@@ -540,11 +538,11 @@ int main(void)
     init_game_display();
     irqSet(IRQ_VBLANK, video_vblank);
     if (!fatInitDefault()) {
-        frontend_draw(VIEW_BROWSER, -1);
+        frontend_draw(-1);
         frontend_cursor(2, MENU_FIRST_ROW);
-        fputs("Could not mount the SD card.", stdout);
+        frontend_write("Could not mount the SD card.");
         frontend_cursor(2, MENU_FIRST_ROW + 2);
-        fputs("Check the DLDI driver.", stdout);
+        frontend_write("Check the DLDI driver.");
         for (;;)
             swiWaitForVBlank();
     }
@@ -556,7 +554,10 @@ int main(void)
     // runs at about 49.70 Hz, so present it on a subset of DS VBlanks.
     enum { DS_REFRESH = 5983, PAL_REFRESH = 4970 };
     unsigned pal_phase = DS_REFRESH - PAL_REFRESH;
+    bool was_running = false;
     uint32_t observed_vblank = vblank_count;
+    unsigned measurement_vblanks = 0;
+    unsigned measurement_frames = 0;
     for (;;) {
         if (observed_vblank == vblank_count)
             swiWaitForVBlank();
@@ -573,18 +574,40 @@ int main(void)
             draw_screen(&app, message);
         bool running = app.view == VIEW_CARTRIDGE && !app.md.cpu.stopped;
         bool pal = running && (app.md.version & 0x40);
-        if (pal)
-            pal_phase += PAL_REFRESH * (elapsed_vblanks > 2 ? 2 : elapsed_vblanks);
-        else
+        unsigned frame_budget = was_running && elapsed_vblanks >= 2 ? 2 : 1;
+        if (!running || !was_running)
             pal_phase = DS_REFRESH - PAL_REFRESH;
-        if (running && (!pal || pal_phase >= DS_REFRESH)) {
-            if (pal)
-                pal_phase %= DS_REFRESH;
+        if (pal) {
+            pal_phase += PAL_REFRESH * frame_budget;
+            frame_budget = pal_phase / DS_REFRESH;
+            pal_phase %= DS_REFRESH;
+        }
+        // When one VBlank was missed, advance both guest frames but only
+        // display the newest one. Bound the work so input stays responsive.
+        if (running && frame_budget) {
             app.md.pad1_pressed = genesis_buttons(keysHeld());
-            megadrive_run_frame(&app.md);
+            for (unsigned frame = 0; frame < frame_budget && !app.md.cpu.stopped; ++frame) {
+                megadrive_run_frame(&app.md);
+                ++measurement_frames;
+                send_audio(&app);
+            }
             draw_game_frame(&app.md);
             if (app.md.cpu.stopped)
                 draw_screen(&app, NULL);
+        }
+        was_running = running && !app.md.cpu.stopped;
+        if (running && !app.md.cpu.stopped) {
+            measurement_vblanks += elapsed_vblanks;
+            if (measurement_vblanks >= 60) {
+                app.measured_fps = (60 * measurement_frames + measurement_vblanks / 2) /
+                                   measurement_vblanks;
+                frontend_draw_fps(app.measured_fps);
+                measurement_frames = 0;
+                measurement_vblanks = 0;
+            }
+        } else {
+            measurement_frames = 0;
+            measurement_vblanks = 0;
         }
         send_audio(&app);
     }
