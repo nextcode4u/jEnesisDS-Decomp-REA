@@ -1,8 +1,8 @@
-/* ARM9 palette write paths — grouped REA pseudocode.
+/* ARM9 memory writes — grouped REA pseudocode.
  * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x02004c50  write_display_palette
+// 0x02004c50  write_z80_mapped_byte
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -1119,7 +1119,7 @@ switchD_02005bc0_caseD_1:
 }
 
 
-// 0x02004ce4  write_display_palette
+// 0x02004ce4  write_z80_mapped_little_endian_word
 
 /* WARNING: Removing unreachable block (ram,0x02009614) */
 /* WARNING: Removing unreachable block (ram,0x02009628) */

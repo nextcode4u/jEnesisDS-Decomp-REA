@@ -1,8 +1,8 @@
 /* ARM9 core — grouped REA pseudocode.
- * Use the processor functions.tsv for names, descriptions and source hashes.
+ * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x01002cd0  helper_for_run_z80_cycle_budget
+// 0x01002cd0  dispatch_z80_mapped_read_by_address_page
 
 void FUN_01002cd0(uint param_1)
 
@@ -16,7 +16,7 @@ void FUN_01002cd0(uint param_1)
 }
 
 
-// 0x01002cec  helper_for_run_z80_cycle_budget
+// 0x01002cec  dispatch_z80_mapped_read_from_r10
 
 void FUN_01002cec(void)
 
@@ -31,7 +31,7 @@ void FUN_01002cec(void)
 }
 
 
-// 0x01002cfc  helper_for_run_z80_cycle_budget
+// 0x01002cfc  bridge_to_z80_mapped_word_read
 
 void FUN_01002cfc(void)
 
@@ -41,7 +41,7 @@ void FUN_01002cfc(void)
 }
 
 
-// 0x01002d10  helper_for_run_z80_cycle_budget
+// 0x01002d10  route_z80_mapped_byte_write
 
 void FUN_01002d10(int param_1)
 
@@ -55,7 +55,7 @@ void FUN_01002d10(int param_1)
 }
 
 
-// 0x01002d2c  helper_for_run_z80_cycle_budget
+// 0x01002d2c  route_z80_mapped_byte_write_from_r10
 
 void FUN_01002d2c(void)
 
@@ -71,7 +71,7 @@ void FUN_01002d2c(void)
 }
 
 
-// 0x02000588  helper_calls_run_z80_cycle_budget
+// 0x02000588  run_remaining_z80_cycles
 
 void FUN_02000588(void)
 
@@ -102,7 +102,7 @@ LAB_02000634:
 }
 
 
-// 0x020006b8  helper_calls_run_z80_cycle_budget
+// 0x020006b8  accrue_z80_cycles_for_scanline
 
 void FUN_020006b8(void)
 

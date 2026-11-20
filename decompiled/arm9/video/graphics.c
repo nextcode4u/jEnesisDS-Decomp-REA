@@ -64,122 +64,6 @@ void FUN_020073f0(void)
 }
 
 
-// 0x020074b8  graphics_iterate_and_store_values
-
-uint FUN_020074b8(int param_1,int param_2)
-
-{
-  ushort uVar1;
-  int iVar2;
-  uint uVar3;
-  int iVar4;
-  int iVar5;
-  uint uVar6;
-  uint uVar7;
-  
-  iVar5 = param_1 + param_2 * 0x800;
-  uVar1 = (&DAT_020993cc)[iVar5];
-  if ((uVar1 & 0x8000) == 0) {
-    uVar3 = (uint)(ushort)(&DAT_0209c3cc)[param_2];
-    if (0x3fe < uVar3) {
-      uVar3 = 1;
-      (&DAT_0209c3d4)[param_2] = 1;
-      (&DAT_0209c3cc)[param_2] = 1;
-    }
-    uVar7 = uVar3 | uVar1 | 0x8000;
-    uVar1 = (ushort)uVar7;
-    (&DAT_0209c3cc)[param_2] = (short)uVar3 + 1;
-    (&DAT_020993cc)[iVar5] = uVar1 & 0xdfff;
-    iVar2 = DAT_0b003648;
-    if ((uVar7 & 0x4000) != 0) {
-      iVar4 = *(int *)(&DAT_0208e590 + param_2 * 4);
-      (&DAT_020993cc)[iVar5] = uVar1 & 0x9fff;
-      uVar7 = 0;
-      do {
-        iVar5 = uVar7 * 2;
-        uVar6 = uVar7 ^ 1;
-        uVar7 = uVar7 + 1;
-        *(undefined2 *)(uVar6 * 2 + iVar4 + uVar3 * 0x20) =
-             *(undefined2 *)(iVar5 + iVar2 + param_1 * 0x20);
-      } while (uVar7 != 0x10);
-    }
-  }
-  else {
-    uVar3 = uVar1 & 0x3ff;
-  }
-  return uVar3;
-}
-
-
-// 0x020075ac  graphics_return_computed_value
-
-undefined4 FUN_020075ac(int param_1)
-
-{
-  return (&DAT_0209c3d4)[param_1];
-}
-
-
-// 0x020075bc  graphics_access_shared_state
-
-void FUN_020075bc(int param_1)
-
-{
-  (&DAT_0209c3d4)[param_1] = 1;
-  return;
-}
-
-
-// 0x020075d0  graphics_loop_over_state
-
-void FUN_020075d0(int param_1)
-
-{
-  undefined2 *puVar1;
-  int iVar2;
-  
-  if ((ushort)(&DAT_0209c3cc)[param_1] < 0x2ff) {
-    return;
-  }
-  (&DAT_0209c3cc)[param_1] = 1;
-  puVar1 = &DAT_020993cc + param_1 * 0x800;
-  iVar2 = 1;
-  do {
-    iVar2 = iVar2 + 1;
-    puVar1 = puVar1 + 1;
-    *puVar1 = 0x6000;
-  } while (iVar2 != 0x800);
-  (&DAT_0209c3d4)[param_1] = 0;
-  return;
-}
-
-
-// 0x02007630  graphics_loop_over_state
-
-void FUN_02007630(undefined2 *param_1,uint param_2,int param_3)
-
-{
-  uint uVar1;
-  uint uVar2;
-  
-  (&DAT_0209c3cc)[param_3] = 0x3fe;
-  FUN_020075d0(param_3);
-  if (param_2 != 0) {
-    uVar1 = 0;
-    do {
-      uVar2 = uVar1 + 2;
-      (*DAT_023dc69c)(param_3,uVar1,*param_1);
-      uVar1 = uVar2;
-      param_1 = param_1 + 1;
-    } while (uVar2 < param_2);
-  }
-  if ((DAT_023cb610 & 8) == 0) {
-    (&DAT_0209c3d4)[param_3] = 0;
-  }
-  return;
-}
-
-
 // 0x020076d0  graphics_transform_bit_fields
 
 void FUN_020076d0(uint param_1,undefined2 param_2)
@@ -1368,165 +1252,7 @@ void FUN_020091ec(undefined4 param_1)
 }
 
 
-// 0x02009274  graphics_access_shared_state
-
-undefined2 FUN_02009274(void)
-
-{
-  undefined1 uVar1;
-  uint uVar2;
-  
-  uVar2 = DAT_0b000014;
-  if (DAT_0b003624 <= DAT_0b000014) {
-    uVar2 = DAT_0b003624;
-  }
-  if (DAT_023ddb05 == '\0') {
-    uVar1 = (&DAT_0208e720)[uVar2];
-  }
-  else {
-    uVar1 = (&DAT_0208e908)[uVar2];
-  }
-  return CONCAT11((&DAT_0208e5e0)[DAT_020b4bec],uVar1);
-}
-
-
-// 0x020092e0  graphics_transform_bit_fields
-
-uint FUN_020092e0(void)
-
-{
-  uint uVar1;
-  
-  DAT_0b0000a0 = 1 - DAT_0b000020;
-  if (1 < DAT_0b000020) {
-    DAT_0b0000a0 = 0;
-  }
-  uVar1 = (DAT_0b000084 | DAT_0b000088 | DAT_0b000094 | DAT_0b00007c | DAT_0b00009c |
-          DAT_0b00008c | DAT_0b000090 | DAT_0b000098 | DAT_0b000080 | DAT_0b0000a0) & 0xffff;
-  if (DAT_0b00362f == '\0') {
-    uVar1 = uVar1 | 8;
-  }
-  DAT_020b4bf5 = 0;
-  DAT_0b000090 = 0;
-  DAT_0b00008c = 0;
-  DAT_0b000094 = 0;
-  return uVar1;
-}
-
-
-// 0x02009380  graphics_transform_bit_fields
-
-undefined2 FUN_02009380(void)
-
-{
-  undefined2 uVar1;
-  uint uVar2;
-  
-  uVar1 = 0;
-  uVar2 = DAT_0b00363c & 0xf;
-  DAT_020b4bf5 = 0;
-  if (uVar2 == 4) {
-    uVar2 = DAT_0b003638 & 0x7e;
-    DAT_0b003638 = DAT_0b003638 + DAT_0b003630;
-    return *(undefined2 *)((int)&DAT_0b00364c + uVar2);
-  }
-  if (uVar2 == 8) {
-    uVar2 = DAT_0b003638 & 0x7e;
-    DAT_0b003638 = DAT_0b003638 + DAT_0b003630;
-    return *(undefined2 *)((int)&DAT_023dc6b0 + uVar2);
-  }
-  if (uVar2 == 0) {
-    uVar1 = *(undefined2 *)(&DAT_0209cbec + (DAT_0b003638 & 0xfffe));
-  }
-  DAT_0b003638 = DAT_0b003638 + DAT_0b003630;
-  return uVar1;
-}
-
-
-// 0x0200944c  graphics_transform_bit_fields
-
-undefined4 FUN_0200944c(uint param_1)
-
-{
-  uint uVar1;
-  undefined4 uVar2;
-  
-  uVar2 = 0x4e71;
-  if ((param_1 & 0x1e) < 0xf) {
-    uVar1 = 1 << (param_1 & 0x1e);
-    if ((uVar1 & 0x5500) == 0) {
-      if ((uVar1 & 0x50) == 0) {
-        if ((uVar1 & 5) != 0) {
-          uVar2 = FUN_02009380();
-        }
-      }
-      else {
-        uVar2 = FUN_020092e0();
-      }
-    }
-    else {
-      uVar2 = FUN_02009274();
-    }
-  }
-  return uVar2;
-}
-
-
-// 0x020094b4  graphics_dispatch_selector_cases
-
-uint FUN_020094b4(uint param_1)
-
-{
-  uint uVar1;
-  
-  switch(param_1) {
-  case 0:
-  case 2:
-    uVar1 = FUN_02009380();
-    uVar1 = uVar1 >> 8 & 0xff;
-    break;
-  case 1:
-  case 3:
-    uVar1 = FUN_02009380();
-    uVar1 = uVar1 & 0xff;
-    break;
-  case 4:
-  case 6:
-    uVar1 = FUN_020092e0();
-    uVar1 = uVar1 >> 8 & 0xff;
-    break;
-  case 5:
-  case 7:
-    uVar1 = FUN_020092e0();
-    uVar1 = uVar1 & 0xff;
-    break;
-  case 8:
-  case 10:
-  case 0xc:
-  case 0xe:
-    uVar1 = FUN_02009274();
-    uVar1 = uVar1 >> 8 & 0xff;
-    break;
-  case 9:
-  case 0xb:
-  case 0xd:
-  case 0xf:
-    uVar1 = FUN_02009274();
-    uVar1 = uVar1 & 0xff;
-    break;
-  default:
-    if ((param_1 & 1) == 0) {
-      uVar1 = 0x4e;
-    }
-    else {
-      uVar1 = 0x71;
-    }
-  }
-  return uVar1;
-}
-
-
-// 0x02009570  graphics_dispatch_selector_cases
+// 0x02009570  select_vdp_scanline_render_callback
 
 void FUN_02009570(void)
 
@@ -1758,7 +1484,7 @@ void FUN_02009614(uint param_1,uint param_2)
 }
 
 
-// 0x0200b284  graphics_transform_bit_fields
+// 0x0200b284  update_vdp_line_cycles_and_queue_m68k_interrupts
 
 /* WARNING: Removing unreachable block (ram,0x020050e0) */
 /* WARNING: Removing unreachable block (ram,0x020050e4) */
@@ -1789,7 +1515,7 @@ void FUN_0200b284(uint param_1)
 }
 
 
-// 0x0200b438  graphics_transform_bit_fields
+// 0x0200b438  begin_vdp_frame_and_refresh_backgrounds
 
 void FUN_0200b438(void)
 

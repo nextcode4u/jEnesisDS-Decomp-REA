@@ -1,5 +1,5 @@
 /* ARM9 save states — grouped REA pseudocode.
- * Slot filenames, save-file I/O, and restoring live emulator state.
+ * Use functions.tsv for addresses, names and analysis notes.
  */
 
 // 0x02002e54  display_savestate_slot_status
@@ -104,7 +104,7 @@ LAB_02002fac:
 }
 
 
-// 0x02004438  helper_for_write_emulator_savestate
+// 0x02004438  get_z80_bank_latch_for_savestate
 
 undefined4 FUN_02004438(void)
 
@@ -113,7 +113,7 @@ undefined4 FUN_02004438(void)
 }
 
 
-// 0x02004448  helper_for_load_emulator_savestate
+// 0x02004448  restore_z80_bank_latch_from_savestate
 
 void FUN_02004448(undefined4 param_1)
 
@@ -123,16 +123,7 @@ void FUN_02004448(undefined4 param_1)
 }
 
 
-// 0x02004c18  helper_for_prepare_savestate_header_and_regions
-
-undefined * FUN_02004c18(void)
-
-{
-  return &DAT_0b00161c;
-}
-
-
-// 0x02004f70  helper_for_write_emulator_savestate
+// 0x02004f70  encode_z80_pc_and_sp_as_ram_offsets
 
 void FUN_02004f70(int param_1)
 
@@ -154,7 +145,7 @@ void FUN_02004f70(int param_1)
 }
 
 
-// 0x0200500c  helper_for_load_emulator_savestate
+// 0x0200500c  rebase_z80_pc_and_sp_into_work_ram
 
 void FUN_0200500c(int param_1)
 
@@ -176,7 +167,7 @@ void FUN_0200500c(int param_1)
 }
 
 
-// 0x02005164  helper_for_load_emulator_savestate
+// 0x02005164  rebase_m68k_program_counter_after_savestate
 
 void FUN_02005164(int param_1)
 
@@ -215,7 +206,7 @@ void FUN_02005164(int param_1)
 }
 
 
-// 0x0200526c  helper_for_write_emulator_savestate
+// 0x0200526c  encode_m68k_program_counter_for_savestate
 
 void FUN_0200526c(int param_1)
 
@@ -231,7 +222,7 @@ void FUN_0200526c(int param_1)
 }
 
 
-// 0x020059f0  helper_for_load_emulator_savestate
+// 0x020059f0  clear_sound_mirrors_before_state_load
 
 void FUN_020059f0(void)
 
@@ -275,7 +266,7 @@ void FUN_020059f0(void)
 }
 
 
-// 0x02005aac  helper_for_prepare_savestate_header_and_regions
+// 0x02005aac  get_ym2612_bank_0_mirror_for_savestate
 
 undefined1 * FUN_02005aac(void)
 
@@ -284,7 +275,7 @@ undefined1 * FUN_02005aac(void)
 }
 
 
-// 0x02005ab8  helper_for_prepare_savestate_header_and_regions
+// 0x02005ab8  get_ym2612_bank_1_mirror_for_savestate
 
 undefined1 * FUN_02005ab8(void)
 
@@ -293,7 +284,7 @@ undefined1 * FUN_02005ab8(void)
 }
 
 
-// 0x02005ac4  helper_for_prepare_savestate_header_and_regions
+// 0x02005ac4  get_psg_mirror_for_savestate
 
 undefined * FUN_02005ac4(void)
 
@@ -302,7 +293,7 @@ undefined * FUN_02005ac4(void)
 }
 
 
-// 0x02009cb0  helper_for_prepare_savestate_header_and_regions
+// 0x02009cb0  bind_vdp_memory_regions_for_savestate
 
 void FUN_02009cb0(void)
 

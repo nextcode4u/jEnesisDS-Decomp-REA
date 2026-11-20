@@ -1,5 +1,5 @@
 /* ARM7 service — grouped REA pseudocode.
- * ARM7 audio initialization and timer-driven refill of looping PCM buffers.
+ * Use functions.tsv for addresses, names and analysis notes.
  */
 
 // 0x037f81f4  run_arm7_audio_service
@@ -47,7 +47,7 @@ LAB_037f8308:
 }
 
 
-// 0x037fb9fc  write_timer_registers_and_sound_channel_registers
+// 0x037fb9fc  configure_ds_audio_channels_and_timers
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 

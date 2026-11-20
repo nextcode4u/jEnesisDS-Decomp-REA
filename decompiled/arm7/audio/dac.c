@@ -1,8 +1,8 @@
 /* ARM7 dac — grouped REA pseudocode.
- * Use the processor functions.tsv for names, descriptions and source hashes.
+ * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x037f93d8  helper_for_service_dac_buffer
+// 0x037f93d8  read_ym2612_dac_enable
 
 undefined4 FUN_037f93d8(void)
 

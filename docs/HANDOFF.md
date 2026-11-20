@@ -26,7 +26,7 @@ decompiled/
     platform/      Startup, IPC, interrupts, BIOS, runtime, and peripherals
 ```
 
-The 237 module files group routines by processor and subsystem. The largest 68000 word and long MOVE groups also use the destination addressing mode from a representative opcode. Z80 modules use instruction family and operand type. Routines are in ascending address order within each module. The branch keeps working names in short headers and detailed annotations in two processor indexes.
+The 242 module files group routines by processor and subsystem. The largest 68000 word and long MOVE groups also use the destination addressing mode from a representative opcode. Z80 modules use instruction family and operand type. Routines are in ascending address order within each module. The branch keeps working names in short headers and detailed annotations in two processor indexes.
 
 The 40 routines previously in the unresolved folders were traced to CPU bus and state helpers, sprite tile copies, audio and FIFO control, LZSS, and platform startup or storage stubs. Some other index entries still have provisional names. The standalone 68000 PC accessor has a confirmed operation and no identified caller. [Reading guide and evidence](READING-GUIDE.md#read-a-large-export)
 
@@ -40,7 +40,7 @@ The 40 routines previously in the unresolved folders were traced to CPU bus and 
 | --- | --- |
 | ARM9 boot and emulator | `0x02000000` · `0x020011e4` · [Startup](../decompiled/arm9/system/startup.c#L5) · [Emulator](../decompiled/arm9/system/emulator.c#L343) |
 | Browser and ROM loading | `0x020034b0` · `0x02001d40` · [Browser loop](../decompiled/arm9/frontend/rom_browser.c#L187) · [Cartridge loader](../decompiled/arm9/storage/cartridge.c#L260) |
-| Save states | `0x0200d13c` · `0x0200d4c8` · [Load](../decompiled/arm9/storage/save_states.c#L365) · [Write](../decompiled/arm9/storage/save_states.c#L447) |
+| Save states | `0x0200d13c` · `0x0200d4c8` · [Load](../decompiled/arm9/storage/save_states.c#L356) · [Write](../decompiled/arm9/storage/save_states.c#L438) |
 | CPU dispatch examples | `0x01003d00` · `0x01000020` · [68000 NOP](../decompiled/arm9/cpu/m68k/exceptions_and_control.c#L157) · [Z80 NOP](../decompiled/arm9/cpu/z80/control_and_io/flags_io_and_cpu_control.c#L5) |
 | ARM7 startup and audio | `0x037f8000` · `0x037f81f4` · [Startup](../decompiled/arm7/platform/startup.c#L5) · [Audio service](../decompiled/arm7/audio/service.c#L5) |
 | Sound generation | `0x037f86f4` · `0x037f95fc` · [PSG](../decompiled/arm7/audio/psg.c#L59) · [FM channel](../decompiled/arm7/audio/ym2612/channel_rendering.c#L127) |

@@ -196,3 +196,12 @@ void FUN_02000568(int param_1)
   return;
 }
 
+
+// 0x02005144  get_m68k_cycle_counter_field
+
+undefined4 FUN_02005144(int param_1)
+
+{
+  return *(undefined4 *)(param_1 + 0x94);
+}
+

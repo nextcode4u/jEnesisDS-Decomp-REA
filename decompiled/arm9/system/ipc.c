@@ -2,7 +2,16 @@
  * Use functions.tsv for addresses, names and analysis notes.
  */
 
-// 0x02005ba0  poll_ipc_sync
+// 0x02005b7c  read_ym2612_timer_status
+
+byte FUN_02005b7c(void)
+
+{
+  return *(byte *)(DAT_0b00002c + 0x480) & 3;
+}
+
+
+// 0x02005ba0  queue_ym2612_register_or_dac_write
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -194,7 +203,7 @@ bool FUN_020061a8(void)
 }
 
 
-// 0x02006228  poll_ipc_sync
+// 0x02006228  submit_fm_and_psg_write_buffers_to_arm7
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -320,7 +329,7 @@ bool FUN_020062f0(int param_1)
 }
 
 
-// 0x02006308  write_ipc_fifo_control_and_ipc_fifo_send
+// 0x02006308  clear_audio_queues_and_reset_or_stop_arm7_audio
 
 /* WARNING: Removing unreachable block (ram,0x020063a0) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
@@ -391,7 +400,7 @@ bool FUN_020063dc(void)
 }
 
 
-// 0x020063e8  write_ipc_fifo_control_and_ipc_fifo_send
+// 0x020063e8  restart_arm7_audio_and_replay_fm_registers
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -437,7 +446,7 @@ bool FUN_020063e8(void)
 }
 
 
-// 0x0200c4a8  poll_ipc_fifo_control_and_ipc_fifo_receive
+// 0x0200c4a8  dispatch_arm9_fifo_receive_interrupt
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -471,7 +480,7 @@ void FUN_0200c520(undefined4 param_1)
 }
 
 
-// 0x0200c55c  write_ipc_fifo_control_and_ipc_fifo_send
+// 0x0200c55c  send_arm9_fifo_command_and_payload
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -497,7 +506,7 @@ bool FUN_0200c55c(int param_1,uint param_2)
 }
 
 
-// 0x0200c59c  write_ipc_fifo_control
+// 0x0200c59c  initialize_arm9_fifo_receive_interrupt
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
