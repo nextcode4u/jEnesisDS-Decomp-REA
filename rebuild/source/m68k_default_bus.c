@@ -21,7 +21,7 @@ unsigned default_m68k_word_read_entry(void)
     return read_default_m68k_bus_word(1);
 }
 
-unsigned return_zero_for_unhandled_z80_vdp_access(void)
+unsigned return_zero_for_unhandled_z80_vdp_access(unsigned address)
 {
     return 0;
 }

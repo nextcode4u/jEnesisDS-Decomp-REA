@@ -27,7 +27,7 @@ void reset_genesis_controller_port(volatile GenesisControllerPort *port)
     port->button_inputs[10] = 1;
 }
 
-void write_genesis_controller_direction(GenesisControllerPort *port, unsigned char mask)
+void write_genesis_controller_direction(GenesisControllerPort *port, unsigned mask)
 {
     port->direction_mask = mask;
 }

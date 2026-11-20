@@ -24,5 +24,7 @@ typedef struct {
 void reset_genesis_controller_port(volatile GenesisControllerPort *port);
 unsigned read_genesis_controller_port_pins(GenesisControllerPort *port);
 unsigned read_genesis_controller_direction(const GenesisControllerPort *port);
+void write_genesis_controller_port_pins(GenesisControllerPort *port, unsigned value);
+void write_genesis_controller_direction(GenesisControllerPort *port, unsigned mask);
 
 #endif

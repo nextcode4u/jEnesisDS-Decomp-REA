@@ -139,6 +139,12 @@ RECOVERED_REGIONS = (
      0x020002E4, 0x0200030C, {"genesis_region": 0x0B000000}),
     ("68000 guest PC", "m68k_program_counter.c", "read_m68k_program_counter",
      0x02000310, 0x0200037C, {"m68k_context": 0x0B0000AC}),
+    ("Genesis I/O writes", "controller_io_write.c", "write_genesis_io_register_byte",
+     0x0200037C, 0x020003F4, {
+         "genesis_io": 0x0B000000,
+         "write_genesis_controller_port_pins": 0x02003A68,
+         "write_genesis_controller_direction": 0x02003820,
+     }),
     ("Genesis I/O reads", "controller_io.c", "read_genesis_io_register_byte",
      0x020003F4, 0x020004E0, {
          "genesis_io": 0x0B000000,
@@ -176,12 +182,102 @@ RECOVERED_REGIONS = (
      }),
     ("Cartridge byte order", "cartridge_byte_order.c", "swap_adjacent_bytes_in_backing_buffer",
      0x0200157C, 0x020015C0, {}),
+    ("68000 default page handlers", "m68k_page_defaults.c", "m68k_read_cartridge_sram_byte",
+     0x02003DE0, 0x02003E38, {"cartridge_rom_bytes": 0x020B4CEC}),
+    ("68000 cartridge page refresh", "m68k_refresh_pages.c", "refresh_m68k_cartridge_read_pages",
+     0x0200412C, 0x0200416C, {
+         "m68k_byte_read_handlers": 0x0B00061C,
+         "m68k_word_read_handlers": 0x0B000A1C,
+         "select_m68k_byte_read_handler": 0x02003F30,
+         "select_m68k_word_read_handler": 0x0200402C,
+     }),
+    ("68000 bus page setup", "m68k_bus_pages.c", "select_m68k_byte_write_handler",
+     0x0200416C, 0x02004368, {
+         "m68k_byte_read_handlers": 0x0B00061C,
+         "m68k_word_read_handlers": 0x0B000A1C,
+         "m68k_byte_write_handlers": 0x0B000E1C,
+         "m68k_word_write_handlers": 0x0B00121C,
+         "select_m68k_byte_read_handler": 0x02003F30,
+         "select_m68k_word_read_handler": 0x0200402C,
+         "m68k_write_cartridge_byte": 0x02003E38,
+         "m68k_write_z80_window_byte": 0x02004784,
+         "m68k_write_io_or_mapper_byte": 0x020047F0,
+         "m68k_write_vdp_byte": 0x020044A4,
+         "m68k_write_work_ram_byte": 0x02003EB8,
+         "ignore_m68k_unmapped_byte_page_write": 0x02003E30,
+         "m68k_write_cartridge_word": 0x02003ED4,
+         "m68k_write_z80_window_word": 0x02004714,
+         "m68k_write_io_or_mapper_word": 0x020046C0,
+         "m68k_write_vdp_word": 0x02004484,
+         "m68k_write_work_ram_word": 0x01000000,
+         "ignore_m68k_unmapped_word_page_write": 0x02003E34,
+     }),
     ("Unmapped bus reads and writes", "m68k_default_bus.c", "read_default_m68k_bus_byte",
      0x02004368, 0x020043CC, {}),
     ("Z80 cartridge bank", "z80_bank_state.c", "get_z80_bank_latch_for_savestate",
      0x02004438, 0x02004484, {
          "z80_cartridge_bank_base": 0x02099008,
          "cartridge_rom_bytes": 0x020B4CEC,
+     }),
+    ("68000 VDP writes", "m68k_vdp_write.c", "m68k_write_vdp_word",
+     0x02004484, 0x020044C8, {
+         "queue_psg_register_write": 0x02005AD0,
+         "write_vdp_word_port": 0x0200B26C,
+     }),
+    ("Z80 reset and bus request", "z80_bus_lines.c", "set_z80_reset_line",
+     0x020044C8, 0x020045C8, {
+         "frame_timing": 0x0B000000,
+         "z80_bus_request_asserted": 0x02099000,
+         "z80_reset_released": 0x02099001,
+         "z80_bus_blocked_for_m68k": 0x0208F349,
+         "z80_bus_poll_count": 0x02099004,
+         "emulator_option_flags": 0x023CB610,
+         "reset_fm_and_clear_queued_sound_writes": 0x020062D0,
+         "reset_z80_core_state": 0x02000BFC,
+         "run_z80_if_enabled_and_bus_released": 0x0200081C,
+     }),
+    ("68000 Genesis I/O and mapper writes", "m68k_io_write.c", "m68k_write_io_or_mapper_word",
+     0x020046C0, 0x020048D4, {
+         "write_genesis_io_register_word": 0x020003EC,
+         "write_genesis_io_register_byte": 0x0200037C,
+         "set_z80_bus_request": 0x02004538,
+         "set_z80_reset_line": 0x020044C8,
+         "write_z80_work_ram_byte": 0x02004C34,
+         "queue_ym2612_register_or_dac_write": 0x02005BA0,
+         "shift_z80_cartridge_bank_latch": 0x0200440C,
+         "update_cartridge_sram_mapping": 0x020015C0,
+         "z80_bus_blocked_for_m68k": 0x0208F349,
+         "sram_control": 0x0208F34A,
+         "ssf2_mapper_pages": 0x02099014,
+         "tmss_register_latch": 0x0209900C,
+     }),
+    ("68000 VDP word read", "m68k_vdp_word_read.c", "read_vdp_word_from_m68k",
+     0x020048D4, 0x02004908, {
+         "read_vdp_word_port": 0x0200944C,
+         "return_zero_for_unhandled_z80_vdp_access": 0x020043BC,
+     }),
+    ("68000 VDP and mapper reads", "m68k_io_read.c", "read_vdp_byte_from_m68k",
+     0x02004AA8, 0x02004B7C, {
+         "read_vdp_byte_port": 0x020094B4,
+         "return_zero_for_unhandled_z80_vdp_access": 0x020043BC,
+         "read_genesis_io_register_byte": 0x020003F4,
+         "read_z80_bus_request_status": 0x020043CC,
+         "read_default_m68k_bus_byte": 0x02004368,
+         "sram_control": 0x0208F34A,
+         "ssf2_mapper_pages": 0x02099014,
+     }),
+    ("68000 bus reset", "m68k_bus_reset.c", "clear_work_ram_and_bus_state",
+     0x02004B7C, 0x02004C18, {
+         "memset": 0x02083058,
+         "genesis_work_ram_bytes": 0x023CB634,
+         "z80_cartridge_bank_base": 0x02099008,
+         "sram_control": 0x0208F34A,
+         "cartridge_mapper_reset_word": 0x02099010,
+         "z80_reset_released": 0x02099001,
+         "z80_bus_request_asserted": 0x02099000,
+         "z80_bus_blocked_for_m68k": 0x0208F349,
+         "use_ssf2_mapper": 0x0209900E,
+         "initialize_m68k_bus_dispatch_tables": 0x020042F0,
      }),
     ("Z80 work RAM", "z80_work_ram.c", "get_z80_work_ram_buffer",
      0x02004C18, 0x02004C44, {"z80_work_ram": 0x0B00161C}),
@@ -272,6 +368,13 @@ RECOVERED_REGIONS = (
          "decode_lzss_stream": 0x0200CB78,
          "memcpy": 0x02082EC0,
      }),
+    ("Cartridge and work RAM mapping", "cartridge_mapping.c",
+     "initialize_cartridge_and_work_ram_mapping", 0x02003AF0, 0x02003B34, {
+         "cartridge_mapping": 0x023CB624,
+         "genesis_work_ram_mapping": 0x023CB62C,
+         "cartridge_rom_bytes": 0x020B4CEC,
+         "genesis_work_ram_bytes": 0x023CB634,
+     }),
     ("Cartridge bus", "cartridge_bus.c", "get_cartridge_rom_buffer",
      0x02003CA4, 0x02003CF8, {
          "cartridge_rom_bytes": 0x020B4CEC,
@@ -342,6 +445,8 @@ ARM7_REGIONS = (
          "dac_staged_byte_count": 0x0380B8A0,
          "__aeabi_uidiv": 0x038018D8,
      }),
+    ("ARM7 FM reset entry", "arm7_fm_reset.c", "reset_fm_register_state",
+     0x037FBF44, 0x037FBF5C, {"reset_ym2612_registers": 0x037F9238}),
     ("ARM7 YM2612 lookup tables", YM2612_TABLE_SOURCE, None,
      0x038026F8, 0x03806D34, {}),
     ("ARM7 PSG attenuation table", "arm7_psg_attenuation.c", None,
@@ -370,10 +475,20 @@ def compile_arm9_source(compiler, work, filename):
     flags = {
         # Keep the last stream read in r0 on decoder exit.
         "lzss_decode.c": ("-fno-tree-vrp",),
+        "controller_io_write.c": ("-fno-unit-at-a-time",),
         "controller_write.c": ("-fno-unit-at-a-time",),
         # Preserve the wrapper calls and their original function order.
         "m68k_default_bus.c": ("-fno-unit-at-a-time", "-fno-optimize-sibling-calls"),
+        "m68k_io_read.c": ("-fno-unit-at-a-time", "-fno-optimize-sibling-calls"),
+        "m68k_io_write.c": ("-fno-unit-at-a-time",),
+        "m68k_vdp_word_read.c": ("-fno-optimize-sibling-calls",),
+        "m68k_vdp_write.c": ("-fno-unit-at-a-time",),
+        "m68k_bus_pages.c": ("-fno-unit-at-a-time",),
+        "m68k_page_defaults.c": ("-fno-unit-at-a-time",),
+        # Keep ARM post-indexed stores for the cartridge page refresh.
+        "m68k_refresh_pages.c": ("-fno-tree-loop-optimize",),
         # Preserve the original write-then-read function order.
+        "z80_bus_lines.c": ("-fno-unit-at-a-time",),
         "z80_memory.c": ("-fno-unit-at-a-time",),
     }.get(filename, ())
     return compile_c([*compiler, *flags], work, Path(filename), 9, "-O2", "-marm")
@@ -383,7 +498,10 @@ def compile_arm7_source(compiler, work, filename):
     if filename == YM2612_TABLE_SOURCE:
         write_ym2612_tables(work / filename)
     # Keep the empty-packet branch aimed at the shared return.
-    flags = ("-fno-reorder-blocks",) if filename == "arm7_ym2612_bank1.c" else ()
+    flags = {
+        "arm7_ym2612_bank1.c": ("-fno-reorder-blocks",),
+        "arm7_fm_reset.c": ("-fno-optimize-sibling-calls",),
+    }.get(filename, ())
     return compile_c([*compiler, *flags], work, Path(filename), 7, "-O2", "-marm")
 
 

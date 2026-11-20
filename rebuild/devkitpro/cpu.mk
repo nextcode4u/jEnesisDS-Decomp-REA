@@ -72,7 +72,11 @@ arm7_ym2612_tables.c: ../../../rebuild/generate_ym2612_tables.py
 
 arm7_ym2612_bank1.o: CFLAGS += -fno-reorder-blocks
 lzss_decode.o: CFLAGS += -fno-tree-vrp
-m68k_default_bus.o: CFLAGS += -fno-unit-at-a-time -fno-optimize-sibling-calls
-controller_write.o z80_memory.o: CFLAGS += -fno-unit-at-a-time
+arm7_fm_reset.o: CFLAGS += -fno-optimize-sibling-calls
+m68k_default_bus.o m68k_io_read.o: CFLAGS += -fno-unit-at-a-time -fno-optimize-sibling-calls
+m68k_refresh_pages.o: CFLAGS += -fno-tree-loop-optimize
+m68k_vdp_word_read.o: CFLAGS += -fno-optimize-sibling-calls
+controller_io_write.o controller_write.o m68k_bus_pages.o m68k_io_write.o m68k_page_defaults.o \
+m68k_vdp_write.o z80_bus_lines.o z80_memory.o: CFLAGS += -fno-unit-at-a-time
 
 -include $(OFILES:.o=.d) $(RECOVERED_OBJECTS:.o=.d)

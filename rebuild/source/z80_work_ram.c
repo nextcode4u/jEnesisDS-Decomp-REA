@@ -11,7 +11,7 @@ unsigned char read_z80_work_ram_byte(unsigned address)
     return z80_work_ram[address];
 }
 
-void write_z80_work_ram_byte(unsigned address, unsigned char byte)
+void write_z80_work_ram_byte(unsigned address, unsigned byte)
 {
     z80_work_ram[address] = byte;
 }

@@ -1,15 +1,5 @@
 /* Decode the Genesis controller I/O register window. */
-#include "controller_port.h"
-
-typedef struct {
-    unsigned reserved0[7];
-    unsigned version_register;
-    unsigned reserved1[4];
-    GenesisControllerPort *port1;
-    GenesisControllerPort *port2;
-} GenesisIo;
-
-extern GenesisIo genesis_io;
+#include "genesis_io.h"
 
 unsigned read_genesis_io_register_byte(unsigned address)
 {
