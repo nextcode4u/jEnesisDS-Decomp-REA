@@ -20,7 +20,7 @@ enum {
 
 struct tile_map {
     uint16_t base;
-    uint8_t parity;
+    uint8_t parity, width, height;
 };
 
 struct scanline {
@@ -39,7 +39,7 @@ struct page {
     uint32_t pattern_revisions[BG_PATTERNS];
     uint32_t map_revision, last_revision;
     struct tile_map maps[MAX_MAPS];
-    unsigned map_count, width, height;
+    unsigned map_count;
     bool maps_cached, interlace, raster;
     uint32_t sprite_sources[OBJ_PATTERNS * 4];
     uint32_t sprite_revisions[OBJ_PATTERNS * 4];
@@ -143,17 +143,18 @@ static void refresh_pattern(const struct megadrive *md, struct page *page,
 
 static bool same_map(struct tile_map a, struct tile_map b)
 {
-    return a.base == b.base && a.parity == b.parity;
+    return a.base == b.base && a.parity == b.parity &&
+           a.width == b.width && a.height == b.height;
 }
 
 static bool update_map(const struct megadrive *md, struct page *page, unsigned map,
-                       unsigned next, struct tile_map layout, unsigned width, unsigned height,
+                       unsigned next, unsigned high_map, struct tile_map layout,
                        unsigned old_count, bool incremental)
 {
     unsigned tile_base = 4 + next * 2;
     volatile uint16_t *tiles = (uint16_t *)BG_GFX + tile_base * 8192;
-    unsigned screens = (width / 32) * (height / 32);
-    unsigned high_map = next * SCREENS_PER_PAGE + map * 2 * screens;
+    unsigned width = layout.width, height = layout.height;
+    unsigned screens = width * height / SCREEN_WORDS;
     unsigned low_map = high_map + screens;
     volatile uint16_t *high = (uint16_t *)BG_GFX + high_map * SCREEN_WORDS;
     volatile uint16_t *low = (uint16_t *)BG_GFX + low_map * SCREEN_WORDS;
@@ -192,30 +193,32 @@ static bool update_map(const struct megadrive *md, struct page *page, unsigned m
 }
 
 static bool prepare_maps(const struct megadrive *md, struct page *page, unsigned next,
-                         unsigned width, unsigned height, const struct tile_map *maps,
-                         unsigned count, bool interlace)
+                         const struct tile_map *maps, unsigned count, bool interlace)
 {
     // The first half of bank A is two pages of maps. Tile data follows them.
-    unsigned cells = width * height;
-    if (cells / SCREEN_WORDS * count * 2 > SCREENS_PER_PAGE)
-        return false;
+    unsigned used = 0, screen_base[MAX_MAPS];
     unsigned tile_base = 4 + next * 2;
     volatile uint16_t *tiles = (uint16_t *)BG_GFX + tile_base * 8192;
     bool cacheable = true;
-    bool incremental = page->maps_cached && page->width == width && page->height == height &&
-        page->map_count == count && page->interlace == interlace &&
+    bool incremental = page->maps_cached && page->map_count == count &&
+        page->interlace == interlace &&
         md->video_revision - page->map_revision < UINT32_C(0x80000000);
     for (unsigned i = 0; i < count; ++i) {
+        unsigned cells = maps[i].width * maps[i].height;
+        screen_base[i] = next * SCREENS_PER_PAGE + used;
+        used += cells / SCREEN_WORDS * 2;
         cacheable &= maps[i].base + cells * 2 <= 0x10000;
         incremental &= same_map(page->maps[i], maps[i]);
     }
+    if (used > SCREENS_PER_PAGE)
+        return false;
     incremental &= cacheable;
     unsigned old_count = page->used_patterns;
     bool reuse_patterns = page->interlace == interlace;
     page->interlace = interlace;
     if (incremental) {
         for (unsigned i = 0; i < count; ++i)
-            if (!update_map(md, page, i, next, maps[i], width, height, old_count, true)) {
+            if (!update_map(md, page, i, next, screen_base[i], maps[i], old_count, true)) {
                 incremental = false;
                 break;
             }
@@ -232,7 +235,7 @@ static bool prepare_maps(const struct megadrive *md, struct page *page, unsigned
                 tiles[i] = 0;
         page->used_patterns = 1;
         for (unsigned i = 0; i < count; ++i)
-            if (!update_map(md, page, i, next, maps[i], width, height, old_count, false)) {
+            if (!update_map(md, page, i, next, screen_base[i], maps[i], old_count, false)) {
                 page->used_patterns = 0;
                 return false;
             }
@@ -240,8 +243,6 @@ static bool prepare_maps(const struct megadrive *md, struct page *page, unsigned
     memcpy(page->maps, maps, count * sizeof(*maps));
     page->map_count = count;
     page->map_revision = md->video_revision;
-    page->width = width;
-    page->height = height;
     page->maps_cached = cacheable;
     return true;
 }
@@ -391,7 +392,7 @@ bool vdp_ds_prepare(const struct megadrive *md)
     bool interlace = mode == 6;
     bool enabled = (regs[1] & 0x40) != 0;
     if ((!md->vdp_row_count && !enabled) || (regs[11] & 4) || (regs[12] & 8) ||
-        (mode && !interlace) || (regs[16] & 0x22) || (regs[17] & 0x9f) || (regs[18] & 0x9f))
+        (mode && !interlace) || (regs[16] & 0x22))
         return false;
     bool wide = (regs[12] & 1) != 0;
     unsigned left = wide ? 32 : 0, top = (regs[1] & 8) ? 24 : 16;
@@ -404,8 +405,18 @@ bool vdp_ds_prepare(const struct megadrive *md)
     }
     page->last_revision = md->video_revision;
 
-    // Maps 0 and 2 are Plane A variants. Map 1 is the fixed Plane B.
-    struct tile_map maps[MAX_MAPS] = {[1] = {.base = (regs[4] & 7) << 13}};
+    unsigned width = (regs[16] & 1) ? 64 : 32;
+    unsigned height = (regs[16] & 0x10) ? 64 : 32;
+    unsigned window_x = (regs[17] & 0x1f) * 16;
+    unsigned window_y = (regs[18] & 0x1f) * 8;
+    bool window_right = (regs[17] & 0x80) != 0;
+    bool window_below = (regs[18] & 0x80) != 0;
+    bool window_partial = window_x > left && window_x < left + VDP_VIEW_WIDTH;
+    bool window_full = window_right ? window_x <= left : window_x >= left + VDP_VIEW_WIDTH;
+    // Maps 0 and 2 are Plane A or window variants. Map 1 is the fixed Plane B.
+    struct tile_map maps[MAX_MAPS] = {
+        [1] = {.base = (regs[4] & 7) << 13, .width = width, .height = height},
+    };
     uint8_t map_indices[VDP_VIEW_HEIGHT], sprite_tables[VDP_VIEW_HEIGHT];
     unsigned map_count = 0;
     bool blanking = false;
@@ -419,18 +430,32 @@ bool vdp_ds_prepare(const struct megadrive *md)
             blanking = true;
             continue;
         }
-        unsigned scroll = vdp_hscroll_address(regs, y + top);
+        unsigned guest_y = y + top;
+        bool window_row = window_below ? guest_y >= window_y : guest_y < window_y;
+        // A DS BG cannot change its map partway across a scanline. Use the
+        // bitmap renderer if both Plane A and the window are visible here.
+        if (!window_row && window_partial)
+            return false;
+        bool window = window_row || window_full;
+        unsigned scroll = vdp_hscroll_address(regs, guest_y);
         unsigned parity[2];
         for (unsigned plane = 0; plane < 2; ++plane) {
-            unsigned h = (left - vram_word(md, scroll + plane * 2)) & 0x1ff;
-            unsigned v = megadrive_scanline_vscroll(md, y + top, plane);
+            bool fixed = plane == 0 && window;
+            unsigned h = fixed ? left : (left - vram_word(md, scroll + plane * 2)) & 0x1ff;
+            unsigned v = fixed ? 0 : megadrive_scanline_vscroll(md, guest_y, plane);
             if (interlace)
                 v += md->vdp_odd_field;
             parity[plane] = interlace ? v & 1 : 0;
             v = (top + (v >> interlace)) & 0x1ff;
             page->lines[y].scroll[plane] = h | (v << 16);
         }
-        struct tile_map a = {((row ? row->plane_a_base : regs[2]) & 0x38) << 10, parity[0]};
+        struct tile_map a = {
+            .base = window ? (regs[3] & (wide ? 0x3c : 0x3e)) << 10 :
+                             ((row ? row->plane_a_base : regs[2]) & 0x38) << 10,
+            .parity = parity[0],
+            .width = window ? (wide ? 64 : 32) : width,
+            .height = window ? 32 : height,
+        };
         unsigned index = 0;
         if (!map_count) {
             maps[0] = a;
@@ -450,8 +475,7 @@ bool vdp_ds_prepare(const struct megadrive *md)
         map_indices[y] = index;
     }
     if (!map_count ||
-        !prepare_maps(md, page, next, (regs[16] & 1) ? 64 : 32, (regs[16] & 0x10) ? 64 : 32,
-                      maps, map_count, interlace) ||
+        !prepare_maps(md, page, next, maps, map_count, interlace) ||
         !prepare_sprites(md, page, next, wide, left, top, sprite_tables))
         return false;
     page->raster = blanking || map_count > 2;
