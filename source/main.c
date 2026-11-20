@@ -125,8 +125,8 @@ struct application {
 static uint16_t bitmap_pixels[VDP_VIEW_WIDTH * VDP_VIEW_HEIGHT / 2] __attribute__((aligned(32)));
 static int display_bg;
 static unsigned bitmap_visible, bitmap_queued;
-static volatile bool bitmap_field_visible;
-static bool bitmap_field_queued;
+static volatile bool field_visible;
+static bool field_queued;
 static uint32_t display_revision;
 static bool display_visible;
 enum game_output { OUTPUT_NONE, OUTPUT_BITMAP, OUTPUT_TILES };
@@ -160,11 +160,11 @@ static void present_game_frame(void)
             bgSetMapBase(display_bg, bitmap_queued);
         }
         bitmap_visible = bitmap_queued;
-        bitmap_field_visible = bitmap_field_queued;
         bgShow(display_bg);
     } else {
         return;
     }
+    field_visible = field_queued;
     current_output = pending_output;
     pending_output = OUTPUT_NONE;
 }
@@ -197,7 +197,6 @@ static void draw_game_frame(const struct megadrive *md)
             output = OUTPUT_TILES;
         } else {
             bitmap_queued = bitmap_visible ^ 4;
-            bitmap_field_queued = md->vdp_odd_field;
             uint16_t *bitmap = (uint16_t *)BG_GFX + bitmap_queued * (0x4000 / sizeof(uint16_t));
             vdp_render_frame(md, bitmap_pixels);
             DC_FlushRange(bitmap_pixels, sizeof(bitmap_pixels));
@@ -214,8 +213,10 @@ static void draw_game_frame(const struct megadrive *md)
     int critical = enterCriticalSection();
     memcpy(palette_queued, palette, sizeof(palette));
     palette_pending = true;
-    if (output != OUTPUT_NONE)
+    if (output != OUTPUT_NONE) {
+        field_queued = md->vdp_odd_field;
         pending_output = output;
+    }
     leaveCriticalSection(critical);
 }
 
@@ -696,7 +697,7 @@ int main(void)
                 // opposite the field currently on screen.
                 if (frame == 0 && frame_budget == 2 &&
                     (app.md.vdp_registers[12] & 6) == 6 &&
-                    app.md.vdp_odd_field != bitmap_field_visible) {
+                    app.md.vdp_odd_field != field_visible) {
                     draw_game_frame(&app.md);
                     presented_first_field = true;
                 }
