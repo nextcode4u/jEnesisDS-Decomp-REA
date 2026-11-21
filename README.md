@@ -40,14 +40,14 @@ The C build runs the Genesis backdrop diagnostic in melonDS 1.1. Both captured t
 
 The original and BlocksDS browsers produced pixel-identical captures in melonDS with the same ROM listing. Green Hill Zone spot checks showed about 28–40 guest frames per second in DS mode. In melonDS 1.1, replaying the first 80 guest frames from the same Sonic 2 split-screen save improved from 10.3 to 14.1 guest FPS. Average guest CPU time fell from 2.14 million to 1.70 million DS timer ticks per guest frame, and bitmap drawing fell from 2.08 million to 1.28 million ticks per draw. A subsequent pass on CPU shifts and sound mixing measured 14.2 guest FPS on the same replay. Indexing the sprites by scanline and packing the output four pixels at a time raised the same replay to 14.7 guest FPS and cut average drawing time from 1.28 million to 1.12 million ticks. Separating the larger opcode handlers from the dispatcher and caching the next Z80 sync deadline raised the replay to 15.8 guest FPS. Guest CPU time fell from 1.69 million to 1.54 million ticks per frame. The split-screen hardware path raised the same replay from 15.8 to 19.9 guest FPS and reduced drawing from about 1.10 million to 94,477 ticks per draw. A fixed-frame melonDS capture matched the bitmap output pixel for pixel. With video rendering disabled, the 68000 and sound emulation averaged about 1.59 million ticks per frame, including about 384,000 ticks in Z80 synchronization. With the faster 68000 paths, Z80 polling and VRAM DMA, the same replay reached 26.7 guest FPS and averaged 1.20 million CPU ticks per frame. The CPU and timed FM/DAC traces matched the earlier build across the 240-frame replay and in the 16-cartridge host run. Sustained NTSC full speed requires about 560,000 ticks per frame for the whole workload.
 
-Scroll DMA, faster Z80 pulse handling, ARM9 instruction TCM placement for the Z80 scheduler, and a fast path for register-direct 68000 additions and subtractions improved the Sonic 2 split-screen replay with the full-rate FM mixer enabled. The port selects 134 MHz when launched in native DSi mode. The table shows the results over 600 guest frames in melonDS 1.1, comparing both builds at the same clock in each mode.
+Scroll DMA, faster Z80 pulse handling, ARM9 instruction TCM placement for the Z80 scheduler, and faster register-direct arithmetic improved the Sonic 2 split-screen replay. The latest pass caches the contiguous ROM range and streamlines RTS, LEA with a word address, and ANDI.W to a data register. Results cover the same 600 guest frames in melonDS 1.1 with the full-rate FM mixer enabled. The port uses 134 MHz in native DSi mode.
 
-| Console mode | Guest FPS before | Guest FPS after | CPU ticks per guest frame after |
-| --- | ---: | ---: | ---: |
-| DS, 67 MHz | 23.6 | 26.8 | 1,196,926 |
-| DSi, 134 MHz | 48.0 | 52.6 | 598,206 |
+| Console mode | Initial guest FPS | After scroll DMA and CPU scheduling | After ROM and opcode changes | Latest CPU ticks per guest frame |
+| --- | ---: | ---: | ---: | ---: |
+| DS, 67 MHz | 23.6 | 26.8 | 28.1 | 1,135,356 |
+| DSi, 134 MHz | 48.0 | 52.6 | 54.6 | 567,604 |
 
-The NTSC frame budget for CPU and rendering together is about 560,000 ticks. Both displayed fields, the 128-column intro, and the final replay frame matched the earlier renderer pixel for pixel. The 600-frame state and timed audio trace and the 16-cartridge host run also matched.
+The NTSC frame budget for CPU and rendering together is about 560,000 ticks. Captures of both interlace fields, the 128-column intro, and the final replay frame matched pixel for pixel across the performance passes. The 600-frame state and timed audio trace and the 16-cartridge host run also matched. A host test switches the SRAM overlay on and off while the 68000 fetches instructions.
 
 For the first 240 guest frames of Earthworm Jim in melonDS 1.1, hardware window rendering reduced average draw time from about 567,000 to 30,000 ticks. The capture on guest frame 240 matched the bitmap renderer pixel for pixel. Batching the 68000 work-RAM wait loop through the existing Z80 checkpoints increased startup speed from 12.9 to 18.7 guest FPS.
 

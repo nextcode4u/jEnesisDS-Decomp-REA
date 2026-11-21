@@ -179,8 +179,16 @@ static void capture_raster_through(struct megadrive *md, unsigned next_line)
         md->vdp_rows[md->vdp_row_count++] = row;
 }
 
+static void refresh_rom_fetch_limit(struct megadrive *md)
+{
+    md->rom_fetch_limit = md->rom_size;
+    if ((md->sram_control & 1) && md->sram_start < md->rom_size)
+        md->rom_fetch_limit = md->sram_start;
+}
+
 void megadrive_run_frame(struct megadrive *md)
 {
+    refresh_rom_fetch_limit(md);
     // The BlocksDS ARM9 stack is in fast data TCM.
     struct m68k core = md->cpu;
     struct m68k *cpu = &core;
@@ -221,6 +229,7 @@ void megadrive_run_frame(struct megadrive *md)
     md->frame_cycle = 0;
     md->controller_cycles += md->frame_cycles;
     md->cpu = core;
+    md->rom_fetch_limit = 0;
 }
 
 static unsigned ym_timer_period(const struct megadrive *md, unsigned timer)
@@ -493,8 +502,10 @@ bool megadrive_write_byte(struct megadrive *md, uint32_t address, uint8_t value)
         return true;
     }
     if (address == 0xa130f1) {
-        if (md->sram_size)
+        if (md->sram_size) {
             md->sram_control = value & 3;
+            refresh_rom_fetch_limit(md);
+        }
         return true;
     }
     if (address >= 0xa00000 && address < 0xa04000 && md->z80_bus_requested) {

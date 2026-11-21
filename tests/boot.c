@@ -906,6 +906,35 @@ static void test_cartridge_sram(void)
     assert(remove(state) == 0);
 }
 
+static void test_sram_instruction_fetch(void)
+{
+    static struct megadrive md;
+    uint8_t program[0x10e] = {
+        [4] = 0x00, 0x00, 0x00, 0x20,
+        [0x20] = 0x13, 0xfc, 0x00, 0x01, 0x00, 0xa1, 0x30, 0xf1, // Enable SRAM
+        [0x28] = 0x4e, 0xf9, 0x00, 0x00, 0x01, 0x00,             // JMP $100
+        [0x100] = 0x4a, 0xfc,                                    // ILLEGAL in ROM
+        [0x10a] = 0x52, 0x80,                                    // ADDQ.L #1,D0
+        [0x10c] = 0x60, 0xfe,                                    // BRA.S to itself
+    };
+    const uint8_t overlay[] = {
+        0x70, 0x2a,                                    // MOVEQ #42,D0
+        0x13, 0xfc, 0x00, 0x00, 0x00, 0xa1, 0x30, 0xf1, // Disable SRAM
+        0x4a, 0xfc,                                    // ILLEGAL in SRAM
+    };
+    struct cartridge cart = {
+        .data = program, .size = sizeof(program),
+        .sram_start = 0x100, .sram_size = sizeof(overlay),
+    };
+    megadrive_reset(&md, &cart, GENESIS_REGION_AUTO);
+    memcpy(md.sram, overlay, sizeof(overlay));
+
+    megadrive_run_frame(&md);
+
+    assert(!md.cpu.stopped && md.cpu.pc == 0x10c);
+    assert(!md.sram_control && md.cpu.d[0] == 43);
+}
+
 static void test_psg(void)
 {
     struct psg chip;
@@ -983,6 +1012,7 @@ int main(void)
     assert(md.frame_cycles > 150000 && !md.cpu.stopped);
     test_status_immediates();
     test_cartridge_sram();
+    test_sram_instruction_fetch();
     test_fm_output();
     test_fm_mask_transitions();
     test_fm_zero_sustain_level();

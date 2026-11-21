@@ -48,6 +48,7 @@ struct megadrive {
     struct m68k cpu;
     const uint8_t *rom;
     size_t rom_size;
+    size_t rom_fetch_limit; // First byte outside the uninterrupted ROM range.
     uint32_t sram_start, sram_size;
     uint8_t sram_control;
     bool sram_dirty;

@@ -24,9 +24,10 @@ static void set_status(struct m68k *cpu, uint16_t value)
 
 static inline bool rom_visible(const struct megadrive *md, uint32_t address, unsigned size)
 {
-    return address < md->rom_size && md->rom_size - address >= size &&
-           (!(md->sram_control & 1) || address + size <= md->sram_start ||
-            address >= md->sram_start + md->sram_size);
+    return address + size <= md->rom_fetch_limit ||
+           (address < md->rom_size && md->rom_size - address >= size &&
+            (!(md->sram_control & 1) || address + size <= md->sram_start ||
+             address >= md->sram_start + md->sram_size));
 }
 
 static ITCM_CODE uint32_t read_memory(struct megadrive *md, uint32_t address, unsigned size)
@@ -837,7 +838,18 @@ static __attribute__((noinline)) unsigned shift_memory(struct m68k *cpu, struct 
 
 static ITCM_CODE __attribute__((noinline)) unsigned execute_misc(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
+    if (op == 0x4e75) { // RTS
+        if (cpu->a[7] & 1)
+            return 0;
+        cpu->pc = read_memory(md, cpu->a[7], 4);
+        cpu->a[7] += 4;
+        return 16;
+    }
     if ((op & 0xf1c0) == 0x41c0) {
+        if ((op & 0x3f) == 0x38) { // LEA with an absolute word address
+            cpu->a[(op >> 9) & 7] = (int16_t)fetch(cpu, md, 2);
+            return 8;
+        }
         unsigned mode = (op >> 3) & 7, reg = op & 7;
         uint32_t address;
         if (!address_operand(cpu, md, mode, reg, 0, &address))
@@ -985,12 +997,6 @@ static ITCM_CODE __attribute__((noinline)) unsigned execute_misc(struct m68k *cp
         cpu->sr = (cpu->sr & ~31) | (flags & 31);
         return 20;
     }
-    case 0x4e75:
-        if (cpu->a[7] & 1)
-            return 0;
-        cpu->pc = read_memory(md, cpu->a[7], 4);
-        cpu->a[7] += 4;
-        return 16;
     default:
         return 0;
     }
@@ -1033,6 +1039,13 @@ static unsigned compare_memory(struct m68k *cpu, struct megadrive *md, uint16_t 
 
 static ITCM_CODE __attribute__((noinline)) unsigned execute_immediate(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
+    if ((op & 0xfff8) == 0x0240) { // ANDI.W #value,Dn
+        unsigned reg = op & 7;
+        uint32_t value = cpu->d[reg] & fetch(cpu, md, 2);
+        set_data(cpu, reg, 2, value);
+        set_logic_flags(cpu, 2, value);
+        return 8;
+    }
     if ((op & 0xf138) == 0x0108)
         return move_peripheral(cpu, md, op);
     if ((op & 0x100) || (op & 0xff00) == 0x0800)
