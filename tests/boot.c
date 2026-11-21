@@ -200,98 +200,132 @@ static void test_z80_delay_loops(const struct cartridge *cart)
     assert(md.sound_cpu.zf && md.sound_cpu.pf && !md.sound_cpu.cf && !md.sound_cpu.sf);
 }
 
+enum { TEST_FM_STRIDE = 130 };
+
+static void setup_fm_pcm_patch(struct fm_chip *fm, unsigned algorithm, unsigned feedback)
+{
+    fm_reset(fm);
+    for (unsigned slot = 0; slot < FM_OPERATORS; ++slot) {
+        unsigned offset = slot * 4;
+        fm_write(fm, 0x30 + offset, 1);
+        fm_write(fm, 0x40 + offset, 20);
+        fm_write(fm, 0x50 + offset, 31);
+        fm_write(fm, 0x60 + offset, 0x80);
+        fm_write(fm, 0x80 + offset, 15);
+    }
+    fm_write(fm, 0xb0, algorithm | feedback << 3);
+    fm_write(fm, 0xb4, 0xf7);
+    fm_write(fm, 0xa4, 0x22);
+    fm_write(fm, 0xa0, 0x84);
+    fm_write(fm, 0x28, 0xf0);
+}
+
 static void test_fm_output(void)
 {
-    struct fm_chip fm;
-    fm_reset(&fm, false);
-    int left = 0, right = 0;
-    fm_sample(&fm, &left, &right);
-    assert(left == 0 && right == 0);
+    // FNV-1a over PCM words produced by the original ARM7 renderer.
+    static const uint32_t expected[8][3] = {
+        {0xf6db7a71, 0xe900703b, 0xa0d3732e},
+        {0x812efafe, 0x2edb81e2, 0x3fb7cbad},
+        {0x94391472, 0xf48eb6d9, 0x4f4ebcd7},
+        {0x47097980, 0x639f79db, 0x31d6c6e6},
+        {0xb4da16f0, 0x356a876f, 0x91cace93},
+        {0xea464f61, 0x9860d362, 0xee12ed48},
+        {0x13695212, 0xb428b463, 0x8814a859},
+        {0xac658513, 0xc5fd0fda, 0x6b07b97d},
+    };
+    static const unsigned feedback[] = {0, 4, 7};
+    static const unsigned block_sizes[] = {128, 31, 64, 1, 127, 128, 16, 49, 128};
+    int16_t pcm[FM_CHANNELS * TEST_FM_STRIDE];
 
-    // Key four operators on channel 6 and select original FM panning to the right.
-    for (unsigned slot = 0; slot < FM_OPERATORS; ++slot) {
-        unsigned offset = slot * 4 + 2;
-        fm_write(&fm, 0x130 + offset, 1);
-        fm_write(&fm, 0x140 + offset, 20);
-        fm_write(&fm, 0x150 + offset, 31);
-        fm_write(&fm, 0x180 + offset, 15);
+    for (unsigned alg = 0; alg < 8; ++alg) {
+        for (unsigned fb = 0; fb < 3; ++fb) {
+            struct fm_chip fm;
+            setup_fm_pcm_patch(&fm, alg, feedback[fb]);
+            struct fm_chip with_lfo = fm;
+            fm_write(&with_lfo, 0x22, 0x0f);
+            int16_t lfo_pcm[FM_CHANNELS * TEST_FM_STRIDE];
+
+            uint32_t hash = UINT32_C(2166136261);
+            for (unsigned block = 0; block < sizeof(block_sizes) / sizeof(*block_sizes); ++block) {
+                unsigned count = block_sizes[block];
+                fm_render(&fm, count, TEST_FM_STRIDE, pcm);
+                fm_render(&with_lfo, count, TEST_FM_STRIDE, lfo_pcm);
+                assert(memcmp(pcm, lfo_pcm, count * sizeof(*pcm)) == 0);
+                for (unsigned i = 0; i < count; ++i) {
+                    hash = (hash ^ (uint16_t)pcm[i]) * UINT32_C(16777619);
+                    for (unsigned channel = 1; channel < FM_CHANNELS; ++channel)
+                        assert(pcm[channel * TEST_FM_STRIDE + i] == 0);
+                }
+            }
+            assert(hash == expected[alg][fb]);
+        }
     }
+
+    // Channel 6 pauses its FM state while the DAC owns it.
+    struct fm_chip fm;
+    fm_reset(&fm);
+    fm_write(&fm, 0x132, 1);
+    fm_write(&fm, 0x152, 31);
+    fm_write(&fm, 0x1b2, 7);
     fm_write(&fm, 0x1a6, 0x22);
     fm_write(&fm, 0x1a2, 0x84);
-    fm_write(&fm, 0x1b6, 0x80);
-    fm_write(&fm, 0x28, 0xf6);
-
-    for (unsigned algorithm = 0; algorithm < 8; ++algorithm) {
-        fm_write(&fm, 0x1b2, algorithm);
-        bool audible = false;
-        for (unsigned sample = 0; sample < 128; ++sample) {
-            left = right = 0;
-            fm_sample(&fm, &left, &right);
-            audible |= right != 0;
-            assert(left == 0);
-        }
-        assert(audible);
-    }
-
-    // jEnesisDS 0.7.4 ignores the LFO and the operator/channel AM bits.
-    struct fm_chip with_lfo = fm;
-    fm_write(&with_lfo, 0x22, 0x0f);
-    fm_write(&with_lfo, 0x1b6, 0xb7);
-    for (unsigned slot = 0; slot < FM_OPERATORS; ++slot)
-        fm_write(&with_lfo, 0x162 + slot * 4, 0x80);
-    for (unsigned sample = 0; sample < 1024; ++sample) {
-        int expected_left = 0, expected_right = 0;
-        left = right = 0;
-        fm_sample(&fm, &expected_left, &expected_right);
-        fm_sample(&with_lfo, &left, &right);
-        assert(left == expected_left && right == expected_right);
-    }
-
-    // The other single-side pan uses the opposite DS output.
-    fm_write(&fm, 0x1b6, 0x40);
-    for (unsigned sample = 0; sample < 4; ++sample) {
-        left = right = 0;
-        fm_sample(&fm, &left, &right);
-    }
-    assert(left != 0 && right == 0);
-
+    fm_write(&fm, 0x28, 0x16);
+    fm_render(&fm, 128, TEST_FM_STRIDE, pcm);
+    struct fm_channel prior = fm.channels[5];
     fm_write(&fm, 0x2b, 0x80);
-    for (unsigned sample = 0; sample < 6; ++sample) {
-        left = right = 0;
-        fm_sample(&fm, &left, &right);
-    }
-    assert(left == 0 && right == 0);
+    fm_render(&fm, 128, TEST_FM_STRIDE, pcm);
+    assert(memcmp(&fm.channels[5], &prior, sizeof(prior)) == 0);
+    for (unsigned i = 0; i < 128; ++i)
+        assert(pcm[5 * TEST_FM_STRIDE + i] == 0);
     fm_write(&fm, 0x2b, 0);
-    fm_write(&fm, 0x28, 6);
-    for (unsigned sample = 0; sample < 2048; ++sample) {
-        left = right = 0;
-        fm_sample(&fm, &left, &right);
+    fm_render(&fm, 128, TEST_FM_STRIDE, pcm);
+    assert(fm.channels[5].op[0].phase != prior.op[0].phase);
+}
+
+static void test_fm_mask_transitions(void)
+{
+    static const struct {
+        unsigned algorithm, level_register;
+        uint32_t hash;
+    } expected[] = {
+        {2, 0x4c, UINT32_C(0x3519a99c)},
+        {5, 0x40, UINT32_C(0x665afc00)},
+    };
+    static const unsigned counts[] = {128, 31, 64, 1, 2, 29, 128};
+    int16_t pcm[FM_CHANNELS * TEST_FM_STRIDE];
+    for (unsigned test = 0; test < sizeof(expected) / sizeof(*expected); ++test) {
+        struct fm_chip fm;
+        setup_fm_pcm_patch(&fm, expected[test].algorithm, 7);
+        uint32_t hash = UINT32_C(2166136261);
+        for (unsigned block = 0; block < sizeof(counts) / sizeof(*counts); ++block) {
+            fm_write(&fm, expected[test].level_register, block == 3 || block == 4 ? 127 : 20);
+            fm_render(&fm, counts[block], TEST_FM_STRIDE, pcm);
+            for (unsigned i = 0; i < counts[block]; ++i)
+                hash = (hash ^ (uint16_t)pcm[i]) * UINT32_C(16777619);
+        }
+        assert(hash == expected[test].hash);
     }
-    assert(left == 0 && right == 0);
 }
 
 static void test_fm_zero_sustain_level(void)
 {
+    int16_t pcm[FM_CHANNELS * TEST_FM_STRIDE];
     for (unsigned sustain = 0; sustain <= 1; ++sustain) {
         struct fm_chip fm;
-        fm_reset(&fm, false);
+        fm_reset(&fm);
         fm_write(&fm, 0xb0, 7);
         fm_write(&fm, 0xa4, 0x22);
         fm_write(&fm, 0xa0, 0x84);
-        // Key only operator 1. Decay rate zero holds the note if it has not
-        // already reached the sustain level, as in the original ARM7 mixer.
         fm_write(&fm, 0x30, 1);
         fm_write(&fm, 0x50, 31);
         fm_write(&fm, 0x70, 31);
         fm_write(&fm, 0x80, sustain << 4);
         fm_write(&fm, 0x28, 0x10);
+        for (unsigned block = 0; block < 16; ++block)
+            fm_render(&fm, 128, TEST_FM_STRIDE, pcm);
         bool audible = false;
-        for (unsigned i = 0; i < 2048; ++i) {
-            int left = 0, right = 0;
-            fm_sample(&fm, &left, &right);
-            if (i >= 1024)
-                audible |= left != 0 || right != 0;
-        }
+        for (unsigned i = 0; i < 128; ++i)
+            audible |= pcm[i] != 0;
         assert(audible == (sustain != 0));
     }
 }
@@ -302,7 +336,7 @@ static void test_fm_pitch_latches(const struct cartridge *cart)
     struct fm_chip fm;
     struct dac_frame frame = {.count = 8};
     megadrive_reset(&md, cart, GENESIS_REGION_USA);
-    fm_reset(&fm, false);
+    fm_reset(&fm);
     static const struct { uint16_t reg; uint8_t value; } writes[] = {
         {0x0a4, 0x22}, {0x0ac, 0x19}, {0x1a1, 0x84}, {0x0aa, 0x35},
         {0x1a5, 0x17}, {0x0a0, 0x56}, {0x0a6, 0x32}, {0x0ad, 0x28},
@@ -327,7 +361,7 @@ static void test_fm_pitch_latches(const struct cartridge *cart)
     assert(remove(path) == 0);
     dac_begin(&md, &frame);
     dac_end(&md);
-    fm_restore(&fm, false, frame.fm_registers, frame.fm_keys, &frame.fm_pitch);
+    fm_restore(&fm, frame.fm_registers, frame.fm_keys, &frame.fm_pitch);
     assert(fm.channels[4].op[0].step == phase_step);
     assert(fm.pitch.special[2] == 0x1935);
     fm_write(&fm, 0x1a2, 0x78);
@@ -950,6 +984,7 @@ int main(void)
     test_status_immediates();
     test_cartridge_sram();
     test_fm_output();
+    test_fm_mask_transitions();
     test_fm_zero_sustain_level();
     test_fm_pitch_latches(&cartridge);
     test_dac_timing(&cartridge);

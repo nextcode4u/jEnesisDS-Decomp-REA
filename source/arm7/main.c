@@ -4,8 +4,18 @@
 #include "../dac.h"
 #include "../psg.h"
 
-enum { BLOCK_SAMPLES = 64, DAC_QUEUE_SIZE = 3, AUDIO_TIMER = 1 };
+enum {
+    BLOCK_SAMPLES = 128,
+    // An extra scratch sample is required for the feedback loop. Keep the
+    // stride even so each channel's staging buffer is word-aligned.
+    FM_STRIDE = BLOCK_SAMPLES + 2,
+    DAC_QUEUE_SIZE = 3,
+    AUDIO_TIMER = 1,
+    FM_SOUND_CHANNELS = FM_CHANNELS * 2,
+    MIX_SOUND_CHANNELS = 2,
+};
 static int16_t samples[2][2][BLOCK_SAMPLES] __attribute__((aligned(4)));
+static int16_t fm_samples[FM_CHANNELS][2][BLOCK_SAMPLES] __attribute__((aligned(4)));
 static struct dac_frame dac_queue[DAC_QUEUE_SIZE];
 static unsigned dac_read, dac_count, dac_sample_index;
 static unsigned pending_releases;
@@ -38,7 +48,7 @@ static void receive_psg(void)
         return;
     if (message.generation != sound_generation || chip.pal != (bool)message.pal) {
         psg_reset(&chip, message.pal);
-        fm_reset(&fm, message.pal);
+        fm_reset(&fm);
         sound_generation = message.generation;
         discard_dac();
     }
@@ -79,43 +89,56 @@ static int16_t clamp_sample(int value)
     return value < INT16_MIN ? INT16_MIN : value;
 }
 
-static void fill_sound_block(int16_t *left, int16_t *right)
+static void fill_sound_block(int16_t *left, int16_t *right, int16_t *fm_pcm)
 {
-    if (sound_active) {
-        psg_render(&chip, left, BLOCK_SAMPLES);
-        for (unsigned i = 0; i < BLOCK_SAMPLES; ++i) {
-            int l = left[i], r = left[i];
-            if (dac_count) {
-                const struct dac_frame *frame = &dac_queue[dac_read];
-                if (dac_sample_index == 0) {
-                    if (!fm_synced || next_fm_sequence != frame->sequence)
-                        fm_restore(&fm, chip.pal, frame->fm_registers, frame->fm_keys,
-                                   &frame->fm_pitch);
-                    next_fm_sequence = frame->sequence + 1;
-                    fm_synced = !frame->fm_overflow;
-                    fm_write_index = 0;
-                }
-                while (fm_write_index < frame->fm_count &&
-                       frame->fm_writes[fm_write_index].sample == dac_sample_index) {
-                    const struct fm_write_event *event = &frame->fm_writes[fm_write_index++];
-                    fm_write(&fm, event->reg, event->value);
-                }
-                struct dac_sample sample = frame->samples[dac_sample_index++];
-                l += sample.left * 64;
-                r += sample.right * 64;
-                if (dac_sample_index == frame->count) {
-                    dac_read = (dac_read + 1) % DAC_QUEUE_SIZE;
-                    --dac_count;
-                    dac_sample_index = 0;
-                }
-            }
-            fm_sample(&fm, &l, &r);
-            left[i] = clamp_sample(l);
-            right[i] = clamp_sample(r);
-        }
-    } else {
+    if (!sound_active) {
         memset(left, 0, sizeof(samples[0][0]));
         memset(right, 0, sizeof(samples[1][0]));
+        for (unsigned channel = 0; channel < FM_CHANNELS; ++channel)
+            memset(fm_pcm + channel * (FM_STRIDE), 0, BLOCK_SAMPLES * sizeof(*fm_pcm));
+        return;
+    }
+
+    psg_render(&chip, left, BLOCK_SAMPLES);
+    memcpy(right, left, BLOCK_SAMPLES * sizeof(*left));
+
+    unsigned pos = 0;
+    while (pos < BLOCK_SAMPLES) {
+        unsigned count = BLOCK_SAMPLES - pos;
+        if (dac_count) {
+            const struct dac_frame *frame = &dac_queue[dac_read];
+            if (dac_sample_index == 0) {
+                if (!fm_synced || next_fm_sequence != frame->sequence)
+                    fm_restore(&fm, frame->fm_registers, frame->fm_keys,
+                               &frame->fm_pitch);
+                next_fm_sequence = frame->sequence + 1;
+                fm_synced = !frame->fm_overflow;
+                fm_write_index = 0;
+            }
+            while (fm_write_index < frame->fm_count &&
+                   frame->fm_writes[fm_write_index].sample == dac_sample_index) {
+                const struct fm_write_event *event = &frame->fm_writes[fm_write_index++];
+                fm_write(&fm, event->reg, event->value);
+            }
+            unsigned next = fm_write_index < frame->fm_count ?
+                            frame->fm_writes[fm_write_index].sample : frame->count;
+            if (count > next - dac_sample_index)
+                count = next - dac_sample_index;
+            for (unsigned i = 0; i < count; ++i) {
+                struct dac_sample sample = frame->samples[dac_sample_index + i];
+                int psg = left[pos + i];
+                left[pos + i] = clamp_sample(psg + sample.left * 64);
+                right[pos + i] = clamp_sample(psg + sample.right * 64);
+            }
+            dac_sample_index += count;
+            if (dac_sample_index == frame->count) {
+                dac_read = (dac_read + 1) % DAC_QUEUE_SIZE;
+                --dac_count;
+                dac_sample_index = 0;
+            }
+        }
+        fm_render(&fm, count, FM_STRIDE, fm_pcm + pos);
+        pos += count;
     }
 }
 
@@ -128,21 +151,22 @@ static void start_audio(void)
 {
     psg_reset(&chip, false);
     enableSound();
-    for (unsigned channel = 0; channel < 2; ++channel) {
+    for (unsigned channel = 0; channel < FM_SOUND_CHANNELS + MIX_SOUND_CHANNELS; ++channel) {
+        unsigned stereo = channel - FM_SOUND_CHANNELS;
         SCHANNEL_CR(channel) = 0;
-        SCHANNEL_SOURCE(channel) = (uint32_t)samples[channel];
+        SCHANNEL_SOURCE(channel) = channel < FM_SOUND_CHANNELS ? (uint32_t)fm_samples[channel % FM_CHANNELS] :
+                                                 (uint32_t)samples[stereo];
         SCHANNEL_TIMER(channel) = SOUNDXTMR_FREQ(PSG_RATE);
         SCHANNEL_REPEAT_POINT(channel) = 0;
-        SCHANNEL_LENGTH(channel) = sizeof(samples[channel]) / 4;
+        SCHANNEL_LENGTH(channel) = sizeof(samples[0]) / 4;
     }
     int critical = enterCriticalSection();
-    for (unsigned channel = 0; channel < 2; ++channel)
-        SCHANNEL_CR(channel) = SOUNDXCNT_ENABLE | SOUNDXCNT_REPEAT |
-                               SOUNDXCNT_FORMAT_16BIT | SOUNDXCNT_PAN(channel * 127) |
-                               SOUNDXCNT_VOL_MUL(127);
-    int sample_ticks = -(int16_t)SOUNDXTMR_FREQ(PSG_RATE) * 2;
-    // One timer tick per 64 master-clock ticks. A 64-sample block therefore
-    // reloads with the number of master-clock ticks per output sample.
+    for (unsigned channel = 0; channel < FM_SOUND_CHANNELS + MIX_SOUND_CHANNELS; ++channel)
+        SCHANNEL_CR(channel) = SOUNDXCNT_ENABLE | SOUNDXCNT_REPEAT | SOUNDXCNT_FORMAT_16BIT |
+            (channel < FM_SOUND_CHANNELS ? SOUNDXCNT_PAN(63) : SOUNDXCNT_PAN((channel - FM_SOUND_CHANNELS) * 127)) |
+            SOUNDXCNT_VOL_MUL(127);
+    int sample_ticks = -(int16_t)SOUNDXTMR_FREQ(PSG_RATE) * 2 * BLOCK_SAMPLES / 64;
+    // Keep the interrupt period in step with the hardware channel ring.
     timerStart(AUDIO_TIMER, ClockDivider_64, (uint16_t)-sample_ticks, audio_tick);
     leaveCriticalSection(critical);
 }
@@ -181,11 +205,26 @@ int main(void)
             release_dac_slots();
 
         int16_t left[BLOCK_SAMPLES], right[BLOCK_SAMPLES];
-        fill_sound_block(left, right);
-        if (tick == audio_ticks) {
-            unsigned slot = (tick - 1) & 1;
-            memcpy(samples[0][slot], left, sizeof(left));
-            memcpy(samples[1][slot], right, sizeof(right));
+        unsigned slot = (tick - 1) & 1;
+        int16_t fm_pcm[FM_CHANNELS * (FM_STRIDE)] __attribute__((aligned(4)));
+        fill_sound_block(left, right, fm_pcm);
+        if (tick != audio_ticks)
+            continue;
+        for (unsigned channel = 0; channel < FM_CHANNELS; ++channel) {
+            memcpy(fm_samples[channel][slot], fm_pcm + channel * FM_STRIDE,
+                   sizeof(fm_samples[channel][slot]));
+            // Both DS channels play this voice using the original mixer routing.
+            unsigned pan = fm.channels[channel].pan;
+            unsigned side = pan == 1 ? 0 : pan == 2 ? 127 : 63;
+            unsigned volume = pan == 3 ? 127 : pan ? 63 : 0;
+            uint32_t control = SOUNDXCNT_ENABLE | SOUNDXCNT_REPEAT | SOUNDXCNT_FORMAT_16BIT |
+                SOUNDXCNT_PAN(side) | SOUNDXCNT_VOL_MUL(sound_active ? volume : 0);
+            if (SCHANNEL_CR(channel) != control) {
+                SCHANNEL_CR(channel) = control;
+                SCHANNEL_CR(channel + FM_CHANNELS) = control;
+            }
         }
+        memcpy(samples[0][slot], left, sizeof(left));
+        memcpy(samples[1][slot], right, sizeof(right));
     }
 }

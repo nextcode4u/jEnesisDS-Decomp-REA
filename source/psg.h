@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-enum { PSG_RATE = 28000, PSG_REGISTERS = 8 };
+enum { PSG_RATE = 27563, PSG_REGISTERS = 8 };
 
 struct psg_message {
     uint16_t registers[PSG_REGISTERS];

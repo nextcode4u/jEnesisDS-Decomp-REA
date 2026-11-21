@@ -44,7 +44,7 @@ struct fm_operator {
 
 struct fm_channel {
     struct fm_operator op[FM_OPERATORS];
-    int16_t history[2];
+    int16_t history[2], delayed;
     uint8_t algorithm, feedback, pan;
 };
 
@@ -53,18 +53,19 @@ struct fm_chip {
     uint8_t registers[2][256];
     struct fm_pitch pitch;
     uint32_t envelope_clock, envelope_tick;
-    int32_t previous_left, previous_right, delta_left, delta_right;
-    uint16_t output_clock;
-    uint8_t samples_remaining;
     uint8_t active_channels;
 };
 
-extern const uint16_t fm_sine[512], fm_exponent[256];
+extern const uint16_t fm_log_sine[1024];
+extern const int16_t fm_levels[6656];
+extern const uint32_t fm_frequency[2048];
 
-void fm_reset(struct fm_chip *fm, bool pal);
+void fm_reset(struct fm_chip *fm);
 void fm_write(struct fm_chip *fm, unsigned reg, uint8_t value);
-void fm_restore(struct fm_chip *fm, bool pal, const uint8_t registers[2][256],
+void fm_restore(struct fm_chip *fm, const uint8_t registers[2][256],
                 const uint8_t keys[FM_CHANNELS], const struct fm_pitch *pitch);
-void fm_sample(struct fm_chip *fm, int *left, int *right);
+// Render one block per voice. Each output channel starts stride samples
+// after the previous one and needs samples + 1 entries for feedback.
+void fm_render(struct fm_chip *fm, unsigned samples, unsigned stride, int16_t *output);
 
 #endif
