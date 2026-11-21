@@ -289,7 +289,7 @@ static inline __attribute__((always_inline)) unsigned move_common(
     unsigned cycles = 4;
     if (modes == 0x0000) {
         value = cpu->d[src_reg];
-    } else if (modes == 0x0028 || modes == 0x0018 || modes == 0x0010) {
+    } else if (modes == 0x0028 || (size != 2 && modes == 0x0018) || modes == 0x0010) {
         address = cpu->a[src_reg];
         if (modes == 0x0028) {
             address += (int16_t)fetch(cpu, md, 2);
@@ -1487,6 +1487,7 @@ static ARM9_ITCM unsigned execute_until(struct megadrive *md, unsigned cycles,
         {0xffff, 0x4eb9, &&op_jsr_long},
         {0xffbf, 0x4a38, &&op_tst_absolute},
         {0xf1f8, 0x30c0, &&op_store_word_postincrement},
+        {0xf1f8, 0x3018, &&op_load_word_postincrement},
         {0xf1f8, 0x1028, &&op_load_byte_displacement},
         {0xfff8, 0x51c8, &&op_dbra},
         {0xfefd, 0x66f8, &&op_poll_branch},
@@ -1561,6 +1562,17 @@ op_store_word_postincrement: { // MOVE.W Dn,(An)+
                 cpu->a[reg] += 2;
                 if (!write_memory_fast(md, address, 2, value))
                     FINISH_INSTRUCTION(0);
+                set_logic_flags(cpu, 2, value);
+                FINISH_INSTRUCTION(8);
+            }
+op_load_word_postincrement: { // MOVE.W (An)+,Dn
+                unsigned reg = op & 7;
+                uint32_t address = cpu->a[reg];
+                cpu->a[reg] += 2;
+                if (address & 1)
+                    FINISH_INSTRUCTION(0);
+                uint32_t value = read_memory_fast(md, address, 2);
+                set_data(cpu, (op >> 9) & 7, 2, value);
                 set_logic_flags(cpu, 2, value);
                 FINISH_INSTRUCTION(8);
             }
