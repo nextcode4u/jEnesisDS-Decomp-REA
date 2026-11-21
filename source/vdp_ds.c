@@ -8,7 +8,7 @@
 enum {
     SCREEN_WORDS = 1024,
     SCREENS_PER_PAGE = 16,
-    MAX_MAPS = 3,
+    MAX_MAPS = 4,
     BG_PATTERNS = 1024,
     GENESIS_PATTERNS = 2048,
     OBJ_PATTERNS = 512,
@@ -20,13 +20,13 @@ enum {
 
 struct tile_map {
     uint16_t base;
-    uint8_t parity, width, height;
+    uint8_t parity, width, height, columns, first_column;
 };
 
 struct scanline {
     uint32_t scroll[2];
     uint16_t control_a[2];
-    uint8_t layers;
+    uint8_t layers, map_b;
 };
 
 struct page {
@@ -88,11 +88,17 @@ static void set_scroll(unsigned y)
     // BG0/BG2 share plane A and BG1/BG3 share plane B.
     scroll[0] = scroll[2] = line->scroll[0];
     scroll[1] = scroll[3] = line->scroll[1];
-    if (page->raster && (!y || line->layers != line[-1].layers ||
-                         line->control_a[0] != line[-1].control_a[0])) {
-        REG_BG0CNT = line->control_a[0];
-        REG_BG2CNT = line->control_a[1];
-        REG_WINOUT = line->layers;
+    if (page->raster) {
+        if (!y || line->control_a[0] != line[-1].control_a[0]) {
+            REG_BG0CNT = line->control_a[0];
+            REG_BG2CNT = line->control_a[1];
+        }
+        if (!y || line->map_b != line[-1].map_b) {
+            REG_BG1CNT = page->control[line->map_b][0];
+            REG_BG3CNT = page->control[line->map_b][1];
+        }
+        if (!y || line->layers != line[-1].layers)
+            REG_WINOUT = line->layers;
     }
 }
 
@@ -144,7 +150,8 @@ static void refresh_pattern(const struct megadrive *md, struct page *page,
 static bool same_map(struct tile_map a, struct tile_map b)
 {
     return a.base == b.base && a.parity == b.parity &&
-           a.width == b.width && a.height == b.height;
+           a.width == b.width && a.height == b.height &&
+           a.columns == b.columns && a.first_column == b.first_column;
 }
 
 static bool update_map(const struct megadrive *md, struct page *page, unsigned map,
@@ -164,12 +171,16 @@ static bool update_map(const struct megadrive *md, struct page *page, unsigned m
 
     unsigned row_shift = width == 64 ? 6 : 5;
     for (unsigned cell = 0; cell < width * height; cell += 16) {
+        unsigned x = cell & (width - 1), y = cell >> row_shift;
         unsigned address = layout.base + cell * 2;
+        if (layout.columns != width) {
+            unsigned source_x = (layout.first_column + x) & (layout.columns - 1);
+            address = layout.base + (y * layout.columns + source_x) * 2;
+        }
         if (incremental && (int32_t)(md->vram_revisions[address / TILE_BYTES] -
                                      page->map_revision) <= 0)
             continue;
         // Genesis rows are linear. DS text maps split into 32 x 32 screens.
-        unsigned x = cell & (width - 1), y = cell >> row_shift;
         unsigned index = ((y >> 5) * (width >> 5) + (x >> 5)) * SCREEN_WORDS +
                          (y & 31) * 32 + (x & 31);
         for (unsigned j = 0; j < 16; ++j) {
@@ -207,7 +218,7 @@ static bool prepare_maps(const struct megadrive *md, struct page *page, unsigned
         unsigned cells = maps[i].width * maps[i].height;
         screen_base[i] = next * SCREENS_PER_PAGE + used;
         used += cells / SCREEN_WORDS * 2;
-        cacheable &= maps[i].base + cells * 2 <= 0x10000;
+        cacheable &= maps[i].base + maps[i].columns * maps[i].height * 2 <= 0x10000;
         incremental &= same_map(page->maps[i], maps[i]);
     }
     if (used > SCREENS_PER_PAGE)
@@ -385,14 +396,62 @@ static bool prepare_sprites(const struct megadrive *md, struct page *page, unsig
     return true;
 }
 
+static unsigned column_origins(unsigned x)
+{
+    // Candidate bases are a multiple of 16 tiles. A 64-tile map covers
+    // the 32-tile viewport when its left edge is within the first 256 pixels.
+    unsigned block = x / 128;
+    unsigned valid = (1U << block) | (1U << ((block + 7) & 7));
+    if (x % 128 == 0)
+        valid |= 1U << ((block + 6) & 7);
+    return valid;
+}
+
+static bool split_map_columns(const struct page *page, unsigned plane,
+                              const uint8_t *tables, uint8_t *maps, unsigned map,
+                              unsigned extra, unsigned *first, unsigned *second)
+{
+    // For every possible first origin, retain the second origins that
+    // cover every scanline the first origin cannot cover.
+    uint8_t partners[8];
+    memset(partners, 0xff, sizeof(partners));
+    for (unsigned y = 0; y < VDP_VIEW_HEIGHT; ++y) {
+        if (tables[y] == UINT8_MAX || maps[y] != map)
+            continue;
+        unsigned valid = column_origins(page->lines[y].scroll[plane] & 0x3ff);
+        for (unsigned candidate = 0; candidate < 8; ++candidate)
+            if (!(valid & (1U << candidate)))
+                partners[candidate] &= valid;
+    }
+    for (unsigned candidate = 0; candidate < 8; ++candidate) {
+        if (!partners[candidate])
+            continue;
+        *first = candidate * 16;
+        *second = (unsigned)__builtin_ctz(partners[candidate]) * 16;
+        for (unsigned y = 0; y < VDP_VIEW_HEIGHT; ++y)
+            if (tables[y] != UINT8_MAX && maps[y] == map &&
+                !(column_origins(page->lines[y].scroll[plane] & 0x3ff) & (1U << candidate)))
+                maps[y] = extra;
+        return true;
+    }
+    return false;
+}
+
+static void rebase_scroll(struct scanline *line, unsigned plane, const struct tile_map *map)
+{
+    uint32_t scroll = line->scroll[plane];
+    line->scroll[plane] = (scroll & 0xffff0000) | ((scroll - map->first_column * 8) & 0x1ff);
+}
+
 bool vdp_ds_prepare(const struct megadrive *md)
 {
     const uint8_t *regs = md->vdp_registers;
     unsigned mode = regs[12] & 6;
     bool interlace = mode == 6;
+    unsigned horizontal = regs[16] & 3;
     bool enabled = (regs[1] & 0x40) != 0;
     if ((!md->vdp_row_count && !enabled) || (regs[11] & 4) || (regs[12] & 8) ||
-        (mode && !interlace) || (regs[16] & 0x22))
+        (mode && !interlace) || horizontal == 2 || (regs[16] & 0x20))
         return false;
     bool wide = (regs[12] & 1) != 0;
     unsigned left = wide ? 32 : 0, top = (regs[1] & 8) ? 24 : 16;
@@ -405,7 +464,8 @@ bool vdp_ds_prepare(const struct megadrive *md)
     }
     page->last_revision = md->video_revision;
 
-    unsigned width = (regs[16] & 1) ? 64 : 32;
+    unsigned width = horizontal ? 64 : 32;
+    unsigned columns = horizontal == 3 ? 128 : width;
     unsigned height = (regs[16] & 0x10) ? 64 : 32;
     unsigned window_x = (regs[17] & 0x1f) * 16;
     unsigned window_y = (regs[18] & 0x1f) * 8;
@@ -415,17 +475,19 @@ bool vdp_ds_prepare(const struct megadrive *md)
     bool window_full = window_right ? window_x <= left : window_x >= left + VDP_VIEW_WIDTH;
     // Maps 0 and 2 are Plane A or window variants. Map 1 is the fixed Plane B.
     struct tile_map maps[MAX_MAPS] = {
-        [1] = {.base = (regs[4] & 7) << 13, .width = width, .height = height},
+        [1] = {.base = (regs[4] & 7) << 13, .width = width, .height = height, .columns = columns},
     };
-    uint8_t map_indices[VDP_VIEW_HEIGHT], sprite_tables[VDP_VIEW_HEIGHT];
+    uint8_t map_a[VDP_VIEW_HEIGHT], map_b[VDP_VIEW_HEIGHT], sprite_tables[VDP_VIEW_HEIGHT];
+    memset(map_b, 1, sizeof(map_b));
     unsigned map_count = 0;
+    unsigned origins[MAX_MAPS] = {0xff, 0xff, 0xff, 0xff};
     bool blanking = false;
     for (unsigned y = 0; y < VDP_VIEW_HEIGHT; ++y) {
         const struct vdp_scanline *row = raster_row(md, y + top);
         bool active = row ? row->display_enabled : enabled;
         sprite_tables[y] = active ? (row ? row->sprite_table : 0) : UINT8_MAX;
         if (!active) {
-            map_indices[y] = 0;
+            map_a[y] = 0;
             page->lines[y].scroll[0] = page->lines[y].scroll[1] = 0;
             blanking = true;
             continue;
@@ -441,7 +503,8 @@ bool vdp_ds_prepare(const struct megadrive *md)
         unsigned parity[2];
         for (unsigned plane = 0; plane < 2; ++plane) {
             bool fixed = plane == 0 && window;
-            unsigned h = fixed ? left : (left - vram_word(md, scroll + plane * 2)) & 0x1ff;
+            unsigned hmask = !fixed && columns == 128 ? 0x3ff : 0x1ff;
+            unsigned h = fixed ? left : (left - vram_word(md, scroll + plane * 2)) & hmask;
             unsigned v = fixed ? 0 : megadrive_scanline_vscroll(md, guest_y, plane);
             if (interlace)
                 v += md->vdp_odd_field;
@@ -455,6 +518,7 @@ bool vdp_ds_prepare(const struct megadrive *md)
             .parity = parity[0],
             .width = window ? (wide ? 64 : 32) : width,
             .height = window ? 32 : height,
+            .columns = window ? (wide ? 64 : 32) : columns,
         };
         unsigned index = 0;
         if (!map_count) {
@@ -472,7 +536,33 @@ bool vdp_ds_prepare(const struct megadrive *md)
         }
         if (maps[1].parity != parity[1])
             return false;
-        map_indices[y] = index;
+        map_a[y] = index;
+        if (columns == 128) {
+            if (!window)
+                origins[index] &= column_origins(page->lines[y].scroll[0] & 0x3ff);
+            origins[1] &= column_origins(page->lines[y].scroll[1] & 0x3ff);
+        }
+    }
+    if (columns == 128) {
+        unsigned original_count = map_count;
+        for (unsigned i = 0; i < original_count; ++i) {
+            if (maps[i].columns != 128)
+                continue;
+            if (origins[i]) {
+                unsigned old = page->maps[i].first_column / 16;
+                unsigned block = (origins[i] & (1U << old)) ? old : (unsigned)__builtin_ctz(origins[i]);
+                maps[i].first_column = block * 16;
+                continue;
+            }
+            unsigned first, second;
+            if (map_count == MAX_MAPS || height != 32 ||
+                !split_map_columns(page, i == 1, sprite_tables, i == 1 ? map_b : map_a,
+                                   i, map_count, &first, &second))
+                return false;
+            maps[i].first_column = first;
+            maps[map_count] = maps[i];
+            maps[map_count++].first_column = second;
+        }
     }
     if (!map_count ||
         !prepare_maps(md, page, next, maps, map_count, interlace) ||
@@ -480,9 +570,14 @@ bool vdp_ds_prepare(const struct megadrive *md)
         return false;
     page->raster = blanking || map_count > 2;
     for (unsigned y = 0; y < VDP_VIEW_HEIGHT; ++y) {
-        unsigned map = map_indices[y];
+        unsigned map = map_a[y];
+        if (columns == 128) {
+            rebase_scroll(&page->lines[y], 0, &maps[map]);
+            rebase_scroll(&page->lines[y], 1, &maps[map_b[y]]);
+        }
         page->lines[y].control_a[0] = page->control[map][0];
         page->lines[y].control_a[1] = page->control[map][1];
+        page->lines[y].map_b = map_b[y];
         page->lines[y].layers = sprite_tables[y] == UINT8_MAX ? 0 : VISIBLE_LAYERS;
     }
     ready = true;

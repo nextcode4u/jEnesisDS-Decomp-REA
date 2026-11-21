@@ -208,7 +208,7 @@ static void test_fm_output(void)
     fm_sample(&fm, &left, &right);
     assert(left == 0 && right == 0);
 
-    // Key four operators on channel 6 and pan them left.
+    // Key four operators on channel 6 and select original FM panning to the right.
     for (unsigned slot = 0; slot < FM_OPERATORS; ++slot) {
         unsigned offset = slot * 4 + 2;
         fm_write(&fm, 0x130 + offset, 1);
@@ -227,14 +227,36 @@ static void test_fm_output(void)
         for (unsigned sample = 0; sample < 128; ++sample) {
             left = right = 0;
             fm_sample(&fm, &left, &right);
-            audible |= left != 0;
-            assert(right == 0);
+            audible |= right != 0;
+            assert(left == 0);
         }
         assert(audible);
     }
 
-    fm_write(&fm, 0x2b, 0x80);
+    // jEnesisDS 0.7.4 ignores the LFO and the operator/channel AM bits.
+    struct fm_chip with_lfo = fm;
+    fm_write(&with_lfo, 0x22, 0x0f);
+    fm_write(&with_lfo, 0x1b6, 0xb7);
+    for (unsigned slot = 0; slot < FM_OPERATORS; ++slot)
+        fm_write(&with_lfo, 0x162 + slot * 4, 0x80);
+    for (unsigned sample = 0; sample < 1024; ++sample) {
+        int expected_left = 0, expected_right = 0;
+        left = right = 0;
+        fm_sample(&fm, &expected_left, &expected_right);
+        fm_sample(&with_lfo, &left, &right);
+        assert(left == expected_left && right == expected_right);
+    }
+
+    // The other single-side pan uses the opposite DS output.
+    fm_write(&fm, 0x1b6, 0x40);
     for (unsigned sample = 0; sample < 4; ++sample) {
+        left = right = 0;
+        fm_sample(&fm, &left, &right);
+    }
+    assert(left != 0 && right == 0);
+
+    fm_write(&fm, 0x2b, 0x80);
+    for (unsigned sample = 0; sample < 6; ++sample) {
         left = right = 0;
         fm_sample(&fm, &left, &right);
     }
@@ -246,6 +268,32 @@ static void test_fm_output(void)
         fm_sample(&fm, &left, &right);
     }
     assert(left == 0 && right == 0);
+}
+
+static void test_fm_zero_sustain_level(void)
+{
+    for (unsigned sustain = 0; sustain <= 1; ++sustain) {
+        struct fm_chip fm;
+        fm_reset(&fm, false);
+        fm_write(&fm, 0xb0, 7);
+        fm_write(&fm, 0xa4, 0x22);
+        fm_write(&fm, 0xa0, 0x84);
+        // Key only operator 1. Decay rate zero holds the note if it has not
+        // already reached the sustain level, as in the original ARM7 mixer.
+        fm_write(&fm, 0x30, 1);
+        fm_write(&fm, 0x50, 31);
+        fm_write(&fm, 0x70, 31);
+        fm_write(&fm, 0x80, sustain << 4);
+        fm_write(&fm, 0x28, 0x10);
+        bool audible = false;
+        for (unsigned i = 0; i < 2048; ++i) {
+            int left = 0, right = 0;
+            fm_sample(&fm, &left, &right);
+            if (i >= 1024)
+                audible |= left != 0 || right != 0;
+        }
+        assert(audible == (sustain != 0));
+    }
 }
 
 static void test_fm_pitch_latches(const struct cartridge *cart)
@@ -902,6 +950,7 @@ int main(void)
     test_status_immediates();
     test_cartridge_sram();
     test_fm_output();
+    test_fm_zero_sustain_level();
     test_fm_pitch_latches(&cartridge);
     test_dac_timing(&cartridge);
     test_z80_dac_writes(&cartridge);

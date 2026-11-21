@@ -24,7 +24,6 @@ static void update_channel(struct fm_chip *fm, unsigned index)
     ch->algorithm = reg[0xb0 + channel] & 7;
     ch->feedback = (reg[0xb0 + channel] >> 3) & 7;
     ch->pan = reg[0xb4 + channel] >> 6;
-    ch->am_depth = (reg[0xb4 + channel] >> 4) & 3;
     static const uint8_t offsets[] = {0, 8, 4, 12};
     static const uint8_t special_slots[] = {1, 2, 0};
 
@@ -57,7 +56,6 @@ static void update_channel(struct fm_chip *fm, unsigned index)
         op->rate[DECAY] = rate_with_key_scale((reg[0x60 + offset] & 31) * 2, scale);
         op->rate[SUSTAIN] = rate_with_key_scale((reg[0x70 + offset] & 31) * 2, scale);
         op->rate[RELEASE] = rate_with_key_scale((reg[0x80 + offset] & 15) * 4 + 2, scale);
-        op->amplitude_modulation = (reg[0x60 + offset] & 0x80) != 0;
         unsigned sustain = reg[0x80 + offset] >> 4;
         op->sustain_level = (sustain == 15 ? 31 : sustain) * 32;
     }
@@ -76,7 +74,7 @@ static void key_change(struct fm_chip *fm, unsigned channel, unsigned keys)
             op->stage = ATTACK;
             if (op->rate[ATTACK] >= 62) {
                 op->attenuation = 0;
-                op->stage = DECAY;
+                op->stage = op->sustain_level ? DECAY : SUSTAIN;
             }
         } else if (!on && op->keyed && op->stage != SILENT) {
             op->stage = RELEASE;
@@ -164,7 +162,7 @@ static __attribute__((noinline)) void envelope(struct fm_operator *op, unsigned 
         unsigned decrease = ((level + 1) * step + 15) >> 4;
         op->attenuation = decrease < level ? level - decrease : 0;
         if (op->attenuation == 0)
-            op->stage = DECAY;
+            op->stage = op->sustain_level ? DECAY : SUSTAIN;
     } else {
         level += step;
         op->attenuation = level < 1023 ? level : 1023;
@@ -175,7 +173,7 @@ static __attribute__((noinline)) void envelope(struct fm_operator *op, unsigned 
     }
 }
 
-static inline __attribute__((always_inline)) int wave(struct fm_operator *op, int modulation, unsigned am, unsigned tick, bool extra_tick)
+static inline __attribute__((always_inline)) int wave(struct fm_operator *op, int modulation, unsigned tick, bool extra_tick)
 {
     unsigned stage = op->stage;
     if (stage == SILENT)
@@ -189,8 +187,6 @@ static inline __attribute__((always_inline)) int wave(struct fm_operator *op, in
     op->phase += op->step;
     unsigned phase = ((op->phase >> 22) + modulation) & 1023;
     unsigned level = (op->total_level + op->attenuation) * 4 + fm_sine[phase & 511];
-    if (op->amplitude_modulation)
-        level += am * 4;
     unsigned shift = level >> 8;
     if (shift >= 13)
         return 0;
@@ -198,7 +194,7 @@ static inline __attribute__((always_inline)) int wave(struct fm_operator *op, in
     return phase & 512 ? -value : value;
 }
 
-static int channel_sample(struct fm_chip *fm, unsigned channel, unsigned tick, unsigned am, bool extra_tick)
+static int channel_sample(struct fm_chip *fm, unsigned channel, unsigned tick, bool extra_tick)
 {
     struct fm_channel *ch = &fm->channels[channel];
     struct fm_operator *op = ch->op;
@@ -207,15 +203,13 @@ static int channel_sample(struct fm_chip *fm, unsigned channel, unsigned tick, u
         fm->active_channels &= ~(1U << channel);
         return 0;
     }
-    static const uint8_t am_shift[] = {7, 3, 1, 0};
-    am = am ? am >> am_shift[ch->am_depth] : 0;
     int feedback = ch->feedback ? (ch->history[0] + ch->history[1]) >> (10 - ch->feedback) : 0;
-    int a = wave(&op[0], feedback, am, tick, extra_tick);
+    int a = wave(&op[0], feedback, tick, extra_tick);
     ch->history[1] = ch->history[0];
     ch->history[0] = a;
     unsigned algorithm = ch->algorithm;
     int b_input = algorithm == 1 || algorithm == 2 || algorithm == 7 ? 0 : a;
-    int b = wave(&op[1], b_input >> 1, am, tick, extra_tick);
+    int b = wave(&op[1], b_input >> 1, tick, extra_tick);
     // Select the signal feeding operator C before evaluating it. All eight
     // algorithms then follow the same oscillator and envelope code.
     int c_input = 0, d_input = 0;
@@ -227,10 +221,10 @@ static int channel_sample(struct fm_chip *fm, unsigned channel, unsigned tick, u
     case 5: c_input = d_input = a; break;
     default: break;
     }
-    int c = wave(&op[2], c_input >> 1, am, tick, extra_tick);
+    int c = wave(&op[2], c_input >> 1, tick, extra_tick);
     if (algorithm <= 4)
         d_input += c;
-    int result = wave(&op[3], d_input >> 1, am, tick, extra_tick);
+    int result = wave(&op[3], d_input >> 1, tick, extra_tick);
     if (algorithm >= 4)
         result += b;
     if (algorithm >= 5)
@@ -261,35 +255,31 @@ void fm_sample(struct fm_chip *fm, int *left, int *right)
             extra_tick = true;
         }
     }
-    unsigned am = 0;
-    if (fm->registers[0][0x22] & 8) {
-        static const uint8_t periods[] = {108, 77, 71, 67, 62, 44, 8, 5};
-        fm->lfo_clock += fm->output_clock;
-        unsigned period = periods[fm->registers[0][0x22] & 7] * 4096;
-        if (fm->lfo_clock >= period) {
-            fm->lfo_clock -= period;
-            ++fm->lfo_phase;
-        }
-        unsigned triangle = fm->lfo_phase & 63;
-        am = ((fm->lfo_phase & 64) ? triangle : 63 - triangle) * 2;
-    }
     unsigned channels = fm->registers[0][0x2b] & 0x80 ? 5 : FM_CHANNELS;
     int l = 0, r = 0;
     for (unsigned i = 0, active = fm->active_channels; active; ++i, active >>= 1) {
         if (!(active & 1))
             continue;
-        int sample = channel_sample(fm, i, tick, am, extra_tick);
+        int sample = channel_sample(fm, i, tick, extra_tick);
         if (i >= channels)
             continue;
         unsigned pan = fm->channels[i].pan;
-        if (pan & 2)
+        // The original duplicates each voice on two DS sound channels.
+        // A centered voice sends half to each side on both channels.
+        // A one-sided voice uses volume 63 on each copy and reverses the
+        // Genesis left/right bits when programming the DS pan register.
+        if (pan == 3) {
             l += sample;
-        if (pan & 1)
             r += sample;
+        } else if (pan) {
+            int one_side = sample * 63 / 64;
+            if (pan & 1)
+                l += one_side;
+            else
+                r += one_side;
+        }
     }
     // Interpolate two samples between consecutive FM outputs.
-    l /= 4;
-    r /= 4;
     fm->delta_left = (l - fm->previous_left) / 3;
     fm->delta_right = (r - fm->previous_right) / 3;
     *left += fm->previous_left + fm->delta_left;

@@ -39,24 +39,24 @@ struct fm_operator {
     uint32_t phase, step;
     uint16_t attenuation, total_level, sustain_level;
     uint8_t rate[4], stage;
-    bool keyed, amplitude_modulation;
+    bool keyed;
 };
 
 struct fm_channel {
     struct fm_operator op[FM_OPERATORS];
     int16_t history[2];
-    uint8_t algorithm, feedback, pan, am_depth;
+    uint8_t algorithm, feedback, pan;
 };
 
 struct fm_chip {
     struct fm_channel channels[FM_CHANNELS];
     uint8_t registers[2][256];
     struct fm_pitch pitch;
-    uint32_t envelope_clock, envelope_tick, lfo_clock;
+    uint32_t envelope_clock, envelope_tick;
     int32_t previous_left, previous_right, delta_left, delta_right;
     uint16_t output_clock;
     uint8_t samples_remaining;
-    uint8_t lfo_phase, active_channels;
+    uint8_t active_channels;
 };
 
 extern const uint16_t fm_sine[512], fm_exponent[256];
