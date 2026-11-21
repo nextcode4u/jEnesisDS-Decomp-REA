@@ -68,7 +68,7 @@ static unsigned change_index;
 
 static uint16_t vram_word(const struct megadrive *md, unsigned offset)
 {
-    return (md->vram[(uint16_t)offset] << 8) | md->vram[(uint16_t)(offset + 1)];
+    return (md->memory->vram[(uint16_t)offset] << 8) | md->memory->vram[(uint16_t)(offset + 1)];
 }
 
 static void upload_pattern(volatile uint16_t *dest, const uint8_t *source,
@@ -168,9 +168,9 @@ void vdp_ds_init(void)
 static uint32_t pattern_revision(const struct megadrive *md, unsigned key, bool interlace)
 {
     if (!interlace)
-        return md->vram_revisions[key];
+        return md->memory->vram_revisions[key];
     unsigned block = key & ~1U;
-    uint32_t first = md->vram_revisions[block], second = md->vram_revisions[block + 1];
+    uint32_t first = md->memory->vram_revisions[block], second = md->memory->vram_revisions[block + 1];
     return first > second ? first : second;
 }
 
@@ -185,7 +185,7 @@ static void refresh_pattern(const struct megadrive *md, struct page *page,
         cached->revisions[field] != revision) {
         unsigned parity = page->interlace ? pattern & 1 : 0;
         unsigned block = pattern - parity;
-        upload_pattern(tiles + slot * (TILE_BYTES / 2), md->vram + block * TILE_BYTES,
+        upload_pattern(tiles + slot * (TILE_BYTES / 2), md->memory->vram + block * TILE_BYTES,
                        page->interlace, parity, ALL_TILE_ROWS);
         cached->sources[field] = pattern;
         cached->revisions[field] = revision;
@@ -227,7 +227,7 @@ static bool update_map(const struct megadrive *md, struct page *page, unsigned m
             unsigned source_x = (layout.first_column + x) & (layout.columns - 1);
             address = layout.base + (y * layout.columns + source_x) * 2;
         }
-        if (incremental && (int32_t)(md->vram_revisions[address / TILE_BYTES] -
+        if (incremental && (int32_t)(md->memory->vram_revisions[address / TILE_BYTES] -
                                      page->map_revision) <= 0)
             continue;
         // Genesis rows are linear. DS text maps split into 32 x 32 screens.
@@ -415,7 +415,7 @@ static bool prepare_sprite_span(const struct megadrive *md, struct page *page, u
                         uint32_t revision = pattern_revision(md, key, interlace);
                         if (index/4 >= old_blocks || page->sprite_sources[index] != source ||
                             page->sprite_revisions[index] != revision) {
-                            upload_pattern(tiles + offset * (TILE_BYTES / 2), md->vram + block * TILE_BYTES,
+                            upload_pattern(tiles + offset * (TILE_BYTES / 2), md->memory->vram + block * TILE_BYTES,
                                            interlace, parity, rows);
                             page->sprite_sources[index] = source;
                             page->sprite_revisions[index] = revision;
@@ -441,7 +441,7 @@ static bool prepare_sprite_span(const struct megadrive *md, struct page *page, u
 
 static const struct vdp_scanline *raster_row(const struct megadrive *md, unsigned y)
 {
-    return y < md->vdp_row_count ? &md->vdp_rows[y] : NULL;
+    return y < md->vdp_row_count ? &md->memory->vdp_rows[y] : NULL;
 }
 
 static bool prepare_sprites(const struct megadrive *md, struct page *page, unsigned next,
@@ -456,7 +456,7 @@ static bool prepare_sprites(const struct megadrive *md, struct page *page, unsig
         unsigned table = tables[first];
         if (table == UINT8_MAX)
             continue;
-        const uint8_t *data = table ? md->vdp_sprite_tables[table - 1] : md->vram + table_base;
+        const uint8_t *data = table ? md->memory->vdp_sprite_tables[table - 1] : md->memory->vram + table_base;
         if (!prepare_sprite_span(md, page, next, wide, left, top, data, first, last, &count, &blocks))
             return false;
     }

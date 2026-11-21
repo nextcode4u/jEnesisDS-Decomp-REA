@@ -39,7 +39,10 @@ void megadrive_reset_serial(struct megadrive *md)
 
 void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum genesis_region region)
 {
+    struct megadrive_memory *memory = md->memory;
     memset(md, 0, sizeof(*md));
+    memset(memory, 0, sizeof(*memory));
+    md->memory = memory;
     md->rom = cart->data;
     md->rom_size = cart->size;
     md->sram_start = cart->sram_start;
@@ -113,11 +116,11 @@ static ITCM_CODE __attribute__((noinline)) unsigned run_cpu_until(struct megadri
             md->frame_cycle = cycles;
             unsigned elapsed = m68k_step(cpu, md);
             uint16_t op = cpu->opcode;
-            if (elapsed == 10 && cpu->pc <= cpu->instruction_address &&
-                elapsed < end - cycles &&
-                ((op & 0xfff8) == 0x51c8 || op == 0x66fa || op == 0x67fa))
+            if (elapsed == 10 &&
+                ((op & 0xfff8) == 0x51c8 || (op & 0xfeff) == 0x66fa) &&
+                cpu->pc <= cpu->instruction_address && elapsed < end - cycles)
                 elapsed += m68k_skip_idle(cpu, md, end - cycles - elapsed);
-            else if (elapsed == 10 && (op == 0x66f8 || op == 0x67f8))
+            else if (elapsed == 10 && (op & 0xfeff) == 0x66f8)
                 long_poll = cpu->pc + 6 == cpu->instruction_address;
             cycles += elapsed;
         } while (!long_poll && !hint_pending && cycles < boundary && !cpu->stopped);
@@ -139,15 +142,15 @@ static unsigned snapshot_sprite_table(struct megadrive *md)
     bool wide = (md->vdp_registers[12] & 1) != 0;
     unsigned size = (wide ? 80 : 64) * 8;
     unsigned base = (md->vdp_registers[5] & (wide ? 0x7e : 0x7f)) << 9;
-    const uint8_t *table = md->vram + base;
+    const uint8_t *table = md->memory->vram + base;
     unsigned count = md->vdp_sprite_table_count;
-    if (count && !memcmp(md->vdp_sprite_tables[count - 1], table, size))
+    if (count && !memcmp(md->memory->vdp_sprite_tables[count - 1], table, size))
         return count;
     if (count == VDP_RASTER_SPRITE_TABLES)
         return 0;
-    memcpy(md->vdp_sprite_tables[count], table, size);
+    memcpy(md->memory->vdp_sprite_tables[count], table, size);
     if (size < VDP_SPRITE_TABLE_BYTES)
-        memset(md->vdp_sprite_tables[count] + size, 0, VDP_SPRITE_TABLE_BYTES - size);
+        memset(md->memory->vdp_sprite_tables[count] + size, 0, VDP_SPRITE_TABLE_BYTES - size);
     return ++md->vdp_sprite_table_count;
 }
 
@@ -165,8 +168,8 @@ static void capture_raster_through(struct megadrive *md, unsigned next_line)
         if (first_layout_snapshot && sprite_table) {
             // Earlier scroll writes may already have recorded this display span.
             for (unsigned y = 0; y < md->vdp_row_count; ++y)
-                if (md->vdp_rows[y].display_enabled)
-                    md->vdp_rows[y].sprite_table = sprite_table;
+                if (md->memory->vdp_rows[y].display_enabled)
+                    md->memory->vdp_rows[y].sprite_table = sprite_table;
         }
     }
     struct vdp_scanline row = {
@@ -176,7 +179,7 @@ static void capture_raster_through(struct megadrive *md, unsigned next_line)
         .display_enabled = display,
     };
     while (md->vdp_row_count < next_line)
-        md->vdp_rows[md->vdp_row_count++] = row;
+        md->memory->vdp_rows[md->vdp_row_count++] = row;
 }
 
 static void refresh_rom_fetch_limit(struct megadrive *md)
@@ -386,7 +389,7 @@ static uint16_t read_vdp_data(struct megadrive *md)
     md->vdp_command_pending = false;
     md->vdp_address += md->vdp_registers[15];
     switch (md->vdp_code & 15) {
-    case 0: return (uint16_t)md->vram[address] << 8 | md->vram[address + 1];
+    case 0: return (uint16_t)md->memory->vram[address] << 8 | md->memory->vram[address + 1];
     case 4: return word < 40 ? md->vsram[word] : md->vsram[0];
     case 8: return md->cram[word];
     default: return 0;
@@ -422,13 +425,13 @@ uint8_t megadrive_read_byte(struct megadrive *md, uint32_t address)
 {
     address &= 0xffffff;
     if (megadrive_sram_visible(md, address))
-        return md->sram[address - md->sram_start];
+        return md->memory->sram[address - md->sram_start];
     if (address < md->rom_size)
         return cartridge_byte(md->rom, address);
     if (address >= 0xe00000)
         return work_ram_byte(md, address);
     if (address >= 0xa00000 && address < 0xa04000 && md->z80_bus_requested)
-        return md->z80_ram[address & 0x1fff];
+        return md->memory->z80_ram[address & 0x1fff];
     if (address >= 0xa04000 && address < 0xa06000 && md->z80_bus_requested) {
         genesis_z80_sync(md, md->frame_cycle);
         return megadrive_ym_status(md);
@@ -498,7 +501,7 @@ bool megadrive_write_byte(struct megadrive *md, uint32_t address, uint8_t value)
         return true;
     }
     if (megadrive_sram_visible(md, address)) {
-        uint8_t *byte = &md->sram[address - md->sram_start];
+        uint8_t *byte = &md->memory->sram[address - md->sram_start];
         if (!(md->sram_control & 2) && *byte != value) {
             *byte = value;
             md->sram_dirty = true;
@@ -513,7 +516,7 @@ bool megadrive_write_byte(struct megadrive *md, uint32_t address, uint8_t value)
         return true;
     }
     if (address >= 0xa00000 && address < 0xa04000 && md->z80_bus_requested) {
-        md->z80_ram[address & 0x1fff] = value;
+        md->memory->z80_ram[address & 0x1fff] = value;
         return true;
     }
     if (address >= 0xa04000 && address < 0xa06000 && md->z80_bus_requested) {
@@ -570,9 +573,9 @@ bool megadrive_write_byte(struct megadrive *md, uint32_t address, uint8_t value)
 
 static void store_vram_byte(struct megadrive *md, uint16_t address, uint8_t value)
 {
-    if (md->vram[address] != value) {
-        md->vram[address] = value;
-        md->vram_revisions[address >> 5] = ++md->video_revision;
+    if (md->memory->vram[address] != value) {
+        md->memory->vram[address] = value;
+        md->memory->vram_revisions[address >> 5] = ++md->video_revision;
     }
 }
 
@@ -629,7 +632,7 @@ static bool dma_linear_vram(struct megadrive *md, uint32_t address, unsigned len
         source = md->rom + address;
     } else if (address >= 0xe00000 && address >= md->rom_size &&
                bytes <= 0x10000 - (address & 0xffff)) {
-        source = md->ram + (address & 0xffff);
+        source = md->memory->ram + (address & 0xffff);
     } else {
         return false;
     }
@@ -643,7 +646,7 @@ static bool dma_linear_vram(struct megadrive *md, uint32_t address, unsigned len
         if (block_end > end)
             block_end = end;
         unsigned count = block_end - dest;
-        uint8_t *target = md->vram + dest;
+        uint8_t *target = md->memory->vram + dest;
         if (M68K_NATIVE_WORDS) {
             unsigned changed = 0;
             for (unsigned i = 0; i < count; i += 2) {
@@ -659,13 +662,13 @@ static bool dma_linear_vram(struct megadrive *md, uint32_t address, unsigned len
             }
             if (changed) {
                 revision += changed;
-                md->vram_revisions[dest >> 5] = revision;
+                md->memory->vram_revisions[dest >> 5] = revision;
             }
         } else if (memcmp(target, source, count)) {
             for (unsigned i = 0; i < count; ++i)
                 revision += target[i] != source[i];
             memcpy(target, source, count);
-            md->vram_revisions[dest >> 5] = revision;
+            md->memory->vram_revisions[dest >> 5] = revision;
         }
         source += count;
         dest = block_end;
@@ -690,7 +693,7 @@ static bool vdp_dma(struct megadrive *md)
         if (!(md->vdp_code & 0x10))
             return false;
         for (unsigned i = 0; i < length; ++i) {
-            store_vram_byte(md, md->vdp_address ^ 1, md->vram[(uint16_t)offset ^ 1]);
+            store_vram_byte(md, md->vdp_address ^ 1, md->memory->vram[(uint16_t)offset ^ 1]);
             md->vdp_address += md->vdp_registers[15];
             ++offset;
         }

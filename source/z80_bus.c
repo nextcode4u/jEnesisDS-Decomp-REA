@@ -13,7 +13,7 @@ static uint8_t read_byte(void *context, uint16_t address)
 {
     struct megadrive *md = context;
     if (address < 0x4000)
-        return md->z80_ram[address & 0x1fff];
+        return md->memory->z80_ram[address & 0x1fff];
     if (address < 0x6000)
         return megadrive_ym_status(md);
     if (address >= 0x8000) {
@@ -28,7 +28,7 @@ static void write_byte(void *context, uint16_t address, uint8_t data)
 {
     struct megadrive *md = context;
     if (address < 0x4000)
-        md->z80_ram[address & 0x1fff] = data;
+        md->memory->z80_ram[address & 0x1fff] = data;
     else if (address < 0x6000) {
         unsigned cycle = md->z80_slice_start +
                          (md->sound_cpu.cyc - md->z80_slice_clocks) * Z80_DIVIDER / M68K_DIVIDER;
@@ -63,9 +63,9 @@ void genesis_z80_bind(struct megadrive *md)
     md->sound_cpu.port_in = port_read;
     md->sound_cpu.port_out = port_write;
     md->sound_cpu.userdata = md;
-    md->sound_cpu.mirrored_ram = md->z80_ram;
+    md->sound_cpu.mirrored_ram = md->memory->z80_ram;
     md->sound_cpu.ram_limit = 0x4000;
-    md->sound_cpu.ram_mask = sizeof(md->z80_ram) - 1;
+    md->sound_cpu.ram_mask = sizeof(md->memory->z80_ram) - 1;
 }
 
 void genesis_z80_reset(struct megadrive *md)
@@ -95,14 +95,11 @@ static void finish_poll(z80 *cpu, unsigned value, unsigned iterations)
     advance_refresh(cpu, iterations * 3);
 }
 
-static unsigned run_local_delay(struct megadrive *md, unsigned budget)
+static unsigned run_local_delay(struct megadrive *md, unsigned budget,
+                                unsigned offset, unsigned op)
 {
     z80 *cpu = &md->sound_cpu;
-    if (cpu->pc >= 0x4000)
-        return 0;
-    const uint8_t *ram = md->z80_ram;
-    unsigned offset = cpu->pc & 0x1fff;
-    unsigned op = ram[offset];
+    const uint8_t *ram = md->memory->z80_ram;
     if (op != 0x10 && op != 0x7a && op != 0x7e)
         return 0;
     if (cpu->int_pending || cpu->nmi_pending || cpu->iff_delay || md->ym_busy_cycles)
@@ -183,21 +180,24 @@ ITCM_CODE void genesis_z80_sync(struct megadrive *md, unsigned m68k_cycle)
     unsigned irq_clocks = md->z80_irq_clocks;
     cpu->int_pending = irq_clocks != 0;
     while (elapsed < budget) {
-        unsigned clocks = 0;
-        if (cpu->halted && !cpu->int_pending && !cpu->nmi_pending && !cpu->iff_delay) {
+        unsigned long before = cpu->cyc;
+        if (!cpu->halted && cpu->pc < 0x4000) {
+            unsigned offset = cpu->pc & 0x1fff;
+            uint8_t opcode = md->memory->z80_ram[offset];
+            unsigned clocks = budget - elapsed >= 13 ?
+                run_local_delay(md, budget - elapsed, offset, opcode) : 0;
+            if (clocks)
+                cpu->cyc += clocks;
+            else
+                z80_step_ram(cpu, opcode);
+        } else if (cpu->halted && !cpu->int_pending && !cpu->nmi_pending && !cpu->iff_delay) {
             unsigned refreshes = (budget - elapsed + 3) / 4;
             advance_refresh(cpu, refreshes);
-            clocks = refreshes * 4;
-        } else if (!cpu->halted && budget - elapsed >= 13) {
-            clocks = run_local_delay(md, budget - elapsed);
-        }
-        if (clocks) {
-            cpu->cyc += clocks;
+            cpu->cyc += refreshes * 4;
         } else {
-            unsigned long before = cpu->cyc;
             z80_step(cpu);
-            clocks = cpu->cyc - before;
         }
+        unsigned clocks = cpu->cyc - before;
         // Outside the VBlank pulse, the interrupt line remains clear for
         // the whole slice. During the pulse the core can also acknowledge it.
         if (irq_clocks) {

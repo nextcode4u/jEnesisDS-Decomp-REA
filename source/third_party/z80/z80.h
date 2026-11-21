@@ -36,6 +36,7 @@ struct z80 {
 
 void z80_init(z80* const z);
 void z80_step(z80* const z);
+void z80_step_ram(z80* const z, uint8_t opcode);
 void z80_debug_output(z80* const z);
 void z80_gen_nmi(z80* const z);
 void z80_gen_int(z80* const z, uint8_t data);

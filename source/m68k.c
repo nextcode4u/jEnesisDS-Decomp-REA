@@ -45,21 +45,9 @@ static uint32_t read_cartridge(const struct megadrive *md, unsigned address, uns
     return size == 2 ? value : (value << 16) | cartridge_aligned_word(rom, address + 2);
 }
 
-static ITCM_CODE uint32_t read_memory(struct megadrive *md, uint32_t address, unsigned size)
+static ITCM_CODE __attribute__((noinline)) uint32_t read_other_memory(
+    struct megadrive *md, uint32_t address, unsigned size)
 {
-    address &= 0xffffff;
-    if (address >= 0xe00000 && (address & 0xffff) <= 0x10000 - size) {
-        if (size == 1)
-            return work_ram_byte(md, address);
-        if (M68K_NATIVE_WORDS && size == 4 && !(address & 3)) {
-            // The first guest word occupies the low half of the ARM word.
-            uint32_t pair;
-            __builtin_memcpy(&pair, __builtin_assume_aligned(md->ram + (uint16_t)address, 4), sizeof(pair));
-            return (pair << 16) | (pair >> 16);
-        }
-        uint32_t word = work_ram_word(md, address);
-        return size == 2 ? word : (word << 16) | work_ram_word(md, address + 2);
-    }
     if (rom_visible(md, address, size))
         return read_cartridge(md, address, size);
     if (size == 1)
@@ -70,7 +58,35 @@ static ITCM_CODE uint32_t read_memory(struct megadrive *md, uint32_t address, un
     return value;
 }
 
-static ITCM_CODE bool write_memory(struct megadrive *md, uint32_t address, unsigned size, uint32_t value)
+static ITCM_CODE __attribute__((noinline)) bool write_other_memory(
+    struct megadrive *md, uint32_t address, unsigned size, uint32_t value)
+{
+    if (size == 1)
+        return megadrive_write_byte(md, address, value);
+    if (size == 4 && !megadrive_write_word(md, address, value >> 16))
+        return false;
+    return megadrive_write_word(md, address + size - 2, value);
+}
+
+static inline __attribute__((always_inline)) uint32_t read_memory_fast(struct megadrive *md, uint32_t address, unsigned size)
+{
+    address &= 0xffffff;
+    if (address >= 0xe00000 && (address & 0xffff) <= 0x10000 - size) {
+        if (size == 1)
+            return work_ram_byte(md, address);
+        if (M68K_NATIVE_WORDS && size == 4 && !(address & 3)) {
+            // The first guest word occupies the low half of the ARM word.
+            uint32_t pair;
+            __builtin_memcpy(&pair, __builtin_assume_aligned(md->memory->ram + (uint16_t)address, 4), sizeof(pair));
+            return (pair << 16) | (pair >> 16);
+        }
+        uint32_t word = work_ram_word(md, address);
+        return size == 2 ? word : (word << 16) | work_ram_word(md, address + 2);
+    }
+    return read_other_memory(md, address, size);
+}
+
+static inline __attribute__((always_inline)) bool write_memory_fast(struct megadrive *md, uint32_t address, unsigned size, uint32_t value)
 {
     address &= 0xffffff;
     if (size != 1 && (address & 1))
@@ -81,7 +97,7 @@ static ITCM_CODE bool write_memory(struct megadrive *md, uint32_t address, unsig
         } else {
             if (M68K_NATIVE_WORDS && size == 4 && !(address & 3)) {
                 uint32_t pair = (value << 16) | (value >> 16);
-                __builtin_memcpy(__builtin_assume_aligned(md->ram + (uint16_t)address, 4), &pair, sizeof(pair));
+                __builtin_memcpy(__builtin_assume_aligned(md->memory->ram + (uint16_t)address, 4), &pair, sizeof(pair));
                 return true;
             }
             if (size == 4) {
@@ -92,21 +108,28 @@ static ITCM_CODE bool write_memory(struct megadrive *md, uint32_t address, unsig
         }
         return true;
     }
-    if (size == 1)
-        return megadrive_write_byte(md, address, value);
-    if (size == 4 && !megadrive_write_word(md, address, value >> 16))
-        return false;
-    return megadrive_write_word(md, address + size - 2, value);
+    return write_other_memory(md, address, size, value);
 }
 
-static ITCM_CODE uint32_t fetch(struct m68k *cpu, struct megadrive *md, unsigned size)
+static ITCM_CODE uint32_t read_memory(struct megadrive *md, uint32_t address, unsigned size)
+{
+    return read_memory_fast(md, address, size);
+}
+
+static ITCM_CODE bool write_memory(struct megadrive *md, uint32_t address, unsigned size, uint32_t value)
+{
+    return write_memory_fast(md, address, size, value);
+}
+
+static inline __attribute__((always_inline)) uint32_t fetch(
+    struct m68k *cpu, struct megadrive *md, unsigned size)
 {
     uint32_t address = cpu->pc & 0xffffff;
     cpu->pc += size;
-    if (rom_visible(md, address, size)) {
-        // Instruction addresses are checked for word alignment before decoding.
-        uint32_t word = cartridge_aligned_word(md->rom, address);
-        return size == 2 ? word : (word << 16) | cartridge_aligned_word(md->rom, address + 2);
+    if (__builtin_expect(address + size <= md->rom_fetch_limit, 1)) {
+        const uint8_t *rom = md->rom;
+        uint32_t word = cartridge_aligned_word(rom, address);
+        return size == 2 ? word : (word << 16) | cartridge_aligned_word(rom, address + 2);
     }
     return read_memory(md, address, size);
 }
@@ -265,7 +288,7 @@ static inline __attribute__((always_inline)) unsigned move_common(
                 address += (int16_t)fetch(cpu, md, 2);
             if (size != 1 && (address & 1))
                 return 0;
-            value = read_memory(md, address, size);
+            value = read_memory_fast(md, address, size);
             cycles += ram_cycles + (source == 5 ? 4 : 0);
         } else if (source == 7 && src_reg == 4) {
             value = fetch(cpu, md, size == 4 ? 4 : 2);
@@ -284,7 +307,7 @@ static inline __attribute__((always_inline)) unsigned move_common(
         else if (target == 5)
             address += (int16_t)fetch(cpu, md, 2);
         value = cpu->d[src_reg];
-        if (!write_memory(md, address, size, value))
+        if (!write_memory_fast(md, address, size, value))
             return 0;
         cycles += ram_cycles + (target >= 4 ? 2 * (target - 3) : 0);
     } else {
@@ -860,18 +883,7 @@ static __attribute__((noinline)) unsigned shift_memory(struct m68k *cpu, struct 
 
 static ITCM_CODE __attribute__((noinline)) unsigned execute_misc(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
-    if (op == 0x4e75) { // RTS
-        if (cpu->a[7] & 1)
-            return 0;
-        cpu->pc = read_memory(md, cpu->a[7], 4);
-        cpu->a[7] += 4;
-        return 16;
-    }
     if ((op & 0xf1c0) == 0x41c0) {
-        if ((op & 0x3f) == 0x38) { // LEA with an absolute word address
-            cpu->a[(op >> 9) & 7] = (int16_t)fetch(cpu, md, 2);
-            return 8;
-        }
         unsigned mode = (op >> 3) & 7, reg = op & 7;
         uint32_t address;
         if (!address_operand(cpu, md, mode, reg, 0, &address))
@@ -1061,13 +1073,6 @@ static unsigned compare_memory(struct m68k *cpu, struct megadrive *md, uint16_t 
 
 static ITCM_CODE __attribute__((noinline)) unsigned execute_immediate(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
-    if ((op & 0xfff8) == 0x0240) { // ANDI.W #value,Dn
-        unsigned reg = op & 7;
-        uint32_t value = cpu->d[reg] & fetch(cpu, md, 2);
-        set_data(cpu, reg, 2, value);
-        set_logic_flags(cpu, 2, value);
-        return 8;
-    }
     if ((op & 0xf138) == 0x0108)
         return move_peripheral(cpu, md, op);
     if ((op & 0x100) || (op & 0xff00) == 0x0800)
@@ -1079,22 +1084,30 @@ static ITCM_CODE __attribute__((noinline)) unsigned execute_immediate(struct m68
     return 0;
 }
 
-static ITCM_CODE __attribute__((noinline)) unsigned execute_branch(struct m68k *cpu, struct megadrive *md, uint16_t op)
+static ITCM_CODE __attribute__((noinline)) unsigned branch_subroutine(
+    struct m68k *cpu, struct megadrive *md, uint32_t address)
+{
+    cpu->a[7] -= 4;
+    if (!write_memory(md, cpu->a[7], 4, cpu->pc))
+        return 0;
+    cpu->pc = address;
+    return 18;
+}
+
+static inline __attribute__((always_inline)) unsigned execute_branch(
+    struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
     unsigned condition = (op >> 8) & 15;
     uint32_t base = cpu->pc;
     int32_t displacement = (int8_t)op;
     if (!displacement)
         displacement = (int16_t)fetch(cpu, md, 2);
-    if (condition == 1) {
-        cpu->a[7] -= 4;
-        if (!write_memory(md, cpu->a[7], 4, cpu->pc))
-            return 0;
-    } else if (!condition_true(cpu->sr, condition)) {
+    if (condition == 1)
+        return branch_subroutine(cpu, md, base + displacement);
+    if (!condition_true(cpu->sr, condition))
         return (op & 255) ? 8 : 12;
-    }
     cpu->pc = base + displacement;
-    return condition == 1 ? 18 : 10;
+    return 10;
 }
 
 // Keeping the larger opcode families out of line lets the ARM9 dispatch
@@ -1103,6 +1116,13 @@ static unsigned execute(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
     switch (op >> 12) {
     case 0:
+        if ((op & 0xfff8) == 0x0240) { // ANDI.W #value,Dn
+            unsigned reg = op & 7;
+            uint32_t value = cpu->d[reg] & fetch(cpu, md, 2);
+            set_data(cpu, reg, 2, value);
+            set_logic_flags(cpu, 2, value);
+            return 8;
+        }
         return execute_immediate(cpu, md, op);
     case 1:
         return move_common(cpu, md, op, 1);
@@ -1111,6 +1131,17 @@ static unsigned execute(struct m68k *cpu, struct megadrive *md, uint16_t op)
     case 3:
         return move_common(cpu, md, op, 2);
     case 4:
+        if (op == 0x4e75) { // RTS
+            if (cpu->a[7] & 1)
+                return 0;
+            cpu->pc = read_memory(md, cpu->a[7], 4);
+            cpu->a[7] += 4;
+            return 16;
+        }
+        if ((op & 0xf1ff) == 0x41f8) { // LEA with an absolute word address
+            cpu->a[(op >> 9) & 7] = (int16_t)fetch(cpu, md, 2);
+            return 8;
+        }
         return execute_misc(cpu, md, op);
     case 5: {
         if ((op & 0x00f8) == 0x00c8) {
@@ -1202,9 +1233,11 @@ static unsigned execute(struct m68k *cpu, struct megadrive *md, uint16_t op)
         return data_alu(cpu, md, op);
     case 14:
         return (op & 0xc0) != 0xc0 ? shift_register(cpu, op) : shift_memory(cpu, md, op);
-    default:
+    case 10:
+    case 15:
         return 0;
     }
+    __builtin_unreachable();
 }
 
 unsigned m68k_interrupt(struct m68k *cpu, struct megadrive *md, unsigned level)
@@ -1232,7 +1265,7 @@ static unsigned skip_ram_store_loop(struct m68k *cpu, struct megadrive *md, unsi
         iterations = counter;
     if (iterations > room)
         iterations = room;
-    uint8_t *dest = md->ram + (address & 0xffff);
+    uint8_t *dest = md->memory->ram + (address & 0xffff);
     uint32_t value = cpu->d[data];
     for (unsigned i = 0; i < iterations; ++i) {
         dest[0 ^ M68K_NATIVE_WORDS] = value >> 24;
@@ -1283,7 +1316,7 @@ static unsigned skip_signed_byte_copy(struct m68k *cpu, struct megadrive *md,
 
     if (!source_in_ram && !rom_visible(md, src, (iterations - 1) * step + 1))
         return 0;
-    uint8_t *output = md->ram + (dst & 0xffff);
+    uint8_t *output = md->memory->ram + (dst & 0xffff);
     uint32_t upper = cpu->d[data] & 0xffff0000;
     uint16_t bias = cpu->d[increment], word = 0;
     for (unsigned i = 0; i < iterations; ++i) {
@@ -1338,7 +1371,7 @@ static unsigned skip_interleaved_word_stores(struct m68k *cpu, struct megadrive 
     if (!iterations)
         return 0;
 
-    uint8_t *dest = md->ram + (address & 0xffff);
+    uint8_t *dest = md->memory->ram + (address & 0xffff);
     uint16_t first_word = cpu->d[data];
     uint32_t mask = size == 2 ? UINT32_MAX : UINT16_MAX;
     uint32_t stride = cpu->d[increment] & mask;
@@ -1498,14 +1531,7 @@ ITCM_CODE unsigned m68k_step(struct m68k *cpu, struct megadrive *md)
         cpu->stopped = true;
         return 0;
     }
-    uint32_t address = cpu->pc & 0xffffff;
-    // Keep the usual cartridge fetch in the instruction dispatch loop.
-    if (address + 2 <= md->rom_fetch_limit) {
-        cpu->opcode = cartridge_aligned_word(md->rom, address);
-        cpu->pc += 2;
-    } else {
-        cpu->opcode = fetch(cpu, md, 2);
-    }
+    cpu->opcode = fetch(cpu, md, 2);
     unsigned cycles = execute(cpu, md, cpu->opcode);
     if (!cycles)
         cpu->stopped = true;

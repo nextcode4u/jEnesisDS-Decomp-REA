@@ -55,13 +55,13 @@ static uint32_t transfer_u32(struct state_io *io, uint32_t value)
 static void transfer_work_ram(struct state_io *io, struct megadrive *md)
 {
     if (!M68K_NATIVE_WORDS) {
-        transfer(io, md->ram, sizeof(md->ram));
+        transfer(io, md->memory->ram, sizeof(md->memory->ram));
         return;
     }
 
     // Save files always store guest bytes in address order.
     uint8_t bytes[256];
-    for (unsigned offset = 0; offset < sizeof(md->ram) && io->ok; offset += sizeof(bytes)) {
+    for (unsigned offset = 0; offset < sizeof(md->memory->ram) && io->ok; offset += sizeof(bytes)) {
         if (io->writing)
             for (unsigned i = 0; i < sizeof(bytes); ++i)
                 bytes[i] = work_ram_byte(md, offset + i);
@@ -88,13 +88,13 @@ static void transfer_state(struct state_io *io, struct megadrive *md, unsigned v
     SCALAR(md->cpu.opcode);
     SCALAR(md->cpu.stopped);
     transfer_work_ram(io, md);
-    ARRAY_BYTES(md->z80_ram);
+    ARRAY_BYTES(md->memory->z80_ram);
     SCALAR(md->z80_bus_requested);
     SCALAR(md->z80_reset);
     ARRAY_BYTES(md->port_data);
     ARRAY_BYTES(md->port_direction);
     SCALAR(md->pad1_pressed);
-    ARRAY_BYTES(md->vram);
+    ARRAY_BYTES(md->memory->vram);
     for (unsigned i = 0; i < 64; ++i)
         SCALAR(md->cram[i]);
     for (unsigned i = 0; i < 40; ++i)
@@ -165,7 +165,7 @@ static void transfer_state(struct state_io *io, struct megadrive *md, unsigned v
         md->vdp_odd_field = false;
     if (version >= 8 && md->sram_size) {
         SCALAR(md->sram_control);
-        transfer(io, md->sram, md->sram_size);
+        transfer(io, md->memory->sram, md->sram_size);
     }
     md->vdp_capture_raster = false;
     if (version >= 9) {
@@ -178,9 +178,9 @@ static void transfer_state(struct state_io *io, struct megadrive *md, unsigned v
             return;
         }
         for (unsigned i = 0; i < md->vdp_sprite_table_count; ++i)
-            ARRAY_BYTES(md->vdp_sprite_tables[i]);
+            ARRAY_BYTES(md->memory->vdp_sprite_tables[i]);
         for (unsigned y = 0; y < md->vdp_row_count; ++y) {
-            struct vdp_scanline *row = &md->vdp_rows[y];
+            struct vdp_scanline *row = &md->memory->vdp_rows[y];
             SCALAR(row->vscroll[0]);
             SCALAR(row->vscroll[1]);
             SCALAR(row->plane_a_base);
@@ -353,7 +353,7 @@ void saveram_load(const char *path, struct megadrive *md)
         free(backup);
     }
     if (ok) {
-        memcpy(md->sram, data, md->sram_size);
+        memcpy(md->memory->sram, data, md->sram_size);
         md->sram_dirty = false;
     }
     free(data);
@@ -369,7 +369,7 @@ bool saveram_flush(const char *path, struct megadrive *md)
     if (!temp)
         return false;
     FILE *file = fopen(temp, "wb");
-    bool ok = file && fwrite(md->sram, 1, md->sram_size, file) == md->sram_size;
+    bool ok = file && fwrite(md->memory->sram, 1, md->sram_size, file) == md->sram_size;
     if (file && fclose(file))
         ok = false;
     if (ok)
@@ -393,23 +393,29 @@ static bool load_file(const char *path, uint32_t identity, struct megadrive *md)
 
 bool savestate_load(const char *path, uint32_t identity, struct megadrive *md)
 {
-    struct megadrive *loaded = calloc(1, sizeof(*loaded));
-    if (!loaded)
+    struct state_buffer {
+        struct megadrive core;
+        struct megadrive_memory memory;
+    };
+    struct state_buffer *buffer = calloc(1, sizeof(*buffer));
+    if (!buffer)
         return false;
+    struct megadrive *loaded = &buffer->core;
+    loaded->memory = &buffer->memory;
     loaded->six_button = md->six_button;
     loaded->rom = md->rom;
     loaded->rom_size = md->rom_size;
     loaded->sram_start = md->sram_start;
     loaded->sram_size = md->sram_size;
     loaded->sram_control = md->sram_control;
-    memcpy(loaded->sram, md->sram, md->sram_size);
+    memcpy(loaded->memory->sram, md->memory->sram, md->sram_size);
     genesis_z80_reset(loaded);
     bool ok = load_file(path, identity, loaded);
     if (!ok) {
         char *backup = with_suffix(path, ".bak");
         // The first parse may have partially filled SRAM before checksum verification.
         loaded->sram_control = md->sram_control;
-        memcpy(loaded->sram, md->sram, md->sram_size);
+        memcpy(loaded->memory->sram, md->memory->sram, md->sram_size);
         ok = backup && load_file(backup, identity, loaded);
         free(backup);
     }
@@ -422,13 +428,15 @@ bool savestate_load(const char *path, uint32_t identity, struct megadrive *md)
         loaded->ym_timer_clocks[1] <= 256 * 16 * 144 * 7 &&
         loaded->sound_cpu.interrupt_mode <= 2 && loaded->sound_cpu.iff_delay <= 2) {
         loaded->sram_dirty = md->sram_dirty ||
-                             memcmp(loaded->sram, md->sram, md->sram_size) != 0;
+                             memcmp(loaded->memory->sram, md->memory->sram, md->sram_size) != 0;
         loaded->video_revision = md->video_revision + 1;
+        *md->memory = *loaded->memory;
+        loaded->memory = md->memory;
         *md = *loaded;
         genesis_z80_bind(md);
     } else {
         ok = false;
     }
-    free(loaded);
+    free(buffer);
     return ok;
 }

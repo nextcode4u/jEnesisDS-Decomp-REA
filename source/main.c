@@ -104,7 +104,7 @@ static const char *read_directory(struct browser *browser)
 struct application {
     struct browser browser;
     struct cartridge cart;
-    struct megadrive md;
+    struct megadrive *md;
     char filename[29];
     char *save_path;
     char *sram_path;
@@ -239,7 +239,7 @@ static void draw_browser(const struct browser *browser)
 
 static void draw_cartridge(const struct application *app)
 {
-    const struct m68k *cpu = &app->md.cpu;
+    const struct m68k *cpu = &app->md->cpu;
     frontend_cursor(1, 6);
     frontend_write(cpu->stopped ? "Cartridge Loaded" :
                    app->view == VIEW_PAUSED ? "-= PAUSED =-" : "Now Playing:");
@@ -264,7 +264,7 @@ static void draw_cartridge(const struct application *app)
         frontend_write(app->view == VIEW_PAUSED ? "or TOUCH BOTTOM" : "TOUCH screen to pause");
     }
 
-    unsigned region = (app->md.version & 0x40) ? 2 : (app->md.version & 0x80) ? 1 : 0;
+    unsigned region = (app->md->version & 0x40) ? 2 : (app->md->version & 0x80) ? 1 : 0;
     frontend_draw_indicators(region, app->slots);
     frontend_draw_fps(app->measured_fps);
 }
@@ -277,7 +277,7 @@ static void draw_settings(const struct application *app)
     frontend_cursor(2, 8);
     frontend_printf("Country          %s", regions[app->region]);
     frontend_cursor(2, 10);
-    frontend_printf("Controller       %u Button", app->md.six_button ? 6 : 3);
+    frontend_printf("Controller       %u Button", app->md->six_button ? 6 : 3);
     frontend_cursor(2, 13);
     frontend_write("Country applies to next ROM");
     frontend_cursor(2, 21);
@@ -367,7 +367,7 @@ static void setup_savestates(struct application *app, const char *name)
     const char *separator = length && directory[length - 1] == '/' ? "" : "/";
     app->save_path = malloc(capacity);
     if (app->save_path) {
-        app->save_identity = savestate_identity(&app->md);
+        app->save_identity = savestate_identity(app->md);
         snprintf(app->save_path, capacity, "%s%s%.*s-%08lX_1.jsc", directory, separator,
                  (int)stem, name, (unsigned long)app->save_identity);
         for (unsigned i = 0; i < 2; ++i) {
@@ -375,12 +375,12 @@ static void setup_savestates(struct application *app, const char *name)
             app->slots[i] = savestate_exists(app->save_path);
         }
     }
-    if (app->md.sram_size) {
+    if (app->md->sram_size) {
         app->sram_path = malloc(capacity);
         if (app->sram_path) {
                 snprintf(app->sram_path, capacity, "%s%s%.*s.srm", directory, separator,
                      (int)stem, name);
-            saveram_load(app->sram_path, &app->md);
+            saveram_load(app->sram_path, app->md);
         }
     }
     free(directory);
@@ -393,7 +393,7 @@ static const char *open_selection(struct application *app)
     if (entry->directory)
         return chdir(entry->name) == 0 ? read_directory(browser) : "Cannot open folder";
 
-    if (!saveram_flush(app->sram_path, &app->md))
+    if (!saveram_flush(app->sram_path, app->md))
         return "Cannot write cartridge SRAM";
     free(app->sram_path);
     app->sram_path = NULL;
@@ -415,9 +415,9 @@ static const char *open_selection(struct application *app)
     const char *error = cartridge_load(&app->cart, entry->name);
     if (!error) {
         snprintf(app->filename, sizeof(app->filename), "%.28s", entry->name);
-        bool six_button = app->md.six_button;
-        megadrive_reset(&app->md, &app->cart, app->region);
-        app->md.six_button = six_button;
+        bool six_button = app->md->six_button;
+        megadrive_reset(app->md, &app->cart, app->region);
+        app->md->six_button = six_button;
         ++app->sound_generation;
         setup_savestates(app, entry->name);
         app->view = VIEW_CARTRIDGE;
@@ -452,15 +452,15 @@ static bool handle_save_menu(struct application *app, uint32_t keys, const char 
     } else if (keys & KEY_A) {
         select_save_path(app, app->save_slot);
         if (app->save_line == SAVE_LOAD_ROW) {
-            bool loaded = savestate_load(app->save_path, app->save_identity, &app->md);
+            bool loaded = savestate_load(app->save_path, app->save_identity, app->md);
             if (loaded) {
                 ++app->sound_generation;
                 vdp_ds_invalidate();
-                draw_game_frame(&app->md);
+                draw_game_frame(app->md);
             }
             *message = loaded ? "State loaded" : "Unable to load state";
         } else if (app->save_line == SAVE_WRITE_ROW) {
-            bool saved = savestate_save(app->save_path, app->save_identity, &app->md);
+            bool saved = savestate_save(app->save_path, app->save_identity, app->md);
             if (saved)
                 app->slots[app->save_slot] = true;
             *message = saved ? "State saved" : "Unable to save state";
@@ -493,8 +493,8 @@ static bool handle_menu(struct application *app, uint32_t keys, const touchPosit
             if (app->settings_line == 8)
                 app->region = (app->region + 1) % GENESIS_REGION_COUNT;
             else {
-                app->md.six_button = !app->md.six_button;
-                memset(app->md.th_phase, 0, sizeof(app->md.th_phase));
+                app->md->six_button = !app->md->six_button;
+                memset(app->md->th_phase, 0, sizeof(app->md->th_phase));
             }
         } else {
             return false;
@@ -541,7 +541,7 @@ static bool handle_menu(struct application *app, uint32_t keys, const touchPosit
             app->save_line = SAVE_CANCEL_ROW;
             app->view = VIEW_SAVE;
         }
-    } else if (!app->md.cpu.stopped) {
+    } else if (!app->md->cpu.stopped) {
         app->view = app->view == VIEW_PAUSED ? VIEW_CARTRIDGE : VIEW_PAUSED;
     } else {
         return false;
@@ -600,7 +600,7 @@ static struct dac_frame *begin_audio_frame(struct application *app, bool pal)
             frame->generation = app->sound_generation;
             frame->slot = slot;
             frame->sequence = audio_sequence;
-            dac_begin(&app->md, frame);
+            dac_begin(app->md, frame);
             return frame;
         }
     }
@@ -622,10 +622,10 @@ static void send_audio(const struct application *app)
     static struct psg_message last;
     struct psg_message msg = {
         .generation = app->sound_generation,
-        .enabled = app->view == VIEW_CARTRIDGE && !app->md.cpu.stopped,
-        .pal = (app->md.version & 0x40) != 0,
+        .enabled = app->view == VIEW_CARTRIDGE && !app->md->cpu.stopped,
+        .pal = (app->md->version & 0x40) != 0,
     };
-    memcpy(msg.registers, app->md.psg_registers, sizeof(msg.registers));
+    memcpy(msg.registers, app->md->psg_registers, sizeof(msg.registers));
     if (memcmp(&last, &msg, sizeof(msg)) &&
         fifoSendDatamsg(FIFO_USER_01, sizeof(msg), (uint8_t *)&msg))
         last = msg;
@@ -648,7 +648,9 @@ int main(void)
         for (;;)
             swiWaitForVBlank();
     }
-    static struct application app;
+    static struct megadrive_memory game_memory;
+    static struct megadrive game_core DTCM_DATA = {.memory = &game_memory};
+    static struct application app = {.md = &game_core};
     keysSetRepeat(18, 4);
     draw_screen(&app, read_directory(&app.browser));
 
@@ -673,43 +675,43 @@ int main(void)
         const char *message = NULL;
         if (handle_menu(&app, keys, keys & KEY_TOUCH ? &touch : NULL, &message))
             draw_screen(&app, message);
-        bool running = app.view == VIEW_CARTRIDGE && !app.md.cpu.stopped;
-        bool pal = running && (app.md.version & 0x40);
+        bool running = app.view == VIEW_CARTRIDGE && !app.md->cpu.stopped;
+        bool pal = running && (app.md->version & 0x40);
         unsigned frame_budget = frame_pacing_batch(&pacing, elapsed_vblanks, running, was_running, pal);
         if (running && frame_budget) {
-            app.md.pad1_pressed = genesis_buttons(keysHeld(), app.md.six_button);
+            app.md->pad1_pressed = genesis_buttons(keysHeld(), app.md->six_button);
             bool presented_first_field = false;
-            for (unsigned frame = 0; frame < frame_budget && !app.md.cpu.stopped; ++frame) {
+            for (unsigned frame = 0; frame < frame_budget && !app.md->cpu.stopped; ++frame) {
                 struct dac_frame *audio = begin_audio_frame(&app, pal);
-                megadrive_run_frame(&app.md);
-                dac_end(&app.md);
+                megadrive_run_frame(app.md);
+                dac_end(app.md);
                 ++measurement_frames;
                 send_audio(&app);
-                if (!app.md.cpu.stopped)
+                if (!app.md->cpu.stopped)
                     submit_dac_frame(audio);
                 // With two emulated fields before a VBlank, choose the one
                 // opposite the field currently on screen.
                 if (frame == 0 && frame_budget == 2 &&
-                    (app.md.vdp_registers[12] & 6) == 6 &&
-                    app.md.vdp_odd_field != field_visible) {
-                    draw_game_frame(&app.md);
+                    (app.md->vdp_registers[12] & 6) == 6 &&
+                    app.md->vdp_odd_field != field_visible) {
+                    draw_game_frame(app.md);
                     presented_first_field = true;
                 }
             }
             if (!presented_first_field)
-                draw_game_frame(&app.md);
-            if (app.md.cpu.stopped)
+                draw_game_frame(app.md);
+            if (app.md->cpu.stopped)
                 draw_screen(&app, NULL);
         }
         static unsigned sram_flush_vblank;
-        if (app.md.sram_dirty &&
+        if (app.md->sram_dirty &&
             ((was_running && !running) || vblank_count - sram_flush_vblank >= 120)) {
             sram_flush_vblank = vblank_count;
-            if (!saveram_flush(app.sram_path, &app.md))
+            if (!saveram_flush(app.sram_path, app.md))
                 draw_screen(&app, "Cannot write cartridge SRAM");
         }
-        was_running = running && !app.md.cpu.stopped;
-        if (running && !app.md.cpu.stopped) {
+        was_running = running && !app.md->cpu.stopped;
+        if (running && !app.md->cpu.stopped) {
             measurement_vblanks += elapsed_vblanks;
             if (measurement_vblanks >= 60) {
                 app.measured_fps = (60 * measurement_frames + measurement_vblanks / 2) /

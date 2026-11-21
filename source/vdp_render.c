@@ -27,12 +27,12 @@ uint16_t vdp_ds_color(uint16_t cram)
 
 static uint16_t vram_word(const struct megadrive *md, unsigned address)
 {
-    return (md->vram[(uint16_t)address] << 8) | md->vram[(uint16_t)(address + 1)];
+    return (md->memory->vram[(uint16_t)address] << 8) | md->memory->vram[(uint16_t)(address + 1)];
 }
 
 static uint32_t pattern_row(const struct megadrive *md, unsigned address)
 {
-    const uint8_t *p = md->vram + (uint16_t)address;
+    const uint8_t *p = md->memory->vram + (uint16_t)address;
     return (uint32_t)p[0] << 24 | (uint32_t)p[1] << 16 |
            (uint32_t)p[2] << 8 | p[3];
 }
@@ -93,7 +93,7 @@ static void draw_plane_line(const struct megadrive *md, uint8_t *line,
     unsigned width = cells[regs[16] & 3];
     unsigned height = cells[(regs[16] >> 4) & 3];
     unsigned plane_a_base = screen_y < md->vdp_row_count ?
-                            md->vdp_rows[screen_y].plane_a_base : regs[2];
+                            md->memory->vdp_rows[screen_y].plane_a_base : regs[2];
     unsigned base = plane ? (regs[4] & 7) << 13 : (plane_a_base & 0x38) << 10;
     unsigned hscroll = vram_word(md, vdp_hscroll_address(regs, screen_y) + plane * 2) & 0x3ff;
     bool column_scroll = (regs[11] & 4) != 0;
@@ -267,7 +267,7 @@ void vdp_render_frame(const struct megadrive *md, uint16_t *pixels)
     for (unsigned y = 0; y < VDP_VIEW_HEIGHT; ++y) {
         unsigned guest_y = screen_y + y;
         const struct vdp_scanline *row = guest_y < md->vdp_row_count ?
-                                         &md->vdp_rows[guest_y] : NULL;
+                                         &md->memory->vdp_rows[guest_y] : NULL;
         _Alignas(4) uint8_t line[VDP_VIEW_WIDTH] = {0};
         if (row ? row->display_enabled : display_enabled) {
             if (y >= indexed_until) {
@@ -275,13 +275,13 @@ void vdp_render_frame(const struct megadrive *md, uint16_t *pixels)
                 indexed_until = y + 1;
                 while (indexed_until < VDP_VIEW_HEIGHT) {
                     unsigned guest = screen_y + indexed_until;
-                    unsigned next_table = guest < md->vdp_row_count ? md->vdp_rows[guest].sprite_table : 0;
+                    unsigned next_table = guest < md->vdp_row_count ? md->memory->vdp_rows[guest].sprite_table : 0;
                     if (next_table != table)
                         break;
                     ++indexed_until;
                 }
-                const uint8_t *sprite_data = table ? md->vdp_sprite_tables[table - 1] :
-                                                      md->vram + sprite_base;
+                const uint8_t *sprite_data = table ? md->memory->vdp_sprite_tables[table - 1] :
+                                                      md->memory->vram + sprite_base;
                 unsigned count = load_sprites(sprite_data, wide, cell_shift, sprites);
                 index_sprite_lines(&visible, y, indexed_until, sprites, count, screen_y,
                                    wide, cell_shift, md->vdp_odd_field);

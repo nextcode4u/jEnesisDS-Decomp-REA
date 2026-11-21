@@ -35,7 +35,8 @@ int main(int argc, char **argv)
     struct cartridge cart = {0};
     assert(cartridge_load(&cart, path) == NULL);
     assert(remove(path) == 0 && cart.size == sizeof(rom));
-    static struct megadrive md;
+    static struct megadrive_memory memory;
+    static struct megadrive md = {.memory = &memory};
     megadrive_reset(&md, &cart, GENESIS_REGION_AUTO);
 
     for (unsigned i = 0; i < sizeof(rom); ++i)
@@ -51,9 +52,9 @@ int main(int argc, char **argv)
     assert(megadrive_read_word(&md, 0xffffff) == 0x5600);
 
     copy_words_to_vram(&md, 0x200, 0x100);
-    assert(memcmp(md.vram + 0x100, rom + 0x200, 4) == 0);
+    assert(memcmp(md.memory->vram + 0x100, rom + 0x200, 4) == 0);
     copy_words_to_vram(&md, 0xe00000, 0x21e);
-    assert(md.vram[0x21f] == 0x12 && md.vram[0x220] == 0x34);
+    assert(md.memory->vram[0x21f] == 0x12 && md.memory->vram[0x220] == 0x34);
 
     uint32_t identity = savestate_identity(&md);
     remove(argv[1]);

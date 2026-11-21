@@ -753,6 +753,13 @@ void z80_step(z80* const z) {
   process_interrupts(z);
 }
 
+// Execute an opcode already read from ordinary RAM.
+void z80_step_ram(z80* const z, uint8_t opcode) {
+  ++z->pc;
+  exec_opcode(z, opcode);
+  process_interrupts(z);
+}
+
 // outputs to stdout a debug trace of the emulator
 void z80_debug_output(z80* const z) {
   printf("PC: %04X, AF: %04X, BC: %04X, DE: %04X, HL: %04X, SP: %04X, "

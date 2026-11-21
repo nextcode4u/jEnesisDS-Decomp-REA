@@ -57,7 +57,8 @@ static uint8_t rom[0x27c] = {
 
 static void test_status_immediates(void)
 {
-    static struct megadrive md;
+    static struct megadrive_memory memory;
+    static struct megadrive md = {.memory = &memory};
     static uint8_t code[] = {
         0x00, 0x7c, 0x07, 0x01, // ORI #$0701,SR
         0x02, 0x3c, 0x00, 0x1e, // ANDI #$1e,CCR
@@ -106,7 +107,8 @@ static void vdp_register(struct megadrive *md, unsigned reg, unsigned value)
 
 static void test_six_button_controller(void)
 {
-    static struct megadrive md;
+    static struct megadrive_memory memory;
+    static struct megadrive md = {.memory = &memory};
     md.six_button = true;
     md.pad1_pressed = GENESIS_Z | GENESIS_X | GENESIS_START;
     assert(megadrive_write_byte(&md, 0xa10003, 0x40));
@@ -152,11 +154,12 @@ static void test_startup_bus(struct megadrive *md)
 
 static void test_z80_delay_loops(const struct cartridge *cart)
 {
-    static struct megadrive md;
+    static struct megadrive_memory memory;
+    static struct megadrive md = {.memory = &memory};
     megadrive_reset(&md, cart, GENESIS_REGION_AUTO);
     md.z80_reset = false;
-    md.z80_ram[0] = 0x10;
-    md.z80_ram[1] = 0xfe;
+    md.memory->z80_ram[0] = 0x10;
+    md.memory->z80_ram[1] = 0xfe;
     md.sound_cpu.b = 12;
     md.sound_cpu.r = 0xfd;
     z80 expected = md.sound_cpu;
@@ -171,9 +174,9 @@ static void test_z80_delay_loops(const struct cartridge *cart)
     genesis_z80_reset(&md);
     md.z80_synced_cycle = 0;
     const uint8_t poll[] = {0x7e, 0xb7, 0xf2, 0, 0};
-    memcpy(md.z80_ram, poll, sizeof(poll));
+    memcpy(md.memory->z80_ram, poll, sizeof(poll));
     md.sound_cpu.l = 0x20;
-    md.z80_ram[0x20] = 0x29;
+    md.memory->z80_ram[0x20] = 0x29;
     expected = md.sound_cpu;
     expected.ram_limit = 0;
     for (unsigned i = 0; i < 9; ++i)
@@ -188,7 +191,7 @@ static void test_z80_delay_loops(const struct cartridge *cart)
     genesis_z80_reset(&md);
     md.z80_synced_cycle = 0;
     const uint8_t register_poll[] = {0x7a, 0xb3, 0x28, 0xfc};
-    memcpy(md.z80_ram, register_poll, sizeof(register_poll));
+    memcpy(md.memory->z80_ram, register_poll, sizeof(register_poll));
     md.sound_cpu.a = 0xff;
     md.sound_cpu.r = 0xfa;
     expected = md.sound_cpu;
@@ -333,7 +336,8 @@ static void test_fm_zero_sustain_level(void)
 
 static void test_fm_pitch_latches(const struct cartridge *cart)
 {
-    static struct megadrive md;
+    static struct megadrive_memory memory;
+    static struct megadrive md = {.memory = &memory};
     struct fm_chip fm;
     struct dac_frame frame = {.count = 8};
     megadrive_reset(&md, cart, GENESIS_REGION_USA);
@@ -372,7 +376,8 @@ static void test_fm_pitch_latches(const struct cartridge *cart)
 
 static void test_dac_timing(const struct cartridge *cart)
 {
-    static struct megadrive md;
+    static struct megadrive_memory memory;
+    static struct megadrive md = {.memory = &memory};
     struct dac_frame frame = {.count = 8};
     megadrive_reset(&md, cart, GENESIS_REGION_USA);
     dac_begin(&md, &frame);
@@ -405,10 +410,11 @@ static void test_z80_dac_writes(const struct cartridge *cart)
         0x3e, 0x20, 0x32, 0x01, 0x40, // Write $20 to YM2612 data.
         0x76,
     };
-    static struct megadrive md;
+    static struct megadrive_memory memory;
+    static struct megadrive md = {.memory = &memory};
     struct dac_frame frame = {.count = 8};
     megadrive_reset(&md, cart, GENESIS_REGION_USA);
-    memcpy(md.z80_ram, program, sizeof(program));
+    memcpy(md.memory->z80_ram, program, sizeof(program));
     md.frame_cycles = 240;
     md.z80_reset = false;
     md.ym_registers[0][0x2b] = 0x80;
@@ -434,15 +440,16 @@ static void test_z80_mirrored_words(const struct cartridge *cart)
         0x22, 0xff, 0x3f, // LD ($3fff),HL across the RAM and FM ports
         0x76,
     };
-    static struct megadrive md;
+    static struct megadrive_memory memory;
+    static struct megadrive md = {.memory = &memory};
     megadrive_reset(&md, cart, GENESIS_REGION_USA);
-    memcpy(md.z80_ram + 0x100, program, sizeof(program));
+    memcpy(md.memory->z80_ram + 0x100, program, sizeof(program));
     md.sound_cpu.pc = 0x100;
     md.z80_reset = false;
     genesis_z80_sync(&md, 200);
 
     assert(md.sound_cpu.halted);
-    assert(md.z80_ram[0] == 0x12 && md.z80_ram[0x1fff] == 0x34);
+    assert(md.memory->z80_ram[0] == 0x12 && md.memory->z80_ram[0x1fff] == 0x34);
     assert(md.sound_cpu.h == 0x12 && md.sound_cpu.l == 0x34);
     assert(md.ym_address[0] == 0x12);
 }
@@ -456,7 +463,7 @@ static void test_z80_and_ym(struct megadrive *md)
         0x32, 0x01, 0x40,              // ld ($4001),a
         0x76,                          // halt
     };
-    memcpy(md->z80_ram, program, sizeof(program));
+    memcpy(md->memory->z80_ram, program, sizeof(program));
     genesis_z80_sync(md, 200);
     assert(md->sound_cpu.halted && md->ym_registers[0][0x24] == 0xff);
     assert(megadrive_write_byte(md, 0xa11100, 1));
@@ -482,15 +489,15 @@ static void test_vdp_dma(struct megadrive *md)
     vdp_register(md, 19, 2);
     assert(megadrive_write_word(md, 0xc00004, 0x4100));
     assert(megadrive_write_word(md, 0xc00004, 0x0080));
-    assert(md->vram[0x100] == 0 && md->vram[0x101] == 0xff);
-    assert(md->vram[0x102] == 0xfe && md->vram[0x103] == 0);
+    assert(md->memory->vram[0x100] == 0 && md->memory->vram[0x101] == 0xff);
+    assert(md->memory->vram[0x102] == 0xfe && md->memory->vram[0x103] == 0);
     assert(md->vdp_address == 0x104 && md->vdp_registers[19] == 0);
-    uint32_t written_revision = md->vram_revisions[0x100 / 32];
-    assert(written_revision != 0 && md->vram_revisions[0x120 / 32] == 0);
+    uint32_t written_revision = md->memory->vram_revisions[0x100 / 32];
+    assert(written_revision != 0 && md->memory->vram_revisions[0x120 / 32] == 0);
 
     // The two changed bytes straddle VRAM revision blocks.
-    md->ram[1] = 0x12;
-    md->ram[2] = 0x34;
+    md->memory->ram[1] = 0x12;
+    md->memory->ram[2] = 0x34;
     for (unsigned i = 0; i < 2; ++i) {
         vdp_register(md, 19, 2);
         vdp_register(md, 21, 0);
@@ -500,15 +507,15 @@ static void test_vdp_dma(struct megadrive *md)
         assert(megadrive_write_word(md, 0xc00004, 0x421e));
         assert(megadrive_write_word(md, 0xc00004, 0x0080));
         assert(md->vdp_address == 0x222 && md->vdp_registers[21] == 2);
-        assert(md->vram[0x21f] == 0x12 && md->vram[0x220] == 0x34);
+        assert(md->memory->vram[0x21f] == 0x12 && md->memory->vram[0x220] == 0x34);
         if (!i) {
-            assert(md->vram_revisions[0x21f / 32] == revision + 1);
-            assert(md->vram_revisions[0x220 / 32] == revision + 2);
+            assert(md->memory->vram_revisions[0x21f / 32] == revision + 1);
+            assert(md->memory->vram_revisions[0x220 / 32] == revision + 2);
         } else {
             assert(md->video_revision == revision);
         }
     }
-    md->ram[1] = md->ram[2] = 0;
+    md->memory->ram[1] = md->memory->ram[2] = 0;
 
     vdp_register(md, 15, 1);
     vdp_register(md, 19, 3);
@@ -518,15 +525,15 @@ static void test_vdp_dma(struct megadrive *md)
     assert(md->vdp_fill_pending);
     assert(megadrive_write_word(md, 0xc00000, 0));
     for (unsigned i = 0; i < 5; ++i)
-        assert(md->vram[0x100 + i] == 0);
-    assert(md->vram_revisions[0x100 / 32] > written_revision);
+        assert(md->memory->vram[0x100 + i] == 0);
+    assert(md->memory->vram_revisions[0x100 / 32] > written_revision);
     assert(!md->vdp_fill_pending && md->vdp_address == 0x104);
 }
 
 static void set_vram_word(struct megadrive *md, unsigned address, uint16_t word)
 {
-    md->vram[address] = word >> 8;
-    md->vram[address + 1] = word;
+    md->memory->vram[address] = word >> 8;
+    md->memory->vram[address + 1] = word;
 }
 
 static void test_vdp_render(struct megadrive *md)
@@ -538,10 +545,10 @@ static void test_vdp_render(struct megadrive *md)
     vdp_register(md, 5, 0x78);
     vdp_register(md, 13, 0x3f);
     vdp_register(md, 16, 0);
-    memset(md->vram, 0, sizeof(md->vram));
-    memset(&md->vram[32], 0x11, 32);
-    memset(&md->vram[64], 0x22, 32);
-    memset(&md->vram[96], 0x33, 32);
+    memset(md->memory->vram, 0, sizeof(md->memory->vram));
+    memset(&md->memory->vram[32], 0x11, 32);
+    memset(&md->memory->vram[64], 0x22, 32);
+    memset(&md->memory->vram[96], 0x33, 32);
     set_vram_word(md, 0xc080, 0x2001);
     set_vram_word(md, 0xe080, 0x8002);
     // First sprite: 8x8, low priority, starting at viewport x=0 and y=0.
@@ -563,7 +570,8 @@ static void test_vdp_render(struct megadrive *md)
 
 static void test_sprite_scanline_limit(void)
 {
-    static struct megadrive md;
+    static struct megadrive_memory memory;
+    static struct megadrive md = {.memory = &memory};
     // Force the halfword-aligned output path as well as the sprite limit.
     _Alignas(4) static uint16_t storage[VDP_VIEW_WIDTH * VDP_VIEW_HEIGHT / 2 + 1];
     uint16_t *bitmap = storage + 1;
@@ -571,7 +579,7 @@ static void test_sprite_scanline_limit(void)
     vdp_register(&md, 2, 0x30);
     vdp_register(&md, 4, 0x05);
     vdp_register(&md, 5, 0x78);
-    memset(md.vram + 32, 0x22, 32);
+    memset(md.memory->vram + 32, 0x22, 32);
     for (unsigned i = 0; i < 17; ++i) {
         unsigned entry = 0xf000 + i * 8;
         set_vram_word(&md, entry, 128 + 16);
@@ -589,7 +597,8 @@ static void test_sprite_scanline_limit(void)
 
 static void test_vdp_reads(const struct cartridge *cart)
 {
-    static struct megadrive md;
+    static struct megadrive_memory memory;
+    static struct megadrive md = {.memory = &memory};
     megadrive_reset(&md, cart, GENESIS_REGION_USA);
     vdp_register(&md, 15, 2);
     set_vram_word(&md, 0x100, 0x1234);
@@ -616,7 +625,8 @@ static void test_vdp_reads(const struct cartridge *cart)
 
 static void test_scanline_scroll(void)
 {
-    static struct megadrive md;
+    static struct megadrive_memory memory;
+    static struct megadrive md = {.memory = &memory};
     static uint16_t pixels[VDP_VIEW_WIDTH * VDP_VIEW_HEIGHT / 2];
     uint8_t code[0x270] = {
         0x00, 0xff, 0xfe, 0x00,
@@ -648,18 +658,18 @@ static void test_scanline_scroll(void)
     vdp_register(&md, 5, 0x70);
     vdp_register(&md, 10, 112);
     vdp_register(&md, 13, 0x3f);
-    memset(md.vram, 0x11, 16);
-    memset(md.vram + 16, 0x22, 16);
-    md.vram[0xe000 + 1] = 1;
-    md.vram[0xd000 + 1] = 2;
+    memset(md.memory->vram, 0x11, 16);
+    memset(md.memory->vram + 16, 0x22, 16);
+    md.memory->vram[0xe000 + 1] = 1;
+    md.memory->vram[0xd000 + 1] = 2;
     megadrive_run_frame(&md);
     assert(!md.cpu.stopped && md.vsram[0] == 0);
     assert(md.vdp_row_count == 224 && md.vdp_raster_layout);
-    assert(md.vdp_rows[64].plane_a_base == 0x30);
-    assert(md.vdp_rows[160].plane_a_base == 0x28);
+    assert(md.memory->vdp_rows[64].plane_a_base == 0x30);
+    assert(md.memory->vdp_rows[160].plane_a_base == 0x28);
     assert(md.vdp_sprite_table_count == 2);
-    assert(md.vdp_rows[64].sprite_table == 1 && md.vdp_sprite_tables[0][1] == 1);
-    assert(md.vdp_rows[160].sprite_table == 2 && md.vdp_sprite_tables[1][1] == 2);
+    assert(md.memory->vdp_rows[64].sprite_table == 1 && md.memory->vdp_sprite_tables[0][1] == 1);
+    assert(md.memory->vdp_rows[160].sprite_table == 2 && md.memory->vdp_sprite_tables[1][1] == 2);
     assert(megadrive_scanline_vscroll(&md, 64, 0) == 0);
     assert(megadrive_scanline_vscroll(&md, 160, 0) == 4);
     vdp_render_frame(&md, pixels);
@@ -673,8 +683,8 @@ static void test_scanline_scroll(void)
     md.vdp_row_count = 0;
     assert(savestate_load(path, identity, &md));
     assert(md.vdp_row_count == 224 && md.vdp_raster_layout);
-    assert(md.vdp_rows[160].sprite_table == 2);
-    assert(md.vdp_sprite_tables[1][1] == 2);
+    assert(md.memory->vdp_rows[160].sprite_table == 2);
+    assert(md.memory->vdp_sprite_tables[1][1] == 2);
     assert(remove(path) == 0);
 
     vdp_register(&md, 0, 0);
@@ -688,7 +698,8 @@ static void test_scanline_scroll(void)
 
 static void test_interlace(const struct cartridge *cart)
 {
-    static struct megadrive md;
+    static struct megadrive_memory memory;
+    static struct megadrive md = {.memory = &memory};
     static uint16_t bitmap[VDP_VIEW_WIDTH * VDP_VIEW_HEIGHT / 2];
     megadrive_reset(&md, cart, GENESIS_REGION_USA);
     vdp_register(&md, 1, 0x40);
@@ -698,10 +709,10 @@ static void test_interlace(const struct cartridge *cart)
     vdp_register(&md, 12, 6);
     vdp_register(&md, 13, 0x3f);
 
-    memset(md.vram + 64, 0x11, 4);
-    memset(md.vram + 68, 0x22, 4);
-    memset(md.vram + 128, 0x33, 4);
-    memset(md.vram + 132, 0x44, 4);
+    memset(md.memory->vram + 64, 0x11, 4);
+    memset(md.memory->vram + 68, 0x22, 4);
+    memset(md.memory->vram + 128, 0x33, 4);
+    memset(md.memory->vram + 132, 0x44, 4);
     set_vram_word(&md, 0x2080, 1);
     set_vram_word(&md, 0x4000, 256 + 32);
     set_vram_word(&md, 0x4004, 2);
@@ -736,16 +747,18 @@ static void test_idle_loops(struct megadrive *md)
     assert(cpu->pc == 0x258);
 
     cpu->pc = 0x25e;
-    md->ram[0xf620] = 1;
+    md->memory->ram[0xf620] = 1;
     assert(m68k_step(cpu, md) == 12 && m68k_step(cpu, md) == 10);
     assert(m68k_skip_idle(cpu, md, 50) == 44 && cpu->pc == 0x25e);
-    md->ram[0xf620] = 0;
+    md->memory->ram[0xf620] = 0;
     assert(m68k_skip_idle(cpu, md, 50) == 0);
 }
 
 static void test_m68k_batched_loops(void)
 {
-    static struct megadrive direct, batched;
+    static struct megadrive_memory direct_memory, batched_memory;
+    static struct megadrive direct = {.memory = &direct_memory};
+    static struct megadrive batched = {.memory = &batched_memory};
     uint8_t code[] = {
         0x30, 0xc2, 0x30, 0xc3, // move.w d2,(a0)+; move.w d3,(a0)+
         0x48, 0x43, 0xd6, 0x40, 0x48, 0x43, // swap d3; add.w d0,d3; swap d3
@@ -770,23 +783,27 @@ static void test_m68k_batched_loops(void)
         for (unsigned i = 0; i < 6; ++i)
             m68k_step(&direct.cpu, &direct);
         batched = direct;
+        batched_memory = direct_memory;
+        batched.memory = &batched_memory;
         unsigned cycles = 0;
         for (unsigned i = 0; i < 18; ++i)
             cycles += m68k_step(&direct.cpu, &direct);
         assert(cycles == (wide ? 126 : 114));
         assert(m68k_skip_idle(&batched.cpu, &batched, cycles) == cycles);
         assert(memcmp(&direct.cpu, &batched.cpu, sizeof(direct.cpu)) == 0);
-        assert(memcmp(direct.ram, batched.ram, sizeof(direct.ram)) == 0);
+        assert(memcmp(direct.memory->ram, batched.memory->ram, sizeof(direct.memory->ram)) == 0);
     }
 
     direct.cpu.pc = 14;
     direct.cpu.d[5] = 0x1234ff99;
     direct.cpu.d[6] = 5;
     direct.cpu.a[2] = 0xff8000;
-    direct.ram[0x8120] = 1; // A later object must still go through the interpreter.
+    direct.memory->ram[0x8120] = 1; // A later object must still go through the interpreter.
     for (unsigned i = 0; i < 4; ++i)
         m68k_step(&direct.cpu, &direct);
     batched = direct;
+    batched_memory = direct_memory;
+    batched.memory = &batched_memory;
     unsigned cycles = 0;
     for (unsigned i = 0; i < 12; ++i)
         cycles += m68k_step(&direct.cpu, &direct);
@@ -795,24 +812,28 @@ static void test_m68k_batched_loops(void)
     assert(m68k_skip_idle(&batched.cpu, &batched, 200) == 0);
 
     direct.cpu.pc = 30;
-    direct.ram[0xf645] = 1;
+    direct.memory->ram[0xf645] = 1;
     assert(m68k_step(&direct.cpu, &direct) == 12 && m68k_step(&direct.cpu, &direct) == 10);
     assert(m68k_skip_idle(&direct.cpu, &direct, 50) == 44);
 
     direct.cpu.pc = 36;
     assert(m68k_step(&direct.cpu, &direct) == 16 && m68k_step(&direct.cpu, &direct) == 10);
     batched = direct;
+    batched_memory = direct_memory;
+    batched.memory = &batched_memory;
     for (unsigned i = 0; i < 2; ++i)
         assert(m68k_step(&direct.cpu, &direct) == 16 && m68k_step(&direct.cpu, &direct) == 10);
     assert(m68k_skip_idle(&batched.cpu, &batched, 77) == 52);
     assert(memcmp(&direct.cpu, &batched.cpu, sizeof(direct.cpu)) == 0);
-    batched.ram[0xa6ca] = 1;
+    batched.memory->ram[0xa6ca] = 1;
     assert(m68k_skip_idle(&batched.cpu, &batched, 77) == 0);
 }
 
 static void test_signed_byte_copy(void)
 {
-    static struct megadrive direct, batched;
+    static struct megadrive_memory direct_memory, batched_memory;
+    static struct megadrive direct = {.memory = &direct_memory};
+    static struct megadrive batched = {.memory = &batched_memory};
     const uint8_t code[] = {
         0x10, 0x1a, 0x48, 0x80, 0xd0, 0x43, // move.b (a2)+,d0; ext.w d0; add.w d3,d0
         0x22, 0xc0, 0x51, 0xc9, 0xff, 0xf6, // move.l d0,(a1)+; dbra d1,0
@@ -828,12 +849,14 @@ static void test_signed_byte_copy(void)
     for (unsigned i = 0; i < 5; ++i)
         assert(m68k_step(&direct.cpu, &direct));
     batched = direct;
+    batched_memory = direct_memory;
+    batched.memory = &batched_memory;
     unsigned cycles = 0;
     for (unsigned i = 0; i < 15; ++i)
         cycles += m68k_step(&direct.cpu, &direct);
     assert(cycles == 114 && m68k_skip_idle(&batched.cpu, &batched, cycles) == cycles);
     assert(memcmp(&direct.cpu, &batched.cpu, sizeof(direct.cpu)) == 0);
-    assert(memcmp(direct.ram, batched.ram, sizeof(direct.ram)) == 0);
+    assert(memcmp(direct.memory->ram, batched.memory->ram, sizeof(direct.memory->ram)) == 0);
 
     batched.cpu.a[2] = sizeof(code) - 1;
     assert(m68k_skip_idle(&batched.cpu, &batched, 100) == 38); // Stop at the ROM boundary.
@@ -845,8 +868,8 @@ static void test_savestate(struct megadrive *md)
     remove(path);
     uint32_t identity = savestate_identity(md);
     const uint32_t pc = md->cpu.pc;
-    md->ram[75] = 0x81;
-    md->vram[5] = 0x93;
+    md->memory->ram[75] = 0x81;
+    md->memory->vram[5] = 0x93;
     md->hint_pending = true;
     md->sound_cpu.pc = 0x1234;
     md->ym_address[0] = 0x27;
@@ -855,29 +878,30 @@ static void test_savestate(struct megadrive *md)
     const uint32_t timer_a = md->ym_timer_clocks[0];
     assert(savestate_save(path, identity, md));
     assert(savestate_exists(path));
-    md->ram[75] = md->vram[5] = 0;
+    md->memory->ram[75] = md->memory->vram[5] = 0;
     md->cpu.pc = 0;
     md->hint_pending = false;
     md->sound_cpu.pc = 0;
     md->ym_timer_clocks[0] = 0;
     assert(!savestate_load(path, identity ^ 1, md));
-    assert(md->cpu.pc == 0 && md->ram[75] == 0);
+    assert(md->cpu.pc == 0 && md->memory->ram[75] == 0);
     assert(savestate_load(path, identity, md));
-    assert(md->cpu.pc == pc && md->ram[75] == 0x81 && md->vram[5] == 0x93);
+    assert(md->cpu.pc == pc && md->memory->ram[75] == 0x81 && md->memory->vram[5] == 0x93);
     assert(md->hint_pending);
     assert(md->sound_cpu.userdata == md && md->sound_cpu.pc == 0x1234);
-    assert(md->sound_cpu.mirrored_ram == md->z80_ram);
+    assert(md->sound_cpu.mirrored_ram == md->memory->z80_ram);
     assert(md->ym_timer_clocks[0] == timer_a && timer_a != 0);
     FILE *file = fopen(path, "ab");
     assert(file && fputc(0xff, file) != EOF && fclose(file) == 0);
     assert(!savestate_load(path, identity, md));
-    assert(md->cpu.pc == pc && md->ram[75] == 0x81);
+    assert(md->cpu.pc == pc && md->memory->ram[75] == 0x81);
     assert(remove(path) == 0);
 }
 
 static void test_cartridge_sram(void)
 {
-    static struct megadrive md;
+    static struct megadrive_memory memory;
+    static struct megadrive md = {.memory = &memory};
     uint8_t rom[0x204] = {
         [0x84] = 0x00, 0x00, 0x02, 0x00, // TRAP #1 vector
         [0x100] = 0x34, 0x56,
@@ -899,7 +923,7 @@ static void test_cartridge_sram(void)
     const char *path = "build/c/boot-test.srm";
     remove(path);
     assert(saveram_flush(path, &md) && !md.sram_dirty);
-    memset(md.sram, 0, md.sram_size);
+    memset(md.memory->sram, 0, md.sram_size);
     saveram_load(path, &md);
     assert(megadrive_read_word(&md, 0x100) == 0x1234 && !md.sram_dirty);
     assert(remove(path) == 0);
@@ -923,7 +947,7 @@ static void test_cartridge_sram(void)
     remove(state);
     unsigned identity = savestate_identity(&md);
     assert(savestate_save(state, identity, &md));
-    md.sram[0] = 0xff;
+    md.memory->sram[0] = 0xff;
     assert(megadrive_write_byte(&md, 0xa130f1, 0));
     assert(savestate_load(state, identity, &md));
     assert(md.sram_control == 3 && md.sram_dirty && megadrive_read_word(&md, 0x100) == 0x1234);
@@ -932,7 +956,8 @@ static void test_cartridge_sram(void)
 
 static void test_sram_instruction_fetch(void)
 {
-    static struct megadrive md;
+    static struct megadrive_memory memory;
+    static struct megadrive md = {.memory = &memory};
     uint8_t program[0x10e] = {
         [4] = 0x00, 0x00, 0x00, 0x20,
         [0x20] = 0x13, 0xfc, 0x00, 0x01, 0x00, 0xa1, 0x30, 0xf1, // Enable SRAM
@@ -951,7 +976,7 @@ static void test_sram_instruction_fetch(void)
         .sram_start = 0x100, .sram_size = sizeof(overlay),
     };
     megadrive_reset(&md, &cart, GENESIS_REGION_AUTO);
-    memcpy(md.sram, overlay, sizeof(overlay));
+    memcpy(md.memory->sram, overlay, sizeof(overlay));
 
     megadrive_run_frame(&md);
 
@@ -1020,7 +1045,8 @@ static void test_frame_pacing(void)
 int main(void)
 {
     test_frame_pacing();
-    static struct megadrive md;
+    static struct megadrive_memory memory;
+    static struct megadrive md = {.memory = &memory};
     const struct cartridge cartridge = {.data = rom, .size = sizeof(rom), .region = "JUE"};
     megadrive_reset(&md, &cartridge, GENESIS_REGION_AUTO);
     assert(md.cpu.pc == 0x200 && md.cpu.a[7] == 0xfffe00);
