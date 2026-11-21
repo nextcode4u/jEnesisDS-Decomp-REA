@@ -120,7 +120,8 @@ static const char *load_stream(struct cartridge *cart, FILE *file)
             return "Invalid BIN or SMD header";
     }
 
-    cart->data = malloc(cart->size);
+    size_t padded_size = cart->size + (M68K_NATIVE_WORDS && (cart->size & 1));
+    cart->data = malloc(padded_size);
     if (!cart->data)
         return "Not enough memory for ROM";
     if (cart->format == CARTRIDGE_SMD) {
@@ -138,6 +139,15 @@ static const char *load_stream(struct cartridge *cart, FILE *file)
                             cart->data[CHECKSUM + 1];
     cart->computed_checksum = rom_checksum(cart->data, cart->size);
     read_sram_header(cart);
+    if (M68K_NATIVE_WORDS) {
+        if (cart->size < padded_size)
+            cart->data[cart->size] = 0;
+        for (size_t offset = 0; offset < padded_size; offset += 2) {
+            uint8_t high = cart->data[offset];
+            cart->data[offset] = cart->data[offset + 1];
+            cart->data[offset + 1] = high;
+        }
+    }
     return NULL;
 }
 

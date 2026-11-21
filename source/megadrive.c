@@ -424,9 +424,9 @@ uint8_t megadrive_read_byte(struct megadrive *md, uint32_t address)
     if (megadrive_sram_visible(md, address))
         return md->sram[address - md->sram_start];
     if (address < md->rom_size)
-        return md->rom[address];
+        return cartridge_byte(md->rom, address);
     if (address >= 0xe00000)
-        return md->ram[address & 0xffff];
+        return work_ram_byte(md, address);
     if (address >= 0xa00000 && address < 0xa04000 && md->z80_bus_requested)
         return md->z80_ram[address & 0x1fff];
     if (address >= 0xa04000 && address < 0xa06000 && md->z80_bus_requested) {
@@ -459,10 +459,14 @@ uint16_t megadrive_read_word(struct megadrive *md, uint32_t address)
 {
     address &= 0xffffff;
     if (address < md->rom_size && md->rom_size - address >= 2 &&
-        !megadrive_sram_visible(md, address))
-        return (uint16_t)md->rom[address] << 8 | md->rom[address + 1];
+        !megadrive_sram_visible(md, address)) {
+        if (!(address & 1))
+            return cartridge_aligned_word(md->rom, address);
+        return (uint16_t)cartridge_byte(md->rom, address) << 8 |
+                         cartridge_byte(md->rom, address + 1);
+    }
     if (address >= 0xe00000)
-        return (uint16_t)md->ram[address & 0xffff] << 8 | md->ram[(address + 1) & 0xffff];
+        return work_ram_word(md, address);
     if (address == 0xc00000 || address == 0xc00002)
         return read_vdp_data(md);
     if (address >= 0xc00008 && address <= 0xc0000e)
@@ -490,7 +494,7 @@ bool megadrive_write_byte(struct megadrive *md, uint32_t address, uint8_t value)
 {
     address &= 0xffffff;
     if (address >= 0xe00000) {
-        md->ram[address & 0xffff] = value;
+        work_ram_store_byte(md, address, value);
         return true;
     }
     if (megadrive_sram_visible(md, address)) {
@@ -640,7 +644,24 @@ static bool dma_linear_vram(struct megadrive *md, uint32_t address, unsigned len
             block_end = end;
         unsigned count = block_end - dest;
         uint8_t *target = md->vram + dest;
-        if (memcmp(target, source, count)) {
+        if (M68K_NATIVE_WORDS) {
+            unsigned changed = 0;
+            for (unsigned i = 0; i < count; i += 2) {
+                uint8_t high = source[i + 1], low = source[i];
+                if (target[i] != high) {
+                    target[i] = high;
+                    ++changed;
+                }
+                if (target[i + 1] != low) {
+                    target[i + 1] = low;
+                    ++changed;
+                }
+            }
+            if (changed) {
+                revision += changed;
+                md->vram_revisions[dest >> 5] = revision;
+            }
+        } else if (memcmp(target, source, count)) {
             for (unsigned i = 0; i < count; ++i)
                 revision += target[i] != source[i];
             memcpy(target, source, count);
@@ -748,8 +769,7 @@ bool megadrive_write_word(struct megadrive *md, uint32_t address, uint16_t value
 {
     address &= 0xffffff;
     if (address >= 0xe00000) {
-        md->ram[address & 0xffff] = value >> 8;
-        md->ram[(address + 1) & 0xffff] = value;
+        work_ram_store_word(md, address, value);
         return true;
     }
     switch (address) {

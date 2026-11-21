@@ -26,7 +26,12 @@ static uint32_t hash_bytes(uint32_t hash, const uint8_t *bytes, size_t size)
 
 uint32_t savestate_identity(const struct megadrive *md)
 {
-    return hash_bytes(fnv_start, md->rom, md->rom_size);
+    if (!M68K_NATIVE_WORDS)
+        return hash_bytes(fnv_start, md->rom, md->rom_size);
+    uint32_t hash = fnv_start;
+    for (unsigned offset = 0; offset < md->rom_size; ++offset)
+        hash = (hash ^ cartridge_byte(md->rom, offset)) * FNV_PRIME;
+    return hash;
 }
 
 static void transfer(struct state_io *io, uint8_t *bytes, size_t size)
@@ -47,6 +52,26 @@ static uint32_t transfer_u32(struct state_io *io, uint32_t value)
     return bytes[0] | (uint32_t)bytes[1] << 8 | (uint32_t)bytes[2] << 16 | (uint32_t)bytes[3] << 24;
 }
 
+static void transfer_work_ram(struct state_io *io, struct megadrive *md)
+{
+    if (!M68K_NATIVE_WORDS) {
+        transfer(io, md->ram, sizeof(md->ram));
+        return;
+    }
+
+    // Save files always store guest bytes in address order.
+    uint8_t bytes[256];
+    for (unsigned offset = 0; offset < sizeof(md->ram) && io->ok; offset += sizeof(bytes)) {
+        if (io->writing)
+            for (unsigned i = 0; i < sizeof(bytes); ++i)
+                bytes[i] = work_ram_byte(md, offset + i);
+        transfer(io, bytes, sizeof(bytes));
+        if (!io->writing && io->ok)
+            for (unsigned i = 0; i < sizeof(bytes); ++i)
+                work_ram_store_byte(md, offset + i, bytes[i]);
+    }
+}
+
 static void transfer_state(struct state_io *io, struct megadrive *md, unsigned version)
 {
     // Keep the on-disk format independent of pointers, padding, and host byte order.
@@ -62,7 +87,7 @@ static void transfer_state(struct state_io *io, struct megadrive *md, unsigned v
     SCALAR(md->cpu.instruction_address);
     SCALAR(md->cpu.opcode);
     SCALAR(md->cpu.stopped);
-    ARRAY_BYTES(md->ram);
+    transfer_work_ram(io, md);
     ARRAY_BYTES(md->z80_ram);
     SCALAR(md->z80_bus_requested);
     SCALAR(md->z80_reset);

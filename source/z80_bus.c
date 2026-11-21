@@ -19,7 +19,7 @@ static uint8_t read_byte(void *context, uint16_t address)
     if (address >= 0x8000) {
         // jEnesisDS masks the shifted cartridge bank to the 4 MiB ROM window.
         uint32_t mapped = ((uint32_t)md->z80_bank << 15 | (address & 0x7fff)) & 0x3fffff;
-        return mapped < md->rom_size ? md->rom[mapped] : 0xff;
+        return mapped < md->rom_size ? cartridge_byte(md->rom, mapped) : 0xff;
     }
     return (address & 0xff00) == 0x7f00 ? 0 : 0xff;
 }

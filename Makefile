@@ -17,6 +17,7 @@ build/c/m68k.o build/c/vdp_render.o build/c/vdp_ds.o build/c/megadrive.o build/c
 build/c/arm7/main.o build/c/arm7/psg.o build/c/arm7/fm.o: C_FLAGS += -marm -O3
 ARM7_OBJ := build/c/arm7/main.o build/c/arm7/psg.o build/c/arm7/fm.o build/c/arm7/fm_tables.o
 Z80_SRC := source/z80_bus.c source/third_party/z80/z80.c
+HOST_CORE_SRC := source/m68k.c source/megadrive.c source/vdp_render.c source/savestate.c source/dac.c $(Z80_SRC)
 ARM9_OBJ := build/c/main.o build/c/frontend.o build/c/cartridge.o build/c/m68k.o build/c/megadrive.o build/c/vdp_render.o build/c/vdp_ds.o build/c/savestate.o build/c/dac.o $(Z80_SRC:source/%.c=build/c/%.o) build/c/frontend_assets.o
 ARM7_ELF := build/c/arm7.elf
 ARM9_ELF := build/c/arm9.elf
@@ -28,8 +29,16 @@ all: $(ROM)
 check: build/c/fm_tables.c
 	@mkdir -p build/c
 	"$(HOST_CC)" -std=c11 -Wall -Wextra -Werror -Isource \
-		tests/boot.c source/m68k.c source/megadrive.c source/vdp_render.c source/savestate.c source/dac.c source/arm7/psg.c source/arm7/fm.c build/c/fm_tables.c $(Z80_SRC) -o build/c/boot-test
+		tests/boot.c $(HOST_CORE_SRC) source/arm7/psg.c source/arm7/fm.c build/c/fm_tables.c -o build/c/boot-test
 	build/c/boot-test
+	"$(HOST_CC)" -std=c11 -Wall -Wextra -Werror -Isource \
+		tests/memory_layout.c source/cartridge.c $(HOST_CORE_SRC) -o build/c/raw-memory-test
+	"$(HOST_CC)" -std=c11 -Wall -Wextra -Werror -DJENESIS_NATIVE_WORDS -Isource \
+		tests/memory_layout.c source/cartridge.c $(HOST_CORE_SRC) -o build/c/native-memory-test
+	build/c/raw-memory-test build/c/raw-memory-test.jsc
+	build/c/native-memory-test build/c/native-memory-test.jsc
+	cmp build/c/raw-memory-test.jsc build/c/native-memory-test.jsc
+	rm build/c/raw-memory-test.jsc build/c/native-memory-test.jsc
 
 build/c/fm_tables.c: tools/generate_fm_tables.py
 	@mkdir -p "$(@D)"

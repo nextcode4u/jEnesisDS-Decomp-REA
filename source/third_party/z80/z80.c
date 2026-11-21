@@ -142,23 +142,11 @@ static inline void inc_r(z80* const z) {
   z->r = (z->r & 0x80) | ((z->r + 1) & 0x7f);
 }
 
-// returns if there was a carry between bit "bit_no" and "bit_no - 1" when
-// executing "a + b + cy"
-static inline bool carry(int bit_no, uint16_t a, uint16_t b, bool cy) {
-  int32_t result = a + b + cy;
-  int32_t carry = result ^ a ^ b;
-  return carry & (1 << bit_no);
-}
-
-// returns the parity of byte: 0 if number of 1 bits in `val` is odd, else 1
+// Fold two nibbles and look up even parity.
 static inline bool parity(uint8_t val) {
-  uint8_t nb_one_bits = 0;
-  for (int i = 0; i < 8; i++) {
-    nb_one_bits += ((val >> i) & 1);
-  }
-
-  return (nb_one_bits & 1) == 0;
+  return (0x9669U >> ((val ^ (val >> 4)) & 15)) & 1;
 }
+
 
 static void exec_opcode(z80* const z, uint8_t opcode);
 static void exec_opcode_cb(z80* const z, uint8_t opcode);
@@ -227,27 +215,30 @@ static inline void cond_jr(z80* const z, bool condition) {
   }
 }
 
-// ADD Byte: adds two bytes together
+enum {
+  FLAG_C = 0x01, FLAG_N = 0x02, FLAG_PV = 0x04, FLAG_H = 0x10,
+  FLAG_XY = 0x28, FLAG_Z = 0x40, FLAG_S = 0x80,
+};
+
+static inline unsigned result_flags(uint8_t result) {
+  return (result & (FLAG_S | FLAG_XY)) | (result == 0 ? FLAG_Z : 0);
+}
+
 static inline uint8_t addb(z80* const z, uint8_t a, uint8_t b, bool cy) {
-  const uint8_t result = a + b + cy;
-  z->sf = result >> 7;
-  z->zf = result == 0;
-  z->hf = carry(4, a, b, cy);
-  z->pf = carry(7, a, b, cy) != carry(8, a, b, cy);
-  z->cf = carry(8, a, b, cy);
-  z->nf = 0;
-  z->xf = GET_BIT(3, result);
-  z->yf = GET_BIT(5, result);
+  unsigned sum = (unsigned)a + b + cy;
+  uint8_t result = sum;
+  unsigned carries = sum ^ a ^ b;
+  unsigned carry_out = carries >> 8;
+  unsigned overflow = ((carries >> 7) ^ carry_out) & 1;
+  set_f(z, result_flags(result) | (carries & FLAG_H) |
+           (overflow * FLAG_PV) | carry_out);
   return result;
 }
 
-// SUBstract Byte: substracts two bytes (with optional carry)
 static inline uint8_t subb(z80* const z, uint8_t a, uint8_t b, bool cy) {
-  uint8_t val = addb(z, a, ~b, !cy);
-  z->cf = !z->cf;
-  z->hf = !z->hf;
-  z->nf = 1;
-  return val;
+  uint8_t result = addb(z, a, ~b, !cy);
+  set_f(z, (get_f(z) ^ (FLAG_C | FLAG_H)) | FLAG_N);
+  return result;
 }
 
 // ADD Word: adds two words together
@@ -330,49 +321,21 @@ static inline uint8_t dec(z80* const z, uint8_t a) {
 
 // MARK: bitwise
 
-// executes a logic "and" between register A and a byte, then stores the
-// result in register A
+static inline void logic_result(z80* const z, uint8_t value, unsigned half_carry) {
+  set_f(z, result_flags(value) | half_carry | (parity(value) ? FLAG_PV : 0));
+  z->a = value;
+}
+
 static inline void land(z80* const z, uint8_t val) {
-  const uint8_t result = z->a & val;
-  z->sf = result >> 7;
-  z->zf = result == 0;
-  z->hf = 1;
-  z->pf = parity(result);
-  z->nf = 0;
-  z->cf = 0;
-  z->xf = GET_BIT(3, result);
-  z->yf = GET_BIT(5, result);
-  z->a = result;
+  logic_result(z, z->a & val, FLAG_H);
 }
 
-// executes a logic "xor" between register A and a byte, then stores the
-// result in register A
-static inline void lxor(z80* const z, const uint8_t val) {
-  const uint8_t result = z->a ^ val;
-  z->sf = result >> 7;
-  z->zf = result == 0;
-  z->hf = 0;
-  z->pf = parity(result);
-  z->nf = 0;
-  z->cf = 0;
-  z->xf = GET_BIT(3, result);
-  z->yf = GET_BIT(5, result);
-  z->a = result;
+static inline void lxor(z80* const z, uint8_t val) {
+  logic_result(z, z->a ^ val, 0);
 }
 
-// executes a logic "or" between register A and a byte, then stores the
-// result in register A
-static inline void lor(z80* const z, const uint8_t val) {
-  const uint8_t result = z->a | val;
-  z->sf = result >> 7;
-  z->zf = result == 0;
-  z->hf = 0;
-  z->pf = parity(result);
-  z->nf = 0;
-  z->cf = 0;
-  z->xf = GET_BIT(3, result);
-  z->yf = GET_BIT(5, result);
-  z->a = result;
+static inline void lor(z80* const z, uint8_t val) {
+  logic_result(z, z->a | val, 0);
 }
 
 // compares a value with register A
@@ -382,8 +345,7 @@ static inline void cp(z80* const z, const uint8_t val) {
   // the only difference between cp and sub is that
   // the xf/yf are taken from the value to be substracted,
   // not the result
-  z->yf = GET_BIT(5, val);
-  z->xf = GET_BIT(3, val);
+  set_f(z, (get_f(z) & ~FLAG_XY) | (val & FLAG_XY));
 }
 
 // 0xCB opcodes

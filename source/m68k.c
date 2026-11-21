@@ -30,20 +30,32 @@ static inline bool rom_visible(const struct megadrive *md, uint32_t address, uns
              address >= md->sram_start + md->sram_size));
 }
 
+static uint32_t read_cartridge(const struct megadrive *md, unsigned address, unsigned size)
+{
+    const uint8_t *rom = md->rom;
+    if (size == 1)
+        return cartridge_byte(rom, address);
+    if (M68K_NATIVE_WORDS && (address & 1)) {
+        uint32_t value = 0;
+        for (unsigned i = 0; i < size; ++i)
+            value = (value << 8) | cartridge_byte(rom, address + i);
+        return value;
+    }
+    uint32_t value = cartridge_aligned_word(rom, address);
+    return size == 2 ? value : (value << 16) | cartridge_aligned_word(rom, address + 2);
+}
+
 static ITCM_CODE uint32_t read_memory(struct megadrive *md, uint32_t address, unsigned size)
 {
     address &= 0xffffff;
-    const uint8_t *memory = NULL;
-    if (address >= 0xe00000 && (address & 0xffff) <= 0x10000 - size)
-        memory = md->ram + (address & 0xffff);
-    else if (rom_visible(md, address, size))
-        memory = md->rom + address;
-    if (memory) {
+    if (address >= 0xe00000 && (address & 0xffff) <= 0x10000 - size) {
         if (size == 1)
-            return memory[0];
-        uint32_t value = (uint32_t)memory[0] << 8 | memory[1];
-        return size == 2 ? value : value << 16 | (uint32_t)memory[2] << 8 | memory[3];
+            return work_ram_byte(md, address);
+        uint32_t word = work_ram_word(md, address);
+        return size == 2 ? word : (word << 16) | work_ram_word(md, address + 2);
     }
+    if (rom_visible(md, address, size))
+        return read_cartridge(md, address, size);
     if (size == 1)
         return megadrive_read_byte(md, address);
     uint32_t value = megadrive_read_word(md, address);
@@ -58,14 +70,15 @@ static ITCM_CODE bool write_memory(struct megadrive *md, uint32_t address, unsig
     if (size != 1 && (address & 1))
         return false;
     if (address >= 0xe00000 && (address & 0xffff) <= 0x10000 - size) {
-        uint8_t *memory = md->ram + (address & 0xffff);
-        if (size == 4) {
-            *memory++ = value >> 24;
-            *memory++ = value >> 16;
+        if (size == 1) {
+            work_ram_store_byte(md, address, value);
+        } else {
+            if (size == 4) {
+                work_ram_store_word(md, address, value >> 16);
+                address += 2;
+            }
+            work_ram_store_word(md, address, value);
         }
-        if (size != 1)
-            *memory++ = value >> 8;
-        *memory = value;
         return true;
     }
     if (size == 1)
@@ -80,11 +93,9 @@ static uint32_t fetch(struct m68k *cpu, struct megadrive *md, unsigned size)
     uint32_t address = cpu->pc & 0xffffff;
     cpu->pc += size;
     if (rom_visible(md, address, size)) {
-        const uint8_t *rom = md->rom + address;
-        uint32_t value = (uint32_t)rom[0] << 8 | rom[1];
-        if (size == 4)
-            value = (value << 16) | ((uint32_t)rom[2] << 8) | rom[3];
-        return value;
+        // Instruction addresses are checked for word alignment before decoding.
+        uint32_t word = cartridge_aligned_word(md->rom, address);
+        return size == 2 ? word : (word << 16) | cartridge_aligned_word(md->rom, address + 2);
     }
     return read_memory(md, address, size);
 }
@@ -1193,11 +1204,6 @@ unsigned m68k_interrupt(struct m68k *cpu, struct megadrive *md, unsigned level)
     return enter_exception(cpu, md, 24 + level, (old_status & 31) | (level << 8)) ? 44 : 0;
 }
 
-static uint16_t rom_word(const uint8_t *rom, unsigned offset)
-{
-    return (uint16_t)rom[offset] << 8 | rom[offset + 1];
-}
-
 static unsigned skip_ram_store_loop(struct m68k *cpu, struct megadrive *md, unsigned budget,
                                     uint16_t move_op)
 {
@@ -1218,10 +1224,10 @@ static unsigned skip_ram_store_loop(struct m68k *cpu, struct megadrive *md, unsi
     uint8_t *dest = md->ram + (address & 0xffff);
     uint32_t value = cpu->d[data];
     for (unsigned i = 0; i < iterations; ++i) {
-        dest[0] = value >> 24;
-        dest[1] = value >> 16;
-        dest[2] = value >> 8;
-        dest[3] = value;
+        dest[0 ^ M68K_NATIVE_WORDS] = value >> 24;
+        dest[1 ^ M68K_NATIVE_WORDS] = value >> 16;
+        dest[2 ^ M68K_NATIVE_WORDS] = value >> 8;
+        dest[3 ^ M68K_NATIVE_WORDS] = value;
         dest += 4;
     }
     if (iterations)
@@ -1235,8 +1241,8 @@ static unsigned skip_signed_byte_copy(struct m68k *cpu, struct megadrive *md,
                                       unsigned budget, const uint8_t *rom)
 {
     // MOVE.B (An)+,Dn; EXT.W Dn; ADD.W Dr,Dn; MOVE.L Dn,(Am)+; DBRA.
-    uint16_t load = rom_word(rom, 0), extend = rom_word(rom, 2);
-    uint16_t add = rom_word(rom, 4), store = rom_word(rom, 6);
+    uint16_t load = cartridge_aligned_word(rom, 0), extend = cartridge_aligned_word(rom, 2);
+    uint16_t add = cartridge_aligned_word(rom, 4), store = cartridge_aligned_word(rom, 6);
     unsigned source = load & 7, data = (load >> 9) & 7;
     unsigned increment = add & 7, target = (store >> 9) & 7, counter = cpu->opcode & 7;
     if ((load & 0xf1f8) != 0x1018 || extend != (0x4880 | data) ||
@@ -1266,16 +1272,18 @@ static unsigned skip_signed_byte_copy(struct m68k *cpu, struct megadrive *md,
 
     if (!source_in_ram && !rom_visible(md, src, (iterations - 1) * step + 1))
         return 0;
-    const uint8_t *input = source_in_ram ? md->ram + (src & 0xffff) : md->rom + src;
     uint8_t *output = md->ram + (dst & 0xffff);
     uint32_t upper = cpu->d[data] & 0xffff0000;
     uint16_t bias = cpu->d[increment], word = 0;
     for (unsigned i = 0; i < iterations; ++i) {
-        word = (int8_t)input[i * step] + bias;
-        output[0] = upper >> 24;
-        output[1] = upper >> 16;
-        output[2] = word >> 8;
-        output[3] = word;
+        unsigned address = src + i * step;
+        int8_t value = source_in_ram ? work_ram_byte(md, address) :
+                       cartridge_byte(md->rom, address);
+        word = value + bias;
+        output[0 ^ M68K_NATIVE_WORDS] = upper >> 24;
+        output[1 ^ M68K_NATIVE_WORDS] = upper >> 16;
+        output[2 ^ M68K_NATIVE_WORDS] = word >> 8;
+        output[3 ^ M68K_NATIVE_WORDS] = word;
         output += 4;
     }
     cpu->d[data] = upper | word;
@@ -1292,15 +1300,15 @@ static unsigned skip_interleaved_word_stores(struct m68k *cpu, struct megadrive 
 {
     // Two MOVE.W stores through the same postincrement address register,
     // followed by SWAP, ADD, SWAP and the taken DBRA.
-    uint16_t first = rom_word(rom, 0), second = rom_word(rom, 2);
-    uint16_t swap = rom_word(rom, 4), add = rom_word(rom, 6);
+    uint16_t first = cartridge_aligned_word(rom, 0), second = cartridge_aligned_word(rom, 2);
+    uint16_t swap = cartridge_aligned_word(rom, 4), add = cartridge_aligned_word(rom, 6);
     unsigned data = first & 7, accumulator = second & 7, increment = add & 7;
     unsigned size = (add >> 6) & 3;
     unsigned address_reg = (first >> 9) & 7, counter = cpu->opcode & 7;
     if ((first & 0xf1f8) != 0x30c0 || (second & 0xf1f8) != 0x30c0 ||
         ((second >> 9) & 7) != address_reg || swap != (0x4840 | accumulator) ||
         (add & 0xff38) != (0xd000 | accumulator << 9) || (size != 1 && size != 2) ||
-        rom_word(rom, 8) != swap ||
+        cartridge_aligned_word(rom, 8) != swap ||
         accumulator == counter || data == counter || increment == counter ||
         accumulator == data || accumulator == increment)
         return 0;
@@ -1329,10 +1337,10 @@ static unsigned skip_interleaved_word_stores(struct m68k *cpu, struct megadrive 
     value = (value << 16) | (value >> 16);
     bool carry = false;
     for (unsigned i = 0; i < iterations; ++i) {
-        dest[0] = first_word >> 8;
-        dest[1] = first_word;
-        dest[2] = value >> 24;
-        dest[3] = value >> 16;
+        dest[0 ^ M68K_NATIVE_WORDS] = first_word >> 8;
+        dest[1 ^ M68K_NATIVE_WORDS] = first_word;
+        dest[2 ^ M68K_NATIVE_WORDS] = value >> 24;
+        dest[3 ^ M68K_NATIVE_WORDS] = value >> 16;
         dest += 4;
         uint32_t sum = ((value & mask) + stride) & mask;
         carry = sum < stride;
@@ -1359,9 +1367,9 @@ static unsigned skip_inactive_objects(struct m68k *cpu, const struct megadrive *
     bool move_byte = length != 16;
     bool displaced = length == 12;
     unsigned prefix = displaced || !move_byte ? 4 : 2;
-    uint16_t first = rom_word(rom, 0);
-    uint16_t branch = rom_word(rom, prefix);
-    uint16_t lea = rom_word(rom, length - 4);
+    uint16_t first = cartridge_aligned_word(rom, 0);
+    uint16_t branch = cartridge_aligned_word(rom, prefix);
+    uint16_t lea = cartridge_aligned_word(rom, length - 4);
     unsigned areg = first & 7, dreg = (first >> 9) & 7, counter_reg = cpu->opcode & 7;
     if ((lea & 0xf1f8) != 0x41e8 || ((lea >> 9) & 7) != areg || (lea & 7) != areg)
         return 0;
@@ -1378,8 +1386,8 @@ static unsigned skip_inactive_objects(struct m68k *cpu, const struct megadrive *
             return 0;
         }
     }
-    int16_t step = rom_word(rom, length - 2);
-    int16_t offset = !move_byte || displaced ? (int16_t)rom_word(rom, 2) : 0;
+    int16_t step = cartridge_aligned_word(rom, length - 2);
+    int16_t offset = !move_byte || displaced ? (int16_t)cartridge_aligned_word(rom, 2) : 0;
     unsigned cost = displaced ? 42 : move_byte ? 36 : 40;
     unsigned counter = (uint16_t)cpu->d[counter_reg], iterations = budget / cost;
     if (iterations > counter)
@@ -1389,7 +1397,7 @@ static unsigned skip_inactive_objects(struct m68k *cpu, const struct megadrive *
         uint32_t address = (cpu->a[areg] + offset) & 0xffffff;
         if (address < 0xe00000)
             break;
-        uint8_t flags = md->ram[address & 0xffff];
+        uint8_t flags = work_ram_byte(md, address);
         if (move_byte ? flags != 0 : (flags & 0x80) != 0)
             break;
         set_logic_flags(cpu, 1, flags);
@@ -1417,7 +1425,7 @@ ITCM_CODE unsigned m68k_skip_idle(struct m68k *cpu, struct megadrive *md, unsign
                 return skip_inactive_objects(cpu, md, budget, pc);
             if (!rom_visible(md, pc, 2))
                 return 0;
-            uint16_t first = rom_word(md->rom, pc);
+            uint16_t first = cartridge_aligned_word(md->rom, pc);
             if (first != 0x4e71)
                 return skip_ram_store_loop(cpu, md, budget, first);
             loop_cycles += 4; // NOP immediately before the DBRA.
@@ -1437,16 +1445,16 @@ ITCM_CODE unsigned m68k_skip_idle(struct m68k *cpu, struct megadrive *md, unsign
     unsigned length = full_address ? 6 : 4;
     if (cpu->pc + length != cpu->instruction_address || !rom_visible(md, pc, length))
         return 0;
-    uint16_t test = rom_word(md->rom, pc);
+    uint16_t test = cartridge_aligned_word(md->rom, pc);
     uint16_t byte_test = full_address ? 0x4a39 : 0x4a38;
     if (test != byte_test && test != (byte_test | 0x40))
         return 0;
 
     // Only work-RAM polling can skip instructions. The Z80 cannot observe
     // these reads or write to the address between 68000 instructions.
-    uint32_t address = rom_word(md->rom, pc + 2);
+    uint32_t address = cartridge_aligned_word(md->rom, pc + 2);
     if (full_address)
-        address = address << 16 | rom_word(md->rom, pc + 4);
+        address = address << 16 | cartridge_aligned_word(md->rom, pc + 4);
     else
         address = (int16_t)address;
     address &= 0xffffff;
@@ -1454,8 +1462,8 @@ ITCM_CODE unsigned m68k_skip_idle(struct m68k *cpu, struct megadrive *md, unsign
     if (address < 0xe00000 || (word && (address & 1)))
         return 0;
     uint16_t offset = address;
-    uint8_t value = md->ram[offset];
-    if (word && md->ram[offset + 1])
+    uint8_t value = work_ram_byte(md, offset);
+    if (word && work_ram_byte(md, offset + 1))
         value |= 1;
     unsigned flags = value == 0 ? CCR_Z : (value & 0x80) ? CCR_N : 0;
     if ((cpu->sr & 15) != flags || (value == 0) != (op >> 8 == 0x67))

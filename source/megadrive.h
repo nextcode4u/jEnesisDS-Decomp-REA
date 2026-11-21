@@ -101,7 +101,7 @@ struct megadrive {
     unsigned frame_cycle;
 
     // Bulk memory follows the CPU, bus and video registers used in the hot path.
-    uint8_t ram[0x10000];
+    _Alignas(4) uint8_t ram[0x10000];
     uint8_t z80_ram[0x2000];
     uint8_t vram[0x10000];
     struct vdp_scanline vdp_rows[VDP_MAX_ACTIVE_LINES];
@@ -109,6 +109,38 @@ struct megadrive {
     uint32_t vram_revisions[0x10000 / 32];
     uint8_t sram[CARTRIDGE_SRAM_CAPACITY];
 };
+
+static inline uint8_t work_ram_byte(const struct megadrive *md, unsigned address)
+{
+    return md->ram[(uint16_t)address ^ M68K_NATIVE_WORDS];
+}
+
+static inline void work_ram_store_byte(struct megadrive *md, unsigned address, uint8_t value)
+{
+    md->ram[(uint16_t)address ^ M68K_NATIVE_WORDS] = value;
+}
+
+static inline uint16_t work_ram_word(const struct megadrive *md, unsigned address)
+{
+    unsigned offset = (uint16_t)address;
+    if (M68K_NATIVE_WORDS && !(offset & 1)) {
+        uint16_t word;
+        __builtin_memcpy(&word, __builtin_assume_aligned(md->ram + offset, 2), sizeof(word));
+        return word;
+    }
+    return (uint16_t)work_ram_byte(md, address) << 8 | work_ram_byte(md, address + 1);
+}
+
+static inline void work_ram_store_word(struct megadrive *md, unsigned address, uint16_t value)
+{
+    unsigned offset = (uint16_t)address;
+    if (M68K_NATIVE_WORDS && !(offset & 1)) {
+        __builtin_memcpy(__builtin_assume_aligned(md->ram + offset, 2), &value, sizeof(value));
+    } else {
+        work_ram_store_byte(md, address, value >> 8);
+        work_ram_store_byte(md, address + 1, value);
+    }
+}
 
 static inline bool megadrive_sram_visible(const struct megadrive *md, uint32_t address)
 {
