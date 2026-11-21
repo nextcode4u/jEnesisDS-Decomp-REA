@@ -65,7 +65,7 @@ void genesis_z80_bind(struct megadrive *md)
     md->sound_cpu.userdata = md;
     md->sound_cpu.mirrored_ram = md->memory->z80_ram;
     md->sound_cpu.ram_limit = 0x4000;
-    md->sound_cpu.ram_mask = sizeof(md->memory->z80_ram) - 1;
+    md->sound_cpu.ram_mask = Z80_RAM_SIZE - 1;
 }
 
 void genesis_z80_reset(struct megadrive *md)

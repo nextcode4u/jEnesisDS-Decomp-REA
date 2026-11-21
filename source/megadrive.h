@@ -51,9 +51,15 @@ enum genesis_button {
     GENESIS_MODE = 1 << 11,
 };
 
+enum { Z80_RAM_SIZE = 0x2000 };
+
 struct megadrive_memory {
     _Alignas(4) uint8_t ram[0x10000];
-    uint8_t z80_ram[0x2000];
+#ifdef __NDS__
+    uint8_t *z80_ram;
+#else
+    uint8_t z80_ram[Z80_RAM_SIZE];
+#endif
     _Alignas(4) uint8_t vram[0x10000];
     struct vdp_scanline vdp_rows[VDP_MAX_ACTIVE_LINES];
     uint8_t vdp_sprite_tables[VDP_RASTER_SPRITE_TABLES][VDP_SPRITE_TABLE_BYTES];

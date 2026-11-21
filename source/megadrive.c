@@ -35,7 +35,14 @@ void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum ge
 {
     struct megadrive_memory *memory = md->memory;
     memset(md, 0, sizeof(*md));
+#ifdef __NDS__
+    uint8_t *z80_ram = memory->z80_ram;
+#endif
     memset(memory, 0, sizeof(*memory));
+#ifdef __NDS__
+    memory->z80_ram = z80_ram;
+    memset(z80_ram, 0, Z80_RAM_SIZE);
+#endif
     md->memory = memory;
     md->rom = cart->data;
     md->rom_size = cart->size;
@@ -520,10 +527,27 @@ static void vdp_store(struct megadrive *md, uint16_t value)
     uint16_t address = md->vdp_address;
     unsigned word = (address >> 1) & 0x3f;
     switch (md->vdp_code & 0xf) {
-    case 1:
-        store_vram_byte(md, address, value >> 8);
-        store_vram_byte(md, address ^ 1, value);
+    case 1: {
+        // Both bytes occupy the same VRAM revision block, even on an odd address.
+        uint8_t *target = md->memory->vram + (address & ~1U);
+        uint16_t encoded = value;
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+        if (!(address & 1))
+            encoded = __builtin_bswap16(encoded);
+#else
+        if (address & 1)
+            encoded = __builtin_bswap16(encoded);
+#endif
+        uint16_t prior;
+        memcpy(&prior, __builtin_assume_aligned(target, 2), sizeof(prior));
+        unsigned changed = prior ^ encoded;
+        if (changed) {
+            memcpy(__builtin_assume_aligned(target, 2), &encoded, sizeof(encoded));
+            md->video_revision += ((changed & 0xff) != 0) + ((changed >> 8) != 0);
+            md->memory->vram_revisions[address >> 5] = md->video_revision;
+        }
         break;
+    }
     case 3:
         md->cram[word] = value & 0x0eee;
         break;
@@ -585,7 +609,26 @@ static bool dma_linear_vram(struct megadrive *md, uint32_t address, unsigned len
         uint8_t *target = md->memory->vram + dest;
         if (M68K_NATIVE_WORDS) {
             unsigned changed = 0;
-            for (unsigned i = 0; i < count; i += 2) {
+            unsigned i = 0;
+            if ((((uintptr_t)source | (uintptr_t)target) & 3) == 0) {
+                const uint8_t *aligned_source = __builtin_assume_aligned(source, 4);
+                uint8_t *aligned_target = __builtin_assume_aligned(target, 4);
+                for (; i + 4 <= count; i += 4) {
+                    uint32_t pair, old;
+                    memcpy(&pair, aligned_source + i, sizeof(pair));
+                    memcpy(&old, aligned_target + i, sizeof(old));
+                    pair = ((pair & 0xff00ff00U) >> 8) | ((pair & 0x00ff00ffU) << 8);
+                    uint32_t difference = pair ^ old;
+                    if (difference) {
+                        memcpy(aligned_target + i, &pair, sizeof(pair));
+                        changed += (difference & 0xff) != 0;
+                        changed += (difference & 0xff00) != 0;
+                        changed += (difference & 0xff0000) != 0;
+                        changed += (difference & 0xff000000) != 0;
+                    }
+                }
+            }
+            for (; i < count; i += 2) {
                 uint8_t high = source[i + 1], low = source[i];
                 if (target[i] != high) {
                     target[i] = high;

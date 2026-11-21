@@ -663,7 +663,9 @@ int main(void)
         for (;;)
             swiWaitForVBlank();
     }
+    static uint8_t sound_ram[Z80_RAM_SIZE] DTCM_DATA;
     static struct megadrive_memory game_memory;
+    game_memory.z80_ram = sound_ram;
     static struct megadrive game_core DTCM_DATA = {.memory = &game_memory};
     static struct application app = {.md = &game_core};
     keysSetRepeat(18, 4);

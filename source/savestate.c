@@ -88,7 +88,7 @@ static void transfer_state(struct state_io *io, struct megadrive *md, unsigned v
     SCALAR(md->cpu.opcode);
     SCALAR(md->cpu.stopped);
     transfer_work_ram(io, md);
-    ARRAY_BYTES(md->memory->z80_ram);
+    transfer(io, md->memory->z80_ram, Z80_RAM_SIZE);
     SCALAR(md->z80_bus_requested);
     SCALAR(md->z80_reset);
     ARRAY_BYTES(md->port_data);
@@ -396,12 +396,18 @@ bool savestate_load(const char *path, uint32_t identity, struct megadrive *md)
     struct state_buffer {
         struct megadrive core;
         struct megadrive_memory memory;
+#ifdef __NDS__
+        uint8_t z80_ram[Z80_RAM_SIZE];
+#endif
     };
     struct state_buffer *buffer = calloc(1, sizeof(*buffer));
     if (!buffer)
         return false;
     struct megadrive *loaded = &buffer->core;
     loaded->memory = &buffer->memory;
+#ifdef __NDS__
+    loaded->memory->z80_ram = buffer->z80_ram;
+#endif
     loaded->six_button = md->six_button;
     loaded->rom = md->rom;
     loaded->rom_size = md->rom_size;
@@ -430,6 +436,12 @@ bool savestate_load(const char *path, uint32_t identity, struct megadrive *md)
         loaded->sram_dirty = md->sram_dirty ||
                              memcmp(loaded->memory->sram, md->memory->sram, md->sram_size) != 0;
         loaded->video_revision = md->video_revision + 1;
+#ifdef __NDS__
+        // Commit the staged RAM only after validating the whole save.
+        uint8_t *sound_ram = md->memory->z80_ram;
+        memcpy(sound_ram, buffer->z80_ram, Z80_RAM_SIZE);
+        loaded->memory->z80_ram = sound_ram;
+#endif
         *md->memory = *loaded->memory;
         loaded->memory = md->memory;
         *md = *loaded;
