@@ -552,6 +552,11 @@ bool vdp_ds_prepare(const struct megadrive *md)
     unsigned map_count = 0;
     unsigned origins[MAX_MAPS] = {0xff, 0xff, 0xff, 0xff};
     bool blanking = false;
+    const uint8_t *vram = md->memory->vram;
+    unsigned hscroll_base = vdp_hscroll_address(regs, 0);
+    unsigned hscroll_mask = vdp_hscroll_line_mask(regs);
+    unsigned hmask = columns == 128 ? 0x3ff : 0x1ff;
+    unsigned field = interlace && md->vdp_odd_field;
     for (unsigned y = 0; y < VDP_VIEW_HEIGHT; ++y) {
         const struct vdp_scanline *row = raster_row(md, y + top);
         bool active = row ? row->display_enabled : enabled;
@@ -569,23 +574,25 @@ bool vdp_ds_prepare(const struct megadrive *md)
         if (!window_row && window_partial)
             return false;
         bool window = window_row || window_full;
-        unsigned scroll = vdp_hscroll_address(regs, guest_y);
-        unsigned parity[2];
-        for (unsigned plane = 0; plane < 2; ++plane) {
-            bool fixed = plane == 0 && window;
-            unsigned hmask = !fixed && columns == 128 ? 0x3ff : 0x1ff;
-            unsigned h = fixed ? left : (left - vram_word(md, scroll + plane * 2)) & hmask;
-            unsigned v = fixed ? 0 : megadrive_scanline_vscroll(md, guest_y, plane);
-            if (interlace)
-                v += md->vdp_odd_field;
-            parity[plane] = interlace ? v & 1 : 0;
-            v = (top + (v >> interlace)) & 0x1ff;
-            page->lines[y].scroll[plane] = h | (v << 16);
-        }
+        unsigned offset = (uint16_t)(hscroll_base + (guest_y & hscroll_mask) * 4);
+        // VRAM holds the two horizontal scroll words in Genesis byte order.
+        uint32_t packed;
+        memcpy(&packed, __builtin_assume_aligned(vram + offset, 4), sizeof(packed));
+        unsigned horizontal_a = __builtin_bswap16((uint16_t)packed);
+        unsigned horizontal_b = __builtin_bswap16((uint16_t)(packed >> 16));
+        unsigned h_a = window ? left : (left - horizontal_a) & hmask;
+        unsigned h_b = (left - horizontal_b) & hmask;
+        const uint16_t *vertical = row ? row->vscroll : md->vsram;
+        unsigned v_a = (window ? 0 : vertical[0]) + field;
+        unsigned v_b = vertical[1] + field;
+        unsigned parity_a = interlace ? v_a & 1 : 0;
+        unsigned parity_b = interlace ? v_b & 1 : 0;
+        page->lines[y].scroll[0] = h_a | (((top + (v_a >> interlace)) & 0x1ff) << 16);
+        page->lines[y].scroll[1] = h_b | (((top + (v_b >> interlace)) & 0x1ff) << 16);
         struct tile_map a = {
             .base = window ? (regs[3] & (wide ? 0x3c : 0x3e)) << 10 :
                              ((row ? row->plane_a_base : regs[2]) & 0x38) << 10,
-            .parity = parity[0],
+            .parity = parity_a,
             .width = window ? (wide ? 64 : 32) : width,
             .height = window ? 32 : height,
             .columns = window ? (wide ? 64 : 32) : columns,
@@ -593,7 +600,7 @@ bool vdp_ds_prepare(const struct megadrive *md)
         unsigned index = 0;
         if (!map_count) {
             maps[0] = a;
-            maps[1].parity = parity[1];
+            maps[1].parity = parity_b;
             map_count = 2;
         } else if (!same_map(maps[0], a)) {
             index = 2;
@@ -604,7 +611,7 @@ bool vdp_ds_prepare(const struct megadrive *md)
                 return false;
             }
         }
-        if (maps[1].parity != parity[1])
+        if (maps[1].parity != parity_b)
             return false;
         map_a[y] = index;
         if (columns == 128) {

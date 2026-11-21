@@ -23,8 +23,12 @@ struct z80 {
   uint8_t a_, b_, c_, d_, e_, h_, l_, f_; // alternate registers
   uint8_t i, r; // interrupt vector, memory refresh
 
-  // Flags in the order they occupy in F, starting with carry.
-  bool cf : 1, nf : 1, pf : 1, xf : 1, hf : 1, yf : 1, zf : 1, sf : 1;
+  union {
+    uint8_t f;
+    struct {
+      bool cf : 1, nf : 1, pf : 1, xf : 1, hf : 1, yf : 1, zf : 1, sf : 1;
+    };
+  };
 
   uint8_t iff_delay;
   uint8_t interrupt_mode;

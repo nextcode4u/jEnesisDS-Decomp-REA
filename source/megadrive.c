@@ -5,12 +5,6 @@
 
 #include <string.h>
 
-#ifdef __NDS__
-#include <nds/ndstypes.h>
-#else
-#define ITCM_CODE
-#endif
-
 static uint8_t detect_region(const char *region)
 {
     // Prefer the USA release as jEnesisDS 0.7.4 does by default.
@@ -96,15 +90,9 @@ static unsigned advance_ram_poll(struct megadrive *md, struct m68k *cpu,
     return stop;
 }
 
-static ITCM_CODE __attribute__((noinline)) unsigned run_cpu_until(struct megadrive *md, unsigned cycles, unsigned end)
+static ARM9_ITCM __attribute__((noinline)) unsigned run_cpu_until(struct megadrive *md, unsigned cycles, unsigned end)
 {
     struct m68k *cpu = &md->cpu;
-    // This prefix of the ROM stays visible if the guest toggles SRAM mid-slice.
-    const uint8_t *rom = md->rom;
-    unsigned rom_limit = md->rom_size;
-    if (md->sram_size && md->sram_start < rom_limit)
-        rom_limit = md->sram_start;
-    rom_limit &= ~1U;
     unsigned next_sync = md->z80_synced_cycle + Z80_SYNC_CYCLES;
     bool hint_pending = md->hint_pending;
     while (cycles < end && !cpu->stopped) {
@@ -123,23 +111,7 @@ static ITCM_CODE __attribute__((noinline)) unsigned run_cpu_until(struct megadri
         if (hint_pending)
             boundary = cycles + 1;
         bool long_poll = false;
-        do {
-            md->frame_cycle = cycles;
-            unsigned elapsed = m68k_step_rom(cpu, md, rom, rom_limit);
-            if (__builtin_expect(!elapsed, 0))
-                break;
-            cycles += elapsed;
-            if (elapsed == 10) {
-                uint16_t op = cpu->opcode;
-                if (((op & 0xfff8) == 0x51c8 || (op & 0xfeff) == 0x66fa) &&
-                    cpu->pc <= cpu->instruction_address && cycles < end) {
-                    cycles += m68k_skip_idle(cpu, md, end - cycles);
-                } else if ((op & 0xfeff) == 0x66f8 && cpu->pc + 6 == cpu->instruction_address) {
-                    long_poll = true;
-                    break;
-                }
-            }
-        } while (cycles < boundary);
+        cycles = m68k_run_slice(md, cycles, boundary, end, &long_poll);
         if (cycles >= next_sync) {
             // I/O can have synchronized the sound CPU inside an instruction.
             if (cycles - md->z80_synced_cycle >= Z80_SYNC_CYCLES)

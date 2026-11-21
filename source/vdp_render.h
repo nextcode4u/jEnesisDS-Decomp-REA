@@ -7,15 +7,15 @@ struct megadrive;
 
 enum { VDP_VIEW_WIDTH = 256, VDP_VIEW_HEIGHT = 192 };
 
+static inline unsigned vdp_hscroll_line_mask(const uint8_t *registers)
+{
+    static const unsigned masks[] = {0, 7, ~7U, ~0U};
+    return masks[registers[11] & 3];
+}
+
 static inline unsigned vdp_hscroll_address(const uint8_t *registers, unsigned y)
 {
-    unsigned address = (registers[13] & 0x3f) << 10;
-    switch (registers[11] & 3) {
-    case 1: return address + (y & 7) * 4;
-    case 2: return address + (y & ~7U) * 4;
-    case 3: return address + y * 4;
-    default: return address;
-    }
+    return ((registers[13] & 0x3f) << 10) + (y & vdp_hscroll_line_mask(registers)) * 4;
 }
 
 /* Two palette indices per halfword, ready for the DS bitmap BG. */

@@ -1,12 +1,6 @@
 #include "z80_bus.h"
 #include "megadrive.h"
 
-#ifdef __NDS__
-#include <nds/ndstypes.h>
-#else
-#define ITCM_CODE
-#endif
-
 enum { M68K_DIVIDER = 7, Z80_DIVIDER = 15, Z80_IRQ_DURATION = 32 };
 
 static uint8_t read_byte(void *context, uint16_t address)
@@ -30,12 +24,17 @@ static void write_byte(void *context, uint16_t address, uint8_t data)
     if (address < 0x4000)
         md->memory->z80_ram[address & 0x1fff] = data;
     else if (address < 0x6000) {
+        unsigned port = address & 3;
+        if (!(port & 1)) {
+            md->ym_address[port >> 1] = data;
+            return;
+        }
         // The Z80 clock grid continues across scheduler slices. Keep the
         // write time on that grid even if execution crosses the slice end.
         int clocks = md->z80_slice_master +
                      (int)((md->sound_cpu.cyc - md->z80_slice_clocks) * Z80_DIVIDER);
         unsigned cycle = clocks > 0 ? (unsigned)clocks / M68K_DIVIDER : 0;
-        megadrive_ym_write_at(md, address & 3, data, cycle);
+        megadrive_ym_write_at(md, port, data, cycle);
     }
     else if (address < 0x6100)
         md->z80_bank = md->z80_bank >> 1 | (data & 1) << 8;
@@ -178,7 +177,7 @@ static unsigned run_local_delay(struct megadrive *md, unsigned budget,
     return iterations * 21;
 }
 
-ITCM_CODE void genesis_z80_sync(struct megadrive *md, unsigned m68k_cycle)
+ARM9_ITCM void genesis_z80_sync(struct megadrive *md, unsigned m68k_cycle)
 {
     if (m68k_cycle > md->frame_cycles)
         m68k_cycle = md->frame_cycles;

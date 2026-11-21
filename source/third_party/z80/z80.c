@@ -128,6 +128,10 @@ static inline void set_hl(z80* const z, uint16_t val) {
 }
 
 static inline uint8_t get_f(z80* const z) {
+#if defined(__GNUC__) && (defined(__ARMEL__) || defined(__i386__) || defined(__x86_64__))
+  // The supported ARM and x86 ABIs allocate these bit-fields from bit 0.
+  return z->f;
+#else
   uint8_t val = 0;
   val |= z->cf << 0;
   val |= z->nf << 1;
@@ -138,9 +142,13 @@ static inline uint8_t get_f(z80* const z) {
   val |= z->zf << 6;
   val |= z->sf << 7;
   return val;
+#endif
 }
 
 static inline void set_f(z80* const z, uint8_t val) {
+#if defined(__GNUC__) && (defined(__ARMEL__) || defined(__i386__) || defined(__x86_64__))
+  z->f = val;
+#else
   z->cf = (val >> 0) & 1;
   z->nf = (val >> 1) & 1;
   z->pf = (val >> 2) & 1;
@@ -149,6 +157,7 @@ static inline void set_f(z80* const z, uint8_t val) {
   z->yf = (val >> 5) & 1;
   z->zf = (val >> 6) & 1;
   z->sf = (val >> 7) & 1;
+#endif
 }
 
 // increments R, keeping the highest byte intact
@@ -753,10 +762,35 @@ void z80_step(z80* const z) {
   process_interrupts(z);
 }
 
+static inline void store_accumulator(z80* const z) {
+  const uint16_t addr = nextw(z);
+  wb(z, addr, z->a);
+  z->mem_ptr = (z->a << 8) | ((addr + 1) & 0xFF);
+}
+
+static inline void exchange_af(z80* const z) {
+  uint8_t a = z->a;
+  uint8_t f = get_f(z);
+  z->a = z->a_;
+  set_f(z, z->f_);
+  z->a_ = a;
+  z->f_ = f;
+}
+
 // Execute an opcode already read from ordinary RAM.
 void z80_step_ram(z80* const z, uint8_t opcode) {
   ++z->pc;
-  exec_opcode(z, opcode);
+  if (opcode == 0x32) { // LD (nn),A
+    z->cyc += 13;
+    inc_r(z);
+    store_accumulator(z);
+  } else if (opcode == 0x08) { // EX AF,AF'
+    z->cyc += 4;
+    inc_r(z);
+    exchange_af(z);
+  } else {
+    exec_opcode(z, opcode);
+  }
   process_interrupts(z);
 }
 
@@ -893,11 +927,7 @@ void exec_opcode(z80* const z, uint8_t opcode) {
     z->mem_ptr = (z->a << 8) | ((get_de(z) + 1) & 0xFF);
     break; // ld (de),a
 
-  case 0x32: {
-    const uint16_t addr = nextw(z);
-    wb(z, addr, z->a);
-    z->mem_ptr = (z->a << 8) | ((addr + 1) & 0xFF);
-  } break; // ld (**),a
+  case 0x32: store_accumulator(z); break; // ld (**),a
 
   case 0x01: set_bc(z, nextw(z)); break; // ld bc,**
   case 0x11: set_de(z, nextw(z)); break; // ld de,**
@@ -1197,16 +1227,7 @@ void exec_opcode(z80* const z, uint8_t opcode) {
     z->mem_ptr = (port + 1) | (z->a << 8);
   } break; // out (n), a
 
-  case 0x08: {
-    uint8_t a = z->a;
-    uint8_t f = get_f(z);
-
-    z->a = z->a_;
-    set_f(z, z->f_);
-
-    z->a_ = a;
-    z->f_ = f;
-  } break; // ex af,af'
+  case 0x08: exchange_af(z); break; // ex af,af'
   case 0xD9: {
     uint8_t b = z->b, c = z->c, d = z->d, e = z->e, h = z->h, l = z->l;
 

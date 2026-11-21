@@ -8,6 +8,13 @@
 
 #include <stddef.h>
 
+#ifdef __NDS__
+// The ARM-mode core can branch directly between the ARM9 binary and ITCM.
+#define ARM9_ITCM __attribute__((section(".itcm.text.core")))
+#else
+#define ARM9_ITCM
+#endif
+
 enum {
     VDP_MAX_ACTIVE_LINES = 240,
     VDP_SPRITE_TABLE_BYTES = 80 * 8,
