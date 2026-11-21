@@ -1,3 +1,4 @@
+#include "frame_pacing.h"
 #include "cartridge.h"
 #include "frontend.h"
 #include "megadrive.h"
@@ -574,7 +575,6 @@ static struct dac_frame dac_transfers[DAC_TRANSFER_SLOTS];
 static unsigned dac_in_use;
 static unsigned dac_phase;
 static uint16_t dac_generation, audio_sequence;
-enum { DS_REFRESH = 5983, PAL_REFRESH = 4970 };
 
 static struct dac_frame *begin_audio_frame(struct application *app, bool pal)
 {
@@ -654,13 +654,13 @@ int main(void)
 
     // The DS display runs at about 59.83 Hz. A 313-line PAL cartridge
     // runs at about 49.70 Hz, so present it on a subset of DS VBlanks.
-    unsigned pal_phase = DS_REFRESH - PAL_REFRESH;
+    struct frame_pacing pacing = {0};
     bool was_running = false;
     uint32_t observed_vblank = vblank_count;
     unsigned measurement_vblanks = 0;
     unsigned measurement_frames = 0;
     for (;;) {
-        if (observed_vblank == vblank_count)
+        if (!pacing.pending_frames && observed_vblank == vblank_count)
             swiWaitForVBlank();
         uint32_t current_vblank = vblank_count;
         unsigned elapsed_vblanks = current_vblank - observed_vblank;
@@ -675,16 +675,7 @@ int main(void)
             draw_screen(&app, message);
         bool running = app.view == VIEW_CARTRIDGE && !app.md.cpu.stopped;
         bool pal = running && (app.md.version & 0x40);
-        unsigned frame_budget = was_running && elapsed_vblanks >= 2 ? 2 : 1;
-        if (!running || !was_running)
-            pal_phase = DS_REFRESH - PAL_REFRESH;
-        if (pal) {
-            pal_phase += PAL_REFRESH * frame_budget;
-            frame_budget = pal_phase / DS_REFRESH;
-            pal_phase %= DS_REFRESH;
-        }
-        // When one VBlank was missed, advance both guest frames but only
-        // display the newest one. Bound the work so input stays responsive.
+        unsigned frame_budget = frame_pacing_batch(&pacing, elapsed_vblanks, running, was_running, pal);
         if (running && frame_budget) {
             app.md.pad1_pressed = genesis_buttons(keysHeld(), app.md.six_button);
             bool presented_first_field = false;

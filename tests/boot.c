@@ -1,3 +1,4 @@
+#include "frame_pacing.h"
 #include "cartridge.h"
 #include "megadrive.h"
 #include "psg.h"
@@ -974,8 +975,28 @@ static void test_psg(void)
     assert(memcmp(samples, other, sizeof(samples)) == 0);
 }
 
+static void test_frame_pacing(void)
+{
+    struct frame_pacing pacing = {0};
+    assert(frame_pacing_batch(&pacing, 40, true, false, false) == 1);
+    assert(frame_pacing_batch(&pacing, 3, true, true, false) == 2);
+    assert(pacing.pending_frames == 1);
+    assert(frame_pacing_batch(&pacing, 0, true, true, false) == 1);
+    assert(pacing.pending_frames == 0);
+    assert(frame_pacing_batch(&pacing, 40, true, true, false) == 2);
+    assert(pacing.pending_frames == 2);
+    assert(frame_pacing_batch(&pacing, 0, false, true, false) == 0);
+    assert(pacing.pending_frames == 0);
+
+    unsigned pal_frames = frame_pacing_batch(&pacing, 1, true, false, true);
+    for (unsigned i = 1; i < DS_REFRESH; ++i)
+        pal_frames += frame_pacing_batch(&pacing, 1, true, true, true);
+    assert(pal_frames == PAL_REFRESH && pacing.pending_frames == 0);
+}
+
 int main(void)
 {
+    test_frame_pacing();
     static struct megadrive md;
     const struct cartridge cartridge = {.data = rom, .size = sizeof(rom), .region = "JUE"};
     megadrive_reset(&md, &cartridge, GENESIS_REGION_AUTO);

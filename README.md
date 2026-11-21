@@ -42,10 +42,12 @@ The original and BlocksDS browsers produced pixel-identical captures in melonDS 
 
 Scroll DMA, faster Z80 pulse handling, and 68000 fetch and instruction changes improved the Sonic 2 split-screen replay. ARM9 now stores cartridge ROM and 68000 work RAM in its native word order. Byte accesses, Z80 reads, VDP transfers, and save states still use the guest address order. The table shows guest FPS over the same 600 frames in melonDS 1.1 with the full-rate FM mixer enabled. The port uses 134 MHz in native DSi mode. The Z80 now builds arithmetic and logic flags together in the F register.
 
-| Console mode | Initial FPS | After scroll DMA and scheduling | After 68000 fetch changes | After native words and Z80 flag changes | Latest CPU ticks per guest frame |
+| Console mode | Initial FPS | After scroll DMA and scheduling | After 68000 fetch changes | After native words and Z80 flag changes | CPU ticks per guest frame after CPU pass |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | DS, 67 MHz | 23.6 | 26.8 | 28.1 | 29.9 | 1,065,502 |
 | DSi, 134 MHz | 48.0 | 52.6 | 54.6 | 56.5 | 532,761 |
+
+The tile renderer stores the two map pages in VRAM bank E and caches both interlace fields per page in bank A. It uploads tile rows as 32-bit words. The frame scheduler retains overdue guest frames between batches and polls input after at most two. On the same replay, the DS result reached 30.0 guest FPS and native DSi reached 57.5. DSi draw time fell from 84,271 to 48,087 ticks per draw. The host pacing test covers overdue frames, the queue bound, pause, and the PAL rate.
 
 The NTSC frame budget for CPU and rendering together is about 560,000 ticks. In a separately instrumented DS run, Z80 synchronization and execution accounted for about 314,000 ticks per guest frame. Captures of both interlace fields, the 128-column intro, and the final replay frame matched pixel for pixel across the performance passes. The 600-frame state and timed audio trace and the 16-cartridge host run also matched. The memory-layout host check covers odd ROM sizes, mirrored RAM, Z80 ROM reads, and VDP DMA, and compares the save files from both layouts byte for byte.
 

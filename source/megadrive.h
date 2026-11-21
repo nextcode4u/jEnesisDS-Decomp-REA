@@ -103,7 +103,7 @@ struct megadrive {
     // Bulk memory follows the CPU, bus and video registers used in the hot path.
     _Alignas(4) uint8_t ram[0x10000];
     uint8_t z80_ram[0x2000];
-    uint8_t vram[0x10000];
+    _Alignas(4) uint8_t vram[0x10000];
     struct vdp_scanline vdp_rows[VDP_MAX_ACTIVE_LINES];
     uint8_t vdp_sprite_tables[VDP_RASTER_SPRITE_TABLES][VDP_SPRITE_TABLE_BYTES];
     uint32_t vram_revisions[0x10000 / 32];

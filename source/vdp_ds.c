@@ -14,6 +14,8 @@ enum {
     OBJ_PATTERNS = 512,
     OBJECTS = 128,
     TILE_BYTES = 32,
+    FIRST_TILE_BLOCK = 0x20000 / 0x4000,
+    FIELD_TILE_BLOCKS = BG_PATTERNS * TILE_BYTES / 0x4000,
     ALL_TILE_ROWS = 0xff,
     VISIBLE_LAYERS = 0x1f,
     SCROLL_DMA = 0,
@@ -30,6 +32,12 @@ struct scanline {
     uint8_t layers, map_b;
 };
 
+struct background_pattern {
+    uint32_t revisions[2];
+    uint16_t sources[2];
+    uint16_t key;
+};
+
 struct page {
     struct scanline lines[VDP_VIEW_HEIGHT];
     _Alignas(32) uint32_t hblank_scroll[VDP_VIEW_HEIGHT][4];
@@ -39,12 +47,13 @@ struct page {
     uint16_t objects[OBJECTS][4];
     // Only a changed source pattern or a dirty VRAM block needs an upload.
     uint16_t tile_slots[GENESIS_PATTERNS];
-    uint16_t pattern_sources[BG_PATTERNS];
-    uint32_t pattern_revisions[BG_PATTERNS];
+    // Shared map slots index two independently cached sets of field tiles.
+    struct background_pattern patterns[BG_PATTERNS];
     uint32_t map_revision, last_revision;
     struct tile_map maps[MAX_MAPS];
     unsigned map_count;
     bool maps_cached, interlace, raster;
+    unsigned parity_bias;
     uint32_t sprite_sources[OBJ_PATTERNS * 4];
     uint32_t sprite_revisions[OBJ_PATTERNS * 4];
     unsigned used_patterns;
@@ -65,23 +74,15 @@ static uint16_t vram_word(const struct megadrive *md, unsigned offset)
 static void upload_pattern(volatile uint16_t *dest, const uint8_t *source,
                            bool interlace, unsigned parity, unsigned rows)
 {
-    if (!interlace && rows == ALL_TILE_ROWS) {
-        for (unsigned i = 0; i < TILE_BYTES / 2; ++i) {
-            unsigned pair = source[2*i] | (source[2*i+1] << 8);
-            dest[i] = ((pair & 0x0f0f) << 4) | ((pair & 0xf0f0) >> 4);
-        }
-        return;
-    }
+    // Tile rows are four aligned bytes. Store all eight DS pixels together.
+    volatile uint32_t *words = (volatile uint32_t *)dest;
     source += parity * 4;
+    unsigned stride = interlace ? 8 : 4;
     for (unsigned row = 0; row < 8; ++row) {
-        unsigned word = 0;
-        if (rows & (1U << row)) {
-            const uint8_t *p = source + row * (interlace ? 8 : 4);
-            word = p[0] | p[1] << 8 | p[2] << 16 | (uint32_t)p[3] << 24;
-        }
-        word = ((word & 0x0f0f0f0f) << 4) | ((word & 0xf0f0f0f0) >> 4);
-        dest[2*row] = word;
-        dest[2*row + 1] = word >> 16;
+        uint32_t word = 0;
+        if (rows & (1U << row))
+            memcpy(&word, __builtin_assume_aligned(source + row * stride, 4), sizeof(word));
+        words[row] = ((word & 0x0f0f0f0f) << 4) | ((word & 0xf0f0f0f0) >> 4);
     }
 }
 
@@ -145,7 +146,9 @@ void vdp_ds_frame_start(void)
 
 void vdp_ds_init(void)
 {
-    vramSetBankA(VRAM_A_MAIN_BG);
+    // Bank E holds both map pages. Bank A holds their two interlace fields.
+    vramSetBankA(VRAM_A_MAIN_BG_0x06020000);
+    vramSetBankE(VRAM_E_MAIN_BG);
     vramSetBankB(VRAM_B_MAIN_SPRITE);
     irqSet(IRQ_HBLANK, hblank);
     irqSet(IRQ_VCOUNT, vcount);
@@ -161,19 +164,26 @@ static uint32_t pattern_revision(const struct megadrive *md, unsigned key, bool 
 }
 
 static void refresh_pattern(const struct megadrive *md, struct page *page,
-                            volatile uint16_t *tiles, unsigned slot,
-                            unsigned pattern, bool already_written)
+                            volatile uint16_t *tiles, unsigned slot)
 {
+    struct background_pattern *cached = &page->patterns[slot];
+    unsigned field = page->parity_bias;
+    unsigned pattern = cached->key ^ field;
     uint32_t revision = pattern_revision(md, pattern, page->interlace);
-    if (!already_written || page->pattern_sources[slot] != pattern ||
-        page->pattern_revisions[slot] != revision) {
+    if (cached->sources[field] != pattern ||
+        cached->revisions[field] != revision) {
         unsigned parity = page->interlace ? pattern & 1 : 0;
         unsigned block = pattern - parity;
         upload_pattern(tiles + slot * (TILE_BYTES / 2), md->vram + block * TILE_BYTES,
                        page->interlace, parity, ALL_TILE_ROWS);
-        page->pattern_sources[slot] = pattern;
-        page->pattern_revisions[slot] = revision;
+        cached->sources[field] = pattern;
+        cached->revisions[field] = revision;
     }
+}
+
+static unsigned background_tile_base(unsigned page, unsigned parity)
+{
+    return FIRST_TILE_BLOCK + (page * 2 + parity) * FIELD_TILE_BLOCKS;
 }
 
 static bool same_map(struct tile_map a, struct tile_map b)
@@ -185,15 +195,15 @@ static bool same_map(struct tile_map a, struct tile_map b)
 
 static bool update_map(const struct megadrive *md, struct page *page, unsigned map,
                        unsigned next, unsigned high_map, struct tile_map layout,
-                       unsigned old_count, bool incremental)
+                       bool incremental)
 {
-    unsigned tile_base = 4 + next * 2;
-    volatile uint16_t *tiles = (uint16_t *)BG_GFX + tile_base * 8192;
+    unsigned tile_base = background_tile_base(next, page->parity_bias);
+    volatile uint16_t *tiles = BG_TILE_RAM(tile_base);
     unsigned width = layout.width, height = layout.height;
     unsigned screens = width * height / SCREEN_WORDS;
     unsigned low_map = high_map + screens;
-    volatile uint16_t *high = (uint16_t *)BG_GFX + high_map * SCREEN_WORDS;
-    volatile uint16_t *low = (uint16_t *)BG_GFX + low_map * SCREEN_WORDS;
+    volatile uint16_t *high = BG_MAP_RAM(high_map);
+    volatile uint16_t *low = BG_MAP_RAM(low_map);
     unsigned size = (width == 64 ? 1 : 0) | (height == 64 ? 2 : 0);
     page->control[map][0] = BG_MAP_BASE(high_map) | BG_TILE_BASE(tile_base) | size << 14;
     page->control[map][1] = BG_MAP_BASE(low_map) | BG_TILE_BASE(tile_base) | size << 14 | 2;
@@ -222,7 +232,8 @@ static bool update_map(const struct megadrive *md, struct page *page, unsigned m
                 if (page->used_patterns == BG_PATTERNS)
                     return false;
                 page->tile_slots[pattern] = slot = page->used_patterns++;
-                refresh_pattern(md, page, tiles, slot, pattern, slot < old_count);
+                page->patterns[slot].key = pattern;
+                refresh_pattern(md, page, tiles, slot);
             }
             unsigned entry = slot | ((attr >> 1) & 0x3c00);
             high[index + j] = (attr & 0x8000) ? entry : 0;
@@ -232,13 +243,30 @@ static bool update_map(const struct megadrive *md, struct page *page, unsigned m
     return true;
 }
 
-static bool prepare_maps(const struct megadrive *md, struct page *page, unsigned next,
-                         const struct tile_map *maps, unsigned count, bool interlace)
+static void reset_pattern_cache(struct page *page, unsigned next)
 {
-    // The first half of bank A is two pages of maps. Tile data follows them.
+    page->maps_cached = false;
+    page->used_patterns = 0;
+    memset(page->patterns, 0xff, sizeof(page->patterns));
+    for (unsigned parity = 0; parity < 2; ++parity) {
+        volatile uint16_t *tiles = BG_TILE_RAM(background_tile_base(next, parity));
+        for (unsigned i = 0; i < TILE_BYTES / 2; ++i)
+            tiles[i] = 0;
+    }
+}
+
+static bool prepare_maps(const struct megadrive *md, struct page *page, unsigned next,
+                         struct tile_map *maps, unsigned count, bool interlace)
+{
+    if (count > MAX_MAPS)
+        return false;
+    // Normalize every map to Plane A's parity. A field change can then
+    // select a different tile bank without changing the maps' tile indices.
+    unsigned parity_bias = interlace ? maps[0].parity : 0;
+    for (unsigned i = 0; i < count; ++i)
+        maps[i].parity ^= parity_bias;
+
     unsigned used = 0, screen_base[MAX_MAPS];
-    unsigned tile_base = 4 + next * 2;
-    volatile uint16_t *tiles = (uint16_t *)BG_GFX + tile_base * 8192;
     bool cacheable = true;
     bool incremental = page->maps_cached && page->map_count == count &&
         page->interlace == interlace &&
@@ -252,30 +280,32 @@ static bool prepare_maps(const struct megadrive *md, struct page *page, unsigned
     }
     if (used > SCREENS_PER_PAGE)
         return false;
+    if (!page->used_patterns || page->interlace != interlace) {
+        reset_pattern_cache(page, next);
+        incremental = false;
+    }
     incremental &= cacheable;
     unsigned old_count = page->used_patterns;
-    bool reuse_patterns = page->interlace == interlace;
     page->interlace = interlace;
+    page->parity_bias = parity_bias;
     if (incremental) {
         for (unsigned i = 0; i < count; ++i)
-            if (!update_map(md, page, i, next, screen_base[i], maps[i], old_count, true)) {
+            if (!update_map(md, page, i, next, screen_base[i], maps[i], true)) {
                 incremental = false;
                 break;
             }
     }
     if (incremental) {
+        unsigned tile_base = background_tile_base(next, page->parity_bias);
+        volatile uint16_t *tiles = BG_TILE_RAM(tile_base);
         for (unsigned slot = 1; slot < old_count; ++slot)
-            refresh_pattern(md, page, tiles, slot, page->pattern_sources[slot], true);
+            refresh_pattern(md, page, tiles, slot);
     } else {
         page->maps_cached = false;
-        old_count = reuse_patterns ? page->used_patterns : 0;
         memset(page->tile_slots, 0xff, sizeof(page->tile_slots));
-        if (!old_count)
-            for (unsigned i = 0; i < TILE_BYTES / 2; ++i)
-                tiles[i] = 0;
         page->used_patterns = 1;
         for (unsigned i = 0; i < count; ++i)
-            if (!update_map(md, page, i, next, screen_base[i], maps[i], old_count, false)) {
+            if (!update_map(md, page, i, next, screen_base[i], maps[i], false)) {
                 page->used_patterns = 0;
                 return false;
             }
