@@ -1128,7 +1128,7 @@ unsigned m68k_interrupt(struct m68k *cpu, struct megadrive *md, unsigned level)
     return enter_exception(cpu, md, 24 + level, (old_status & 31) | (level << 8)) ? 44 : 0;
 }
 
-static unsigned skip_ram_store_loop(struct m68k *cpu, struct megadrive *md, unsigned budget,
+static __attribute__((noinline)) unsigned skip_ram_store_loop(struct m68k *cpu, struct megadrive *md, unsigned budget,
                                     uint16_t move_op)
 {
     unsigned reg = cpu->opcode & 7;
@@ -1441,7 +1441,7 @@ static __attribute__((noinline)) void initialize_opcode_table(
 }
 
 // Synchronize sooner when a bus access or interrupt needs the sound CPU.
-enum { Z80_SYNC_CYCLES = 8192 };
+enum { Z80_SYNC_CYCLES = 32768 };
 
 static unsigned advance_ram_poll(struct megadrive *md, struct m68k *cpu,
                                  unsigned cycles, unsigned end, unsigned *next_sync)
@@ -1467,8 +1467,8 @@ static unsigned advance_ram_poll(struct megadrive *md, struct m68k *cpu,
 
 // Use the fetched word to select a handler, as the r20 reference does.
 // Keep scheduling and single-step execution at the same instruction boundary.
-static ARM9_ITCM unsigned execute_until(struct m68k *cpu, struct megadrive *md,
-                                        unsigned cycles, unsigned end, bool single_step)
+static ARM9_ITCM unsigned execute_until(struct megadrive *md, unsigned cycles,
+                                        unsigned end, struct m68k *step_cpu)
 {
     static const void *const families[] = {
         &&op_immediate, &&op_move_byte, &&op_move_long, &&op_move_word,
@@ -1493,6 +1493,9 @@ static ARM9_ITCM unsigned execute_until(struct m68k *cpu, struct megadrive *md,
     if (!opcode_table[0])
         initialize_opcode_table(opcode_table, families, shortcuts,
                                 sizeof(shortcuts) / sizeof(shortcuts[0]));
+
+    bool single_step = step_cpu != NULL;
+    struct m68k *cpu = single_step ? step_cpu : &md->cpu;
 
     // This prefix of the ROM stays visible if the guest toggles SRAM mid-slice.
     const uint8_t *rom = md->rom;
@@ -1747,11 +1750,11 @@ completed:
 
 unsigned m68k_run_until(struct megadrive *md, unsigned cycles, unsigned end)
 {
-    return execute_until(&md->cpu, md, cycles, end, false);
+    return execute_until(md, cycles, end, NULL);
 }
 
 unsigned m68k_step(struct m68k *cpu, struct megadrive *md)
 {
     unsigned start = md->frame_cycle;
-    return execute_until(cpu, md, start, 0, true) - start;
+    return execute_until(md, start, 0, cpu) - start;
 }

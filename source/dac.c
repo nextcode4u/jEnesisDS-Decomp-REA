@@ -13,6 +13,19 @@ void dac_begin(struct megadrive *md, struct dac_frame *frame)
     frame->fm_pitch = md->ym_pitch;
 }
 
+static unsigned sample_position(const struct megadrive *md, const struct dac_frame *frame,
+                                unsigned cycle)
+{
+    unsigned numerator = cycle * frame->count;
+    // The usual frame lengths allow a multiply by a constant reciprocal.
+    enum { NTSC_CYCLES = 3420 * 262 / 7, PAL_CYCLES = 3420 * 313 / 7 };
+    if (md->frame_cycles == NTSC_CYCLES)
+        return numerator / NTSC_CYCLES;
+    if (md->frame_cycles == PAL_CYCLES)
+        return numerator / PAL_CYCLES;
+    return numerator / md->frame_cycles;
+}
+
 void dac_sync(struct megadrive *md, unsigned cycle)
 {
     struct dac_capture *capture = &md->dac_capture;
@@ -21,7 +34,7 @@ void dac_sync(struct megadrive *md, unsigned cycle)
         return;
 
     unsigned end = cycle >= md->frame_cycles ? frame->count :
-                   cycle * frame->count / md->frame_cycles;
+                   sample_position(md, frame, cycle);
     if (end <= capture->position)
         return;
 
@@ -36,6 +49,14 @@ void dac_sync(struct megadrive *md, unsigned cycle)
         frame->samples[capture->position++] = sample;
 }
 
+void dac_write_sample(struct megadrive *md, uint8_t sample, unsigned cycle)
+{
+    if (md->ym_registers[0][0x2a] != sample) {
+        dac_sync(md, cycle);
+        md->ym_registers[0][0x2a] = sample;
+    }
+}
+
 void capture_fm_write(struct megadrive *md, unsigned reg, uint8_t value, unsigned cycle)
 {
     struct dac_frame *frame = md->dac_capture.frame;
@@ -47,7 +68,7 @@ void capture_fm_write(struct megadrive *md, unsigned reg, uint8_t value, unsigne
     }
 
     unsigned sample = cycle >= md->frame_cycles ? frame->count - 1U :
-                      cycle * frame->count / md->frame_cycles;
+                      sample_position(md, frame, cycle);
     if (frame->fm_count && sample < frame->fm_writes[frame->fm_count - 1].sample)
         sample = frame->fm_writes[frame->fm_count - 1].sample;
     frame->fm_writes[frame->fm_count++] = (struct fm_write_event){sample, reg, value};

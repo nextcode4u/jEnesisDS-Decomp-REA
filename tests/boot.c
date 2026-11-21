@@ -460,6 +460,95 @@ static void test_z80_dac_writes(const struct cartridge *cart)
     }
 }
 
+static void test_z80_indexed_dac(const struct cartridge *cart)
+{
+    static const uint8_t program[][13] = {
+        {0x08, 0xdd, 0x86, 0xff, 0x32, 0x01, 0x40, 0x08, 0x41, 0xfb, 0x76},
+        {0x08, 0xfd, 0x86, 0xff, 0x32, 0x01, 0x40, 0x08, 0xfb, 0xc3, 0x0c, 0x01, 0x76},
+    };
+    static const unsigned instruction_boundaries[] = {9, 50, 78, 86, 95};
+    static struct megadrive_memory memory;
+    static struct megadrive md = {.memory = &memory};
+    struct dac_frame continuous = {.count = 64}, sliced = {.count = 64};
+    for (unsigned sequence = 0; sequence < sizeof(program) / sizeof(program[0]); ++sequence) {
+        z80 expected;
+        for (unsigned stepped = 0; stepped < 2; ++stepped) {
+            megadrive_reset(&md, cart, GENESIS_REGION_USA);
+            md.frame_cycles = 256;
+            md.z80_reset = false;
+            md.sound_cpu.pc = 0x100;
+            md.sound_cpu.ix = md.sound_cpu.iy = 0x2000;
+            md.sound_cpu.a = 0x15;
+            md.sound_cpu.a_ = 0xa1;
+            md.sound_cpu.b = 1;
+            md.sound_cpu.c = 9;
+            md.sound_cpu.cf = true;
+            md.sound_cpu.r = 0xfe;
+            memcpy(md.memory->z80_ram + 0x100, program[sequence], sizeof(program[sequence]));
+            md.memory->z80_ram[0x1fff] = 0x35;
+            md.ym_address[0] = 0x2a;
+            md.ym_registers[0][0x2a] = 0x80;
+            md.ym_registers[0][0x2b] = 0x80;
+            md.ym_registers[1][0xb6] = 0xc0;
+            dac_begin(&md, stepped ? &sliced : &continuous);
+            if (stepped)
+                for (unsigned i = 0; i < sizeof(instruction_boundaries) / sizeof(*instruction_boundaries); ++i)
+                    genesis_z80_sync(&md, instruction_boundaries[i]);
+            genesis_z80_sync(&md, md.frame_cycles);
+            dac_end(&md);
+            assert(md.sound_cpu.halted && md.sound_cpu.iff1 && md.sound_cpu.iff2);
+            assert(md.sound_cpu.a == 0x15 && md.sound_cpu.cf && md.sound_cpu.a_ == 0xd6);
+            assert(md.ym_registers[0][0x2a] == 0xd6 && !md.ym_busy_cycles);
+            if (stepped) {
+                size_t state_offset = offsetof(z80, cyc);
+                assert(memcmp((const uint8_t *)&expected + state_offset,
+                              (const uint8_t *)&md.sound_cpu + state_offset,
+                              sizeof(expected) - state_offset) == 0);
+            } else {
+                memcpy(&expected, &md.sound_cpu, sizeof(expected));
+            }
+        }
+        assert(memcmp(continuous.samples, sliced.samples,
+                      continuous.count * sizeof(continuous.samples[0])) == 0);
+        for (unsigned i = 0; i < continuous.count; ++i) {
+            int level = i < 19 ? 0 : 86;
+            assert(continuous.samples[i].left == level && continuous.samples[i].right == level);
+        }
+    }
+}
+
+static void test_z80_delay_exits(const struct cartridge *cart)
+{
+    static const uint8_t programs[][5] = {
+        {0x10, 0xfe, 0x76},
+        {0x7a, 0xb3, 0x28, 0xfc, 0x76},
+        {0x7e, 0xb7, 0xf2, 0, 0},
+    };
+    static struct megadrive_memory memory;
+    static struct megadrive md = {.memory = &memory};
+    // Fourteen Z80 clocks start the final untaken branch in each case.
+    for (unsigned i = 0; i < sizeof(programs) / sizeof(programs[0]); ++i) {
+        megadrive_reset(&md, cart, GENESIS_REGION_AUTO);
+        memcpy(md.memory->z80_ram, programs[i], sizeof(programs[i]));
+        md.memory->z80_ram[0x20] = 0x9e;
+        md.z80_reset = false;
+        md.sound_cpu.b = 2;
+        md.sound_cpu.d = 0x8f;
+        md.sound_cpu.l = 0x20;
+        md.sound_cpu.mem_ptr = 0x7777;
+        md.sound_cpu.r = 0xfe;
+        z80 expected = md.sound_cpu;
+        while (expected.cyc < 14)
+            z80_step(&expected);
+        genesis_z80_sync(&md, 30);
+        size_t state_offset = offsetof(z80, cyc);
+        assert(memcmp((const uint8_t *)&expected + state_offset,
+                      (const uint8_t *)&md.sound_cpu + state_offset,
+                      sizeof(expected) - state_offset) == 0);
+        assert(md.z80_instruction_debt == expected.cyc - 14);
+    }
+}
+
 static void test_z80_mirrored_words(const struct cartridge *cart)
 {
     static const uint8_t program[] = {
@@ -1119,10 +1208,12 @@ int main(void)
     test_fm_pitch_latches(&cartridge);
     test_dac_timing(&cartridge);
     test_z80_dac_writes(&cartridge);
+    test_z80_indexed_dac(&cartridge);
     test_z80_mirrored_words(&cartridge);
     test_startup_bus(&md);
     test_six_button_controller();
     test_z80_delay_loops(&cartridge);
+    test_z80_delay_exits(&cartridge);
     test_z80_and_ym(&md);
     test_vdp_dma(&md);
     test_vdp_render(&md);

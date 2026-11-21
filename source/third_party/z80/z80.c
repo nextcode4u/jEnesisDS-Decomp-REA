@@ -258,6 +258,14 @@ static inline uint8_t addb(z80* const z, uint8_t a, uint8_t b, bool cy) {
   return result;
 }
 
+uint8_t z80_add_alternate(z80 *cpu, uint8_t value) {
+  uint8_t flags = get_f(cpu);
+  cpu->a_ = addb(cpu, cpu->a_, value, false);
+  cpu->f_ = get_f(cpu);
+  set_f(cpu, flags);
+  return cpu->a_;
+}
+
 static inline uint8_t subb(z80* const z, uint8_t a, uint8_t b, bool cy) {
   uint8_t result = addb(z, a, ~b, !cy);
   set_f(z, (get_f(z) ^ (FLAG_C | FLAG_H)) | FLAG_N);

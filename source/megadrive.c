@@ -209,6 +209,11 @@ void megadrive_ym_write_at(struct megadrive *md, unsigned port, uint8_t data, un
     }
 
     unsigned reg = md->ym_address[bank];
+    if (!bank && reg == 0x2a) {
+        dac_write_sample(md, data, cycle);
+        md->ym_busy_cycles = 32;
+        return;
+    }
     if (!bank && reg == 0x27) {
         uint8_t prior = md->ym_registers[0][reg];
         for (unsigned timer = 0; timer < 2; ++timer) {
@@ -221,7 +226,7 @@ void megadrive_ym_write_at(struct megadrive *md, unsigned port, uint8_t data, un
         md->ym_timer_flags &= ~(data >> 4 & 3);
     }
     if (md->ym_registers[bank][reg] != data &&
-        ((!bank && (reg == 0x2a || reg == 0x2b)) || (bank && reg == 0xb6)))
+        ((!bank && reg == 0x2b) || (bank && reg == 0xb6)))
         dac_sync(md, cycle);
     if (!bank && reg == 0x28) {
         unsigned channel = data & 3;

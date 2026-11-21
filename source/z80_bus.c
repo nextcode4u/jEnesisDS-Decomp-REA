@@ -86,20 +86,19 @@ static void advance_refresh(z80 *cpu, unsigned instructions)
 static void finish_poll(z80 *cpu, unsigned value, unsigned iterations)
 {
     cpu->a = value;
-    cpu->sf = cpu->hf = cpu->nf = cpu->cf = 0;
+    cpu->hf = cpu->nf = cpu->cf = 0;
+    cpu->sf = (value >> 7) & 1;
     cpu->zf = value == 0;
     cpu->yf = (value >> 5) & 1;
     cpu->xf = (value >> 3) & 1;
     cpu->pf = !__builtin_parity(value);
-    cpu->mem_ptr = cpu->pc;
     advance_refresh(cpu, iterations * 3);
 }
 
 static __attribute__((noinline)) unsigned run_four_rotates(
-    struct megadrive *md, unsigned budget, unsigned offset)
+    struct megadrive *md, unsigned budget, const uint8_t *ram, unsigned offset)
 {
     z80 *cpu = &md->sound_cpu;
-    const uint8_t *ram = md->memory->z80_ram;
     // At most 32 busy cycles expire either way. A longer busy period needs
     // the interpreter's separate clock conversion after each instruction.
     if (budget >= 16 && offset <= 0x1ffc &&
@@ -121,42 +120,106 @@ static __attribute__((noinline)) unsigned run_four_rotates(
     return 0;
 }
 
+static __attribute__((noinline)) unsigned run_indexed_dac_write(
+    struct megadrive *md, unsigned budget, const uint8_t *ram, unsigned offset)
+{
+    // EX AF,AF'; ADD A,(IX/IY+d); LD (nn),A; EX AF,AF'.
+    enum { STORE_CYCLE = 36, SEQUENCE_CYCLES = 40 };
+    z80 *cpu = &md->sound_cpu;
+    if (budget <= STORE_CYCLE || offset > 0x1ff8 ||
+        cpu->int_pending || cpu->nmi_pending || cpu->iff_delay ||
+        md->ym_busy_cycles || (md->ym_registers[0][0x27] & 3) ||
+        md->ym_address[0] != 0x2a)
+        return 0;
+    const uint8_t *code = ram + offset;
+    if ((code[1] & 0xdf) != 0xdd || code[2] != 0x86 ||
+        code[4] != 0x32 || code[7] != 0x08)
+        return 0;
+
+    unsigned port = code[5] | code[6] << 8;
+    if ((port & 0xe003) != 0x4001)
+        return 0;
+    uint16_t operand = ((code[1] & 0x20) ? cpu->iy : cpu->ix) + (int8_t)code[3];
+    if (operand >= 0x4000)
+        return 0;
+
+    uint8_t sample = z80_add_alternate(cpu, ram[operand & 0x1fff]);
+    cpu->mem_ptr = (sample << 8) | ((port + 1) & 0xff);
+    cpu->pc += 8;
+    unsigned cycles = SEQUENCE_CYCLES;
+    unsigned refreshes = 5;
+    if (budget > SEQUENCE_CYCLES + 4 && offset <= 0x1ff6 &&
+        code[8] == 0x41 && code[9] == 0xfb) {
+        // LD B,C; EI.
+        cpu->b = cpu->c;
+        cpu->iff1 = cpu->iff2 = 1;
+        cpu->pc += 2;
+        refreshes += 2;
+        cycles += 8;
+    } else if (budget > SEQUENCE_CYCLES + 4 && offset <= 0x1ff4 &&
+               code[8] == 0xfb && code[9] == 0xc3) {
+        // EI; JP nn. This slice has no pending interrupt to acknowledge.
+        cpu->iff1 = cpu->iff2 = 1;
+        cpu->pc = cpu->mem_ptr = code[10] | code[11] << 8;
+        refreshes += 2;
+        cycles += 14;
+    }
+    advance_refresh(cpu, refreshes);
+
+    int master = md->z80_slice_master +
+        (int)((cpu->cyc - md->z80_slice_clocks + STORE_CYCLE) * Z80_DIVIDER);
+    unsigned cycle = master > 0 ? (unsigned)master / M68K_DIVIDER : 0;
+    dac_write_sample(md, sample, cycle);
+    // The store and final exchange consume enough cycles to clear any DAC busy time.
+    return cycles;
+}
+
 static unsigned run_local_delay(struct megadrive *md, unsigned budget,
-                                unsigned offset, unsigned op)
+                                const uint8_t *ram, unsigned offset, unsigned op)
 {
     z80 *cpu = &md->sound_cpu;
-    const uint8_t *ram = md->memory->z80_ram;
+    if (op == 0x08)
+        return run_indexed_dac_write(md, budget, ram, offset);
     if (op == 0x07)
-        return run_four_rotates(md, budget, offset);
+        return run_four_rotates(md, budget, ram, offset);
     if (op != 0x10 && op != 0x7a && op != 0x7e)
         return 0;
     if (cpu->int_pending || cpu->nmi_pending || cpu->iff_delay || md->ym_busy_cycles)
         return 0;
     if (offset <= 0x1ffe && op == 0x10 && ram[offset + 1] == 0xfe) {
-        // DJNZ to itself. Leave the last, untaken iteration to the interpreter.
-        // The normal path also executes the complete DJNZ if the slice
-        // expires within its 13 clocks.
-        unsigned iterations = (budget + 12) / 13;
-        unsigned taken = (uint8_t)(cpu->b - 1);
-        if (iterations > taken)
-            iterations = taken;
-        if (iterations) {
-            cpu->b -= iterations;
+        // Include the final untaken DJNZ when it starts within this slice.
+        unsigned iterations = (uint8_t)(cpu->b - 1);
+        unsigned clocks = iterations * 13;
+        if (iterations)
             cpu->mem_ptr = cpu->pc;
-            advance_refresh(cpu, iterations);
-            return iterations * 13;
+        if (budget > clocks) {
+            cpu->b = 0;
+            cpu->pc += 2;
+            advance_refresh(cpu, iterations + 1);
+            return clocks + 8;
         }
+        if (clocks > budget + 12)
+            iterations = (budget + 12) / 13;
+        cpu->b -= iterations;
+        advance_refresh(cpu, iterations);
+        return iterations * 13;
     }
 
     // LD A,D; OR E; JR Z back to the load. DE can change in an interrupt,
     // so leave any slice with a pending interrupt to the interpreter.
-    if (offset <= 0x1ffc && !(cpu->d | cpu->e) &&
-        op == 0x7a && ram[offset + 1] == 0xb3 &&
+    if (offset <= 0x1ffc && op == 0x7a && ram[offset + 1] == 0xb3 &&
         ram[offset + 2] == 0x28 && ram[offset + 3] == 0xfc) {
+        unsigned value = cpu->d | cpu->e;
+        if (value) {
+            finish_poll(cpu, value, 1);
+            cpu->pc += 4;
+            return 15;
+        }
         // The branch may cross the slice boundary once its first eight clocks
         // have elapsed. The caller carries any resulting debt to the next slice.
         unsigned iterations = (budget + 11) / 20;
         finish_poll(cpu, 0, iterations);
+        cpu->mem_ptr = cpu->pc;
         return iterations * 20;
     }
 
@@ -169,8 +232,12 @@ static unsigned run_local_delay(struct megadrive *md, unsigned budget,
         return 0;
 
     unsigned value = ram[hl & 0x1fff];
-    if (value & 0x80)
-        return 0;
+    cpu->mem_ptr = cpu->pc;
+    if (value & 0x80) {
+        finish_poll(cpu, value, 1);
+        cpu->pc += 5;
+        return 21;
+    }
     // The jump executes whenever the slice reaches its first clock.
     unsigned iterations = (budget + 9) / 21;
     finish_poll(cpu, value, iterations);
@@ -204,35 +271,39 @@ ARM9_ITCM void genesis_z80_sync(struct megadrive *md, unsigned m68k_cycle)
 
     z80 *cpu = &md->sound_cpu;
     md->z80_slice_master = slice_master + (int)(debt * Z80_DIVIDER);
-    md->z80_slice_clocks = cpu->cyc;
-    unsigned elapsed = 0;
+    unsigned long previous = cpu->cyc;
+    md->z80_slice_clocks = previous;
+    const uint8_t *ram = md->memory->z80_ram;
+    int remaining = budget;
     unsigned irq_clocks = md->z80_irq_clocks;
     cpu->int_pending = irq_clocks != 0;
-    while (elapsed < budget) {
-        unsigned long before = cpu->cyc;
+    do {
         if (!cpu->halted && cpu->pc < 0x4000) {
             unsigned offset = cpu->pc & 0x1fff;
-            uint8_t opcode = md->memory->z80_ram[offset];
-            unsigned clocks = budget - elapsed >= 13 ?
-                run_local_delay(md, budget - elapsed, offset, opcode) : 0;
+            uint8_t opcode = ram[offset];
+            unsigned clocks = remaining >= 13 ?
+                run_local_delay(md, remaining, ram, offset, opcode) : 0;
             if (clocks)
-                cpu->cyc += clocks;
+                cpu->cyc = previous + clocks;
             else
                 z80_step_ram(cpu, opcode);
         } else if (cpu->halted && !cpu->int_pending && !cpu->nmi_pending && !cpu->iff_delay) {
-            unsigned refreshes = (budget - elapsed + 3) / 4;
+            unsigned refreshes = ((unsigned)remaining + 3) / 4;
             advance_refresh(cpu, refreshes);
             cpu->cyc += refreshes * 4;
         } else {
             z80_step(cpu);
         }
-        unsigned clocks = cpu->cyc - before;
+        unsigned long now = cpu->cyc;
+        unsigned clocks = now - previous;
+        previous = now;
+        remaining -= (int)clocks;
         // Outside the VBlank pulse, the interrupt line remains clear for
         // the whole slice. During the pulse the core can also acknowledge it.
         if (irq_clocks) {
             irq_clocks = cpu->int_pending && clocks < irq_clocks ? irq_clocks - clocks : 0;
             // Keep the final pin state for save states taken between slices.
-            if (elapsed + clocks < budget)
+            if (remaining > 0)
                 cpu->int_pending = irq_clocks != 0;
         }
         if (md->ym_registers[0][0x27] & 3) {
@@ -242,10 +313,9 @@ ARM9_ITCM void genesis_z80_sync(struct megadrive *md, unsigned m68k_cycle)
             md->ym_busy_cycles = elapsed_m68k < md->ym_busy_cycles ?
                                  md->ym_busy_cycles - elapsed_m68k : 0;
         }
-        elapsed += clocks;
-    }
+    } while (remaining > 0);
     md->z80_irq_clocks = irq_clocks;
-    md->z80_instruction_debt = elapsed - budget;
+    md->z80_instruction_debt = -remaining;
 }
 
 void genesis_z80_vblank(struct megadrive *md, unsigned m68k_cycle)

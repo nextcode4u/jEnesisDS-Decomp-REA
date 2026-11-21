@@ -35,6 +35,7 @@ struct dac_capture {
 
 struct megadrive;
 void dac_begin(struct megadrive *md, struct dac_frame *frame);
+void dac_write_sample(struct megadrive *md, uint8_t sample, unsigned cycle);
 void dac_sync(struct megadrive *md, unsigned cycle);
 void capture_fm_write(struct megadrive *md, unsigned reg, uint8_t value, unsigned cycle);
 void dac_end(struct megadrive *md);
