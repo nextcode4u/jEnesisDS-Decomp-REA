@@ -262,7 +262,13 @@ void vdp_render_frame(const struct megadrive *md, uint16_t *pixels)
     unsigned cell_shift = (md->vdp_registers[12] & 6) == 6 ? 4 : 3;
     unsigned sprite_base = (md->vdp_registers[5] & (wide ? 0x7e : 0x7f)) << 9;
     struct sprite sprites[80];
+#ifdef __NDS__
+    // Only the ARM9 main loop renders frames. Keep the 4 KiB line index
+    // in main RAM so a bitmap frame cannot exhaust the DTCM stack.
+    static struct sprite_index visible;
+#else
     struct sprite_index visible;
+#endif
     unsigned indexed_until = 0;
     for (unsigned y = 0; y < VDP_VIEW_HEIGHT; ++y) {
         unsigned guest_y = screen_y + y;
