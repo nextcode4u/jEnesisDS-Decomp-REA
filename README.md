@@ -57,17 +57,17 @@ The r20 source rebuild indexes its 68000 handlers directly by opcode. The Blocks
 
 Z80 FM and DAC timestamps use the continuous guest clock across interpreter slices. The scheduler runs longer slices with the same early checkpoints for bus accesses, PSG writes, and interrupts. The Z80 batches an indexed DAC write when the full instruction sequence is visible in RAM and no interrupt, YM timer, or busy state can affect it. It also finishes common delay loops at the original instruction boundary. In the same melonDS workload, the 67 MHz split-screen race now runs 600 guest frames in 604 VBlanks (59.43 FPS), and the single-player run takes 608 VBlanks (59.04 FPS). Native DSi runs the race at 59.83 FPS. The saved replay's video captures and the CPU, save-state, and timed FM/DAC traces match the previous C build.
 
-The next pass moved idle-loop checks to the 68000 opcodes that can use them. A masked horizontal interrupt now requests another interrupt check when the guest changes its interrupt mask or enables VDP horizontal interrupts. The renderer reuses scanline layouts and unchanged palettes and transfers sprite attributes to OAM by DMA. The frame scheduler keeps up to eight overdue frames, with input polling after at most two. The ARM7 sound queue holds five guest frames.
+The next pass moved idle-loop checks to the 68000 opcodes that can use them and dispatched register ADD and SUB instructions directly to their handlers. A masked horizontal interrupt now requests another interrupt check when the guest changes its interrupt mask or enables VDP horizontal interrupts. The renderer reuses scanline layouts and unchanged palettes and transfers sprite attributes to OAM by DMA. The frame scheduler keeps up to eight overdue frames, with input polling after at most two. The ARM7 sound queue holds five guest frames.
 
 | Sonic 2 in melonDS 1.1 | Guest frames | DS VBlanks | Guest FPS |
 | --- | ---: | ---: | ---: |
 | devkitARM r20 reference, 67 MHz race | 600 | 600 | 59.83 |
 | BlocksDS C, 67 MHz single-player | 600 | 600 | 59.83 |
-| BlocksDS C, 67 MHz split-screen race | 600 | 602 | 59.63 |
-| BlocksDS C, 67 MHz extended split-screen race | 1,800 | 1,825 | 59.01 |
+| BlocksDS C, 67 MHz split-screen race | 600 | 600 | 59.83 |
+| BlocksDS C, 67 MHz extended split-screen race | 1,800 | 1,818 | 59.23 |
 | BlocksDS C, native DSi split-screen replay | 600 | 600 | 59.83 |
 
-The extended run held Right from guest frame 1,300 through 3,700. Split-screen still falls behind the display rate in 67 MHz DS mode. In the instrumented 600-frame race, the ARM7 queue evicted 16 frames and supplied 3,043 samples without queued DAC data, down from 35 evictions and 6,243 samples. The timed FM/DAC traces, saved state, and three fixed-guest-frame video captures matched the previous C build.
+The short runs measure guest frames 1,304 through 1,904. The extended run held Right through guest frame 3,700 and measured frames 1,304 through 3,104. Split-screen still falls behind the display rate over that longer window in 67 MHz DS mode. In the instrumented 600-frame race, the ARM7 queue evicted 26 frames and supplied 2,059 samples without queued DAC data, down from 35 evictions and 6,243 samples. The timed FM/DAC traces, saved state, and three fixed-guest-frame video captures matched the previous C build.
 
 The NTSC frame budget for CPU and rendering together is about 560,000 ticks. In a separately instrumented DS run, Z80 synchronization and execution accounted for about 314,000 ticks per guest frame. Captures of both interlace fields, the 128-column intro, and the final replay frame matched pixel for pixel across the performance passes. The 600-frame state and timed audio trace and the 16-cartridge host run also matched. The memory-layout host check covers odd ROM sizes, mirrored RAM, Z80 ROM reads, and VDP DMA, and compares the save files from both layouts byte for byte.
 

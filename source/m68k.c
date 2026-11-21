@@ -1429,7 +1429,7 @@ static __attribute__((noinline)) void initialize_opcode_table(
     for (unsigned opcode = 0; opcode <= UINT16_MAX; ++opcode) {
         unsigned family = opcode >> 12;
         const void *handler = families[family];
-        if (family != 2 && family <= 6) {
+        if ((family != 2 && family <= 6) || family == 9 || family == 13) {
             for (unsigned i = 0; i < shortcut_count; ++i) {
                 if ((opcode & shortcuts[i].mask) == shortcuts[i].value) {
                     handler = shortcuts[i].handler;
@@ -1490,6 +1490,10 @@ static ARM9_ITCM unsigned execute_until(struct megadrive *md, unsigned cycles,
         {0xf1f8, 0x1028, &&op_load_byte_displacement},
         {0xfff8, 0x51c8, &&op_dbra},
         {0xfefd, 0x66f8, &&op_poll_branch},
+        {0xb1f8, 0x9000, &&op_byte_register_arithmetic},
+        {0xb1f0, 0x9040, &&op_word_register_arithmetic},
+        {0xb1f0, 0x9080, &&op_long_register_arithmetic},
+        {0xb1f0, 0x90c0, &&op_address_word_arithmetic},
     };
     // The ARM9 interpreter initializes this 256 KiB table on first use.
     static const void *opcode_table[UINT16_MAX + 1];
@@ -1609,18 +1613,15 @@ op_dbra: {
                 cpu->pc = base + displacement;
                 goto skip_idle_loop;
             }
-op_poll_branch:
-            elapsed = execute_branch(cpu, md, op);
-            if (elapsed != 10)
-                goto completed;
+op_poll_branch: // BNE/BEQ with displacement -6 or -8.
+            if ((cpu->sr & CCR_Z) != ((op >> 6) & CCR_Z))
+                FINISH_INSTRUCTION(8);
+            cpu->pc += (int8_t)op;
             if (op & 2)
                 goto skip_idle_loop;
-            if (cpu->pc + 6 == instruction) {
-                cycles += 10;
-                long_poll = true;
-                break;
-            }
-            goto completed;
+            cycles += 10;
+            long_poll = true;
+            break;
 op_branch:
             FINISH_INSTRUCTION(execute_branch(cpu, md, op));
 op_move_quick:
@@ -1655,28 +1656,20 @@ op_compare:
             if ((op & 0x100) && (op & 0xc0) != 0xc0)
                 FINISH_INSTRUCTION(exclusive_or(cpu, md, op));
             FINISH_INSTRUCTION(data_alu(cpu, md, op));
-op_add_subtract:
-            // A register source avoids effective address decoding.
-            if ((op & 0x130) == 0) {
-                bool subtract = !(op & 0x4000);
-                switch ((op >> 6) & 3) {
-                case 0:
-                    if (!(op & 8))
-                        FINISH_INSTRUCTION(register_arithmetic(cpu, op, 1, subtract));
-                    break;
-                case 1:
-                    FINISH_INSTRUCTION(register_arithmetic(cpu, op, 2, subtract));
-                case 2:
-                    FINISH_INSTRUCTION(register_arithmetic(cpu, op, 4, subtract));
-                case 3: {
-                    unsigned dest = (op >> 9) & 7;
-                    const uint32_t *source = (op & 8) ? cpu->a : cpu->d;
-                    int16_t operand = source[op & 7];
-                    cpu->a[dest] += subtract ? -operand : operand;
-                    FINISH_INSTRUCTION(8);
-                }
-                }
+op_byte_register_arithmetic:
+            FINISH_INSTRUCTION(register_arithmetic(cpu, op, 1, !(op & 0x4000)));
+op_word_register_arithmetic:
+            FINISH_INSTRUCTION(register_arithmetic(cpu, op, 2, !(op & 0x4000)));
+op_long_register_arithmetic:
+            FINISH_INSTRUCTION(register_arithmetic(cpu, op, 4, !(op & 0x4000)));
+op_address_word_arithmetic: {
+                unsigned dest = (op >> 9) & 7;
+                const uint32_t *source = (op & 8) ? cpu->a : cpu->d;
+                int16_t operand = source[op & 7];
+                cpu->a[dest] += (op & 0x4000) ? operand : -operand;
+                FINISH_INSTRUCTION(8);
             }
+op_add_subtract:
             if ((op & 0x130) == 0x100 && (op & 0xc0) != 0xc0)
                 FINISH_INSTRUCTION(extend_arithmetic(cpu, md, op));
             FINISH_INSTRUCTION(data_alu(cpu, md, op));
