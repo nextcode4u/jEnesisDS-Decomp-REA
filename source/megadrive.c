@@ -71,7 +71,8 @@ void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum ge
     m68k_reset(&md->cpu, md);
 }
 
-enum { Z80_SYNC_CYCLES = 128 };
+// Synchronize sooner when a bus access or interrupt needs the sound CPU.
+enum { Z80_SYNC_CYCLES = 8192 };
 
 static unsigned advance_ram_poll(struct megadrive *md, struct m68k *cpu,
                                  unsigned cycles, unsigned end, unsigned *next_sync)
@@ -111,19 +112,27 @@ static ITCM_CODE __attribute__((noinline)) unsigned run_cpu_until(struct megadri
                 break;
         }
         unsigned boundary = next_sync < end ? next_sync : end;
+        // Retry a masked H interrupt after the next instruction.
+        if (hint_pending)
+            boundary = cycles + 1;
         bool long_poll = false;
         do {
             md->frame_cycle = cycles;
             unsigned elapsed = m68k_step(cpu, md);
-            uint16_t op = cpu->opcode;
-            if (elapsed == 10 &&
-                ((op & 0xfff8) == 0x51c8 || (op & 0xfeff) == 0x66fa) &&
-                cpu->pc <= cpu->instruction_address && elapsed < end - cycles)
-                elapsed += m68k_skip_idle(cpu, md, end - cycles - elapsed);
-            else if (elapsed == 10 && (op & 0xfeff) == 0x66f8)
-                long_poll = cpu->pc + 6 == cpu->instruction_address;
+            if (__builtin_expect(!elapsed, 0))
+                break;
             cycles += elapsed;
-        } while (!long_poll && !hint_pending && cycles < boundary && !cpu->stopped);
+            if (elapsed == 10) {
+                uint16_t op = cpu->opcode;
+                if (((op & 0xfff8) == 0x51c8 || (op & 0xfeff) == 0x66fa) &&
+                    cpu->pc <= cpu->instruction_address && cycles < end) {
+                    cycles += m68k_skip_idle(cpu, md, end - cycles);
+                } else if ((op & 0xfeff) == 0x66f8 && cpu->pc + 6 == cpu->instruction_address) {
+                    long_poll = true;
+                    break;
+                }
+            }
+        } while (cycles < boundary);
         if (cycles >= next_sync) {
             // I/O can have synchronized the sound CPU inside an instruction.
             if (cycles - md->z80_synced_cycle >= Z80_SYNC_CYCLES)
@@ -493,6 +502,19 @@ uint16_t megadrive_read_word(struct megadrive *md, uint32_t address)
 static bool vdp_write_data(struct megadrive *md, uint16_t value);
 static bool vdp_write_control(struct megadrive *md, uint16_t value);
 
+void megadrive_psg_write(struct megadrive *md, uint8_t value)
+{
+    if (value & 0x80)
+        md->psg_latch = (value >> 4) & 7;
+    uint16_t *reg = &md->psg_registers[md->psg_latch];
+    if (value & 0x80)
+        *reg = (*reg & 0x3f0) | (value & 15);
+    else if (md->psg_latch < 6 && !(md->psg_latch & 1))
+        *reg = (*reg & 15) | ((value & 0x3f) << 4);
+    else
+        *reg = value & 15;
+}
+
 bool megadrive_write_byte(struct megadrive *md, uint32_t address, uint8_t value)
 {
     address &= 0xffffff;
@@ -556,15 +578,8 @@ bool megadrive_write_byte(struct megadrive *md, uint32_t address, uint8_t value)
         return (address & 4) ? vdp_write_control(md, word) : vdp_write_data(md, word);
     }
     if (address >= 0xc00011 && address <= 0xc00017 && (address & 1)) {
-        if (value & 0x80)
-            md->psg_latch = (value >> 4) & 7;
-        uint16_t *reg = &md->psg_registers[md->psg_latch];
-        if (value & 0x80)
-            *reg = (*reg & 0x3f0) | (value & 15);
-        else if (md->psg_latch < 6 && !(md->psg_latch & 1))
-            *reg = (*reg & 15) | ((value & 0x3f) << 4);
-        else
-            *reg = value & 15;
+        genesis_z80_sync(md, md->frame_cycle);
+        megadrive_psg_write(md, value);
         return true;
     }
     // The reference emulator does not gate VDP access on the TMSS handshake.

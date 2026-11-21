@@ -69,7 +69,7 @@ struct megadrive {
     uint8_t z80_irq_clocks;
     uint32_t z80_instruction_debt;
     unsigned z80_synced_cycle;
-    unsigned z80_slice_start;
+    int z80_slice_master;
     unsigned long z80_slice_clocks;
     bool z80_bus_requested;
     bool z80_reset;
@@ -163,6 +163,7 @@ void megadrive_run_frame(struct megadrive *md);
 uint16_t megadrive_backdrop(const struct megadrive *md);
 uint8_t megadrive_read_byte(struct megadrive *md, uint32_t address);
 uint16_t megadrive_read_word(struct megadrive *md, uint32_t address);
+void megadrive_psg_write(struct megadrive *md, uint8_t value);
 bool megadrive_write_byte(struct megadrive *md, uint32_t address, uint8_t value);
 bool megadrive_write_word(struct megadrive *md, uint32_t address, uint16_t value);
 

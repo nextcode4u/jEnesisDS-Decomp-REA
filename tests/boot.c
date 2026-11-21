@@ -412,22 +412,33 @@ static void test_z80_dac_writes(const struct cartridge *cart)
     };
     static struct megadrive_memory memory;
     static struct megadrive md = {.memory = &memory};
-    struct dac_frame frame = {.count = 8};
-    megadrive_reset(&md, cart, GENESIS_REGION_USA);
-    memcpy(md.memory->z80_ram, program, sizeof(program));
-    md.frame_cycles = 240;
-    md.z80_reset = false;
-    md.ym_registers[0][0x2b] = 0x80;
-    md.ym_address[0] = 0x2a;
-    dac_begin(&md, &frame);
-    genesis_z80_sync(&md, md.frame_cycles);
-    dac_end(&md);
+    struct dac_frame continuous = {.count = 24}, sliced = {.count = 24};
+    for (unsigned run = 0; run < 2; ++run) {
+        megadrive_reset(&md, cart, GENESIS_REGION_USA);
+        memcpy(md.memory->z80_ram, program, sizeof(program));
+        md.frame_cycles = 240;
+        md.z80_reset = false;
+        md.ym_registers[0][0x2b] = 0x80;
+        md.ym_address[0] = 0x2a;
+        dac_begin(&md, run ? &sliced : &continuous);
 
-    assert(md.sound_cpu.halted);
-    assert(frame.samples[0].left == 0 && frame.samples[0].right == 0);
-    assert(frame.samples[1].left == 96 && frame.samples[1].right == 96);
-    for (unsigned i = 2; i < frame.count; ++i)
-        assert(frame.samples[i].left == -96 && frame.samples[i].right == -96);
+        // The first write finishes at cycle 42, after the first slice ends.
+        if (run) {
+            genesis_z80_sync(&md, 36);
+            genesis_z80_sync(&md, 67);
+        }
+        genesis_z80_sync(&md, md.frame_cycles);
+        dac_end(&md);
+        assert(md.sound_cpu.halted);
+    }
+
+    assert(!memcmp(continuous.samples, sliced.samples,
+                   continuous.count * sizeof(continuous.samples[0])));
+    for (unsigned i = 0; i < continuous.count; ++i) {
+        int level = i < 4 ? 0 : i < 8 ? 96 : -96;
+        assert(continuous.samples[i].left == level);
+        assert(continuous.samples[i].right == level);
+    }
 }
 
 static void test_z80_mirrored_words(const struct cartridge *cart)

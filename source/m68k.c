@@ -184,20 +184,10 @@ static bool condition_true(uint16_t sr, unsigned condition)
     return (masks[condition] >> (sr & 15)) & 1;
 }
 
-static ITCM_CODE bool address_operand(struct m68k *cpu, struct megadrive *md,
-                            unsigned mode, unsigned reg, unsigned size, uint32_t *address)
+static ITCM_CODE __attribute__((noinline)) bool address_operand_other(
+    struct m68k *cpu, struct megadrive *md, unsigned mode, unsigned reg, uint32_t *address)
 {
-    unsigned increment = size == 1 && reg == 7 ? 2 : size;
-    if (mode == 2)
-        *address = cpu->a[reg];
-    else if (mode == 3 && size) {
-        *address = cpu->a[reg];
-        cpu->a[reg] += increment;
-    } else if (mode == 4 && size) {
-        cpu->a[reg] -= increment;
-        *address = cpu->a[reg];
-    }
-    else if (mode == 5)
+    if (mode == 5)
         *address = cpu->a[reg] + (int16_t)fetch(cpu, md, 2);
     else if (mode == 6 || (mode == 7 && reg == 3)) {
         uint32_t base = mode == 6 ? cpu->a[reg] : cpu->pc;
@@ -216,6 +206,24 @@ static ITCM_CODE bool address_operand(struct m68k *cpu, struct megadrive *md,
         *address = base + (int16_t)fetch(cpu, md, 2);
     } else
         return false;
+    return true;
+}
+
+static inline bool address_operand(struct m68k *cpu, struct megadrive *md,
+                            unsigned mode, unsigned reg, unsigned size, uint32_t *address)
+{
+    unsigned increment = size == 1 && reg == 7 ? 2 : size;
+    if (mode == 2)
+        *address = cpu->a[reg];
+    else if (mode == 3 && size) {
+        *address = cpu->a[reg];
+        cpu->a[reg] += increment;
+    } else if (mode == 4 && size) {
+        cpu->a[reg] -= increment;
+        *address = cpu->a[reg];
+    }
+    else
+        return address_operand_other(cpu, md, mode, reg, address);
     return true;
 }
 

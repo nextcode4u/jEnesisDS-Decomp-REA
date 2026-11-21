@@ -30,16 +30,17 @@ static void write_byte(void *context, uint16_t address, uint8_t data)
     if (address < 0x4000)
         md->memory->z80_ram[address & 0x1fff] = data;
     else if (address < 0x6000) {
-        unsigned cycle = md->z80_slice_start +
-                         (md->sound_cpu.cyc - md->z80_slice_clocks) * Z80_DIVIDER / M68K_DIVIDER;
-        if (cycle > md->z80_synced_cycle)
-            cycle = md->z80_synced_cycle;
+        // The Z80 clock grid continues across scheduler slices. Keep the
+        // write time on that grid even if execution crosses the slice end.
+        int clocks = md->z80_slice_master +
+                     (int)((md->sound_cpu.cyc - md->z80_slice_clocks) * Z80_DIVIDER);
+        unsigned cycle = clocks > 0 ? (unsigned)clocks / M68K_DIVIDER : 0;
         megadrive_ym_write_at(md, address & 3, data, cycle);
     }
     else if (address < 0x6100)
         md->z80_bank = md->z80_bank >> 1 | (data & 1) << 8;
     else if ((address & 0xfff9) == 0x7f11)
-        megadrive_write_byte(md, 0xc00000 | (address & 0x1f), data);
+        megadrive_psg_write(md, data);
 }
 
 static uint8_t port_read(z80 *cpu, uint8_t port)
@@ -157,10 +158,11 @@ ITCM_CODE void genesis_z80_sync(struct megadrive *md, unsigned m68k_cycle)
         return;
 
     unsigned elapsed_m68k = m68k_cycle - md->z80_synced_cycle;
-    unsigned master_clocks = elapsed_m68k * M68K_DIVIDER + md->z80_clock_phase;
+    unsigned old_phase = md->z80_clock_phase;
+    unsigned master_clocks = elapsed_m68k * M68K_DIVIDER + old_phase;
     unsigned budget = master_clocks / Z80_DIVIDER;
     md->z80_clock_phase = master_clocks % Z80_DIVIDER;
-    md->z80_slice_start = md->z80_synced_cycle;
+    int slice_master = (int)(md->z80_synced_cycle * M68K_DIVIDER) - (int)old_phase;
     md->z80_synced_cycle = m68k_cycle;
     unsigned debt = md->z80_instruction_debt;
     md->z80_instruction_debt = debt > budget ? debt - budget : 0;
@@ -174,7 +176,7 @@ ITCM_CODE void genesis_z80_sync(struct megadrive *md, unsigned m68k_cycle)
     budget -= debt;
 
     z80 *cpu = &md->sound_cpu;
-    md->z80_slice_start += debt * Z80_DIVIDER / M68K_DIVIDER;
+    md->z80_slice_master = slice_master + (int)(debt * Z80_DIVIDER);
     md->z80_slice_clocks = cpu->cyc;
     unsigned elapsed = 0;
     unsigned irq_clocks = md->z80_irq_clocks;
