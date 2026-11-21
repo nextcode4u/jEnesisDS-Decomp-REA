@@ -96,8 +96,15 @@ static unsigned advance_ram_poll(struct megadrive *md, struct m68k *cpu,
     return stop;
 }
 
-static ITCM_CODE __attribute__((noinline)) unsigned run_cpu_until(struct megadrive *md, struct m68k *cpu, unsigned cycles, unsigned end)
+static ITCM_CODE __attribute__((noinline)) unsigned run_cpu_until(struct megadrive *md, unsigned cycles, unsigned end)
 {
+    struct m68k *cpu = &md->cpu;
+    // This prefix of the ROM stays visible if the guest toggles SRAM mid-slice.
+    const uint8_t *rom = md->rom;
+    unsigned rom_limit = md->rom_size;
+    if (md->sram_size && md->sram_start < rom_limit)
+        rom_limit = md->sram_start;
+    rom_limit &= ~1U;
     unsigned next_sync = md->z80_synced_cycle + Z80_SYNC_CYCLES;
     bool hint_pending = md->hint_pending;
     while (cycles < end && !cpu->stopped) {
@@ -118,7 +125,7 @@ static ITCM_CODE __attribute__((noinline)) unsigned run_cpu_until(struct megadri
         bool long_poll = false;
         do {
             md->frame_cycle = cycles;
-            unsigned elapsed = m68k_step(cpu, md);
+            unsigned elapsed = m68k_step_rom(cpu, md, rom, rom_limit);
             if (__builtin_expect(!elapsed, 0))
                 break;
             cycles += elapsed;
@@ -201,9 +208,7 @@ static void refresh_rom_fetch_limit(struct megadrive *md)
 void megadrive_run_frame(struct megadrive *md)
 {
     refresh_rom_fetch_limit(md);
-    // The BlocksDS ARM9 stack is in fast data TCM.
-    struct m68k core = md->cpu;
-    struct m68k *cpu = &core;
+    struct m68k *cpu = &md->cpu;
     unsigned cycles = md->cycle_carry;
     md->z80_synced_cycle = 0;
     md->frame_cycle = cycles;
@@ -222,11 +227,11 @@ void megadrive_run_frame(struct megadrive *md)
     // active display and when it expires, so writes take effect on reload.
     unsigned hint_line = md->vdp_registers[10];
     while (hint_line <= active_lines && !cpu->stopped) {
-        cycles = run_cpu_until(md, cpu, cycles, 3420 * hint_line / 7);
+        cycles = run_cpu_until(md, cycles, 3420 * hint_line / 7);
         md->hint_pending = true;
         hint_line += md->vdp_registers[10] + 1;
     }
-    cycles = run_cpu_until(md, cpu, cycles, 3420 * active_lines / 7);
+    cycles = run_cpu_until(md, cycles, 3420 * active_lines / 7);
     md->vdp_capture_raster = false;
     if (md->vdp_row_count)
         capture_raster_through(md, active_lines);
@@ -236,11 +241,10 @@ void megadrive_run_frame(struct megadrive *md)
     genesis_z80_vblank(md, cycles);
     if (!cpu->stopped && (md->vdp_registers[1] & 0x20))
         cycles += m68k_interrupt(cpu, md, 6);
-    cycles = run_cpu_until(md, cpu, cycles, md->frame_cycles);
+    cycles = run_cpu_until(md, cycles, md->frame_cycles);
     md->cycle_carry = cycles >= md->frame_cycles ? cycles - md->frame_cycles : 0;
     md->frame_cycle = 0;
     md->controller_cycles += md->frame_cycles;
-    md->cpu = core;
     md->rom_fetch_limit = 0;
 }
 

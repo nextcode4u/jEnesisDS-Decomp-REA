@@ -279,48 +279,50 @@ static ITCM_CODE __attribute__((noinline)) unsigned move(struct m68k *cpu, struc
 static inline __attribute__((always_inline)) unsigned move_common(
     struct m68k *cpu, struct megadrive *md, uint16_t op, unsigned size)
 {
-    unsigned source = (op >> 3) & 7, target = (op >> 6) & 7;
     unsigned src_reg = op & 7, dst_reg = (op >> 9) & 7;
-    const unsigned ram_cycles = size == 4 ? 8 : 4;
-    const uint32_t mask = size_mask(size);
+    // The six mode bits identify both operands without decoding the register numbers.
+    unsigned modes = op & 0x01f8;
+    const unsigned access_cycles = size == 4 ? 8 : 4;
+    uint32_t value, address;
     unsigned cycles = 4;
-    uint32_t value;
-    if (target == 0) {
-        if (source == 0) {
-            value = cpu->d[src_reg];
-        } else if (source == 2 || source == 3 || source == 5) {
-            uint32_t address = cpu->a[src_reg];
-            if (source == 3)
-                cpu->a[src_reg] += size == 1 && src_reg == 7 ? 2 : size;
-            else if (source == 5)
-                address += (int16_t)fetch(cpu, md, 2);
-            if (size != 1 && (address & 1))
-                return 0;
-            value = read_memory_fast(md, address, size);
-            cycles += ram_cycles + (source == 5 ? 4 : 0);
-        } else if (source == 7 && src_reg == 4) {
-            value = fetch(cpu, md, size == 4 ? 4 : 2);
-            cycles += ram_cycles;
-        } else {
-            return move(cpu, md, op);
-        }
-        cpu->d[dst_reg] = (cpu->d[dst_reg] & ~mask) | (value & mask);
-    } else if (source == 0 && (target == 2 || target == 3 || target == 4 || target == 5)) {
-        uint32_t address = cpu->a[dst_reg];
-        unsigned increment = size == 1 && dst_reg == 7 ? 2 : size;
-        if (target == 3)
-            cpu->a[dst_reg] += increment;
-        else if (target == 4)
-            address = cpu->a[dst_reg] -= increment;
-        else if (target == 5)
+    if (modes == 0x0000) {
+        value = cpu->d[src_reg];
+    } else if (modes == 0x0028 || modes == 0x0018 || modes == 0x0010) {
+        address = cpu->a[src_reg];
+        if (modes == 0x0028) {
             address += (int16_t)fetch(cpu, md, 2);
+            cycles += 4;
+        } else if (modes == 0x0018) {
+            cpu->a[src_reg] += size == 1 && src_reg == 7 ? 2 : size;
+        }
+        if (size != 1 && (address & 1))
+            return 0;
+        value = read_memory_fast(md, address, size);
+        cycles += access_cycles;
+    } else if ((op & 0x01ff) == 0x003c) {
+        value = fetch(cpu, md, size == 4 ? 4 : 2);
+        cycles += access_cycles;
+    } else if (modes == 0x00c0 || modes == 0x0080 || modes == 0x0100 || modes == 0x0140) {
+        address = cpu->a[dst_reg];
+        unsigned increment = size == 1 && dst_reg == 7 ? 2 : size;
+        if (modes == 0x00c0) {
+            cpu->a[dst_reg] += increment;
+        } else if (modes == 0x0100) {
+            address = cpu->a[dst_reg] -= increment;
+            cycles += 2;
+        } else if (modes == 0x0140) {
+            address += (int16_t)fetch(cpu, md, 2);
+            cycles += 4;
+        }
         value = cpu->d[src_reg];
         if (!write_memory_fast(md, address, size, value))
             return 0;
-        cycles += ram_cycles + (target >= 4 ? 2 * (target - 3) : 0);
+        set_logic_flags(cpu, size, value);
+        return cycles + access_cycles;
     } else {
         return move(cpu, md, op);
     }
+    set_data(cpu, dst_reg, size, value);
     set_logic_flags(cpu, size, value);
     return cycles;
 }
@@ -1092,14 +1094,14 @@ static ITCM_CODE __attribute__((noinline)) unsigned execute_immediate(struct m68
     return 0;
 }
 
-static ITCM_CODE __attribute__((noinline)) unsigned branch_subroutine(
+static ITCM_CODE __attribute__((noinline)) bool call_subroutine(
     struct m68k *cpu, struct megadrive *md, uint32_t address)
 {
     cpu->a[7] -= 4;
-    if (!write_memory(md, cpu->a[7], 4, cpu->pc))
-        return 0;
+    if (!write_memory_fast(md, cpu->a[7], 4, cpu->pc))
+        return false;
     cpu->pc = address;
-    return 18;
+    return true;
 }
 
 static inline __attribute__((always_inline)) unsigned execute_branch(
@@ -1111,7 +1113,7 @@ static inline __attribute__((always_inline)) unsigned execute_branch(
     if (!displacement)
         displacement = (int16_t)fetch(cpu, md, 2);
     if (condition == 1)
-        return branch_subroutine(cpu, md, base + displacement);
+        return call_subroutine(cpu, md, base + displacement) ? 18 : 0;
     if (!condition_true(cpu->sr, condition))
         return (op & 255) ? 8 : 12;
     cpu->pc = base + displacement;
@@ -1142,13 +1144,17 @@ static unsigned execute(struct m68k *cpu, struct megadrive *md, uint16_t op)
         if (op == 0x4e75) { // RTS
             if (cpu->a[7] & 1)
                 return 0;
-            cpu->pc = read_memory(md, cpu->a[7], 4);
+            cpu->pc = read_memory_fast(md, cpu->a[7], 4);
             cpu->a[7] += 4;
             return 16;
         }
         if ((op & 0xf1ff) == 0x41f8) { // LEA with an absolute word address
             cpu->a[(op >> 9) & 7] = (int16_t)fetch(cpu, md, 2);
             return 8;
+        }
+        if (op == 0x4eb9) { // JSR with an absolute long address
+            uint32_t address = fetch(cpu, md, 4);
+            return call_subroutine(cpu, md, address) ? 20 : 0;
         }
         return execute_misc(cpu, md, op);
     case 5: {
@@ -1347,7 +1353,7 @@ static unsigned skip_signed_byte_copy(struct m68k *cpu, struct megadrive *md,
     return iterations * ITERATION_CYCLES;
 }
 
-static unsigned skip_interleaved_word_stores(struct m68k *cpu, struct megadrive *md,
+static __attribute__((noinline)) unsigned skip_interleaved_word_stores(struct m68k *cpu, struct megadrive *md,
                                              unsigned budget, const uint8_t *rom)
 {
     // Two MOVE.W stores through the same postincrement address register,
@@ -1532,16 +1538,29 @@ void m68k_reset(struct m68k *cpu, struct megadrive *md)
     cpu->pc = read_memory(md, 4, 4);
 }
 
-ITCM_CODE unsigned m68k_step(struct m68k *cpu, struct megadrive *md)
+ITCM_CODE unsigned m68k_step_rom(struct m68k *cpu, struct megadrive *md,
+                               const uint8_t *rom, unsigned rom_limit)
 {
     cpu->instruction_address = cpu->pc;
     if (cpu->pc & 1) {
         cpu->stopped = true;
         return 0;
     }
-    cpu->opcode = fetch(cpu, md, 2);
+    uint32_t address = cpu->pc & 0xffffff;
+    if (__builtin_expect(address < rom_limit, 1)) {
+        cpu->opcode = cartridge_aligned_word(rom, address);
+        cpu->pc += 2;
+    } else {
+        cpu->opcode = fetch(cpu, md, 2);
+    }
     unsigned cycles = execute(cpu, md, cpu->opcode);
     if (!cycles)
         cpu->stopped = true;
     return cycles;
+}
+
+
+unsigned m68k_step(struct m68k *cpu, struct megadrive *md)
+{
+    return m68k_step_rom(cpu, md, md->rom, md->rom_fetch_limit & ~1U);
 }
