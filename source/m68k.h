@@ -18,8 +18,7 @@ struct m68k {
 };
 
 void m68k_reset(struct m68k *cpu, struct megadrive *md);
-unsigned m68k_run_slice(struct megadrive *md, unsigned cycles, unsigned boundary,
-                        unsigned end, bool *long_poll);
+unsigned m68k_run_until(struct megadrive *md, unsigned cycles, unsigned end);
 unsigned m68k_step(struct m68k *cpu, struct megadrive *md);
 unsigned m68k_skip_idle(struct m68k *cpu, struct megadrive *md, unsigned budget);
 unsigned m68k_interrupt(struct m68k *cpu, struct megadrive *md, unsigned level);

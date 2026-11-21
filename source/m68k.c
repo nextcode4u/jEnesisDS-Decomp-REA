@@ -1,5 +1,6 @@
 #include "m68k.h"
 #include "megadrive.h"
+#include "z80_bus.h"
 
 #ifdef __NDS__
 #include <nds/ndstypes.h>
@@ -1119,168 +1120,6 @@ static inline __attribute__((always_inline)) unsigned execute_branch(
     return 10;
 }
 
-// Keeping the larger opcode families out of line lets the ARM9 dispatch
-// common instructions without reserving a stack frame for every family.
-static inline __attribute__((always_inline)) unsigned execute(struct m68k *cpu, struct megadrive *md, uint16_t op)
-{
-    switch (op >> 12) {
-    case 0:
-        if ((op & 0xfff8) == 0x0240) { // ANDI.W #value,Dn
-            unsigned reg = op & 7;
-            uint32_t value = cpu->d[reg] & fetch(cpu, md, 2);
-            set_data(cpu, reg, 2, value);
-            set_logic_flags(cpu, 2, value);
-            return 8;
-        }
-        if ((op & 0xfff8) == 0x0800) { // BTST #bit,Dn
-            unsigned bit = fetch(cpu, md, 2) & 31;
-            bool set = (cpu->d[op & 7] >> bit) & 1;
-            cpu->sr = (cpu->sr & ~CCR_Z) | (set ? 0 : CCR_Z);
-            return 10;
-        }
-        if ((op & 0xfff8) == 0x0640) { // ADDI.W #value,Dn
-            unsigned reg = op & 7;
-            uint32_t operand = fetch(cpu, md, 2);
-            set_data(cpu, reg, 2, arithmetic_flags(cpu, 2, cpu->d[reg], operand, false, false));
-            return 8;
-        }
-        if ((op & 0xfff8) == 0x0c40) { // CMPI.W #value,Dn
-            uint32_t operand = fetch(cpu, md, 2);
-            arithmetic_flags(cpu, 2, cpu->d[op & 7], operand, true, true);
-            return 8;
-        }
-        return execute_immediate(cpu, md, op);
-    case 1:
-        return move_common(cpu, md, op, 1);
-    case 2:
-        return move_common(cpu, md, op, 4);
-    case 3:
-        return move_common(cpu, md, op, 2);
-    case 4:
-        if (op == 0x4e75) { // RTS
-            if (cpu->a[7] & 1)
-                return 0;
-            cpu->pc = read_memory_fast(md, cpu->a[7], 4);
-            cpu->a[7] += 4;
-            return 16;
-        }
-        if ((op & 0xf1ff) == 0x41f8) { // LEA with an absolute word address
-            cpu->a[(op >> 9) & 7] = (int16_t)fetch(cpu, md, 2);
-            return 8;
-        }
-        if (op == 0x4eb9) { // JSR with an absolute long address
-            uint32_t address = fetch(cpu, md, 4);
-            return call_subroutine(cpu, md, address) ? 20 : 0;
-        }
-        if ((op & 0xffbf) == 0x4a38) { // TST.B/W with an absolute word address
-            uint32_t address = (int16_t)fetch(cpu, md, 2);
-            if (op & 0x40) {
-                if (address & 1)
-                    return 0;
-                set_logic_flags(cpu, 2, read_memory_fast(md, address, 2));
-            } else {
-                set_logic_flags(cpu, 1, read_memory_fast(md, address, 1));
-            }
-            return 12;
-        }
-        return execute_misc(cpu, md, op);
-    case 5: {
-        if ((op & 0x00f8) == 0x00c8) {
-            uint32_t base = cpu->pc;
-            int16_t displacement = fetch(cpu, md, 2);
-            if (condition_true(cpu->sr, (op >> 8) & 15))
-                return 12;
-            unsigned reg = op & 7;
-            uint16_t count = cpu->d[reg] - 1;
-            set_data(cpu, reg, 2, count);
-            if (count == 0xffff)
-                return 14;
-            cpu->pc = base + displacement;
-            return 10;
-        }
-        if ((op & 0xc0) != 0xc0)
-            return quick_arithmetic(cpu, md, op);
-        unsigned mode = (op >> 3) & 7, reg = op & 7;
-        uint8_t value = condition_true(cpu->sr, (op >> 8) & 15) ? 0xff : 0;
-        if (mode == 0) {
-            set_data(cpu, reg, 1, value);
-            return value ? 6 : 4;
-        }
-        uint32_t address;
-        if ((mode == 7 && reg > 1) || !address_operand(cpu, md, mode, reg, 1, &address) ||
-            !write_memory(md, address, 1, value))
-            return 0;
-        return 8 + memory_cycles(mode, reg, 1);
-    }
-    case 6:
-        return execute_branch(cpu, md, op);
-    case 7:
-        if (!(op & 0x100)) {
-            unsigned reg = (op >> 9) & 7;
-            cpu->d[reg] = (int8_t)op;
-            set_logic_flags(cpu, 4, cpu->d[reg]);
-            return 4;
-        }
-        return 0;
-    case 8:
-        if ((op & 0xc0) == 0xc0)
-            return multiply_or_divide(cpu, md, op);
-        return data_alu(cpu, md, op);
-    case 12:
-        if ((op & 0xf1f8) == 0xc140 || (op & 0xf1f8) == 0xc148 ||
-            (op & 0xf1f8) == 0xc188) {
-            unsigned source = (op >> 9) & 7, target = op & 7;
-            uint32_t *left = ((op & 0xf1f8) == 0xc148 ? cpu->a : cpu->d) + source;
-            uint32_t *right = ((op & 0xf1f8) == 0xc140 ? cpu->d : cpu->a) + target;
-            uint32_t value = *left;
-            *left = *right;
-            *right = value;
-            return 6;
-        }
-        if ((op & 0xc0) == 0xc0)
-            return multiply_or_divide(cpu, md, op);
-        return data_alu(cpu, md, op);
-    case 11:
-        if ((op & 0xf138) == 0xb108 && (op & 0xc0) != 0xc0)
-            return compare_memory(cpu, md, op);
-        if ((op & 0x100) && (op & 0xc0) != 0xc0)
-            return exclusive_or(cpu, md, op);
-        return data_alu(cpu, md, op);
-    case 9:
-    case 13:
-        // A register source avoids effective address decoding.
-        if ((op & 0x130) == 0) {
-            bool subtract = !(op & 0x4000);
-            switch ((op >> 6) & 3) {
-            case 0:
-                if (!(op & 8))
-                    return register_arithmetic(cpu, op, 1, subtract);
-                break;
-            case 1:
-                return register_arithmetic(cpu, op, 2, subtract);
-            case 2:
-                return register_arithmetic(cpu, op, 4, subtract);
-            case 3: {
-                unsigned dest = (op >> 9) & 7;
-                const uint32_t *source = (op & 8) ? cpu->a : cpu->d;
-                int16_t operand = source[op & 7];
-                cpu->a[dest] += subtract ? -operand : operand;
-                return 8;
-            }
-            }
-        }
-        if ((op & 0x130) == 0x100 && (op & 0xc0) != 0xc0)
-            return extend_arithmetic(cpu, md, op);
-        return data_alu(cpu, md, op);
-    case 14:
-        return (op & 0xc0) != 0xc0 ? shift_register(cpu, op) : shift_memory(cpu, md, op);
-    case 10:
-    case 15:
-        return 0;
-    }
-    __builtin_unreachable();
-}
-
 unsigned m68k_interrupt(struct m68k *cpu, struct megadrive *md, unsigned level)
 {
     uint16_t old_status = cpu->sr;
@@ -1576,10 +1415,85 @@ static inline uint16_t fetch_opcode(struct m68k *cpu, struct megadrive *md,
     return fetch(cpu, md, 2);
 }
 
-ARM9_ITCM unsigned m68k_run_slice(struct megadrive *md, unsigned cycles, unsigned boundary,
-                                 unsigned end, bool *long_poll)
+struct opcode_shortcut {
+    uint16_t mask, value;
+    const void *handler;
+};
+
+static __attribute__((noinline)) void initialize_opcode_table(
+    const void **table, const void *const *families,
+    const struct opcode_shortcut *shortcuts, unsigned shortcut_count)
 {
-    struct m68k *cpu = &md->cpu;
+    for (unsigned opcode = 0; opcode <= UINT16_MAX; ++opcode) {
+        unsigned family = opcode >> 12;
+        const void *handler = families[family];
+        // Shortcuts are in the immediate, MOVE.B, MOVE.W and miscellaneous families.
+        if (family != 2 && family <= 4) {
+            for (unsigned i = 0; i < shortcut_count; ++i) {
+                if ((opcode & shortcuts[i].mask) == shortcuts[i].value) {
+                    handler = shortcuts[i].handler;
+                    break;
+                }
+            }
+        }
+        table[opcode] = handler;
+    }
+}
+
+// Synchronize sooner when a bus access or interrupt needs the sound CPU.
+enum { Z80_SYNC_CYCLES = 8192 };
+
+static unsigned advance_ram_poll(struct megadrive *md, struct m68k *cpu,
+                                 unsigned cycles, unsigned end, unsigned *next_sync)
+{
+    unsigned skipped = m68k_skip_idle(cpu, md, end - cycles);
+    if (!skipped)
+        return cycles;
+    unsigned stop = cycles + skipped;
+    // Keep Z80 checkpoints at the original instruction boundaries.
+    enum { TEST_CYCLES = 16, BRANCH_CYCLES = 10, LOOP_CYCLES = TEST_CYCLES + BRANCH_CYCLES };
+    while (*next_sync <= stop) {
+        unsigned iteration = (*next_sync - cycles - 1) / LOOP_CYCLES;
+        unsigned test_start = cycles + iteration * LOOP_CYCLES;
+        unsigned test_end = test_start + TEST_CYCLES;
+        bool after_test = *next_sync <= test_end;
+        md->frame_cycle = after_test ? test_start : test_end;
+        genesis_z80_sync(md, after_test ? test_end : test_start + LOOP_CYCLES);
+        *next_sync = md->z80_synced_cycle + Z80_SYNC_CYCLES;
+    }
+    md->frame_cycle = stop - BRANCH_CYCLES;
+    return stop;
+}
+
+// Use the fetched word to select a handler, as the r20 reference does.
+// Keep scheduling and single-step execution at the same instruction boundary.
+static ARM9_ITCM unsigned execute_until(struct m68k *cpu, struct megadrive *md,
+                                        unsigned cycles, unsigned end, bool single_step)
+{
+    static const void *const families[] = {
+        &&op_immediate, &&op_move_byte, &&op_move_long, &&op_move_word,
+        &&op_miscellaneous, &&op_quick, &&op_branch, &&op_move_quick,
+        &&op_or_divide, &&op_add_subtract, &&op_invalid_a, &&op_compare,
+        &&op_and_multiply, &&op_add_subtract, &&op_shift, &&op_invalid_f,
+    };
+    static const struct opcode_shortcut shortcuts[] = {
+        {0xfff8, 0x0240, &&op_andi_word},
+        {0xfff8, 0x0800, &&op_btst_immediate},
+        {0xfff8, 0x0640, &&op_addi_word},
+        {0xfff8, 0x0c40, &&op_cmpi_word},
+        {0xffff, 0x4e75, &&op_rts},
+        {0xf1ff, 0x41f8, &&op_lea_word},
+        {0xffff, 0x4eb9, &&op_jsr_long},
+        {0xffbf, 0x4a38, &&op_tst_absolute},
+        {0xf1f8, 0x30c0, &&op_store_word_postincrement},
+        {0xf1f8, 0x1028, &&op_load_byte_displacement},
+    };
+    // The ARM9 interpreter initializes this 256 KiB table on first use.
+    static const void *opcode_table[UINT16_MAX + 1];
+    if (!opcode_table[0])
+        initialize_opcode_table(opcode_table, families, shortcuts,
+                                sizeof(shortcuts) / sizeof(shortcuts[0]));
+
     // This prefix of the ROM stays visible if the guest toggles SRAM mid-slice.
     const uint8_t *rom = md->rom;
     unsigned rom_limit = md->rom_size;
@@ -1587,49 +1501,257 @@ ARM9_ITCM unsigned m68k_run_slice(struct megadrive *md, unsigned cycles, unsigne
         rom_limit = md->sram_start;
     rom_limit &= ~1U;
 
-    uint16_t op = cpu->opcode;
+    unsigned next_sync = md->z80_synced_cycle + Z80_SYNC_CYCLES;
+    bool hint_pending = md->hint_pending;
+    unsigned boundary = 0;
+    bool long_poll = false;
+    uint16_t op;
     uint32_t instruction;
-    do {
-        md->frame_cycle = cycles;
-        instruction = cpu->pc;
-        if (__builtin_expect(instruction & 1, 0)) {
-            cpu->stopped = true;
-            break;
+
+    if (single_step)
+        goto run_slice;
+    while (cycles < end && !cpu->stopped) {
+        if (hint_pending && (md->vdp_registers[0] & 0x10) && (cpu->sr & 0x0700) < 0x0400) {
+            unsigned elapsed = m68k_interrupt(cpu, md, 4);
+            if (elapsed) {
+                hint_pending = md->hint_pending = false;
+                cycles += elapsed;
+                continue;
+            }
+            if (cpu->stopped)
+                break;
         }
-        op = fetch_opcode(cpu, md, rom, rom_limit);
-        unsigned elapsed = execute(cpu, md, op);
-        if (__builtin_expect(!elapsed, 0)) {
-            cpu->stopped = true;
-            break;
-        }
-        cycles += elapsed;
-        if (elapsed == 10) {
-            if (((op & 0xfff8) == 0x51c8 || (op & 0xfeff) == 0x66fa) &&
-                cpu->pc <= instruction && cycles < end) {
-                cpu->instruction_address = instruction;
-                cpu->opcode = op;
-                cycles += m68k_skip_idle(cpu, md, end - cycles);
-            } else if ((op & 0xfeff) == 0x66f8 && cpu->pc + 6 == instruction) {
-                *long_poll = true;
+        boundary = next_sync < end ? next_sync : end;
+        // Retry a masked H interrupt after the next instruction.
+        if (hint_pending)
+            boundary = cycles + 1;
+        long_poll = false;
+run_slice:
+        op = cpu->opcode;
+        do {
+            md->frame_cycle = cycles;
+            instruction = cpu->pc;
+            if (__builtin_expect(instruction & 1, 0)) {
+                cpu->stopped = true;
                 break;
             }
+            op = fetch_opcode(cpu, md, rom, rom_limit);
+            unsigned elapsed;
+#define FINISH_INSTRUCTION(timing) do { elapsed = (timing); goto completed; } while (0)
+            goto *opcode_table[op];
+op_immediate:
+            FINISH_INSTRUCTION(execute_immediate(cpu, md, op));
+op_move_byte:
+            FINISH_INSTRUCTION(move_common(cpu, md, op, 1));
+op_move_long:
+            FINISH_INSTRUCTION(move_common(cpu, md, op, 4));
+op_move_word:
+            FINISH_INSTRUCTION(move_common(cpu, md, op, 2));
+op_store_word_postincrement: { // MOVE.W Dn,(An)+
+                unsigned reg = (op >> 9) & 7;
+                uint32_t address = cpu->a[reg];
+                uint32_t value = cpu->d[op & 7];
+                cpu->a[reg] += 2;
+                if (!write_memory_fast(md, address, 2, value))
+                    FINISH_INSTRUCTION(0);
+                set_logic_flags(cpu, 2, value);
+                FINISH_INSTRUCTION(8);
+            }
+op_load_byte_displacement: { // MOVE.B (d16,An),Dn
+                int16_t displacement = fetch(cpu, md, 2);
+                uint32_t address = cpu->a[op & 7] + displacement;
+                uint32_t value = read_memory_fast(md, address, 1);
+                set_data(cpu, (op >> 9) & 7, 1, value);
+                set_logic_flags(cpu, 1, value);
+                FINISH_INSTRUCTION(12);
+            }
+op_miscellaneous:
+            FINISH_INSTRUCTION(execute_misc(cpu, md, op));
+op_quick: {
+            if ((op & 0x00f8) == 0x00c8) {
+                uint32_t base = cpu->pc;
+                int16_t displacement = fetch(cpu, md, 2);
+                if (condition_true(cpu->sr, (op >> 8) & 15))
+                    FINISH_INSTRUCTION(12);
+                unsigned reg = op & 7;
+                uint16_t count = cpu->d[reg] - 1;
+                set_data(cpu, reg, 2, count);
+                if (count == 0xffff)
+                    FINISH_INSTRUCTION(14);
+                cpu->pc = base + displacement;
+                FINISH_INSTRUCTION(10);
+            }
+            if ((op & 0xc0) != 0xc0)
+                FINISH_INSTRUCTION(quick_arithmetic(cpu, md, op));
+            unsigned mode = (op >> 3) & 7, reg = op & 7;
+            uint8_t value = condition_true(cpu->sr, (op >> 8) & 15) ? 0xff : 0;
+            if (mode == 0) {
+                set_data(cpu, reg, 1, value);
+                FINISH_INSTRUCTION(value ? 6 : 4);
+            }
+            uint32_t address;
+            if ((mode == 7 && reg > 1) || !address_operand(cpu, md, mode, reg, 1, &address) ||
+                !write_memory(md, address, 1, value))
+                FINISH_INSTRUCTION(0);
+            FINISH_INSTRUCTION(8 + memory_cycles(mode, reg, 1));
         }
-    } while (cycles < boundary);
-    cpu->instruction_address = instruction;
-    cpu->opcode = op;
+op_branch:
+            FINISH_INSTRUCTION(execute_branch(cpu, md, op));
+op_move_quick:
+            if (!(op & 0x100)) {
+                unsigned reg = (op >> 9) & 7;
+                cpu->d[reg] = (int8_t)op;
+                set_logic_flags(cpu, 4, cpu->d[reg]);
+                FINISH_INSTRUCTION(4);
+            }
+            FINISH_INSTRUCTION(0);
+op_or_divide:
+            if ((op & 0xc0) == 0xc0)
+                FINISH_INSTRUCTION(multiply_or_divide(cpu, md, op));
+            FINISH_INSTRUCTION(data_alu(cpu, md, op));
+op_and_multiply:
+            if ((op & 0xf1f8) == 0xc140 || (op & 0xf1f8) == 0xc148 ||
+                (op & 0xf1f8) == 0xc188) {
+                unsigned source = (op >> 9) & 7, target = op & 7;
+                uint32_t *left = ((op & 0xf1f8) == 0xc148 ? cpu->a : cpu->d) + source;
+                uint32_t *right = ((op & 0xf1f8) == 0xc140 ? cpu->d : cpu->a) + target;
+                uint32_t value = *left;
+                *left = *right;
+                *right = value;
+                FINISH_INSTRUCTION(6);
+            }
+            if ((op & 0xc0) == 0xc0)
+                FINISH_INSTRUCTION(multiply_or_divide(cpu, md, op));
+            FINISH_INSTRUCTION(data_alu(cpu, md, op));
+op_compare:
+            if ((op & 0xf138) == 0xb108 && (op & 0xc0) != 0xc0)
+                FINISH_INSTRUCTION(compare_memory(cpu, md, op));
+            if ((op & 0x100) && (op & 0xc0) != 0xc0)
+                FINISH_INSTRUCTION(exclusive_or(cpu, md, op));
+            FINISH_INSTRUCTION(data_alu(cpu, md, op));
+op_add_subtract:
+            // A register source avoids effective address decoding.
+            if ((op & 0x130) == 0) {
+                bool subtract = !(op & 0x4000);
+                switch ((op >> 6) & 3) {
+                case 0:
+                    if (!(op & 8))
+                        FINISH_INSTRUCTION(register_arithmetic(cpu, op, 1, subtract));
+                    break;
+                case 1:
+                    FINISH_INSTRUCTION(register_arithmetic(cpu, op, 2, subtract));
+                case 2:
+                    FINISH_INSTRUCTION(register_arithmetic(cpu, op, 4, subtract));
+                case 3: {
+                    unsigned dest = (op >> 9) & 7;
+                    const uint32_t *source = (op & 8) ? cpu->a : cpu->d;
+                    int16_t operand = source[op & 7];
+                    cpu->a[dest] += subtract ? -operand : operand;
+                    FINISH_INSTRUCTION(8);
+                }
+                }
+            }
+            if ((op & 0x130) == 0x100 && (op & 0xc0) != 0xc0)
+                FINISH_INSTRUCTION(extend_arithmetic(cpu, md, op));
+            FINISH_INSTRUCTION(data_alu(cpu, md, op));
+op_shift:
+            FINISH_INSTRUCTION((op & 0xc0) != 0xc0 ? shift_register(cpu, op) : shift_memory(cpu, md, op));
+op_invalid_a:
+op_invalid_f:
+            FINISH_INSTRUCTION(0);
+op_andi_word: { // ANDI.W #value,Dn
+                unsigned reg = op & 7;
+                uint32_t value = cpu->d[reg] & fetch(cpu, md, 2);
+                set_data(cpu, reg, 2, value);
+                set_logic_flags(cpu, 2, value);
+                FINISH_INSTRUCTION(8);
+            }
+op_btst_immediate: { // BTST #bit,Dn
+                unsigned bit = fetch(cpu, md, 2) & 31;
+                bool set = (cpu->d[op & 7] >> bit) & 1;
+                cpu->sr = (cpu->sr & ~CCR_Z) | (set ? 0 : CCR_Z);
+                FINISH_INSTRUCTION(10);
+            }
+op_addi_word: { // ADDI.W #value,Dn
+                unsigned reg = op & 7;
+                uint32_t operand = fetch(cpu, md, 2);
+                set_data(cpu, reg, 2, arithmetic_flags(cpu, 2, cpu->d[reg], operand, false, false));
+                FINISH_INSTRUCTION(8);
+            }
+op_cmpi_word: { // CMPI.W #value,Dn
+                uint32_t operand = fetch(cpu, md, 2);
+                arithmetic_flags(cpu, 2, cpu->d[op & 7], operand, true, true);
+                FINISH_INSTRUCTION(8);
+            }
+op_rts: { // RTS
+                if (cpu->a[7] & 1)
+                    FINISH_INSTRUCTION(0);
+                cpu->pc = read_memory_fast(md, cpu->a[7], 4);
+                cpu->a[7] += 4;
+                FINISH_INSTRUCTION(16);
+            }
+op_lea_word: { // LEA with an absolute word address
+                cpu->a[(op >> 9) & 7] = (int16_t)fetch(cpu, md, 2);
+                FINISH_INSTRUCTION(8);
+            }
+op_jsr_long: { // JSR with an absolute long address
+                uint32_t address = fetch(cpu, md, 4);
+                FINISH_INSTRUCTION(call_subroutine(cpu, md, address) ? 20 : 0);
+            }
+op_tst_absolute: { // TST.B/W with an absolute word address
+                uint32_t address = (int16_t)fetch(cpu, md, 2);
+                if (op & 0x40) {
+                    if (address & 1)
+                        FINISH_INSTRUCTION(0);
+                    set_logic_flags(cpu, 2, read_memory_fast(md, address, 2));
+                } else {
+                    set_logic_flags(cpu, 1, read_memory_fast(md, address, 1));
+                }
+                FINISH_INSTRUCTION(12);
+            }
+#undef FINISH_INSTRUCTION
+completed:
+            if (__builtin_expect(!elapsed, 0)) {
+                cpu->stopped = true;
+                break;
+            }
+            cycles += elapsed;
+            if (elapsed == 10) {
+                if (((op & 0xfff8) == 0x51c8 || (op & 0xfeff) == 0x66fa) &&
+                    cpu->pc <= instruction && cycles < end) {
+                    cpu->instruction_address = instruction;
+                    cpu->opcode = op;
+                    cycles += m68k_skip_idle(cpu, md, end - cycles);
+                } else if ((op & 0xfeff) == 0x66f8 && cpu->pc + 6 == instruction) {
+                    long_poll = true;
+                    break;
+                }
+            }
+        } while (cycles < boundary);
+        cpu->instruction_address = instruction;
+        cpu->opcode = op;
+        if (single_step)
+            return cycles;
+        if (cycles >= next_sync) {
+            // I/O can have synchronized the sound CPU inside an instruction.
+            if (cycles - md->z80_synced_cycle >= Z80_SYNC_CYCLES)
+                genesis_z80_sync(md, cycles);
+            next_sync = md->z80_synced_cycle + Z80_SYNC_CYCLES;
+        }
+        if (long_poll && cycles < end)
+            cycles = advance_ram_poll(md, cpu, cycles, end, &next_sync);
+    }
+    genesis_z80_sync(md, cycles < end ? end : cycles);
     return cycles;
+}
+
+unsigned m68k_run_until(struct megadrive *md, unsigned cycles, unsigned end)
+{
+    return execute_until(&md->cpu, md, cycles, end, false);
 }
 
 unsigned m68k_step(struct m68k *cpu, struct megadrive *md)
 {
-    cpu->instruction_address = cpu->pc;
-    if (cpu->pc & 1) {
-        cpu->stopped = true;
-        return 0;
-    }
-    cpu->opcode = fetch_opcode(cpu, md, md->rom, md->rom_fetch_limit & ~1U);
-    unsigned cycles = execute(cpu, md, cpu->opcode);
-    if (!cycles)
-        cpu->stopped = true;
-    return cycles;
+    unsigned start = md->frame_cycle;
+    return execute_until(cpu, md, start, 0, true) - start;
 }

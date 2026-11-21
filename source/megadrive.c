@@ -65,66 +65,6 @@ void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum ge
     m68k_reset(&md->cpu, md);
 }
 
-// Synchronize sooner when a bus access or interrupt needs the sound CPU.
-enum { Z80_SYNC_CYCLES = 8192 };
-
-static unsigned advance_ram_poll(struct megadrive *md, struct m68k *cpu,
-                                 unsigned cycles, unsigned end, unsigned *next_sync)
-{
-    unsigned skipped = m68k_skip_idle(cpu, md, end - cycles);
-    if (!skipped)
-        return cycles;
-    unsigned stop = cycles + skipped;
-    // Keep Z80 checkpoints at the original instruction boundaries.
-    enum { TEST_CYCLES = 16, BRANCH_CYCLES = 10, LOOP_CYCLES = TEST_CYCLES + BRANCH_CYCLES };
-    while (*next_sync <= stop) {
-        unsigned iteration = (*next_sync - cycles - 1) / LOOP_CYCLES;
-        unsigned test_start = cycles + iteration * LOOP_CYCLES;
-        unsigned test_end = test_start + TEST_CYCLES;
-        bool after_test = *next_sync <= test_end;
-        md->frame_cycle = after_test ? test_start : test_end;
-        genesis_z80_sync(md, after_test ? test_end : test_start + LOOP_CYCLES);
-        *next_sync = md->z80_synced_cycle + Z80_SYNC_CYCLES;
-    }
-    md->frame_cycle = stop - BRANCH_CYCLES;
-    return stop;
-}
-
-static ARM9_ITCM __attribute__((noinline)) unsigned run_cpu_until(struct megadrive *md, unsigned cycles, unsigned end)
-{
-    struct m68k *cpu = &md->cpu;
-    unsigned next_sync = md->z80_synced_cycle + Z80_SYNC_CYCLES;
-    bool hint_pending = md->hint_pending;
-    while (cycles < end && !cpu->stopped) {
-        if (hint_pending && (md->vdp_registers[0] & 0x10) && (cpu->sr & 0x0700) < 0x0400) {
-            unsigned elapsed = m68k_interrupt(cpu, md, 4);
-            if (elapsed) {
-                hint_pending = md->hint_pending = false;
-                cycles += elapsed;
-                continue;
-            }
-            if (cpu->stopped)
-                break;
-        }
-        unsigned boundary = next_sync < end ? next_sync : end;
-        // Retry a masked H interrupt after the next instruction.
-        if (hint_pending)
-            boundary = cycles + 1;
-        bool long_poll = false;
-        cycles = m68k_run_slice(md, cycles, boundary, end, &long_poll);
-        if (cycles >= next_sync) {
-            // I/O can have synchronized the sound CPU inside an instruction.
-            if (cycles - md->z80_synced_cycle >= Z80_SYNC_CYCLES)
-                genesis_z80_sync(md, cycles);
-            next_sync = md->z80_synced_cycle + Z80_SYNC_CYCLES;
-        }
-        if (long_poll && cycles < end)
-            cycles = advance_ram_poll(md, cpu, cycles, end, &next_sync);
-    }
-    genesis_z80_sync(md, cycles < end ? end : cycles);
-    return cycles;
-}
-
 static unsigned snapshot_sprite_table(struct megadrive *md)
 {
     bool wide = (md->vdp_registers[12] & 1) != 0;
@@ -199,11 +139,11 @@ void megadrive_run_frame(struct megadrive *md)
     // active display and when it expires, so writes take effect on reload.
     unsigned hint_line = md->vdp_registers[10];
     while (hint_line <= active_lines && !cpu->stopped) {
-        cycles = run_cpu_until(md, cycles, 3420 * hint_line / 7);
+        cycles = m68k_run_until(md, cycles, 3420 * hint_line / 7);
         md->hint_pending = true;
         hint_line += md->vdp_registers[10] + 1;
     }
-    cycles = run_cpu_until(md, cycles, 3420 * active_lines / 7);
+    cycles = m68k_run_until(md, cycles, 3420 * active_lines / 7);
     md->vdp_capture_raster = false;
     if (md->vdp_row_count)
         capture_raster_through(md, active_lines);
@@ -213,7 +153,7 @@ void megadrive_run_frame(struct megadrive *md)
     genesis_z80_vblank(md, cycles);
     if (!cpu->stopped && (md->vdp_registers[1] & 0x20))
         cycles += m68k_interrupt(cpu, md, 6);
-    cycles = run_cpu_until(md, cycles, md->frame_cycles);
+    cycles = m68k_run_until(md, cycles, md->frame_cycles);
     md->cycle_carry = cycles >= md->frame_cycles ? cycles - md->frame_cycles : 0;
     md->frame_cycle = 0;
     md->controller_cycles += md->frame_cycles;
