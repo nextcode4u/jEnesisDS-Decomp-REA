@@ -1,6 +1,12 @@
 #include "z80_bus.h"
 #include "megadrive.h"
 
+#ifdef __NDS__
+#include <nds/ndstypes.h>
+#else
+#define ITCM_CODE
+#endif
+
 enum { M68K_DIVIDER = 7, Z80_DIVIDER = 15, Z80_IRQ_DURATION = 32 };
 
 static uint8_t read_byte(void *context, uint16_t address)
@@ -146,7 +152,7 @@ static unsigned run_local_delay(struct megadrive *md, unsigned budget)
     return iterations * 21;
 }
 
-void genesis_z80_sync(struct megadrive *md, unsigned m68k_cycle)
+ITCM_CODE void genesis_z80_sync(struct megadrive *md, unsigned m68k_cycle)
 {
     if (m68k_cycle > md->frame_cycles)
         m68k_cycle = md->frame_cycles;
@@ -174,9 +180,9 @@ void genesis_z80_sync(struct megadrive *md, unsigned m68k_cycle)
     md->z80_slice_start += debt * Z80_DIVIDER / M68K_DIVIDER;
     md->z80_slice_clocks = cpu->cyc;
     unsigned elapsed = 0;
+    unsigned irq_clocks = md->z80_irq_clocks;
+    cpu->int_pending = irq_clocks != 0;
     while (elapsed < budget) {
-        // The pulse expires even if the driver keeps interrupts masked.
-        cpu->int_pending = md->z80_irq_clocks != 0;
         unsigned clocks = 0;
         if (cpu->halted && !cpu->int_pending && !cpu->nmi_pending && !cpu->iff_delay) {
             unsigned refreshes = (budget - elapsed + 3) / 4;
@@ -192,12 +198,24 @@ void genesis_z80_sync(struct megadrive *md, unsigned m68k_cycle)
             z80_step(cpu);
             clocks = cpu->cyc - before;
         }
-        md->z80_irq_clocks = cpu->int_pending && clocks < md->z80_irq_clocks
-                                 ? md->z80_irq_clocks - clocks : 0;
-        if (md->ym_busy_cycles || (md->ym_registers[0][0x27] & 3))
+        // Outside the VBlank pulse, the interrupt line remains clear for
+        // the whole slice. During the pulse the core can also acknowledge it.
+        if (irq_clocks) {
+            irq_clocks = cpu->int_pending && clocks < irq_clocks ? irq_clocks - clocks : 0;
+            // Keep the final pin state for save states taken between slices.
+            if (elapsed + clocks < budget)
+                cpu->int_pending = irq_clocks != 0;
+        }
+        if (md->ym_registers[0][0x27] & 3) {
             megadrive_ym_advance(md, clocks * Z80_DIVIDER);
+        } else if (md->ym_busy_cycles) {
+            unsigned elapsed_m68k = clocks * Z80_DIVIDER / M68K_DIVIDER;
+            md->ym_busy_cycles = elapsed_m68k < md->ym_busy_cycles ?
+                                 md->ym_busy_cycles - elapsed_m68k : 0;
+        }
         elapsed += clocks;
     }
+    md->z80_irq_clocks = irq_clocks;
     md->z80_instruction_debt = elapsed - budget;
 }
 

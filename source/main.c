@@ -633,6 +633,9 @@ static void send_audio(const struct application *app)
 
 int main(void)
 {
+    if (isDSiMode())
+        setCpuClock(true);
+
     frontend_init();
     init_game_display();
     irqSet(IRQ_VBLANK, video_vblank);

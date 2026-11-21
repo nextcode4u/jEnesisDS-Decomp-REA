@@ -16,6 +16,7 @@ enum {
     TILE_BYTES = 32,
     ALL_TILE_ROWS = 0xff,
     VISIBLE_LAYERS = 0x1f,
+    SCROLL_DMA = 0,
 };
 
 struct tile_map {
@@ -31,6 +32,9 @@ struct scanline {
 
 struct page {
     struct scanline lines[VDP_VIEW_HEIGHT];
+    _Alignas(32) uint32_t hblank_scroll[VDP_VIEW_HEIGHT][4];
+    uint8_t changes[VDP_VIEW_HEIGHT];
+    unsigned change_count;
     uint16_t control[MAX_MAPS][2];
     uint16_t objects[OBJECTS][4];
     // Only a changed source pattern or a dirty VRAM block needs an upload.
@@ -51,6 +55,7 @@ static struct page pages[2];
 static unsigned visible_page;
 static bool visible;
 static bool ready;
+static unsigned change_index;
 
 static uint16_t vram_word(const struct megadrive *md, unsigned offset)
 {
@@ -80,39 +85,62 @@ static void upload_pattern(volatile uint16_t *dest, const uint8_t *source,
     }
 }
 
-static void set_scroll(unsigned y)
+static void set_raster_controls(const struct page *page, unsigned y)
 {
-    const struct page *page = &pages[visible_page];
     const struct scanline *line = &page->lines[y];
-    volatile uint32_t *scroll = (volatile uint32_t *)&REG_BG0HOFS;
-    // BG0/BG2 share plane A and BG1/BG3 share plane B.
-    scroll[0] = scroll[2] = line->scroll[0];
-    scroll[1] = scroll[3] = line->scroll[1];
-    if (page->raster) {
-        if (!y || line->control_a[0] != line[-1].control_a[0]) {
-            REG_BG0CNT = line->control_a[0];
-            REG_BG2CNT = line->control_a[1];
-        }
-        if (!y || line->map_b != line[-1].map_b) {
-            REG_BG1CNT = page->control[line->map_b][0];
-            REG_BG3CNT = page->control[line->map_b][1];
-        }
-        if (!y || line->layers != line[-1].layers)
-            REG_WINOUT = line->layers;
-    }
+    REG_BG0CNT = line->control_a[0];
+    REG_BG2CNT = line->control_a[1];
+    REG_BG1CNT = page->control[line->map_b][0];
+    REG_BG3CNT = page->control[line->map_b][1];
+    REG_WINOUT = line->layers;
 }
 
 static ITCM_CODE void hblank(void)
 {
-    unsigned line = REG_VCOUNT;
-    if (line + 1 < VDP_VIEW_HEIGHT)
-        set_scroll(line + 1);
+    irqDisable(IRQ_HBLANK);
+    unsigned next = REG_VCOUNT + 1;
+    if (next < VDP_VIEW_HEIGHT)
+        set_raster_controls(&pages[visible_page], next);
+}
+
+static ITCM_CODE void vcount(void)
+{
+    // Arm HBlank on the preceding line so control writes land between draws.
+    const struct page *page = &pages[visible_page];
+    if (++change_index < page->change_count)
+        SetYtrigger(page->changes[change_index]);
+    else
+        irqDisable(IRQ_VCOUNT);
+    REG_IF = IRQ_HBLANK;
+    irqEnable(IRQ_HBLANK);
 }
 
 void vdp_ds_frame_start(void)
 {
-    if (visible)
-        set_scroll(0);
+    if (!visible)
+        return;
+    const struct page *page = &pages[visible_page];
+
+    // During HBlank after line y, DMA installs the scroll words for y+1.
+    // The final transfer repeats line zero so it stays in bounds.
+    volatile uint32_t *scroll = (volatile uint32_t *)&REG_BG0HOFS;
+    scroll[0] = scroll[2] = page->lines[0].scroll[0];
+    scroll[1] = scroll[3] = page->lines[0].scroll[1];
+    DMA_CR(SCROLL_DMA) = 0;
+    DMA_SRC(SCROLL_DMA) = (uint32_t)page->hblank_scroll;
+    DMA_DEST(SCROLL_DMA) = (uint32_t)scroll;
+    DMA_CR(SCROLL_DMA) = DMA_ENABLE | DMA_START_HBL | DMA_REPEAT | DMA_DST_RESET | DMA_32_BIT | 4;
+
+    irqDisable(IRQ_HBLANK);
+    irqDisable(IRQ_VCOUNT);
+    if (page->raster)
+        set_raster_controls(page, 0);
+    if (page->change_count) {
+        change_index = 0;
+        SetYtrigger(page->changes[0]);
+        REG_IF = IRQ_VCOUNT;
+        irqEnable(IRQ_VCOUNT);
+    }
 }
 
 void vdp_ds_init(void)
@@ -120,6 +148,7 @@ void vdp_ds_init(void)
     vramSetBankA(VRAM_A_MAIN_BG);
     vramSetBankB(VRAM_B_MAIN_SPRITE);
     irqSet(IRQ_HBLANK, hblank);
+    irqSet(IRQ_VCOUNT, vcount);
 }
 
 static uint32_t pattern_revision(const struct megadrive *md, unsigned key, bool interlace)
@@ -569,6 +598,7 @@ bool vdp_ds_prepare(const struct megadrive *md)
         !prepare_sprites(md, page, next, wide, left, top, sprite_tables))
         return false;
     page->raster = blanking || map_count > 2;
+    page->change_count = 0;
     for (unsigned y = 0; y < VDP_VIEW_HEIGHT; ++y) {
         unsigned map = map_a[y];
         if (columns == 128) {
@@ -579,7 +609,16 @@ bool vdp_ds_prepare(const struct megadrive *md)
         page->lines[y].control_a[1] = page->control[map][1];
         page->lines[y].map_b = map_b[y];
         page->lines[y].layers = sprite_tables[y] == UINT8_MAX ? 0 : VISIBLE_LAYERS;
+        const struct scanline *line = &page->lines[y];
+        uint32_t *scroll = page->hblank_scroll[y ? y - 1 : VDP_VIEW_HEIGHT - 1];
+        scroll[0] = scroll[2] = line->scroll[0];
+        scroll[1] = scroll[3] = line->scroll[1];
+        if (y && page->raster && (line->layers != line[-1].layers ||
+                                line->control_a[0] != line[-1].control_a[0] ||
+                                line->map_b != line[-1].map_b))
+            page->changes[page->change_count++] = y - 1;
     }
+    DC_FlushRange(page->hblank_scroll, sizeof(page->hblank_scroll));
     ready = true;
     return true;
 }
@@ -609,8 +648,6 @@ void vdp_ds_present(void)
         oam[4*i+1] = page->objects[i][1];
         oam[4*i+2] = page->objects[i][2];
     }
-    set_scroll(0);
-    irqEnable(IRQ_HBLANK);
     visible = true;
     ready = false;
 }
@@ -620,6 +657,8 @@ void vdp_ds_hide(void)
     ready = false;
     if (visible) {
         irqDisable(IRQ_HBLANK);
+        irqDisable(IRQ_VCOUNT);
+        DMA_CR(SCROLL_DMA) = 0;
         visible = false;
     }
 }

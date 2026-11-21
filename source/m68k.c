@@ -576,6 +576,16 @@ static unsigned immediate_arithmetic(struct m68k *cpu, struct megadrive *md, uin
     return (size == 4 ? (compare ? 12 : 20) : (compare ? 8 : 12)) + memory_cycles(mode, reg, size);
 }
 
+static inline __attribute__((always_inline)) unsigned register_arithmetic(
+    struct m68k *cpu, uint16_t op, unsigned size, bool subtract)
+{
+    unsigned dest = (op >> 9) & 7;
+    const uint32_t *source = (op & 8) ? cpu->a : cpu->d;
+    uint32_t result = arithmetic_flags(cpu, size, cpu->d[dest], source[op & 7], subtract, false);
+    set_data(cpu, dest, size, result);
+    return size == 4 ? 8 : 4;
+}
+
 static ITCM_CODE unsigned data_alu(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
     unsigned kind = op >> 12, operation = (op >> 6) & 7;
@@ -1131,6 +1141,27 @@ static unsigned execute(struct m68k *cpu, struct megadrive *md, uint16_t op)
         return data_alu(cpu, md, op);
     case 9:
     case 13:
+        // A register source avoids effective address decoding.
+        if ((op & 0x130) == 0) {
+            bool subtract = !(op & 0x4000);
+            switch ((op >> 6) & 3) {
+            case 0:
+                if (!(op & 8))
+                    return register_arithmetic(cpu, op, 1, subtract);
+                break;
+            case 1:
+                return register_arithmetic(cpu, op, 2, subtract);
+            case 2:
+                return register_arithmetic(cpu, op, 4, subtract);
+            case 3: {
+                unsigned dest = (op >> 9) & 7;
+                const uint32_t *source = (op & 8) ? cpu->a : cpu->d;
+                int16_t operand = source[op & 7];
+                cpu->a[dest] += subtract ? -operand : operand;
+                return 8;
+            }
+            }
+        }
         if ((op & 0x130) == 0x100 && (op & 0xc0) != 0xc0)
             return extend_arithmetic(cpu, md, op);
         return data_alu(cpu, md, op);
