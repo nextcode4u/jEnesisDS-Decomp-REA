@@ -13,7 +13,7 @@ struct frame_pacing {
 static inline unsigned frame_pacing_batch(struct frame_pacing *pacing, unsigned elapsed_vblanks,
                                           bool running, bool was_running, bool pal)
 {
-    enum { MAX_PENDING_FRAMES = 4, MAX_FRAMES_PER_BATCH = 2 };
+    enum { MAX_PENDING_FRAMES = 8, MAX_FRAMES_PER_BATCH = 2 };
     if (!running || !was_running) {
         pacing->pending_frames = 0;
         pacing->pal_phase = DS_REFRESH - PAL_REFRESH;

@@ -9,7 +9,7 @@ enum {
     // An extra scratch sample is required for the feedback loop. Keep the
     // stride even so each channel's staging buffer is word-aligned.
     FM_STRIDE = BLOCK_SAMPLES + 2,
-    DAC_QUEUE_SIZE = 3,
+    DAC_QUEUE_SIZE = 5,
     AUDIO_TIMER = 1,
     FM_SOUND_CHANNELS = FM_CHANNELS * 2,
     MIX_SOUND_CHANNELS = 2,

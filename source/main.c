@@ -134,6 +134,8 @@ enum game_output { OUTPUT_NONE, OUTPUT_BITMAP, OUTPUT_TILES };
 static enum game_output current_output;
 static volatile enum game_output pending_output;
 static uint16_t palette_queued[64];
+static uint16_t palette_source[64];
+static bool palette_valid;
 static volatile bool palette_pending;
 static volatile uint32_t vblank_count;
 
@@ -192,7 +194,10 @@ static void draw_game_frame(const struct megadrive *md)
         // Replace an undisplayed frame before touching its off-screen page.
         int critical = enterCriticalSection();
         pending_output = OUTPUT_NONE;
-        palette_pending = false;
+        if (palette_pending) {
+            palette_pending = false;
+            palette_valid = false;
+        }
         leaveCriticalSection(critical);
         if (vdp_ds_prepare(md)) {
             output = OUTPUT_TILES;
@@ -207,13 +212,22 @@ static void draw_game_frame(const struct megadrive *md)
         display_revision = md->video_revision;
         display_visible = true;
     }
+    uint16_t backdrop = megadrive_backdrop(md);
+    bool update_palette = !palette_valid || backdrop != palette_queued[0] ||
+                          memcmp(palette_source, md->cram, sizeof(palette_source));
     uint16_t palette[64];
-    palette[0] = megadrive_backdrop(md);
-    for (unsigned i = 1; i < 64; ++i)
-        palette[i] = vdp_ds_color(md->cram[i]);
+    if (update_palette) {
+        palette[0] = backdrop;
+        for (unsigned i = 1; i < 64; ++i)
+            palette[i] = vdp_ds_color(md->cram[i]);
+        memcpy(palette_source, md->cram, sizeof(palette_source));
+        palette_valid = true;
+    }
     int critical = enterCriticalSection();
-    memcpy(palette_queued, palette, sizeof(palette));
-    palette_pending = true;
+    if (update_palette) {
+        memcpy(palette_queued, palette, sizeof(palette));
+        palette_pending = true;
+    }
     if (output != OUTPUT_NONE) {
         field_queued = md->vdp_odd_field;
         pending_output = output;
@@ -409,6 +423,7 @@ static const char *open_selection(struct application *app)
     videoSetMode(MODE_5_2D);
     current_output = pending_output = OUTPUT_NONE;
     palette_pending = false;
+    palette_valid = false;
     display_visible = false;
     BG_PALETTE[0] = 0;
     leaveCriticalSection(critical);

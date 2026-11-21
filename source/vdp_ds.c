@@ -4,6 +4,7 @@
 
 #include <nds.h>
 #include <string.h>
+#include <limits.h>
 
 enum {
     SCREEN_WORDS = 1024,
@@ -19,6 +20,7 @@ enum {
     ALL_TILE_ROWS = 0xff,
     VISIBLE_LAYERS = 0x1f,
     SCROLL_DMA = 0,
+    OBJECT_DMA = 2,
 };
 
 struct tile_map {
@@ -44,7 +46,7 @@ struct page {
     uint8_t changes[VDP_VIEW_HEIGHT];
     unsigned change_count;
     uint16_t control[MAX_MAPS][2];
-    uint16_t objects[OBJECTS][4];
+    _Alignas(32) uint16_t objects[OBJECTS][4];
     // Only a changed source pattern or a dirty VRAM block needs an upload.
     uint16_t tile_slots[GENESIS_PATTERNS];
     // Shared map slots index two independently cached sets of field tiles.
@@ -557,6 +559,10 @@ bool vdp_ds_prepare(const struct megadrive *md)
     unsigned hscroll_mask = vdp_hscroll_line_mask(regs);
     unsigned hmask = columns == 128 ? 0x3ff : 0x1ff;
     unsigned field = interlace && md->vdp_odd_field;
+    unsigned layout_keys[2] = {UINT_MAX, UINT_MAX};
+    unsigned window_width = wide ? 64 : 32;
+    unsigned window_base = (regs[3] & (wide ? 0x3c : 0x3e)) << 10;
+    bool window_geometry_differs = width != window_width || columns != window_width || height != 32;
     for (unsigned y = 0; y < VDP_VIEW_HEIGHT; ++y) {
         const struct vdp_scanline *row = raster_row(md, y + top);
         bool active = row ? row->display_enabled : enabled;
@@ -589,27 +595,24 @@ bool vdp_ds_prepare(const struct megadrive *md)
         unsigned parity_b = interlace ? v_b & 1 : 0;
         page->lines[y].scroll[0] = h_a | (((top + (v_a >> interlace)) & 0x1ff) << 16);
         page->lines[y].scroll[1] = h_b | (((top + (v_b >> interlace)) & 0x1ff) << 16);
-        struct tile_map a = {
-            .base = window ? (regs[3] & (wide ? 0x3c : 0x3e)) << 10 :
-                             ((row ? row->plane_a_base : regs[2]) & 0x38) << 10,
-            .parity = parity_a,
-            .width = window ? (wide ? 64 : 32) : width,
-            .height = window ? 32 : height,
-            .columns = window ? (wide ? 64 : 32) : columns,
-        };
-        unsigned index = 0;
-        if (!map_count) {
-            maps[0] = a;
-            maps[1].parity = parity_b;
-            map_count = 2;
-        } else if (!same_map(maps[0], a)) {
-            index = 2;
-            if (map_count == 2) {
-                maps[2] = a;
-                map_count = 3;
-            } else if (!same_map(maps[2], a)) {
+        unsigned base = window ? window_base : ((row ? row->plane_a_base : regs[2]) & 0x38) << 10;
+        // The low bits identify field parity and the window's map geometry.
+        unsigned key = base | parity_a | (window && window_geometry_differs ? 2 : 0);
+        unsigned slot = key == layout_keys[0] || layout_keys[0] == UINT_MAX ? 0 : 1;
+        unsigned index = slot * 2;
+        if (key != layout_keys[slot]) {
+            if (layout_keys[slot] != UINT_MAX)
                 return false;
-            }
+            layout_keys[slot] = key;
+            map_count = index ? 3 : 2;
+            if (index == 0)
+                maps[1].parity = parity_b;
+            maps[index] = (struct tile_map){
+                .base = base, .parity = parity_a,
+                .width = window ? window_width : width,
+                .height = window ? 32 : height,
+                .columns = window ? window_width : columns,
+            };
         }
         if (maps[1].parity != parity_b)
             return false;
@@ -667,6 +670,7 @@ bool vdp_ds_prepare(const struct megadrive *md)
             page->changes[page->change_count++] = y - 1;
     }
     DC_FlushRange(page->hblank_scroll, sizeof(page->hblank_scroll));
+    DC_FlushRange(page->objects, sizeof(page->objects));
     ready = true;
     return true;
 }
@@ -690,12 +694,8 @@ void vdp_ds_present(void)
     REG_BG2CNT = page->control[0][1];
     REG_BG1CNT = page->control[1][0];
     REG_BG3CNT = page->control[1][1];
-    volatile uint16_t *oam = (uint16_t *)OAM;
-    for (unsigned i = 0; i < OBJECTS; ++i) {
-        oam[4*i] = page->objects[i][0];
-        oam[4*i+1] = page->objects[i][1];
-        oam[4*i+2] = page->objects[i][2];
-    }
+    // These sprites use no affine matrices. The unused fourth word stays zero.
+    dmaCopyWords(OBJECT_DMA, page->objects, OAM, sizeof(page->objects));
     visible = true;
     ready = false;
 }

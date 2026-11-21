@@ -685,6 +685,8 @@ static bool vdp_write_control(struct megadrive *md, uint16_t value)
                     capture_raster_through(md, md->frame_cycle * 7 / 3420 + 1);
                 }
                 md->vdp_registers[reg] = (uint8_t)value;
+                if (reg == 0 && (changed & value & 0x10) && !(md->cpu.sr & 0x0400))
+                    m68k_end_slice_for_hinterrupt(md);
                 if (reg <= 18)
                     ++md->video_revision;
             }

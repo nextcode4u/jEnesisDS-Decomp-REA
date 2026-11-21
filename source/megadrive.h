@@ -119,7 +119,15 @@ struct megadrive {
 
     // Keep bulk storage separate so the DS can put this state in DTCM.
     struct megadrive_memory *memory;
+
+    unsigned m68k_slice_end;
 };
+
+static inline void m68k_end_slice_for_hinterrupt(struct megadrive *md)
+{
+    if (md->hint_pending)
+        md->m68k_slice_end = 0;
+}
 
 static inline uint8_t work_ram_byte(const struct megadrive *md, unsigned address)
 {

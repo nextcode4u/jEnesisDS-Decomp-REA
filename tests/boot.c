@@ -55,6 +55,39 @@ static uint8_t rom[0x27c] = {
     0x60, 0xfe,                                // bra.s to self
 };
 
+static void test_pending_vdp_interrupt(void)
+{
+    static uint8_t program[0x104] = {
+        0x00, 0xff, 0xfe, 0x00,  // Supervisor stack.
+        0x00, 0x00, 0x00, 0x80,  // Reset PC.
+        [0x70] = 0x00, 0x00, 0x01, 0x00, // Level 4 handler.
+        [0x80] = 0x02, 0x7c, 0xf8, 0xff, // ANDI #$f8ff,SR.
+        0x70, 0x01,                      // MOVEQ #1,D0.
+        [0x90] = 0x30, 0xbc, 0x80, 0x10, // MOVE.W #$8010,(A0).
+        0x70, 0x01,                      // MOVEQ #1,D0.
+    };
+    static struct megadrive_memory memory;
+    static struct megadrive md = {.memory = &memory};
+    const struct cartridge cart = {.data = program, .size = sizeof(program), .region = "U"};
+    for (unsigned enable_vdp = 0; enable_vdp < 2; ++enable_vdp) {
+        megadrive_reset(&md, &cart, GENESIS_REGION_USA);
+        md.hint_pending = true;
+        if (enable_vdp) {
+            md.cpu.sr = 0x2000;
+            md.cpu.pc = 0x90;
+            md.cpu.a[0] = 0xc00004;
+        } else {
+            md.vdp_registers[0] = 0x10;
+        }
+
+        m68k_run_until(&md, 0, 22);
+        assert(!md.hint_pending && !md.cpu.stopped);
+        assert(md.cpu.pc == 0x100 && md.cpu.d[0] == 0);
+        assert(md.cpu.a[7] == 0xfffdfa);
+        assert(megadrive_read_word(&md, 0xfffdfe) == (enable_vdp ? 0x94 : 0x84));
+    }
+}
+
 static void test_status_immediates(void)
 {
     static struct megadrive_memory memory;
@@ -1151,7 +1184,7 @@ static void test_frame_pacing(void)
     assert(frame_pacing_batch(&pacing, 0, true, true, false) == 1);
     assert(pacing.pending_frames == 0);
     assert(frame_pacing_batch(&pacing, 40, true, true, false) == 2);
-    assert(pacing.pending_frames == 2);
+    assert(pacing.pending_frames == 6);
     assert(frame_pacing_batch(&pacing, 0, false, true, false) == 0);
     assert(pacing.pending_frames == 0);
 
@@ -1164,6 +1197,7 @@ static void test_frame_pacing(void)
 int main(void)
 {
     test_frame_pacing();
+    test_pending_vdp_interrupt();
     static struct megadrive_memory memory;
     static struct megadrive md = {.memory = &memory};
     const struct cartridge cartridge = {.data = rom, .size = sizeof(rom), .region = "JUE"};

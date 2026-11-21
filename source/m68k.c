@@ -12,13 +12,15 @@ enum {
     SR_SUPERVISOR = 0x2000, RESET_STATUS = 0x2700,
 };
 
-static void set_status(struct m68k *cpu, uint16_t value)
+static void set_status(struct m68k *cpu, struct megadrive *md, uint16_t value)
 {
     if ((cpu->sr ^ value) & SR_SUPERVISOR) {
         uint32_t previous_sp = cpu->a[7];
         cpu->a[7] = cpu->inactive_sp;
         cpu->inactive_sp = previous_sp;
     }
+    if ((cpu->sr & ~value & 0x0400) && (md->vdp_registers[0] & 0x10))
+        m68k_end_slice_for_hinterrupt(md);
     cpu->sr = value & 0xa71f;
 }
 
@@ -138,7 +140,7 @@ static bool enter_exception(struct m68k *cpu, struct megadrive *md, unsigned vec
                             uint16_t status)
 {
     uint16_t old_status = cpu->sr;
-    set_status(cpu, (status & ~0x8000) | SR_SUPERVISOR);
+    set_status(cpu, md, (status & ~0x8000) | SR_SUPERVISOR);
     cpu->a[7] -= 6;
     if (!write_memory(md, cpu->a[7], 2, old_status) ||
         !write_memory(md, cpu->a[7] + 2, 4, cpu->pc)) {
@@ -475,7 +477,7 @@ static unsigned immediate_status(struct m68k *cpu, struct megadrive *md, uint16_
     default: changed = cpu->sr ^ operand; break;
     }
     if (whole_status)
-        set_status(cpu, changed);
+        set_status(cpu, md, changed);
     else
         cpu->sr = (cpu->sr & ~31) | (changed & 31);
     return 20;
@@ -984,7 +986,7 @@ static ARM9_ITCM __attribute__((noinline)) unsigned execute_misc(struct m68k *cp
             cycles += memory_cycles(mode, reg, 2);
         }
         if (whole_status)
-            set_status(cpu, value);
+            set_status(cpu, md, value);
         else
             cpu->sr = (cpu->sr & ~31) | (value & 31);
         return cycles;
@@ -1028,7 +1030,7 @@ static ARM9_ITCM __attribute__((noinline)) unsigned execute_misc(struct m68k *cp
         uint16_t status = read_memory(md, cpu->a[7], 2);
         cpu->pc = read_memory(md, cpu->a[7] + 2, 4);
         cpu->a[7] += 6;
-        set_status(cpu, status);
+        set_status(cpu, md, status);
         return 20;
     }
     case 0x4e77: {
@@ -1427,8 +1429,7 @@ static __attribute__((noinline)) void initialize_opcode_table(
     for (unsigned opcode = 0; opcode <= UINT16_MAX; ++opcode) {
         unsigned family = opcode >> 12;
         const void *handler = families[family];
-        // Shortcuts are in the immediate, MOVE.B, MOVE.W and miscellaneous families.
-        if (family != 2 && family <= 4) {
+        if (family != 2 && family <= 6) {
             for (unsigned i = 0; i < shortcut_count; ++i) {
                 if ((opcode & shortcuts[i].mask) == shortcuts[i].value) {
                     handler = shortcuts[i].handler;
@@ -1487,6 +1488,8 @@ static ARM9_ITCM unsigned execute_until(struct megadrive *md, unsigned cycles,
         {0xffbf, 0x4a38, &&op_tst_absolute},
         {0xf1f8, 0x30c0, &&op_store_word_postincrement},
         {0xf1f8, 0x1028, &&op_load_byte_displacement},
+        {0xfff8, 0x51c8, &&op_dbra},
+        {0xfefd, 0x66f8, &&op_poll_branch},
     };
     // The ARM9 interpreter initializes this 256 KiB table on first use.
     static const void *opcode_table[UINT16_MAX + 1];
@@ -1506,7 +1509,7 @@ static ARM9_ITCM unsigned execute_until(struct megadrive *md, unsigned cycles,
 
     unsigned next_sync = md->z80_synced_cycle + Z80_SYNC_CYCLES;
     bool hint_pending = md->hint_pending;
-    unsigned boundary = 0;
+    md->m68k_slice_end = 0;
     bool long_poll = false;
     uint16_t op;
     uint32_t instruction;
@@ -1524,10 +1527,7 @@ static ARM9_ITCM unsigned execute_until(struct megadrive *md, unsigned cycles,
             if (cpu->stopped)
                 break;
         }
-        boundary = next_sync < end ? next_sync : end;
-        // Retry a masked H interrupt after the next instruction.
-        if (hint_pending)
-            boundary = cycles + 1;
+        md->m68k_slice_end = next_sync < end ? next_sync : end;
         long_poll = false;
 run_slice:
         op = cpu->opcode;
@@ -1598,6 +1598,29 @@ op_quick: {
                 FINISH_INSTRUCTION(0);
             FINISH_INSTRUCTION(8 + memory_cycles(mode, reg, 1));
         }
+op_dbra: {
+                uint32_t base = cpu->pc;
+                int16_t displacement = fetch(cpu, md, 2);
+                unsigned reg = op & 7;
+                uint16_t count = cpu->d[reg] - 1;
+                set_data(cpu, reg, 2, count);
+                if (count == 0xffff)
+                    FINISH_INSTRUCTION(14);
+                cpu->pc = base + displacement;
+                goto skip_idle_loop;
+            }
+op_poll_branch:
+            elapsed = execute_branch(cpu, md, op);
+            if (elapsed != 10)
+                goto completed;
+            if (op & 2)
+                goto skip_idle_loop;
+            if (cpu->pc + 6 == instruction) {
+                cycles += 10;
+                long_poll = true;
+                break;
+            }
+            goto completed;
 op_branch:
             FINISH_INSTRUCTION(execute_branch(cpu, md, op));
 op_move_quick:
@@ -1713,24 +1736,20 @@ op_tst_absolute: { // TST.B/W with an absolute word address
                 FINISH_INSTRUCTION(12);
             }
 #undef FINISH_INSTRUCTION
+skip_idle_loop:
+            elapsed = 10;
+            if (cpu->pc <= instruction && cycles + elapsed < end) {
+                cpu->instruction_address = instruction;
+                cpu->opcode = op;
+                elapsed += m68k_skip_idle(cpu, md, end - cycles - elapsed);
+            }
 completed:
             if (__builtin_expect(!elapsed, 0)) {
                 cpu->stopped = true;
                 break;
             }
             cycles += elapsed;
-            if (elapsed == 10) {
-                if (((op & 0xfff8) == 0x51c8 || (op & 0xfeff) == 0x66fa) &&
-                    cpu->pc <= instruction && cycles < end) {
-                    cpu->instruction_address = instruction;
-                    cpu->opcode = op;
-                    cycles += m68k_skip_idle(cpu, md, end - cycles);
-                } else if ((op & 0xfeff) == 0x66f8 && cpu->pc + 6 == instruction) {
-                    long_poll = true;
-                    break;
-                }
-            }
-        } while (cycles < boundary);
+        } while (cycles < md->m68k_slice_end);
         cpu->instruction_address = instruction;
         cpu->opcode = op;
         if (single_step)
