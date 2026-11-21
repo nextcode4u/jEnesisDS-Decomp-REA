@@ -58,11 +58,25 @@ static inline void wb(z80* const z, uint16_t addr, uint8_t val) {
     z->write_byte(z->userdata, addr, val);
 }
 
+// A word wholly in mirrored RAM needs one bus-range check. Mask each
+// byte so a word can cross the boundary between mirrors.
 static inline uint16_t rw(z80* const z, uint16_t addr) {
+  if ((unsigned)addr + 1 < z->ram_limit) {
+    unsigned mask = z->ram_mask;
+    const uint8_t *ram = z->mirrored_ram;
+    return ram[((unsigned)addr + 1) & mask] << 8 | ram[addr & mask];
+  }
   return (rb(z, addr + 1) << 8) | rb(z, addr);
 }
 
 static inline void ww(z80* const z, uint16_t addr, uint16_t val) {
+  if ((unsigned)addr + 1 < z->ram_limit) {
+    unsigned mask = z->ram_mask;
+    uint8_t *ram = z->mirrored_ram;
+    ram[addr & mask] = val;
+    ram[((unsigned)addr + 1) & mask] = val >> 8;
+    return;
+  }
   wb(z, addr, val & 0xFF);
   wb(z, addr + 1, val >> 8);
 }

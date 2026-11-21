@@ -51,6 +51,12 @@ static ITCM_CODE uint32_t read_memory(struct megadrive *md, uint32_t address, un
     if (address >= 0xe00000 && (address & 0xffff) <= 0x10000 - size) {
         if (size == 1)
             return work_ram_byte(md, address);
+        if (M68K_NATIVE_WORDS && size == 4 && !(address & 3)) {
+            // The first guest word occupies the low half of the ARM word.
+            uint32_t pair;
+            __builtin_memcpy(&pair, __builtin_assume_aligned(md->ram + (uint16_t)address, 4), sizeof(pair));
+            return (pair << 16) | (pair >> 16);
+        }
         uint32_t word = work_ram_word(md, address);
         return size == 2 ? word : (word << 16) | work_ram_word(md, address + 2);
     }
@@ -73,6 +79,11 @@ static ITCM_CODE bool write_memory(struct megadrive *md, uint32_t address, unsig
         if (size == 1) {
             work_ram_store_byte(md, address, value);
         } else {
+            if (M68K_NATIVE_WORDS && size == 4 && !(address & 3)) {
+                uint32_t pair = (value << 16) | (value >> 16);
+                __builtin_memcpy(__builtin_assume_aligned(md->ram + (uint16_t)address, 4), &pair, sizeof(pair));
+                return true;
+            }
             if (size == 4) {
                 work_ram_store_word(md, address, value >> 16);
                 address += 2;
@@ -88,7 +99,7 @@ static ITCM_CODE bool write_memory(struct megadrive *md, uint32_t address, unsig
     return megadrive_write_word(md, address + size - 2, value);
 }
 
-static uint32_t fetch(struct m68k *cpu, struct megadrive *md, unsigned size)
+static ITCM_CODE uint32_t fetch(struct m68k *cpu, struct megadrive *md, unsigned size)
 {
     uint32_t address = cpu->pc & 0xffffff;
     cpu->pc += size;
@@ -534,7 +545,7 @@ static __attribute__((noinline)) unsigned extend_arithmetic(struct m68k *cpu, st
     return memory ? (size == 4 ? 30 : 18) : (size == 4 ? 8 : 4);
 }
 
-static __attribute__((noinline)) unsigned quick_arithmetic(struct m68k *cpu, struct megadrive *md, uint16_t op)
+static ITCM_CODE __attribute__((noinline)) unsigned quick_arithmetic(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
     unsigned mode = (op >> 3) & 7, reg = op & 7;
     unsigned size = 1U << ((op >> 6) & 3);
@@ -1487,7 +1498,14 @@ ITCM_CODE unsigned m68k_step(struct m68k *cpu, struct megadrive *md)
         cpu->stopped = true;
         return 0;
     }
-    cpu->opcode = fetch(cpu, md, 2);
+    uint32_t address = cpu->pc & 0xffffff;
+    // Keep the usual cartridge fetch in the instruction dispatch loop.
+    if (address + 2 <= md->rom_fetch_limit) {
+        cpu->opcode = cartridge_aligned_word(md->rom, address);
+        cpu->pc += 2;
+    } else {
+        cpu->opcode = fetch(cpu, md, 2);
+    }
     unsigned cycles = execute(cpu, md, cpu->opcode);
     if (!cycles)
         cpu->stopped = true;

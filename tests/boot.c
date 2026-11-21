@@ -424,6 +424,29 @@ static void test_z80_dac_writes(const struct cartridge *cart)
         assert(frame.samples[i].left == -96 && frame.samples[i].right == -96);
 }
 
+static void test_z80_mirrored_words(const struct cartridge *cart)
+{
+    static const uint8_t program[] = {
+        0x21, 0x34, 0x12, // LD HL,$1234
+        0x22, 0xff, 0x1f, // LD ($1fff),HL across the RAM mirror
+        0x21, 0, 0,       // LD HL,0
+        0x2a, 0xff, 0x1f, // LD HL,($1fff)
+        0x22, 0xff, 0x3f, // LD ($3fff),HL across the RAM and FM ports
+        0x76,
+    };
+    static struct megadrive md;
+    megadrive_reset(&md, cart, GENESIS_REGION_USA);
+    memcpy(md.z80_ram + 0x100, program, sizeof(program));
+    md.sound_cpu.pc = 0x100;
+    md.z80_reset = false;
+    genesis_z80_sync(&md, 200);
+
+    assert(md.sound_cpu.halted);
+    assert(md.z80_ram[0] == 0x12 && md.z80_ram[0x1fff] == 0x34);
+    assert(md.sound_cpu.h == 0x12 && md.sound_cpu.l == 0x34);
+    assert(md.ym_address[0] == 0x12);
+}
+
 static void test_z80_and_ym(struct megadrive *md)
 {
     static const uint8_t program[] = {
@@ -1040,6 +1063,7 @@ int main(void)
     test_fm_pitch_latches(&cartridge);
     test_dac_timing(&cartridge);
     test_z80_dac_writes(&cartridge);
+    test_z80_mirrored_words(&cartridge);
     test_startup_bus(&md);
     test_six_button_controller();
     test_z80_delay_loops(&cartridge);
