@@ -202,6 +202,25 @@ static void test_z80_delay_loops(const struct cartridge *cart)
     assert(md.sound_cpu.cyc == expected.cyc && md.sound_cpu.r == expected.r);
     assert(md.sound_cpu.mem_ptr == expected.mem_ptr && md.z80_instruction_debt == 10);
     assert(md.sound_cpu.zf && md.sound_cpu.pf && !md.sound_cpu.cf && !md.sound_cpu.sf);
+
+    genesis_z80_reset(&md);
+    md.z80_synced_cycle = 0;
+    const uint8_t rotate[] = {0x07, 0x07, 0x07, 0x07};
+    memcpy(md.memory->z80_ram, rotate, sizeof(rotate));
+    md.sound_cpu.a = 0xb2;
+    md.sound_cpu.r = 0xfe;
+    md.ym_busy_cycles = 32;
+    expected = md.sound_cpu;
+    for (unsigned i = 0; i < sizeof(rotate); ++i)
+        z80_step(&expected);
+    genesis_z80_sync(&md, 35);
+    assert(md.sound_cpu.pc == expected.pc && md.sound_cpu.a == expected.a);
+    assert(md.sound_cpu.cyc == expected.cyc && md.sound_cpu.r == expected.r);
+    assert(md.sound_cpu.cf == expected.cf && md.sound_cpu.nf == expected.nf);
+    assert(md.sound_cpu.hf == expected.hf && md.sound_cpu.xf == expected.xf);
+    assert(md.sound_cpu.yf == expected.yf && md.sound_cpu.zf == expected.zf);
+    assert(md.sound_cpu.sf == expected.sf && md.sound_cpu.pf == expected.pf);
+    assert(!md.ym_busy_cycles);
 }
 
 enum { TEST_FM_STRIDE = 130 };

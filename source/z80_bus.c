@@ -96,11 +96,39 @@ static void finish_poll(z80 *cpu, unsigned value, unsigned iterations)
     advance_refresh(cpu, iterations * 3);
 }
 
+static __attribute__((noinline)) unsigned run_four_rotates(
+    struct megadrive *md, unsigned budget, unsigned offset)
+{
+    z80 *cpu = &md->sound_cpu;
+    const uint8_t *ram = md->memory->z80_ram;
+    // At most 32 busy cycles expire either way. A longer busy period needs
+    // the interpreter's separate clock conversion after each instruction.
+    if (budget >= 16 && offset <= 0x1ffc &&
+        !cpu->int_pending && !cpu->nmi_pending && !cpu->iff_delay &&
+        md->ym_busy_cycles <= 32 && ram[offset + 1] == 0x07 &&
+        ram[offset + 2] == 0x07 && ram[offset + 3] == 0x07) {
+        // Four consecutive RLCA instructions swap the accumulator nibbles.
+        unsigned a = cpu->a;
+        unsigned result = ((a << 4) | (a >> 4)) & 0xff;
+        cpu->a = result;
+        cpu->cf = (a >> 4) & 1;
+        cpu->hf = cpu->nf = 0;
+        cpu->xf = (result >> 3) & 1;
+        cpu->yf = (result >> 5) & 1;
+        cpu->pc += 4;
+        advance_refresh(cpu, 4);
+        return 16;
+    }
+    return 0;
+}
+
 static unsigned run_local_delay(struct megadrive *md, unsigned budget,
                                 unsigned offset, unsigned op)
 {
     z80 *cpu = &md->sound_cpu;
     const uint8_t *ram = md->memory->z80_ram;
+    if (op == 0x07)
+        return run_four_rotates(md, budget, offset);
     if (op != 0x10 && op != 0x7a && op != 0x7e)
         return 0;
     if (cpu->int_pending || cpu->nmi_pending || cpu->iff_delay || md->ym_busy_cycles)
