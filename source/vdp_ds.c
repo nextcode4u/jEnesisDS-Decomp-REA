@@ -98,20 +98,31 @@ static void set_raster_controls(const struct page *page, unsigned y)
 
 static ITCM_CODE void hblank(void)
 {
+    const struct page *page = &pages[visible_page];
+    unsigned line = REG_VCOUNT;
+    if (line + 1 < VDP_VIEW_HEIGHT)
+        set_raster_controls(page, line + 1);
+
+    // Keep HBlank enabled for neighboring changes. Consecutive VCOUNT
+    // matches can leave the match flag set and suppress a second IRQ.
+    while (change_index < page->change_count && page->changes[change_index] <= line)
+        ++change_index;
+
+    if (change_index < page->change_count) {
+        unsigned next = page->changes[change_index];
+        if (next == line + 1)
+            return;
+        SetYtrigger(next);
+        REG_IF = IRQ_VCOUNT;
+        irqEnable(IRQ_VCOUNT);
+    }
     irqDisable(IRQ_HBLANK);
-    unsigned next = REG_VCOUNT + 1;
-    if (next < VDP_VIEW_HEIGHT)
-        set_raster_controls(&pages[visible_page], next);
 }
 
 static ITCM_CODE void vcount(void)
 {
     // Arm HBlank on the preceding line so control writes land between draws.
-    const struct page *page = &pages[visible_page];
-    if (++change_index < page->change_count)
-        SetYtrigger(page->changes[change_index]);
-    else
-        irqDisable(IRQ_VCOUNT);
+    irqDisable(IRQ_VCOUNT);
     REG_IF = IRQ_HBLANK;
     irqEnable(IRQ_HBLANK);
 }
