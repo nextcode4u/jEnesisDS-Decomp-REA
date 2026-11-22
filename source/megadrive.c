@@ -31,8 +31,25 @@ void megadrive_reset_serial(struct megadrive *md)
     memset(md->serial_control, 0, sizeof(md->serial_control));
 }
 
+static uint8_t horizontal_counters[2][3420];
+static bool horizontal_counters_ready;
+
+static void initialize_horizontal_counters(void)
+{
+    for (unsigned phase = 0; phase < 3420; ++phase) {
+        unsigned clocks = phase * 7 % 3420;
+        unsigned narrow = clocks * 171 / 3420;
+        unsigned wide = clocks * 211 / 3420;
+        horizontal_counters[0][phase] = narrow + (narrow >= 0x94 ? 0xe9 - 0x94 : 0);
+        horizontal_counters[1][phase] = wide + (wide >= 0xb7 ? 0xe4 - 0xb7 : 0);
+    }
+    horizontal_counters_ready = true;
+}
+
 void megadrive_reset(struct megadrive *md, const struct cartridge *cart, enum genesis_region region)
 {
+    if (!horizontal_counters_ready)
+        initialize_horizontal_counters();
     struct megadrive_memory *memory = md->memory;
     memset(md, 0, sizeof(*md));
 #ifdef __NDS__
@@ -405,6 +422,8 @@ uint8_t megadrive_read_byte(struct megadrive *md, uint32_t address)
     if (address >= 0xa10002 && address <= 0xa10007)
         return read_port(md, (address - 0xa10002) >> 1);
     if (address >= 0xc00000 && address <= 0xc0000f) {
+        if ((address & 9) == 9 && horizontal_counters_ready)
+            return horizontal_counters[md->vdp_registers[12] & 1][md->frame_cycle % 3420];
         unsigned status = megadrive_read_word(md, address & ~1U);
         return address & 1 ? status : status >> 8;
     }
