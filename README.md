@@ -16,9 +16,54 @@ This compiles and links both CPUs into ELFs under `build/c/`, then packages them
 
 In melonDS, enable a virtual DLDI SD card and add Genesis ROMs to it. The bottom screen uses the original jEnesisDS menu artwork and font. The build converts the editable tile sheets, palettes, and tilemap into C. The footer shows the port's measured Genesis frames per second during gameplay.
 
-In Configuration, **Horizontal View** controls how 320-pixel games fit on the 256-pixel DS screen. **Left** is the default and keeps the left edge visible using the tile renderer when supported. **Center** uses the original centered crop. **Fit** shows both edges using the bitmap renderer, which takes more CPU time. The option has no effect on 256-pixel games.
+For desktop testing, enable melonDS's JIT recompiler in its emulation settings. In a Windows melonDS 1.1 Sonic 2 comparison, the original held 60 DS frames per second with JIT disabled. The port reported 34–50 DS frames per second over the sampled gameplay stretch with JIT disabled and 59–61 with JIT enabled. The melonDS window title measures DS emulation speed. The port's gameplay and video counters measure Genesis frames and redraws respectively.
 
-Fit can skip redraws under load so the game and audio keep advancing. The bottom-screen gameplay counter shows emulated frames per second. Configuration shows the most recent video update rate and whether the program launched in DS or DSi mode. In DSi mode it also shows the ARM9 clock setting.
+Native DSi mode can load linear Genesis cartridges up to 4 MiB in BIN, GEN, MD, and SMD formats. DS mode retains its smaller file-size limit.
+
+In Configuration, **Horizontal View** controls how 320-pixel games fit on the 256-pixel DS screen. **Fit** is the default and shows both edges using the bitmap renderer, which takes more CPU time. **Left** keeps the left edge visible using the tile renderer when supported. **Center** uses the original centered crop. The option has no effect on 256-pixel games.
+
+Fit preserves alternating pixel patterns when it scales dithered artwork such as Emerald Hill’s bushes. It can skip redraws under load so the game and audio keep advancing. The bottom-screen gameplay counter shows emulated frames per second. Configuration shows the most recent video update rate and whether the program launched in DS or DSi mode. In DSi mode it also shows the ARM9 clock setting.
+
+Aligned VRAM reads and direct tile-attribute decoding reduced the measured ARM9 cost per Fit redraw by about 9% in a 600-frame Sonic 2 DSi replay. Across 23,800 host-rendered frames from 17 games, the revised bitmap renderer matched the preceding renderer pixel for pixel.
+
+The next pass renders whole tiles separately from clipped edges, specializes progressive foreground and background spans, and packs Fit output in aligned batches. It also batches the direct-copy variant of the 68000 sprite-record loop. All 23,800 bitmap comparisons matched again. Separate CPU, work RAM, VRAM, and timed audio traces matched across 34,000 frames from 17 cartridges.
+
+In melonDS 1.1, Sonic 2 guest frames 1,300 through 1,900 took 600 display refreshes in the original, 679 in the previous BlocksDS Fit build, and 606 in the revised Fit build at 67 MHz. The revised build took 600 refreshes in Center at 67 MHz and in Fit in native DSi mode. The 67 MHz Fit run presented 117 redraws over 606 refreshes, about 11.6 redraws per second, up from 11.1. From guest frame 1,300 through 3,100, the original and the revised Fit build in native DSi mode each took 1,800 refreshes. The revised Fit build took 1,911 refreshes at 67 MHz over that longer stretch.
+
+An instrumented run through the 600-frame DS stretch counted 31 audio queue underruns before the renderer and CPU changes and four afterward. One ARM9 transfer was dropped in the revised test. The physical DSi audio result is still unverified.
+
+### Performance references
+
+- PicoDrive's scanline renderer reuses tile row data and skips known blank tiles. Its GP2X fast renderer draws whole tiles and trades mid-frame raster effects for speed. [Scanline renderer](https://github.com/notaz/picodrive/blob/master/pico/draw.c) · [GP2X renderer modes](https://github.com/notaz/picodrive/blob/master/platform/base_readme.txt)
+- Genesis Plus GX tracks dirty pattern rows and expands only those rows back into its pixel cache. The BlocksDS tile renderer already tracks VRAM revisions by 32-byte block, which gives the bitmap renderer a way to check if a cached tile has changed. [Genesis Plus GX pattern cache](https://raw.githubusercontent.com/ekeeke/Genesis-Plus-GX/master/core/vdp_render.c)
+- nesDS maps NES audio voices to DS sound channels and offers a per-scanline sprite path. Its changelog documents the ARM7 sound workload and how the sprite path handles graphical edge cases. [nesDS changelog](https://github.com/ApacheThunder/NesDS)
+
+Two PicoDrive-inspired experiments matched all 23,800 reference bitmap frames. In the 67 MHz Sonic 2 Fit replay from guest frame 1,300 to 2,500, the existing renderer took 1,271 display refreshes. Remembering the last blank tile entry took 1,291, and reusing consecutive tile rows took 1,275. The build keeps the existing hot path.
+
+The Genesis Plus GX pattern-cache comparison used the same 67 MHz replay through guest frame 2,489. The existing renderer took 1,259 display refreshes. A packed opaque-tile path took 1,305. Adding a 64-entry expansion cache took 1,313, and caching transparency masks took 1,321. All three matched the existing renderer over 23,800 bitmap frames.
+
+### Stress-test ROMs
+
+- **Gunstar Heroes (USA)** is a repeatable gameplay performance test. Open the ROM and let the attract demo start. In melonDS at 67 MHz, guest frames 600 through 1,000 took 431 display refreshes on jEnesisDS 0.7.4 and 602 on the BlocksDS port with Fit. The same port took 401 refreshes in native DSi mode. Both builds reached the same action scene. The tested ROM has SHA-256 `f177810ce614be21c1a9214c0ca4d8f8d357b04a497c02fae185e4b2f97b6b87`.
+- **Nemesis's Sprite Masking and Overflow test** is a targeted VDP regression. It covers H32 and H40 sprite masking and overflow. Both builds reached the results screen at 67 MHz. The port's H32 screen reports failures in masking and sprite dot overflow. [ROM and source listing](https://techdocs.exodusemulator.com/Console/SegaMegaDrive/Software.html)
+- **240p Test Suite for Mega Drive** provides interactive checks for scrolling, stripes, and audio sync. Version 1.26 reached the Video Tests menu on the port at 67 MHz. [Author's download page](https://artemiourbina.itch.io/240p-test-suite)
+- **Titan Overdrive 1.1 Hardware** is a heavier raster and DMA test for native DSi mode. The 3,946,282-byte ROM is above the port's 67 MHz DS-mode loader limit. The original remained in the ROM browser during this run. The port reached the intro scene and advanced 600 PAL guest frames over 975 display refreshes in the sampled stretch, about 36.8 game FPS. BlastEm used the demo to identify a VDP DMA timing issue. [Titan's release](https://demozoo.org/productions/83958/) · [BlastEm changelog](https://www.retrodev.com/blastem/changes.html)
+
+The 68000 now batches two kinds of polling loop that dominated these traces. Overdrive waits for the VBlank status bit. Gunstar waits for a work-RAM word and runs a separate loop that builds sprite words. The fast paths check the instruction sequence and stop at the current CPU slice boundary. Tests compare the fast paths with single-stepping. Frame traces covering CPU state, work RAM, VRAM, and timed audio matched across 42,000 frames from 21 cartridges.
+
+After batching, Gunstar's 67 MHz Fit run took 467 refreshes for the same 400 guest frames, improving from 39.75 to 51.24 game FPS. The native DSi run held about 59.7 FPS. In native DSi mode, Overdrive advanced 1,100 guest frames in 1,325 refreshes, about 49.7 game FPS. The sprite-masking results and the 240p Video Tests menu were checked again on the same build.
+
+A longer Overdrive replay found a sustained slowdown after the intro. In native DSi mode with Fit, guest frames 3,500 through 3,640 initially took 506 refreshes (16.55 game FPS). Checking sprite-table VRAM revisions before comparing snapshot bytes cut the same stretch to 389 refreshes (21.53 game FPS). Rendering adjacent columns with the same vertical scroll in a single span cut it to 361 refreshes (23.20 game FPS). The intro still ran at 49.67 game FPS. A 5,000-frame host trace matched CPU, memory, raster state, and sampled bitmap output before and after the change.
+
+Direct dispatch for `SUBI.B #imm,Dn` shortened the horizontal-counter wait in Overdrive's late scene. The same 140 guest frames took 331 refreshes (25.30 FPS). Sonic 2's 67 MHz Fit replay took 617 refreshes for 601 guest frames, up from 609. A separate experiment batched consecutive cartridge-to-VRAM writes and raised the earlier transfer-heavy scene to 47.86 FPS. The combined build reached 21.75 FPS in the late scene, so the build keeps the byte-subtract change.
+
+Direct dispatch for `MOVE.L (An)+,(Am)+` reduced the late Overdrive interval to 329 refreshes (25.46 FPS) and Sonic 2 to 610 refreshes (58.94 FPS). The earlier Overdrive interval, guest frames 2,040 through 2,180, rose from 220 to 225 refreshes. A separate work-RAM copy batch reached 29.81 FPS in the late scene with melonDS JIT enabled and 22.95 FPS with the interpreter. Those runs used the same guest frame endpoints. The build uses the individual-instruction handler.
+
+Sonic 2 at 67 MHz took 614 refreshes over guest frames 1,300 through 1,900 with the new batching code, compared with 606 on the preceding build using the same replay fixture.
+
+Dedicated 68000 handlers for postincrement word arithmetic, immediate word shifts and rotates, register ADDX/SUBX.W, and word branches that read a single flag brought Gunstar down to 440 refreshes for guest frames 600 through 1,000 at 67 MHz with Fit. That is 54.39 game FPS. Sonic 2 took 613 refreshes over the shared guest frame window from 1,300 through 1,901, down from 615 on the preceding build. In native DSi mode, Sonic 2 advanced one guest frame per refresh and Overdrive repeated its 49.67 game FPS result. Gunstar's top-screen captures at guest frames 600, 800, and 1,000 matched the preceding build pixel for pixel. The same 21-cartridge host trace also matched across 42,000 frames.
+
+Direct dispatch for common MOVE.W forms, quick word arithmetic to data registers, SWAP, and signed word branches improved the 67 MHz Fit replay again. Gunstar took 418 refreshes for the same 400 guest frames (57.25 FPS), down from 440 on the preceding build. jEnesisDS 0.7.4 took 431 on that replay. Sonic 2 took 607 refreshes for 601 guest frames (59.23 FPS), down from 613. The original took 601 refreshes. The port's 21-cartridge CPU, memory, video-state, and timed-audio host trace matched the preceding build across 42,000 frames. melonDS samples at display refreshes, so a capture at a given guest counter can show an earlier rendered frame when the builds present at different times.
 
 In a 600-frame Sonic 2 Emerald Hill replay in melonDS, the faster bitmap renderer and redraw pacing sustained 59.83 game FPS and 30.31 video FPS with Fit in native DSi mode. At 67 MHz in DS mode, gameplay ran at about 54 FPS and the video updated about 11 times per second in the same interval. The bitmap renderer matched 1,800 frames from the previous implementation byte for byte in a host replay.
 
@@ -96,7 +141,11 @@ The FM comparison ran the original 0.7.4 ARM7 mixer directly with controlled YM2
 
 Replaying the same timed YM2612 register writes and render spans for 1,400 Sonic 2 frames through both cores matched all 3,869,784 PCM words across the six voices. All 396 randomized cases that ran to completion in the reference matched. Four additional cases faulted when running the original ARM7 code in the reference harness. The comparison ends at per-voice PCM. Audio timing in a whole-game run still depends on the two builds' register delivery and buffer scheduling.
 
-ARM7 queues up to six guest audio frames and starts mixing after three arrive. The mixer uses four 192-sample hardware blocks and prepares up to three blocks ahead. A cascaded hardware timer tracks the playback position across delayed interrupts. An unprepared block is muted. If the guest queue runs dry, the PSG and DAC mix fades out and the FM state holds at the last guest sample until playback can resume. PSG register snapshots travel with the queued audio.
+ARM7 queues up to six guest audio frames and starts mixing after three arrive. The mixer uses four 192-sample hardware blocks and prepares up to three blocks ahead. A cascaded hardware timer tracks the playback position across delayed interrupts. An unprepared block is muted, and audio that finishes late moves to the next safe block. If the guest queue runs dry, the PSG and DAC mix fades out and the FM state holds at the last guest sample until playback can resume. PSG register snapshots travel with the queued audio.
+
+The mixer skips DAC arithmetic for frames containing only silent DAC samples. FM pitch calculation uses the same phase increments as the former 8 KiB lookup table, leaving more ARM7 work RAM for the mixer and interrupt stacks. Four ARM9 transfer buffers hold frames until the ARM7 queue has room. The game clock starts after ROM loading to avoid sending a burst of catch-up frames.
+
+The ARM7 playback interrupt uses a four-entry table for the YM2612 pan and volume settings. In a native DSi melonDS Sonic 2 replay, the measured work per interrupt fell from 2.98 to 2.32 timer ticks over 1,440 interrupts. The four DS control settings are the same as before.
 
 ## Gameplay reference
 

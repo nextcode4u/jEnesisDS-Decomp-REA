@@ -4,16 +4,21 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef __NDS__
+#include <nds/system.h>
+#endif
+
 enum {
     ROM_HEADER_SIZE = 0x200,
     SYSTEM_NAME = 0x100,
     INTERNATIONAL_TITLE = 0x150,
     CHECKSUM = 0x18e,
-    SRAM = 0x1b0,
+    SRAM_HEADER = 0x1b0,
     REGION = 0x1f0,
     SMD_HEADER_SIZE = 0x200,
     SMD_BLOCK_SIZE = 0x4000,
-    MAX_FILE_SIZE = 0x306800,
+    DS_MAX_FILE_SIZE = 0x306800,
+    LINEAR_ROM_LIMIT = 0x400000,
 };
 
 static bool has_sega_header(const uint8_t *bytes)
@@ -80,7 +85,7 @@ static uint32_t read_be32(const uint8_t *data)
 
 static void read_sram_header(struct cartridge *cart)
 {
-    const uint8_t *header = cart->data + SRAM;
+    const uint8_t *header = cart->data + SRAM_HEADER;
     if (header[0] != 'R' || header[1] != 'A' || header[2] == 0xe8)
         return;
     uint32_t start = read_be32(header + 4);
@@ -101,7 +106,12 @@ static const char *load_stream(struct cartridge *cart, FILE *file)
     if (fseek(file, 0, SEEK_END) != 0)
         return "Cannot seek to end of ROM";
     long length = ftell(file);
-    if (length < ROM_HEADER_SIZE || length > MAX_FILE_SIZE)
+    long file_limit = LINEAR_ROM_LIMIT + SMD_HEADER_SIZE;
+#ifdef __NDS__
+    if (!isDSiMode())
+        file_limit = DS_MAX_FILE_SIZE;
+#endif
+    if (length < ROM_HEADER_SIZE || length > file_limit)
         return "Unsupported ROM size";
     uint8_t header[ROM_HEADER_SIZE];
     if (fseek(file, 0, SEEK_SET) != 0 ||
@@ -110,6 +120,8 @@ static const char *load_stream(struct cartridge *cart, FILE *file)
 
     cart->size = (size_t)length;
     if (has_sega_header(header)) {
+        if (cart->size > LINEAR_ROM_LIMIT)
+            return "Unsupported ROM size";
         cart->format = CARTRIDGE_BINARY;
         if (fseek(file, 0, SEEK_SET) != 0)
             return "Cannot rewind ROM";

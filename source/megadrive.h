@@ -64,6 +64,8 @@ struct megadrive_memory {
     struct vdp_scanline vdp_rows[VDP_MAX_ACTIVE_LINES];
     uint8_t vdp_sprite_tables[VDP_RASTER_SPRITE_TABLES][VDP_SPRITE_TABLE_BYTES];
     uint32_t vram_revisions[0x10000 / 32];
+    uint32_t vdp_sprite_snapshot_revision;
+    unsigned vdp_sprite_snapshot_key;
     uint8_t sram[CARTRIDGE_SRAM_CAPACITY];
 };
 
@@ -73,6 +75,7 @@ struct m68k_sprite_record_loop {
     uint32_t lookup_base;
     uint16_t mask;
     uint8_t source, output, data, index, first_bias, last_bias, address_bias, sequence, counter;
+    uint8_t dbra_offset;
 };
 
 struct megadrive {

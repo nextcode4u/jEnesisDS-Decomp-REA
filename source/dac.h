@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-enum { DAC_PCM_CAPACITY = 564, DAC_TRANSFER_SLOTS = 3, FM_FRAME_WRITES = 512 };
+enum { DAC_PCM_CAPACITY = 564, DAC_TRANSFER_SLOTS = 4, FM_FRAME_WRITES = 512 };
 
 struct dac_sample {
     int8_t left, right;
@@ -26,7 +26,7 @@ _Static_assert(DAC_PCM_CAPACITY <= (1U << 10), "DAC frame must fit the FM sample
 struct dac_frame {
     uint16_t count, generation, sequence, fm_count;
     uint8_t slot;
-    bool fm_overflow;
+    bool fm_overflow, dac_audible;
     uint16_t psg_registers[PSG_REGISTERS];
     uint8_t fm_registers[2][256], fm_keys[FM_CHANNELS];
     struct fm_pitch fm_pitch;

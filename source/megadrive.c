@@ -77,16 +77,42 @@ static unsigned snapshot_sprite_table(struct megadrive *md)
     bool wide = (md->vdp_registers[12] & 1) != 0;
     unsigned size = (wide ? 80 : 64) * 8;
     unsigned base = (md->vdp_registers[5] & (wide ? 0x7e : 0x7f)) << 9;
-    const uint8_t *table = md->memory->vram + base;
+    struct megadrive_memory *memory = md->memory;
+    const uint8_t *table = memory->vram + base;
     unsigned count = md->vdp_sprite_table_count;
-    if (count && !memcmp(md->memory->vdp_sprite_tables[count - 1], table, size))
-        return count;
-    if (count == VDP_RASTER_SPRITE_TABLES)
-        return 0;
-    memcpy(md->memory->vdp_sprite_tables[count], table, size);
-    if (size < VDP_SPRITE_TABLE_BYTES)
-        memset(md->memory->vdp_sprite_tables[count] + size, 0, VDP_SPRITE_TABLE_BYTES - size);
-    return ++md->vdp_sprite_table_count;
+    unsigned key = base | wide;
+    bool matches = false;
+    if (count) {
+        // A table can be reused when no overlapping VRAM block was written
+        // since the last snapshot. Subtract revisions in unsigned arithmetic
+        // so this interval check also works across counter wraparound.
+        if (memory->vdp_sprite_snapshot_key == key) {
+            uint32_t revision = memory->vdp_sprite_snapshot_revision;
+            uint32_t elapsed = md->video_revision - revision;
+            matches = true;
+            for (unsigned i = 0; i < size / 32; ++i) {
+                uint32_t change = memory->vram_revisions[base / 32 + i] - revision;
+                if (change && change <= elapsed) {
+                    matches = false;
+                    break;
+                }
+            }
+        }
+        // A changed revision can still leave the same bytes after later writes.
+        if (!matches)
+            matches = !memcmp(memory->vdp_sprite_tables[count - 1], table, size);
+    }
+    if (!matches) {
+        if (count == VDP_RASTER_SPRITE_TABLES)
+            return 0;
+        memcpy(memory->vdp_sprite_tables[count], table, size);
+        if (size < VDP_SPRITE_TABLE_BYTES)
+            memset(memory->vdp_sprite_tables[count] + size, 0, VDP_SPRITE_TABLE_BYTES - size);
+        md->vdp_sprite_table_count = ++count;
+    }
+    memory->vdp_sprite_snapshot_key = key;
+    memory->vdp_sprite_snapshot_revision = md->video_revision;
+    return count;
 }
 
 static void capture_raster_through(struct megadrive *md, unsigned next_line)

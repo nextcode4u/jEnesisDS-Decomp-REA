@@ -58,7 +58,6 @@ struct fm_chip {
 
 extern const uint16_t fm_log_sine[1024];
 extern const int16_t fm_levels[6656];
-extern const uint32_t fm_frequency[2048];
 
 void fm_reset(struct fm_chip *fm);
 void fm_write(struct fm_chip *fm, unsigned reg, uint8_t value);

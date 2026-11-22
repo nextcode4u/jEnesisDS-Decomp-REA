@@ -386,6 +386,20 @@ static void test_fm_zero_sustain_level(void)
     }
 }
 
+static void test_fm_phase_increment(void)
+{
+    struct fm_chip fm;
+    fm_reset(&fm);
+    fm_write(&fm, 0x30, 1);
+    for (unsigned number = 0; number < 2048; ++number) {
+        // Block 7 and multiplier 1 expose the full unshifted phase increment.
+        fm_write(&fm, 0xa4, 0x38 | (number >> 8));
+        fm_write(&fm, 0xa0, number & 0xff);
+        uint32_t expected = (uint64_t)number * 4096 * 0x750ab5 / (27563 * 144);
+        assert(fm.channels[0].op[0].step == expected);
+    }
+}
+
 static void test_fm_pitch_latches(const struct cartridge *cart)
 {
     static struct megadrive_memory memory;
@@ -452,8 +466,15 @@ static void test_dac_timing(const struct cartridge *cart)
     assert(frame.fm_writes[0].reg == 0x2b && frame.fm_writes[0].sample == 2);
     assert(frame.fm_writes[1].reg == 0x1b6 && frame.fm_writes[1].sample == 4);
     assert(!memcmp(frame.psg_registers, md.psg_registers, sizeof(frame.psg_registers)));
+    assert(frame.dac_audible);
     assert(!md.dac_capture.frame);
     assert(!memcmp(frame.samples, expected, sizeof(expected)));
+
+    dac_begin(&md, &frame);
+    megadrive_ym_write_at(&md, 0, 0x2b, 0);
+    megadrive_ym_write_at(&md, 1, 0, 0);
+    dac_end(&md);
+    assert(!frame.dac_audible);
 }
 
 static void test_z80_dac_writes(const struct cartridge *cart)
@@ -781,7 +802,8 @@ static void test_horizontal_view(void)
 {
     static struct megadrive_memory memory;
     static struct megadrive md = {.memory = &memory};
-    static uint16_t bitmap[VDP_VIEW_WIDTH * VDP_VIEW_HEIGHT / 2];
+    _Alignas(4) static uint16_t bitmap[VDP_VIEW_WIDTH * VDP_VIEW_HEIGHT / 2];
+    _Alignas(4) static uint16_t offset_bitmap[VDP_VIEW_WIDTH * VDP_VIEW_HEIGHT / 2 + 1];
     vdp_register(&md, 1, 0x40);
     vdp_register(&md, 2, 8);
     vdp_register(&md, 4, 3);
@@ -802,6 +824,20 @@ static void test_horizontal_view(void)
     assert(bitmap[VDP_VIEW_WIDTH / 2 - 1] == 0);
     vdp_render_frame(&md, bitmap, true, VDP_VIEW_CENTER);
     assert(bitmap[0] == 0);
+
+    // An alternating foreground should keep its phase across 5-to-4
+    // groups and across the boundary between adjacent source tiles.
+    set_vram_word(&md, 0x2002, 1);
+    memset(memory.vram + 32, 0x12, 4);
+    memset(memory.vram + 36, 0x21, 4);
+    vdp_render_frame(&md, bitmap, true, VDP_VIEW_FIT);
+    for (unsigned i = 0; i < 6; ++i) {
+        assert(bitmap[i] == 0x0201);
+        assert(bitmap[VDP_VIEW_WIDTH / 2 + i] == 0x0102);
+    }
+    // Halfword-aligned destinations use the scalar Fit path.
+    vdp_render_frame(&md, offset_bitmap + 1, true, VDP_VIEW_FIT);
+    assert(memcmp(bitmap, offset_bitmap + 1, sizeof(bitmap)) == 0);
 }
 
 static void test_vdp_reads(const struct cartridge *cart)
@@ -937,6 +973,86 @@ static void test_interlace(const struct cartridge *cart)
     assert(megadrive_read_byte(&md, 0xc00005) & 0x10);
     megadrive_run_frame(&md);
     assert(!(megadrive_read_word(&md, 0xc00004) & 0x10));
+}
+
+static void test_stable_poll_loop(bool vdp_status, bool vblank)
+{
+    static struct megadrive_memory step_memory, run_memory;
+    static const uint8_t ram_poll[] = {
+        0x46, 0xfc, 0x23, 0x00,             // MOVE #$2300,SR
+        0x4e, 0xb9, 0, 0, 0, 0x20,         // JSR $20
+        0x60, 0xf4,                         // BRA to the start
+        [0x20] = 0x30, 0x38, 0xff, 0x00,     // MOVE.W ($FF00).W,D0
+        0x67, 0x00, 0x00, 0x06,             // BEQ.W to RTS
+        [0x2c] = 0x4e, 0x75,
+    };
+    const uint8_t status_poll[] = {
+        0x08, 0x39, 0, 3, 0, 0xc0, 0, 5,
+        vblank ? 0x66 : 0x67, 0xf6,
+    };
+    struct megadrive step = {
+        .memory = &step_memory,
+        .rom = vdp_status ? status_poll : ram_poll,
+        .rom_size = vdp_status ? sizeof(status_poll) : sizeof(ram_poll),
+        .cpu = {.sr = 0x2300, .a[7] = 0xfffffc, .d[0] = 0x12345678},
+        .vblank = vblank, .vdp_command_pending = true, .z80_reset = true,
+        .frame_cycles = 128005,
+    };
+    step.rom_fetch_limit = step.rom_size;
+    struct megadrive run = step;
+    memset(&step_memory, 0, sizeof(step_memory));
+    run_memory = step_memory;
+    run.memory = &run_memory;
+    unsigned end = 5 * (vdp_status ? 30 : 84);
+    unsigned cycles = 0;
+    while (cycles < end) {
+        step.frame_cycle = cycles;
+        unsigned elapsed = m68k_step(&step.cpu, &step);
+        assert(elapsed && !step.cpu.stopped);
+        cycles += elapsed;
+    }
+    assert(cycles == end);
+    assert(m68k_run_until(&run, 0, end) == end);
+    assert(memcmp(&step.cpu, &run.cpu, sizeof(step.cpu)) == 0);
+    assert(memcmp(step_memory.ram, run_memory.ram, sizeof(step_memory.ram)) == 0);
+    assert(step.frame_cycle == run.frame_cycle && step.vdp_command_pending == run.vdp_command_pending);
+}
+
+static void test_sprite_word_batch(bool terminal)
+{
+    static struct megadrive_memory step_memory, run_memory;
+    static const uint8_t code[] = {
+        0x3e, 0x15, 0x6a, 0, 0, 6,
+        0x3a, 0x07, 0x18, 0x05, 0x3a, 0xc4, 0x51, 0xce, 0xff, 0xf2,
+    };
+    struct megadrive step = {
+        .memory = &step_memory, .rom = code,
+        .rom_size = sizeof(code), .rom_fetch_limit = sizeof(code),
+        .cpu = {.sr = 0x2310, .a[5] = 0xff3000, .d = {
+            [4] = 0x1234ab11, [5] = 0x11223344,
+            [6] = 0xff120000 | (terminal ? 3 : 4), [7] = 0x77889900,
+        }},
+        .z80_reset = true, .frame_cycles = 128005,
+    };
+    memset(&step_memory, 0, sizeof(step_memory));
+    work_ram_store_word(&step, 0x3000, 0x1234);
+    work_ram_store_word(&step, 0x3002, 0x8156);
+    work_ram_store_word(&step, 0x3004, 0x9a78);
+    work_ram_store_word(&step, 0x3006, 0x1100);
+    struct megadrive run = step;
+    run_memory = step_memory;
+    run.memory = &run_memory;
+    unsigned end = 2 * (36 + 46) + (terminal ? 4 : 0), cycles = 0;
+    while (cycles < end) {
+        step.frame_cycle = cycles;
+        unsigned elapsed = m68k_step(&step.cpu, &step);
+        assert(elapsed && !step.cpu.stopped);
+        cycles += elapsed;
+    }
+    assert(cycles == end && m68k_run_until(&run, 0, end) == end);
+    assert(memcmp(&step.cpu, &run.cpu, sizeof(step.cpu)) == 0);
+    assert(memcmp(step_memory.ram, run_memory.ram, sizeof(step_memory.ram)) == 0);
+    assert(step.frame_cycle == run.frame_cycle);
 }
 
 static void test_idle_loops(struct megadrive *md)
@@ -1080,12 +1196,12 @@ static void test_opcode_fetch_alias(void)
     assert(md.cpu.pc == 0x01000002 && md.cpu.d[0] == 0xffffff80);
 }
 
-static void test_sprite_record_loop(void)
+static void test_sprite_record_loop(bool indexed)
 {
     static struct megadrive_memory direct_memory, batched_memory;
     static struct megadrive direct = {.memory = &direct_memory};
     static struct megadrive batched = {.memory = &batched_memory};
-    const uint8_t code[] = {
+    const uint8_t indexed_code[] = {
         0x10, 0x18, 0x48, 0x80, 0xd0, 0x45, 0x32, 0xc0, // biased signed byte to word
         0x16, 0x18, 0x12, 0xfb, 0x30, 0x34, // index the ROM table with D3
         0x52, 0x04, 0x12, 0xc4, 0x54, 0x48, // sequence byte and source skip
@@ -1095,15 +1211,26 @@ static void test_sprite_record_loop(void)
         0x51, 0xc9, 0xff, 0xd6, // dbra d1,0
         [64] = 0x91, 0xa2, 0xb3,
     };
+    const uint8_t direct_code[] = {
+        0x10, 0x18, 0x48, 0x80, 0xd0, 0x45, 0x32, 0xc0, // biased signed byte to word
+        0x12, 0xd8, 0x52, 0x04, 0x12, 0xc4, // copy one byte and write the sequence
+        0x30, 0x18, 0xd0, 0x4a, 0x32, 0xc0, 0x54, 0x48, // biased word and source skip
+        0x30, 0x18, 0xd0, 0x46, 0x02, 0x40, 0x01, 0xff, // masked word with bias
+        0x66, 0x02, 0x52, 0x40, 0x32, 0xc0, // map zero to one and store
+        0x51, 0xc9, 0xff, 0xda, // dbra d1,0
+        [43] = 0,
+    };
+    unsigned branch = indexed ? 40 : 36;
+    unsigned iteration = indexed ? 138 : 124;
     const uint8_t records[] = {
         0x80, 0, 0, 0, 0x12, 0x34, 0xff, 0xfe,
         0x7f, 1, 0, 0, 0x43, 0x21, 0x03, 0x20,
         0xff, 2, 0, 0, 0x00, 0x19, 0xff, 0xff,
     };
-    direct.rom = code;
-    direct.rom_size = sizeof(code);
+    direct.rom = indexed ? indexed_code : direct_code;
+    direct.rom_size = indexed ? sizeof(indexed_code) : sizeof(direct_code);
     direct.cpu.pc = 0;
-    direct.cpu.instruction_address = 40;
+    direct.cpu.instruction_address = branch;
     direct.cpu.opcode = 0x51c9;
     direct.cpu.a[0] = 0xff1000;
     direct.cpu.a[1] = 0xff2000;
@@ -1120,7 +1247,7 @@ static void test_sprite_record_loop(void)
     batched = direct;
     batched_memory = direct_memory;
     batched.memory = &batched_memory;
-    assert(m68k_skip_idle(&batched.cpu, &batched, 138) == 0);
+    assert(m68k_skip_idle(&batched.cpu, &batched, iteration) == 0);
     unsigned cycles = 0;
     for (unsigned record = 0; record < 3; ++record) {
         do {
@@ -1128,7 +1255,7 @@ static void test_sprite_record_loop(void)
             assert(!direct.cpu.stopped);
         } while (direct.cpu.pc != 0);
     }
-    assert(cycles == 416 && m68k_skip_idle(&batched.cpu, &batched, cycles) == cycles);
+    assert(cycles == iteration * 3 + 2 && m68k_skip_idle(&batched.cpu, &batched, cycles) == cycles);
     assert(memcmp(&direct.cpu, &batched.cpu, sizeof(direct.cpu)) == 0);
     assert(memcmp(direct_memory.ram, batched_memory.ram, sizeof(direct_memory.ram)) == 0);
 
@@ -1141,8 +1268,8 @@ static void test_sprite_record_loop(void)
     do {
         cycles += m68k_step(&direct.cpu, &direct);
         assert(!direct.cpu.stopped);
-    } while (direct.cpu.pc != 44);
-    assert(cycles == 144 && m68k_run_until(&batched, 0, cycles) == cycles);
+    } while (direct.cpu.pc != branch + 4);
+    assert(cycles == iteration + 6 && m68k_run_until(&batched, 0, cycles) == cycles);
     assert(memcmp(&direct.cpu, &batched.cpu, sizeof(direct.cpu)) == 0);
     assert(memcmp(direct_memory.ram, batched_memory.ram, sizeof(direct_memory.ram)) == 0);
 }
@@ -1347,6 +1474,11 @@ static void test_frame_pacing(void)
 
 int main(void)
 {
+    test_sprite_word_batch(false);
+    test_sprite_word_batch(true);
+    test_stable_poll_loop(false, false);
+    test_stable_poll_loop(true, false);
+    test_stable_poll_loop(true, true);
     test_frame_pacing();
     test_pending_vdp_interrupt();
     static struct megadrive_memory memory;
@@ -1390,6 +1522,7 @@ int main(void)
     test_fm_output();
     test_fm_mask_transitions();
     test_fm_zero_sustain_level();
+    test_fm_phase_increment();
     test_fm_pitch_latches(&cartridge);
     test_dac_timing(&cartridge);
     test_z80_dac_writes(&cartridge);
@@ -1423,7 +1556,8 @@ int main(void)
     test_m68k_batched_loops();
     test_signed_byte_copy();
     test_opcode_fetch_alias();
-    test_sprite_record_loop();
+    test_sprite_record_loop(true);
+    test_sprite_record_loop(false);
     md.cpu.pc = 0x264;
     md.cpu.d[0] = 0x12345678;
     md.cpu.d[1] = 0x89abcdef;

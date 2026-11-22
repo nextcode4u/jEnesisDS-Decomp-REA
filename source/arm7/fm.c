@@ -22,6 +22,13 @@ static unsigned rate_with_key_scale(unsigned rate, unsigned scale)
     return rate < 63 ? rate : 63;
 }
 
+static uint32_t phase_increment(unsigned number)
+{
+    // The fractional multiplier is in units of 2^-21. For all 11-bit
+    // F-numbers this gives the same integer as floor(number * 1963635968 / 248067).
+    return 7915U * number + ((1569591U * number) >> 21);
+}
+
 static void update_channel(struct fm_chip *fm, unsigned index)
 {
     unsigned bank = index / 3, channel = index % 3;
@@ -43,7 +50,7 @@ static void update_channel(struct fm_chip *fm, unsigned index)
         unsigned offset = offsets[slot] + channel;
         unsigned detune = reg[0x30 + offset] >> 4 & 7;
         unsigned multiplier = reg[0x30 + offset] & 15;
-        int pitch = fm_frequency[number] >> (7 - block);
+        int pitch = phase_increment(number) >> (7 - block);
 
         static const uint8_t detune_curve[3][32] = {
             { 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 6, 6, 7, 8, 8, 8, 8 },
@@ -52,7 +59,8 @@ static void update_channel(struct fm_chip *fm, unsigned index)
         };
         unsigned adjustment = detune & 3;
         if (adjustment)
-            pitch += (detune & 4 ? -1 : 1) * (int)(fm_frequency[detune_curve[adjustment - 1][code]] >> 6);
+            pitch += (detune & 4 ? -1 : 1) *
+                     (int)(phase_increment(detune_curve[adjustment - 1][code]) >> 6);
         unsigned phase_step = (pitch * (int)(multiplier ? multiplier * 2 : 1)) >> 1;
         struct fm_operator *op = &ch->op[slot];
         op->step = phase_step;

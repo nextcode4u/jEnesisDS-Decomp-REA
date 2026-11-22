@@ -714,7 +714,7 @@ int main(void)
     game_memory.z80_ram = sound_ram;
     static struct megadrive game_core DTCM_DATA = {.memory = &game_memory};
     static struct application app = {
-        .md = &game_core, .vertical_scaling = true, .horizontal_view = VDP_VIEW_LEFT,
+        .md = &game_core, .vertical_scaling = true, .horizontal_view = VDP_VIEW_FIT,
     };
     keysSetRepeat(18, 4);
     draw_screen(&app, read_directory(&app.browser));
@@ -744,6 +744,12 @@ int main(void)
         if (handle_menu(&app, keys, keys & KEY_TOUCH ? &touch : NULL, &message))
             draw_screen(&app, message);
         bool running = app.view == VIEW_CARTRIDGE && !app.md->cpu.stopped;
+        if (running && !was_running) {
+            // ROM loading can span several VBlanks. Start pacing when the
+            // cartridge is ready so those VBlanks do not become guest work.
+            observed_vblank = vblank_count;
+            elapsed_vblanks = 0;
+        }
         bool pal = running && (app.md->version & 0x40);
         unsigned frame_budget = frame_pacing_batch(&pacing, elapsed_vblanks, running, was_running, pal);
         if (!running || !was_running)

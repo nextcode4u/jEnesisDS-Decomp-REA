@@ -76,13 +76,10 @@ static void receive_dac(const void *address)
     if (sound_active && frame->generation == sound_generation &&
         frame->count && frame->count <= DAC_PCM_CAPACITY &&
         frame->fm_count <= FM_FRAME_WRITES) {
-        // Never discard the tail of a frame the mixer is already playing.
-        if (dac_count < DAC_QUEUE_SIZE) {
-            unsigned tail = (dac_read + dac_count) % DAC_QUEUE_SIZE;
-            memcpy(&dac_queue[tail], frame, offsetof(struct dac_frame, fm_writes) +
-                   frame->fm_count * sizeof(frame->fm_writes[0]));
-            ++dac_count;
-        }
+        unsigned tail = (dac_read + dac_count) % DAC_QUEUE_SIZE;
+        memcpy(&dac_queue[tail], frame, offsetof(struct dac_frame, fm_writes) +
+               frame->fm_count * sizeof(frame->fm_writes[0]));
+        ++dac_count;
     }
     pending_releases |= 1U << slot;
     release_dac_slots();
@@ -155,11 +152,13 @@ static void fill_sound_block(int16_t *left, int16_t *right, int16_t *voices, uin
                             frame->fm_writes[fm_write_index].sample : frame->count;
             if (count > next - dac_sample_index)
                 count = next - dac_sample_index;
-            for (unsigned i = 0; i < count; ++i) {
-                struct dac_sample sample = frame->samples[dac_sample_index + i];
-                int psg = left[pos + i];
-                left[pos + i] = clamp_sample(psg + sample.left * 64);
-                right[pos + i] = clamp_sample(psg + sample.right * 64);
+            if (frame->dac_audible) {
+                for (unsigned i = 0; i < count; ++i) {
+                    struct dac_sample sample = frame->samples[dac_sample_index + i];
+                    int psg = left[pos + i];
+                    left[pos + i] = clamp_sample(psg + sample.left * 64);
+                    right[pos + i] = clamp_sample(psg + sample.right * 64);
+                }
             }
             dac_sample_index += count;
             if (dac_sample_index == frame->count) {
@@ -198,12 +197,16 @@ static void audio_wake(void)
     // On a missed deadline, mute the block instead of replaying old PCM.
     bool ready = prepared_blocks[block] == tick;
     atomic_signal_fence(memory_order_acquire);
+    // The two YM2612 routing bits select one of four DS pan/volume settings.
+    static const uint32_t routing[4] = {
+        SOUNDXCNT_PAN(64) | SOUNDXCNT_VOL_MUL(0),
+        SOUNDXCNT_PAN(127) | SOUNDXCNT_VOL_MUL(63),
+        SOUNDXCNT_PAN(0) | SOUNDXCNT_VOL_MUL(63),
+        SOUNDXCNT_PAN(64) | SOUNDXCNT_VOL_MUL(127),
+    };
     for (unsigned channel = 0; channel < FM_CHANNELS; ++channel) {
         unsigned pan = ready ? fm_pan[block][channel] : 0;
-        unsigned side = pan == 2 ? 0 : pan == 1 ? 127 : 64;
-        unsigned volume = pan == 3 ? 127 : pan ? 63 : 0;
-        uint32_t control = SOUNDXCNT_ENABLE | SOUNDXCNT_REPEAT | SOUNDXCNT_FORMAT_16BIT |
-            SOUNDXCNT_PAN(side) | SOUNDXCNT_VOL_MUL(volume);
+        uint32_t control = SOUNDXCNT_ENABLE | SOUNDXCNT_REPEAT | SOUNDXCNT_FORMAT_16BIT | routing[pan];
         if (SCHANNEL_CR(channel) != control) {
             SCHANNEL_CR(channel) = control;
             SCHANNEL_CR(channel + FM_CHANNELS) = control;
@@ -267,14 +270,15 @@ int main(void)
             swiIntrWait(INTRWAIT_KEEP_FLAGS, IRQ_TIMER(AUDIO_TIMER));
             continue;
         }
-        if (distance < 2)
-            next_block = tick + 2;
+        if (distance < 1)
+            next_block = tick + 1;
 
         // The FIFO thread may be interrupted by the timer. Keep the mixer and
         // its queues in the ARM7 main thread so the IRQ never touches them.
         while (fifoCheckDatamsg(FIFO_USER_01))
             receive_psg();
-        while (fifoCheckAddress(FIFO_USER_02))
+        // Wait for room before taking ownership of a frame from ARM9.
+        while (dac_count < DAC_QUEUE_SIZE && fifoCheckAddress(FIFO_USER_02))
             receive_dac(fifoGetAddress(FIFO_USER_02));
         if (pending_releases)
             release_dac_slots();
@@ -285,11 +289,12 @@ int main(void)
         fill_sound_block(left, right, voices, pan);
         tick = timerTick(AUDIO_BLOCK_COUNTER);
         distance = next_block - tick;
-        // Leave the last quarter of the preceding block for DMA prefetch.
-        if (distance < 1 || (distance == 1 &&
-                            TIMER_DATA(AUDIO_TIMER) >= (uint16_t)(-AUDIO_TIMER_TICKS / 4))) {
-            next_block = tick + 2;
-            continue;
+        // Keep the mixed samples if they miss their slot. Leave the last
+        // quarter of the preceding block for the sound hardware to prefetch.
+        if (distance <= 1) {
+            int safe_distance = TIMER_DATA(AUDIO_TIMER) >= (uint16_t)(-AUDIO_TIMER_TICKS / 4) ? 2 : 1;
+            if (distance < safe_distance)
+                next_block = tick + safe_distance;
         }
         unsigned slot = next_block % AUDIO_BLOCKS;
         memcpy(fm_pan[slot], pan, sizeof(pan));

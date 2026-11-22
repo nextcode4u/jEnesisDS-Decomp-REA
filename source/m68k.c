@@ -291,9 +291,10 @@ static inline __attribute__((always_inline)) unsigned move_common(
     const unsigned access_cycles = size == 4 ? 8 : 4;
     uint32_t value, address;
     unsigned cycles = 4;
-    if (modes == 0x0000) {
+    // The opcode table dispatches these word forms directly.
+    if (size != 2 && modes == 0x0000) {
         value = cpu->d[src_reg];
-    } else if (modes == 0x0028 || (size != 2 && modes == 0x0018) || modes == 0x0010) {
+    } else if (size != 2 && (modes == 0x0028 || modes == 0x0018 || modes == 0x0010)) {
         address = cpu->a[src_reg];
         if (modes == 0x0028) {
             address += (int16_t)fetch(cpu, md, 2);
@@ -433,7 +434,7 @@ static unsigned load_multiple(struct m68k *cpu, struct megadrive *md, uint16_t o
     return cycles;
 }
 
-static unsigned store_multiple(struct m68k *cpu, struct megadrive *md, uint16_t op)
+static __attribute__((noinline)) unsigned store_multiple(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
     unsigned mode = (op >> 3) & 7, reg = op & 7;
     unsigned size = (op & 0x40) ? 4 : 2;
@@ -543,8 +544,28 @@ static uint32_t arithmetic_flags(struct m68k *cpu, unsigned size, uint32_t left,
     return result >> shift;
 }
 
+static inline unsigned extend_word_registers(struct m68k *cpu, uint16_t op)
+{
+    unsigned dst = (op >> 9) & 7;
+    uint32_t left = (uint16_t)cpu->d[dst], right = (uint16_t)cpu->d[op & 7];
+    unsigned extend = (cpu->sr & CCR_X) != 0;
+    bool subtract = !(op & 0x4000);
+    uint32_t sum = subtract ? left - right - extend : left + right + extend;
+    uint16_t result = sum;
+    uint32_t overflow = (subtract ? left ^ right : ~(left ^ right)) & (left ^ result);
+    unsigned flags = (result >> 15) * CCR_N |
+                     (result ? 0 : cpu->sr & CCR_Z) |
+                     ((overflow >> 15) & 1) * CCR_V |
+                     ((sum & 0x10000) ? CCR_X | CCR_C : 0);
+    set_data(cpu, dst, 2, result);
+    cpu->sr = (cpu->sr & ~31) | flags;
+    return 4;
+}
+
 static __attribute__((noinline)) unsigned extend_arithmetic(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
+    if ((op & 0xc8) == 0x40)
+        return extend_word_registers(cpu, op);
     unsigned size = 1U << ((op >> 6) & 3);
     unsigned src = op & 7, dst = (op >> 9) & 7;
     bool memory = (op & 8) != 0, subtract = !(op & 0x4000);
@@ -584,7 +605,48 @@ static __attribute__((noinline)) unsigned extend_arithmetic(struct m68k *cpu, st
     return memory ? (size == 4 ? 30 : 18) : (size == 4 ? 8 : 4);
 }
 
-static ARM9_ITCM __attribute__((noinline)) unsigned quick_arithmetic(struct m68k *cpu, struct megadrive *md, uint16_t op)
+static __attribute__((noinline)) unsigned add_decimal_with_extend(
+    struct m68k *cpu, struct megadrive *md, uint16_t op)
+{
+    unsigned src = op & 7, dst = (op >> 9) & 7;
+    bool memory = (op & 8) != 0;
+    uint8_t right = cpu->d[src], left = cpu->d[dst];
+    uint32_t address = 0;
+    if (memory) {
+        uint32_t source_address;
+        // Read the source first when both operands use the same address register.
+        address_operand(cpu, md, 4, src, 1, &source_address);
+        right = read_memory(md, source_address, 1);
+        address_operand(cpu, md, 4, dst, 1, &address);
+        left = read_memory(md, address, 1);
+    }
+
+    unsigned extend = (cpu->sr & CCR_X) != 0;
+    unsigned binary_sum = left + right + extend;
+    unsigned low_digit = (left & 15) + (right & 15) + extend;
+    unsigned adjusted = binary_sum + (low_digit > 9 ? 6 : 0);
+    bool carry = adjusted > 0x9f;
+    uint8_t result = adjusted + (carry ? 0x60 : 0);
+
+    if (memory) {
+        if (!write_memory(md, address, 1, result))
+            return 0;
+    } else {
+        set_data(cpu, dst, 1, result);
+    }
+
+    // ABCD keeps Z across a chain of zero results. A 68000 sets N from the
+    // corrected byte and V when decimal correction turns bit 7 on.
+    unsigned flags = (result & 0x80 ? CCR_N : 0) |
+                     (~binary_sum & result & 0x80 ? CCR_V : 0) |
+                     (result ? 0 : cpu->sr & CCR_Z) |
+                     (carry ? CCR_X | CCR_C : 0);
+    cpu->sr = (cpu->sr & ~31) | flags;
+    return memory ? 18 : 6;
+}
+
+// Reserve ITCM for the common word-to-data-register form.
+static __attribute__((noinline)) unsigned quick_arithmetic(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
     unsigned mode = (op >> 3) & 7, reg = op & 7;
     unsigned size = 1U << ((op >> 6) & 3);
@@ -875,8 +937,54 @@ static uint32_t shift_value(struct m68k *cpu, uint32_t value, unsigned size,
     return value;
 }
 
+static inline unsigned shift_immediate_word(struct m68k *cpu, uint16_t op)
+{
+    unsigned reg = op & 7, kind = (op >> 3) & 3;
+    unsigned count = (op >> 9) & 7;
+    if (!count)
+        count = 8;
+    bool left = (op & 0x100) != 0;
+    uint32_t value = (uint16_t)cpu->d[reg];
+    uint32_t result;
+    bool extend = (cpu->sr & CCR_X) != 0;
+    bool carry, overflow = false;
+
+    if (kind < 2) {
+        unsigned bit = left ? 16 - count : count - 1;
+        carry = (value >> bit) & 1;
+        extend = carry;
+        if (left) {
+            if (kind == 0) {
+                uint32_t prefix = value >> (15 - count);
+                overflow = prefix && prefix != (UINT32_MAX >> (31 - count));
+            }
+            result = value << count;
+        } else {
+            result = kind == 0 ? (uint32_t)((int16_t)value >> count) : value >> count;
+        }
+    } else if (kind == 2) {
+        // Rotate the low word and X together in a seventeen-bit ring.
+        uint32_t ring = (value << 1) | extend;
+        unsigned distance = left ? count : 17 - count;
+        ring = (ring << distance) | (ring >> (17 - distance));
+        carry = extend = ring & 1;
+        result = ring >> 1;
+    } else {
+        unsigned distance = left ? count : 16 - count;
+        result = (value << distance) | (value >> (16 - distance));
+        carry = (result & (left ? 1 : 0x8000)) != 0;
+    }
+    set_data(cpu, reg, 2, result);
+    set_logic_flags(cpu, 2, result);
+    cpu->sr = (cpu->sr & ~CCR_X) | (extend ? CCR_X : 0) |
+              (carry ? CCR_C : 0) | (overflow ? CCR_V : 0);
+    return 6 + count * 2;
+}
+
 static __attribute__((noinline)) unsigned shift_register(struct m68k *cpu, uint16_t op)
 {
+    if ((op & 0xe0) == 0x40)
+        return shift_immediate_word(cpu, op);
     unsigned size = 1U << ((op >> 6) & 3), reg = op & 7;
     unsigned kind = (op >> 3) & 3, count_field = (op >> 9) & 7;
     unsigned count = (op & 0x20) ? cpu->d[count_field] & 63 : count_field ? count_field : 8;
@@ -1285,7 +1393,8 @@ static __attribute__((noinline)) unsigned skip_interleaved_word_stores(struct m6
     return iterations * cost;
 }
 
-static unsigned skip_inactive_objects(struct m68k *cpu, const struct megadrive *md,
+// Keep the object-loop recognizer outside the interpreter's ITCM budget.
+static __attribute__((noinline)) unsigned skip_inactive_objects(struct m68k *cpu, const struct megadrive *md,
                                       unsigned budget, uint32_t pc)
 {
     unsigned length = cpu->instruction_address - cpu->pc;
@@ -1343,62 +1452,76 @@ static unsigned skip_inactive_objects(struct m68k *cpu, const struct megadrive *
 static bool decode_sprite_record_loop(struct m68k_sprite_record_loop *loop,
                                       const uint8_t *rom, uint32_t entry)
 {
-    // This loop copies eight-byte records, applying two register biases,
-    // an indexed ROM byte lookup, a sequence number, and a nonzero word mask.
-    // Decode its operands from the cartridge. Any other form uses the interpreter.
+    // Both loops write eight-byte records. The indexed form translates
+    // the second byte through a ROM table. The direct form copies it.
     uint16_t load_byte = cartridge_aligned_word(rom, 0);
     uint16_t add_first = cartridge_aligned_word(rom, 4);
     uint16_t store_word = cartridge_aligned_word(rom, 6);
-    uint16_t load_index = cartridge_aligned_word(rom, 8);
-    uint16_t lookup = cartridge_aligned_word(rom, 12);
-    uint16_t add_sequence = cartridge_aligned_word(rom, 14);
-    uint16_t add_second = cartridge_aligned_word(rom, 22);
-    uint16_t add_last = cartridge_aligned_word(rom, 28);
+    uint16_t second_byte = cartridge_aligned_word(rom, 8);
+    bool indexed = (second_byte & 0xf1f8) == 0x1018;
+    unsigned word_offset = indexed ? 20 : 14;
+    unsigned dbra_offset = indexed ? 40 : 36;
+    uint16_t lookup = indexed ? cartridge_aligned_word(rom, 12) : 0;
+    uint16_t add_sequence = cartridge_aligned_word(rom, indexed ? 14 : 10);
+    uint16_t add_second = cartridge_aligned_word(rom, word_offset + 2);
+    uint16_t add_last = cartridge_aligned_word(rom, dbra_offset - 12);
     unsigned source = load_byte & 7, output = (store_word >> 9) & 7;
-    unsigned data = (load_byte >> 9) & 7, index = (load_index >> 9) & 7;
+    unsigned data = (load_byte >> 9) & 7, index = (second_byte >> 9) & 7;
     unsigned first_bias = add_first & 7, last_bias = add_last & 7;
     unsigned address_bias = add_second & 7, sequence = add_sequence & 7;
-    uint16_t dbra = cartridge_aligned_word(rom, 40);
+    uint16_t dbra = cartridge_aligned_word(rom, dbra_offset);
     unsigned counter = dbra & 7;
 
     if (source == 7 || output == 7 || source == output ||
-        address_bias == source || address_bias == output ||
-        data == index || data == sequence || index == sequence ||
-        counter == data || counter == index || counter == sequence ||
-        first_bias == data || first_bias == index || first_bias == sequence || first_bias == counter ||
-        last_bias == data || last_bias == index || last_bias == sequence || last_bias == counter)
+        address_bias == source || address_bias == output || data == sequence ||
+        counter == data || counter == sequence ||
+        first_bias == data || first_bias == sequence || first_bias == counter ||
+        last_bias == data || last_bias == sequence || last_bias == counter)
+        return false;
+    if (indexed && (index == data || index == sequence || index == counter ||
+                    index == first_bias || index == last_bias))
         return false;
 
     uint16_t load_word = 0x3018 | (data << 9) | source;
+    uint16_t skip = 0x5448 | source;
+    if (indexed) {
+        if (second_byte != (0x1018 | (index << 9) | source) ||
+            cartridge_aligned_word(rom, 10) != (0x10fb | (output << 9)) ||
+            (lookup & 0xff00) != index << 12 ||
+            cartridge_aligned_word(rom, 16) != (0x10c0 | (output << 9) | sequence) ||
+            cartridge_aligned_word(rom, 18) != skip)
+            return false;
+    } else if (second_byte != (0x10d8 | (output << 9) | source) ||
+               cartridge_aligned_word(rom, 12) != (0x10c0 | (output << 9) | sequence) ||
+               cartridge_aligned_word(rom, 20) != skip) {
+        return false;
+    }
+
     if ((load_byte & 0xf1f8) != 0x1018 ||
         cartridge_aligned_word(rom, 2) != (0x4880 | data) ||
         add_first != (0xd040 | (data << 9) | first_bias) ||
         store_word != (0x30c0 | (output << 9) | data) ||
-        load_index != (0x1018 | (index << 9) | source) ||
-        cartridge_aligned_word(rom, 10) != (0x10fb | (output << 9)) ||
-        (lookup & 0xff00) != index << 12 ||
         add_sequence != (0x5200 | sequence) ||
-        cartridge_aligned_word(rom, 16) != (0x10c0 | (output << 9) | sequence) ||
-        cartridge_aligned_word(rom, 18) != (0x5448 | source) ||
-        cartridge_aligned_word(rom, 20) != load_word ||
+        cartridge_aligned_word(rom, word_offset) != load_word ||
         add_second != (0xd048 | (data << 9) | address_bias) ||
-        cartridge_aligned_word(rom, 24) != store_word ||
-        cartridge_aligned_word(rom, 26) != load_word ||
+        cartridge_aligned_word(rom, word_offset + 4) != store_word ||
+        cartridge_aligned_word(rom, dbra_offset - 14) != load_word ||
         add_last != (0xd040 | (data << 9) | last_bias) ||
-        cartridge_aligned_word(rom, 30) != (0x0240 | data) ||
-        cartridge_aligned_word(rom, 34) != 0x6602 ||
-        cartridge_aligned_word(rom, 36) != (0x5240 | data) ||
-        cartridge_aligned_word(rom, 38) != store_word ||
-        (dbra & 0xfff8) != 0x51c8 || cartridge_aligned_word(rom, 42) != 0xffd6)
+        cartridge_aligned_word(rom, dbra_offset - 10) != (0x0240 | data) ||
+        cartridge_aligned_word(rom, dbra_offset - 6) != 0x6602 ||
+        cartridge_aligned_word(rom, dbra_offset - 4) != (0x5240 | data) ||
+        cartridge_aligned_word(rom, dbra_offset - 2) != store_word ||
+        (dbra & 0xfff8) != 0x51c8 ||
+        (int16_t)cartridge_aligned_word(rom, dbra_offset + 2) != -(int)(dbra_offset + 2))
         return false;
 
     *loop = (struct m68k_sprite_record_loop){
         .start = entry + 1,
         .lookup_base = (entry & 0xffffff) + 12 + (int8_t)lookup,
-        .mask = cartridge_aligned_word(rom, 32),
+        .mask = cartridge_aligned_word(rom, dbra_offset - 8),
         .source = source, .output = output, .data = data, .index = index,
         .first_bias = first_bias, .last_bias = last_bias, .address_bias = address_bias,
-        .sequence = sequence, .counter = counter,
+        .sequence = sequence, .counter = counter, .dbra_offset = dbra_offset,
     };
     return true;
 }
@@ -1406,13 +1529,15 @@ static bool decode_sprite_record_loop(struct m68k_sprite_record_loop *loop,
 static __attribute__((noinline)) unsigned skip_sprite_record_loop(
     struct m68k *cpu, struct megadrive *md, unsigned budget, uint32_t entry, bool complete)
 {
-    enum { RECORD_BYTES = 8, TAKEN_CYCLES = 138, ZERO_CYCLES = 140 };
+    enum { RECORD_BYTES = 8 };
     unsigned pc = entry & 0xffffff;
     struct m68k_sprite_record_loop *loop = &md->sprite_record_loop;
     if (!rom_visible(md, pc, 44) ||
         (loop->start != entry + 1 && !decode_sprite_record_loop(loop, md->rom + pc, entry)))
         return 0;
 
+    bool indexed = loop->dbra_offset == 40;
+    unsigned taken_cycles = indexed ? 138 : 124;
     unsigned source = loop->source, output = loop->output, counter = loop->counter;
     unsigned data = loop->data, index = loop->index, sequence = loop->sequence;
 
@@ -1422,7 +1547,7 @@ static __attribute__((noinline)) unsigned skip_sprite_record_loop(
         (!source_in_ram && !rom_visible(md, src, RECORD_BYTES)))
         return 0;
     unsigned remaining = (uint16_t)cpu->d[counter];
-    unsigned limit = budget / TAKEN_CYCLES;
+    unsigned limit = budget / taken_cycles;
     unsigned src_room = (source_in_ram ? 0x10000 - (src & 0xffff) : md->rom_size - src)
                         / RECORD_BYTES;
     unsigned dst_room = (0x10000 - (dst & 0xffff)) / RECORD_BYTES;
@@ -1445,9 +1570,9 @@ static __attribute__((noinline)) unsigned skip_sprite_record_loop(
 
     const uint8_t *input = source_in_ram ? md->memory->ram + (src & 0xffff) : md->rom + src;
     uint16_t mask = loop->mask;
-    uint16_t index_base = cpu->d[index] & 0xff00;
+    uint16_t index_base = indexed ? cpu->d[index] & 0xff00 : 0;
     uint32_t lookup_base = (loop->lookup_base + (int16_t)index_base) & 0xffffff;
-    bool lookup_in_rom = rom_visible(md, lookup_base, 256);
+    bool lookup_in_rom = indexed && rom_visible(md, lookup_base, 256);
     uint8_t *destination = md->memory->ram + (dst & 0xffff);
     bool aligned_words = (dst & 3) == 0;
     unsigned used = 0, done = 0;
@@ -1456,21 +1581,22 @@ static __attribute__((noinline)) unsigned skip_sprite_record_loop(
     uint16_t bias1 = cpu->d[loop->first_bias], bias2 = cpu->a[loop->address_bias], bias3 = cpu->d[loop->last_bias];
     bool extend = false;
 
-    while (done < limit && budget - used >= TAKEN_CYCLES) {
+    while (done < limit && budget - used >= taken_cycles) {
         uint8_t next_index = cartridge_byte(input, 1);
         unsigned lookup_address = (lookup_base + next_index) & 0xffffff;
-        if (!lookup_in_rom && !rom_visible(md, lookup_address, 1))
+        if (indexed && !lookup_in_rom && !rom_visible(md, lookup_address, 1))
             break;
         uint16_t sum = cartridge_aligned_word(input, 6) + bias3;
         uint16_t last = sum & mask;
-        unsigned cost = (last ? TAKEN_CYCLES : ZERO_CYCLES) + (done == remaining ? 4 : 0);
+        unsigned cost = taken_cycles + (last ? 0 : 2) + (done == remaining ? 4 : 0);
         if (budget - used < cost)
             break;
 
         uint16_t first_word = (int8_t)cartridge_byte(input, 0) + bias1;
-        uint16_t second_word = (uint16_t)cartridge_byte(md->rom, lookup_address) << 8;
+        uint8_t second_byte = indexed ? cartridge_byte(md->rom, lookup_address) : next_index;
+        uint16_t second_word = (uint16_t)second_byte << 8;
         second_word |= ++sequence_byte;
-        uint16_t third_word = cartridge_aligned_word(input, 4) + bias2;
+        uint16_t third_word = cartridge_aligned_word(input, indexed ? 4 : 2) + bias2;
         result = last ? last : 1;
         if (M68K_NATIVE_WORDS && aligned_words) {
             uint32_t first_pair = first_word | (uint32_t)second_word << 16;
@@ -1493,7 +1619,8 @@ static __attribute__((noinline)) unsigned skip_sprite_record_loop(
     }
     if (done) {
         set_data(cpu, data, 2, result);
-        set_data(cpu, index, 1, index_byte);
+        if (indexed)
+            set_data(cpu, index, 1, index_byte);
         set_data(cpu, sequence, 1, sequence_byte);
         set_data(cpu, counter, 2, remaining - done);
         cpu->sr = (cpu->sr & ~CCR_X) | (extend ? CCR_X : 0);
@@ -1501,7 +1628,7 @@ static __attribute__((noinline)) unsigned skip_sprite_record_loop(
         cpu->a[source] += done * RECORD_BYTES;
         cpu->a[output] += done * RECORD_BYTES;
         if (complete)
-            cpu->pc = entry + (done > remaining ? 44 : 0);
+            cpu->pc = entry + (done > remaining ? loop->dbra_offset + 4 : 0);
     }
     return used;
 }
@@ -1519,6 +1646,11 @@ ARM9_ITCM unsigned m68k_skip_idle(struct m68k *cpu, struct megadrive *md, unsign
                 return skip_interleaved_word_stores(cpu, md, budget, md->rom + pc);
             if (cpu->pc + 40 == cpu->instruction_address)
                 return skip_sprite_record_loop(cpu, md, budget, cpu->pc, false);
+            if (cpu->pc + 36 == cpu->instruction_address) {
+                unsigned skipped = skip_sprite_record_loop(cpu, md, budget, cpu->pc, false);
+                if (skipped)
+                    return skipped;
+            }
             if (cpu->pc + 2 != cpu->instruction_address)
                 return skip_inactive_objects(cpu, md, budget, pc);
             if (!rom_visible(md, pc, 2))
@@ -1595,6 +1727,10 @@ struct opcode_shortcut {
     const void *handler;
 };
 
+// Keep label addresses in execute_until when ARM9 LTO compiles the initializer.
+#ifdef __NDS__
+__attribute__((noipa))
+#endif
 static __attribute__((noinline)) void initialize_opcode_table(
     const void **table, const void *const *families,
     const struct opcode_shortcut *shortcuts, unsigned shortcut_count)
@@ -1602,7 +1738,7 @@ static __attribute__((noinline)) void initialize_opcode_table(
     for (unsigned opcode = 0; opcode <= UINT16_MAX; ++opcode) {
         unsigned family = opcode >> 12;
         const void *handler = families[family];
-        if ((family != 2 && family <= 6) || family == 9 || family == 13) {
+        if (family <= 6 || family == 9 || family == 12 || family == 13) {
             for (unsigned i = 0; i < shortcut_count; ++i) {
                 if ((opcode & shortcuts[i].mask) == shortcuts[i].value) {
                     handler = shortcuts[i].handler;
@@ -1616,6 +1752,123 @@ static __attribute__((noinline)) void initialize_opcode_table(
 
 // Synchronize sooner when a bus access or interrupt needs the sound CPU.
 enum { Z80_SYNC_CYCLES = 32768 };
+
+// The caller bounds the skip by the current 68000 slice, before the next
+// VDP or Z80 synchronization point.
+static __attribute__((noinline)) unsigned skip_stable_poll(struct megadrive *md,
+                                                           struct m68k *cpu,
+                                                           uint16_t branch, unsigned budget)
+{
+    unsigned pc = cpu->pc & 0xffffff;
+    if (branch != 0x60f4) {
+        // BTST #3,(VDP status low). A real read already cleared the
+        // command latch and VBlank stays constant within the slice.
+        if (budget < 30 || !rom_visible(md, pc, 10) ||
+            md->vdp_command_pending || megadrive_sram_visible(md, 0xc00005) ||
+            ((cpu->sr & CCR_Z) != 0) == md->vblank)
+            return 0;
+        const uint8_t *code = md->rom + pc;
+        if (cartridge_aligned_word(code, 0) == 0x0839 &&
+            cartridge_aligned_word(code, 2) == 3 &&
+            cartridge_aligned_word(code, 4) == 0x00c0 &&
+            cartridge_aligned_word(code, 6) == 0x0005 &&
+            cartridge_aligned_word(code, 8) == branch)
+            return budget / 30 * 30;
+        return 0;
+    }
+
+    // MOVE #status,SR; JSR absolute-long; BRA back. The subroutine
+    // loads a zero word from work RAM and branches straight to RTS.
+    if (budget < 84 || !rom_visible(md, pc, 12))
+        return 0;
+    const uint8_t *loop = md->rom + pc;
+    if (cartridge_aligned_word(loop, 0) != 0x46fc ||
+        cartridge_aligned_word(loop, 4) != 0x4eb9 ||
+        cartridge_aligned_word(loop, 10) != branch)
+        return 0;
+    unsigned status = cartridge_aligned_word(loop, 2);
+    if (!(status & SR_SUPERVISOR) || cpu->sr != ((status & 0xa710) | CCR_Z))
+        return 0;
+    unsigned target = ((uint32_t)cartridge_aligned_word(loop, 6) << 16 |
+                       cartridge_aligned_word(loop, 8)) & 0xffffff;
+    if ((target & 1) || !rom_visible(md, target, 8))
+        return 0;
+    const uint8_t *callee = md->rom + target;
+    unsigned move = cartridge_aligned_word(callee, 0);
+    if ((move & 0xf1ff) != 0x3038 || cartridge_aligned_word(callee, 4) != 0x6700)
+        return 0;
+    unsigned exit = (target + 6 + (int16_t)cartridge_aligned_word(callee, 6)) & 0xffffff;
+    unsigned address = (uint16_t)cartridge_aligned_word(callee, 2);
+    unsigned stack = (cpu->a[7] - 4) & 0xffffff;
+    if ((exit & 1) || !rom_visible(md, exit, 2) ||
+        cartridge_aligned_word(md->rom, exit) != 0x4e75 ||
+        address < 0x8000 || (address & 1) || (uint16_t)cpu->d[move >> 9 & 7] ||
+        work_ram_word(md, address) || stack < 0xe00000 || (stack & 1))
+        return 0;
+    unsigned offset = (uint16_t)stack;
+    uint32_t ret = cpu->pc + 10;
+    if (offset > 0xfffc || (address >= offset && address < offset + 4) ||
+        work_ram_word(md, offset) != (ret >> 16) ||
+        work_ram_word(md, offset + 2) != (uint16_t)ret)
+        return 0;
+    return budget / 84 * 84;
+}
+
+// Some sprite builders read a sequence of work-RAM words and replace
+// them with a running value. A negative input supplies its new low byte.
+static __attribute__((noinline)) unsigned batch_sprite_words(struct megadrive *md,
+                                                              struct m68k *cpu,
+                                                              unsigned budget)
+{
+    enum { LOOP_CYCLES = 36, NEGATIVE_CYCLES = 46 };
+    unsigned pc = cpu->pc & 0xffffff;
+    unsigned address = cpu->a[5] & 0xffffff;
+    if (budget < LOOP_CYCLES || address < 0xe00000 || (address & 1) ||
+        !rom_visible(md, pc, 16))
+        return 0;
+    const uint8_t *code = md->rom + pc;
+    if (cartridge_aligned_word(code, 0) != 0x3e15 || // MOVE.W (A5),D7
+        cartridge_aligned_word(code, 2) != 0x6a00 || // BPL.W over the next two moves
+        cartridge_aligned_word(code, 4) != 0x0006 ||
+        cartridge_aligned_word(code, 6) != 0x3a07 || // MOVE.W D7,D5
+        cartridge_aligned_word(code, 8) != 0x1805 || // MOVE.B D5,D4
+        cartridge_aligned_word(code, 10) != 0x3ac4 || // MOVE.W D4,(A5)+
+        cartridge_aligned_word(code, 12) != 0x51ce || // DBRA D6 to the start
+        cartridge_aligned_word(code, 14) != 0xfff2)
+        return 0;
+
+    unsigned offset = (uint16_t)address;
+    unsigned remaining = (uint16_t)cpu->d[6];
+    unsigned room = (0x10000 - offset) / 2;
+    if (remaining > room)
+        remaining = room;
+    unsigned done = 0, used = 0;
+    uint16_t source = cpu->d[7], value = cpu->d[4], last_negative = cpu->d[5];
+    while (done < remaining && budget - used >= LOOP_CYCLES) {
+        unsigned at = offset + done * 2;
+        uint16_t word = work_ram_word(md, at);
+        unsigned cost = (word & 0x8000) ? NEGATIVE_CYCLES : LOOP_CYCLES;
+        if (budget - used < cost)
+            break;
+        if (word & 0x8000) {
+            last_negative = word;
+            value = (value & 0xff00) | (word & 0xff);
+        }
+        source = word;
+        work_ram_store_word(md, at, value);
+        used += cost;
+        ++done;
+    }
+    if (done) {
+        set_data(cpu, 6, 2, (uint16_t)cpu->d[6] - done);
+        set_data(cpu, 7, 2, source);
+        set_data(cpu, 5, 2, last_negative);
+        set_data(cpu, 4, 2, value);
+        set_logic_flags(cpu, 2, value);
+        cpu->a[5] += done * 2;
+    }
+    return used;
+}
 
 static unsigned advance_ram_poll(struct megadrive *md, struct m68k *cpu,
                                  unsigned cycles, unsigned end, unsigned *next_sync)
@@ -1651,19 +1904,33 @@ static ARM9_ITCM unsigned execute_until(struct megadrive *md, unsigned cycles,
         &&op_and_multiply, &&op_add_subtract, &&op_shift, &&op_invalid_f,
     };
     static const struct opcode_shortcut shortcuts[] = {
+        {0xfff8, 0x0400, &&op_subi_byte_register},
         {0xfff8, 0x0240, &&op_andi_word},
         {0xfff8, 0x0800, &&op_btst_immediate},
         {0xfff8, 0x0640, &&op_addi_word},
         {0xfff8, 0x0c40, &&op_cmpi_word},
+        {0xfff8, 0x4840, &&op_swap},
         {0xffff, 0x4e75, &&op_rts},
         {0xf1ff, 0x41f8, &&op_lea_word},
         {0xffff, 0x4eb9, &&op_jsr_long},
         {0xffbf, 0x4a38, &&op_tst_absolute},
+        {0xf1f8, 0x20d8, &&op_move_long_postincrement},
         {0xf1f8, 0x30c0, &&op_store_word_postincrement},
+        {0xf1f8, 0x3000, &&op_move_word_register},
+        {0xf1f8, 0x3010, &&op_load_word_memory},
+        {0xf1f8, 0x3028, &&op_load_word_memory},
         {0xf1f8, 0x3018, &&op_load_word_postincrement},
         {0xf1f8, 0x1028, &&op_load_byte_displacement},
         {0xfff8, 0x51c8, &&op_dbra},
+        {0xf0f8, 0x5040, &&op_quick_word_register},
+        {0xfeff, 0x6e00, &&op_word_signed_branch},
+        {0xfcff, 0x6400, &&op_word_flag_branch},
+        {0xfcff, 0x6800, &&op_word_flag_branch},
         {0xfefd, 0x66f8, &&op_poll_branch},
+        {0xfeff, 0x66f6, &&op_stable_poll},
+        {0xffff, 0x60f4, &&op_stable_poll},
+        {0xf1f0, 0xc100, &&op_add_decimal},
+        {0xb1f8, 0x9058, &&op_word_postincrement_arithmetic},
         {0xb1f8, 0x9000, &&op_byte_register_arithmetic},
         {0xb1f0, 0x9040, &&op_word_register_arithmetic},
         {0xb1f0, 0x9080, &&op_long_register_arithmetic},
@@ -1728,7 +1995,7 @@ op_move_byte:
                                                          instruction, true);
                 if (taken) {
                     bool finished = cpu->pc != instruction;
-                    instruction += 40;
+                    instruction += md->sprite_record_loop.dbra_offset;
                     op = cartridge_aligned_word(rom, (instruction & 0xffffff));
                     md->frame_cycle = cycles + taken - (finished ? 14 : 10);
                     FINISH_INSTRUCTION(taken);
@@ -1737,6 +2004,20 @@ op_move_byte:
             FINISH_INSTRUCTION(move_common(cpu, md, op, 1));
 op_move_long:
             FINISH_INSTRUCTION(move_common(cpu, md, op, 4));
+op_move_long_postincrement: { // MOVE.L (An)+,(Am)+
+                unsigned src = op & 7, dst = (op >> 9) & 7;
+                uint32_t address = cpu->a[src];
+                cpu->a[src] += 4;
+                if (address & 1)
+                    FINISH_INSTRUCTION(0);
+                uint32_t value = read_memory_fast(md, address, 4);
+                address = cpu->a[dst];
+                cpu->a[dst] += 4;
+                if (!write_memory_fast(md, address, 4, value))
+                    FINISH_INSTRUCTION(0);
+                set_logic_flags(cpu, 4, value);
+                FINISH_INSTRUCTION(20);
+            }
 op_move_word:
             FINISH_INSTRUCTION(move_common(cpu, md, op, 2));
 op_store_word_postincrement: { // MOVE.W Dn,(An)+
@@ -1748,6 +2029,23 @@ op_store_word_postincrement: { // MOVE.W Dn,(An)+
                     FINISH_INSTRUCTION(0);
                 set_logic_flags(cpu, 2, value);
                 FINISH_INSTRUCTION(8);
+            }
+op_move_word_register: { // MOVE.W Dn,Dn
+                uint32_t value = cpu->d[op & 7];
+                set_data(cpu, (op >> 9) & 7, 2, value);
+                set_logic_flags(cpu, 2, value);
+                FINISH_INSTRUCTION(4);
+            }
+op_load_word_memory: { // MOVE.W (An),Dn or (d16,An),Dn
+                bool displaced = (op & 0x20) != 0;
+                int16_t displacement = displaced ? (int16_t)fetch(cpu, md, 2) : 0;
+                uint32_t address = cpu->a[op & 7] + displacement;
+                if (address & 1)
+                    FINISH_INSTRUCTION(0);
+                uint32_t value = read_memory_fast(md, address, 2);
+                set_data(cpu, (op >> 9) & 7, 2, value);
+                set_logic_flags(cpu, 2, value);
+                FINISH_INSTRUCTION(displaced ? 12 : 8);
             }
 op_load_word_postincrement: { // MOVE.W (An)+,Dn
                 unsigned reg = op & 7;
@@ -1798,6 +2096,14 @@ op_quick: {
                 FINISH_INSTRUCTION(0);
             FINISH_INSTRUCTION(8 + memory_cycles(mode, reg, 1));
         }
+op_quick_word_register: { // ADDQ.W/SUBQ.W to a data register
+                unsigned count = (op >> 9) & 7, reg = op & 7;
+                if (!count)
+                    count = 8;
+                uint32_t result = arithmetic_flags(cpu, 2, cpu->d[reg], count, (op & 0x100) != 0, false);
+                set_data(cpu, reg, 2, result);
+                FINISH_INSTRUCTION(4);
+            }
 op_dbra: {
                 uint32_t base = cpu->pc;
                 int16_t displacement = fetch(cpu, md, 2);
@@ -1807,6 +2113,13 @@ op_dbra: {
                 if (count == 0xffff)
                     FINISH_INSTRUCTION(14);
                 cpu->pc = base + displacement;
+                if (op == 0x51ce && displacement == -14 && cycles + 10 < md->m68k_slice_end) {
+                    unsigned spent = batch_sprite_words(md, cpu, md->m68k_slice_end - cycles - 10);
+                    if (spent) {
+                        md->frame_cycle = cycles + spent;
+                        FINISH_INSTRUCTION(10 + spent);
+                    }
+                }
                 goto skip_idle_loop;
             }
 op_poll_branch: // BNE/BEQ with displacement -6 or -8.
@@ -1818,6 +2131,37 @@ op_poll_branch: // BNE/BEQ with displacement -6 or -8.
             cycles += 10;
             long_poll = true;
             break;
+op_stable_poll: {
+                if (op != 0x60f4 && (cpu->sr & CCR_Z) != ((op >> 6) & CCR_Z))
+                    FINISH_INSTRUCTION(8);
+                cpu->pc += (int8_t)op;
+                unsigned spent = 10;
+                if (cycles + spent < md->m68k_slice_end)
+                    spent += skip_stable_poll(md, cpu, op, md->m68k_slice_end - cycles - spent);
+                md->frame_cycle = cycles + spent - 10;
+                FINISH_INSTRUCTION(spent);
+            }
+op_word_signed_branch: { // BGT.W/BLE.W
+                uint32_t base = cpu->pc;
+                int16_t displacement = fetch(cpu, md, 2);
+                unsigned flags = cpu->sr;
+                // Signed greater-than requires N == V and Z == 0.
+                bool greater = (((flags >> 2) ^ flags) & CCR_V) == 0 && !(flags & CCR_Z);
+                if (greater == ((op & 0x100) != 0))
+                    FINISH_INSTRUCTION(12);
+                cpu->pc = base + displacement;
+                FINISH_INSTRUCTION(10);
+            }
+op_word_flag_branch: { // Word branches based on one condition flag.
+                uint32_t base = cpu->pc;
+                int16_t displacement = fetch(cpu, md, 2);
+                // CC/CS use C, NE/EQ use Z, VC/VS use V, PL/MI use N.
+                unsigned bit = ((op >> 9) & 1) * 2 + ((op >> 11) & 1);
+                if (((cpu->sr >> bit) ^ (op >> 8)) & 1)
+                    FINISH_INSTRUCTION(12);
+                cpu->pc = base + displacement;
+                FINISH_INSTRUCTION(10);
+            }
 op_branch:
             FINISH_INSTRUCTION(execute_branch(cpu, md, op));
 op_move_quick:
@@ -1832,6 +2176,8 @@ op_or_divide:
             if ((op & 0xc0) == 0xc0)
                 FINISH_INSTRUCTION(multiply_or_divide(cpu, md, op));
             FINISH_INSTRUCTION(data_alu(cpu, md, op));
+op_add_decimal:
+            FINISH_INSTRUCTION(add_decimal_with_extend(cpu, md, op));
 op_and_multiply:
             if ((op & 0xf1f8) == 0xc140 || (op & 0xf1f8) == 0xc148 ||
                 (op & 0xf1f8) == 0xc188) {
@@ -1858,6 +2204,18 @@ op_word_register_arithmetic:
             FINISH_INSTRUCTION(register_arithmetic(cpu, op, 2, !(op & 0x4000)));
 op_long_register_arithmetic:
             FINISH_INSTRUCTION(register_arithmetic(cpu, op, 4, !(op & 0x4000)));
+op_word_postincrement_arithmetic: { // ADD.W/SUB.W (An)+,Dn
+                unsigned source = op & 7, dest = (op >> 9) & 7;
+                uint32_t address = cpu->a[source];
+                cpu->a[source] += 2;
+                if (address & 1)
+                    FINISH_INSTRUCTION(0);
+                uint32_t operand = read_memory_fast(md, address, 2);
+                uint32_t result = arithmetic_flags(cpu, 2, cpu->d[dest], operand,
+                                                   !(op & 0x4000), false);
+                set_data(cpu, dest, 2, result);
+                FINISH_INSTRUCTION(8);
+            }
 op_address_word_arithmetic: {
                 unsigned dest = (op >> 9) & 7;
                 const uint32_t *source = (op & 8) ? cpu->a : cpu->d;
@@ -1874,6 +2232,12 @@ op_shift:
 op_invalid_a:
 op_invalid_f:
             FINISH_INSTRUCTION(0);
+op_subi_byte_register: {
+                unsigned reg = op & 7;
+                uint32_t operand = fetch(cpu, md, 2);
+                set_data(cpu, reg, 1, arithmetic_flags(cpu, 1, cpu->d[reg], operand, true, false));
+                FINISH_INSTRUCTION(8);
+            }
 op_andi_word: { // ANDI.W #value,Dn
                 unsigned reg = op & 7;
                 uint32_t value = cpu->d[reg] & fetch(cpu, md, 2);
@@ -1897,6 +2261,14 @@ op_cmpi_word: { // CMPI.W #value,Dn
                 uint32_t operand = fetch(cpu, md, 2);
                 arithmetic_flags(cpu, 2, cpu->d[op & 7], operand, true, true);
                 FINISH_INSTRUCTION(8);
+            }
+op_swap: { // SWAP Dn
+                unsigned reg = op & 7;
+                uint32_t value = cpu->d[reg];
+                value = (value >> 16) | (value << 16);
+                cpu->d[reg] = value;
+                set_logic_flags(cpu, 4, value);
+                FINISH_INSTRUCTION(4);
             }
 op_rts: { // RTS
                 if (cpu->a[7] & 1)

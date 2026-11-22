@@ -8,6 +8,7 @@ void dac_begin(struct megadrive *md, struct dac_frame *frame)
     md->dac_capture = (struct dac_capture){.frame = frame};
     frame->fm_count = 0;
     frame->fm_overflow = false;
+    frame->dac_audible = false;
     memcpy(frame->fm_registers, md->ym_registers, sizeof(frame->fm_registers));
     memcpy(frame->fm_keys, md->ym_fm_keys, sizeof(frame->fm_keys));
     frame->fm_pitch = md->ym_pitch;
@@ -45,6 +46,7 @@ void dac_sync(struct megadrive *md, unsigned cycle)
         .left = pan & 0x80 ? level : 0,
         .right = pan & 0x40 ? level : 0,
     };
+    frame->dac_audible |= sample.left || sample.right;
     while (capture->position < end)
         frame->samples[capture->position++] = sample;
 }

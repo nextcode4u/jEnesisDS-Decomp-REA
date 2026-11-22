@@ -16,8 +16,6 @@ with Path(sys.argv[1]).open("w", encoding="ascii") as output:
         ("int16_t", "fm_levels",
          [sign * (level >> shift) for shift in range(13)
           for level in magnitude for sign in (1, -1)]),
-        ("uint32_t", "fm_frequency",
-         [i * 4096 * 0x750ab5 // (27563 * 144) for i in range(2048)]),
     ]
     for c_type, name, values in tables:
         output.write(f"const {c_type} {name}[{len(values)}] = {{\n")
