@@ -77,5 +77,8 @@ void capture_fm_write(struct megadrive *md, unsigned reg, uint8_t value, unsigne
 void dac_end(struct megadrive *md)
 {
     dac_sync(md, md->frame_cycles);
+    if (md->dac_capture.frame)
+        memcpy(md->dac_capture.frame->psg_registers, md->psg_registers,
+               sizeof(md->dac_capture.frame->psg_registers));
     md->dac_capture.frame = 0;
 }

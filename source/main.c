@@ -112,9 +112,12 @@ struct application {
     uint16_t sound_generation;
     unsigned save_slot;
     unsigned measured_fps;
+    unsigned measured_video_fps;
     int save_line;
     int settings_line;
     bool slots[2];
+    bool vertical_scaling;
+    enum vdp_horizontal_view horizontal_view;
     enum frontend_view view;
     enum frontend_view before_settings;
     enum frontend_view before_save;
@@ -138,6 +141,8 @@ static uint16_t palette_source[64];
 static bool palette_valid;
 static volatile bool palette_pending;
 static volatile uint32_t vblank_count;
+static volatile uint32_t presented_frames;
+enum { FRAME_TIMER = 0, FRAME_TIMER_DIVIDER = 64 };
 
 static void init_game_display(void)
 {
@@ -170,6 +175,7 @@ static void present_game_frame(void)
     field_visible = field_queued;
     current_output = pending_output;
     pending_output = OUTPUT_NONE;
+    ++presented_frames;
 }
 
 static void video_vblank(void)
@@ -177,18 +183,21 @@ static void video_vblank(void)
     present_game_frame();
     vdp_ds_frame_start();
     if (palette_pending) {
-        BG_PALETTE[0] = palette_queued[0];
+        // Preserve the high bit used by the original jEnesisDS palette.
+        BG_PALETTE[0] = palette_queued[0] | BIT(15);
         for (unsigned i = 1; i < 64; ++i) {
-            BG_PALETTE[i] = palette_queued[i];
-            SPRITE_PALETTE[i] = palette_queued[i];
+            uint16_t color = palette_queued[i] | BIT(15);
+            BG_PALETTE[i] = color;
+            SPRITE_PALETTE[i] = color;
         }
         palette_pending = false;
     }
     ++vblank_count;
 }
 
-static void draw_game_frame(const struct megadrive *md)
+static void draw_game_frame(const struct application *app)
 {
+    const struct megadrive *md = app->md;
     enum game_output output = OUTPUT_NONE;
     if (!display_visible || display_revision != md->video_revision) {
         // Replace an undisplayed frame before touching its off-screen page.
@@ -199,12 +208,12 @@ static void draw_game_frame(const struct megadrive *md)
             palette_valid = false;
         }
         leaveCriticalSection(critical);
-        if (vdp_ds_prepare(md)) {
+        if (vdp_ds_prepare(md, app->vertical_scaling, app->horizontal_view)) {
             output = OUTPUT_TILES;
         } else {
             bitmap_queued = bitmap_visible ^ 4;
             uint16_t *bitmap = (uint16_t *)BG_GFX + bitmap_queued * (0x4000 / sizeof(uint16_t));
-            vdp_render_frame(md, bitmap_pixels);
+            vdp_render_frame(md, bitmap_pixels, app->vertical_scaling, app->horizontal_view);
             DC_FlushRange(bitmap_pixels, sizeof(bitmap_pixels));
             dmaCopyWords(3, bitmap_pixels, bitmap, sizeof(bitmap_pixels));
             output = OUTPUT_BITMAP;
@@ -233,6 +242,22 @@ static void draw_game_frame(const struct megadrive *md)
         pending_output = output;
     }
     leaveCriticalSection(critical);
+}
+
+static bool draw_paced_frame(const struct application *app, struct video_pacing *video,
+                             unsigned budget)
+{
+    if (app->horizontal_view != VDP_VIEW_FIT || !(app->md->vdp_registers[12] & 1)) {
+        draw_game_frame(app);
+        return true;
+    }
+    uint32_t vblank = vblank_count;
+    if (display_visible && (pending_output != OUTPUT_NONE || !video_pacing_due(video, vblank)))
+        return false;
+    uint16_t start = timerTick(FRAME_TIMER);
+    draw_game_frame(app);
+    video_pacing_drawn(video, (uint16_t)(timerTick(FRAME_TIMER) - start), vblank, budget);
+    return true;
 }
 
 static void draw_browser(const struct browser *browser)
@@ -292,8 +317,19 @@ static void draw_settings(const struct application *app)
     frontend_printf("Country          %s", regions[app->region]);
     frontend_cursor(2, 10);
     frontend_printf("Controller       %u Button", app->md->six_button ? 6 : 3);
-    frontend_cursor(2, 13);
+    frontend_cursor(2, 12);
+    frontend_printf("Vertical Scaling %s", app->vertical_scaling ? "On" : "Off");
+    static const char *const views[] = {"Fit", "Left", "Center"};
+    frontend_cursor(2, 14);
+    frontend_printf("Horizontal View  %s", views[app->horizontal_view]);
+    frontend_cursor(2, 17);
     frontend_write("Country applies to next ROM");
+    frontend_cursor(2, 19);
+    if (isDSiMode())
+        frontend_printf("DSi %u MHz  Video %u FPS", (REG_SCFG_CLK & SCFG_CLK_ARM9_TWL) ? 134 : 67,
+                        app->measured_video_fps);
+    else
+        frontend_printf("DS mode  Video %u FPS", app->measured_video_fps);
     frontend_cursor(2, 21);
     frontend_write("A Change       SELECT Back");
 }
@@ -471,7 +507,7 @@ static bool handle_save_menu(struct application *app, uint32_t keys, const char 
             if (loaded) {
                 ++app->sound_generation;
                 vdp_ds_invalidate();
-                draw_game_frame(app->md);
+                draw_game_frame(app);
             }
             *message = loaded ? "State loaded" : "Unable to load state";
         } else if (app->save_line == SAVE_WRITE_ROW) {
@@ -496,20 +532,31 @@ static bool handle_menu(struct application *app, uint32_t keys, const touchPosit
     bool tapped_rom = tapped_header && touch->px >= 8 && touch->px < 40;
     bool tapped_settings = tapped_header && touch->px >= 48 && touch->px < 88;
     if (app->view == VIEW_SETTINGS) {
-        bool country_tap = touch && touch->py >= 64 && touch->py < 72;
-        bool controller_tap = touch && touch->py >= 80 && touch->py < 88;
+        int row = touch ? touch->py / 8 : -1;
+        bool tapped_option = row >= 8 && row <= 14 && !(row & 1);
         if ((keys & (KEY_SELECT | KEY_B)) || tapped_settings) {
             app->view = app->before_settings;
-        } else if (keys & (KEY_UP | KEY_DOWN)) {
-            app->settings_line = app->settings_line == 8 ? 10 : 8;
-        } else if ((keys & KEY_A) || country_tap || controller_tap) {
-            if (country_tap || controller_tap)
-                app->settings_line = country_tap ? 8 : 10;
+        } else if (keys & KEY_UP) {
+            app->settings_line = app->settings_line == 8 ? 14 : app->settings_line - 2;
+        } else if (keys & KEY_DOWN) {
+            app->settings_line = app->settings_line == 14 ? 8 : app->settings_line + 2;
+        } else if ((keys & KEY_A) || tapped_option) {
+            if (tapped_option)
+                app->settings_line = row;
             if (app->settings_line == 8)
                 app->region = (app->region + 1) % GENESIS_REGION_COUNT;
-            else {
+            else if (app->settings_line == 10) {
                 app->md->six_button = !app->md->six_button;
                 memset(app->md->th_phase, 0, sizeof(app->md->th_phase));
+            } else {
+                if (app->settings_line == 12)
+                    app->vertical_scaling = !app->vertical_scaling;
+                else
+                    app->horizontal_view = (app->horizontal_view + 1) % VDP_HORIZONTAL_VIEWS;
+                if (app->cart.data) {
+                    display_visible = false;
+                    draw_game_frame(app);
+                }
             }
         } else {
             return false;
@@ -640,7 +687,6 @@ static void send_audio(const struct application *app)
         .enabled = app->view == VIEW_CARTRIDGE && !app->md->cpu.stopped,
         .pal = (app->md->version & 0x40) != 0,
     };
-    memcpy(msg.registers, app->md->psg_registers, sizeof(msg.registers));
     if (memcmp(&last, &msg, sizeof(msg)) &&
         fifoSendDatamsg(FIFO_USER_01, sizeof(msg), (uint8_t *)&msg))
         last = msg;
@@ -667,17 +713,22 @@ int main(void)
     static struct megadrive_memory game_memory;
     game_memory.z80_ram = sound_ram;
     static struct megadrive game_core DTCM_DATA = {.memory = &game_memory};
-    static struct application app = {.md = &game_core};
+    static struct application app = {
+        .md = &game_core, .vertical_scaling = true, .horizontal_view = VDP_VIEW_LEFT,
+    };
     keysSetRepeat(18, 4);
     draw_screen(&app, read_directory(&app.browser));
 
     // The DS display runs at about 59.83 Hz. A 313-line PAL cartridge
     // runs at about 49.70 Hz, so present it on a subset of DS VBlanks.
     struct frame_pacing pacing = {0};
+    struct video_pacing video = {0};
+    timerStart(FRAME_TIMER, ClockDivider_64, 0, NULL);
     bool was_running = false;
     uint32_t observed_vblank = vblank_count;
     unsigned measurement_vblanks = 0;
     unsigned measurement_frames = 0;
+    uint32_t video_measurement_start = presented_frames;
     for (;;) {
         if (!pacing.pending_frames && observed_vblank == vblank_count)
             swiWaitForVBlank();
@@ -695,10 +746,19 @@ int main(void)
         bool running = app.view == VIEW_CARTRIDGE && !app.md->cpu.stopped;
         bool pal = running && (app.md->version & 0x40);
         unsigned frame_budget = frame_pacing_batch(&pacing, elapsed_vblanks, running, was_running, pal);
+        if (!running || !was_running)
+            video = (struct video_pacing){0};
+        else
+            video_pacing_observe(&video, elapsed_vblanks);
         if (running && frame_budget) {
+            // Reserve part of each period for input, display IRQs and the frontend.
+            enum { NTSC_WORK_TICKS = (BUS_CLOCK / FRAME_TIMER_DIVIDER) * 97 / DS_REFRESH,
+                   PAL_WORK_TICKS = (BUS_CLOCK / FRAME_TIMER_DIVIDER) * 97 / PAL_REFRESH };
+            unsigned work_ticks = pal ? PAL_WORK_TICKS : NTSC_WORK_TICKS;
             app.md->pad1_pressed = genesis_buttons(keysHeld(), app.md->six_button);
             bool presented_first_field = false;
             for (unsigned frame = 0; frame < frame_budget && !app.md->cpu.stopped; ++frame) {
+                uint16_t frame_start = timerTick(FRAME_TIMER);
                 struct dac_frame *audio = begin_audio_frame(&app, pal);
                 megadrive_run_frame(app.md);
                 dac_end(app.md);
@@ -706,17 +766,17 @@ int main(void)
                 send_audio(&app);
                 if (!app.md->cpu.stopped)
                     submit_dac_frame(audio);
+                video_pacing_advance(&video, (uint16_t)(timerTick(FRAME_TIMER) - frame_start), work_ticks);
                 // With two emulated fields before a VBlank, choose the one
                 // opposite the field currently on screen.
                 if (frame == 0 && frame_budget == 2 &&
                     (app.md->vdp_registers[12] & 6) == 6 &&
                     app.md->vdp_odd_field != field_visible) {
-                    draw_game_frame(app.md);
-                    presented_first_field = true;
+                    presented_first_field = draw_paced_frame(&app, &video, work_ticks);
                 }
             }
             if (!presented_first_field)
-                draw_game_frame(app.md);
+                draw_paced_frame(&app, &video, work_ticks);
             if (app.md->cpu.stopped)
                 draw_screen(&app, NULL);
         }
@@ -733,6 +793,10 @@ int main(void)
             if (measurement_vblanks >= 60) {
                 app.measured_fps = (60 * measurement_frames + measurement_vblanks / 2) /
                                    measurement_vblanks;
+                uint32_t presented = presented_frames;
+                app.measured_video_fps = (60 * (presented - video_measurement_start) +
+                                          measurement_vblanks / 2) / measurement_vblanks;
+                video_measurement_start = presented;
                 frontend_draw_fps(app.measured_fps);
                 measurement_frames = 0;
                 measurement_vblanks = 0;
@@ -740,6 +804,7 @@ int main(void)
         } else {
             measurement_frames = 0;
             measurement_vblanks = 0;
+            video_measurement_start = presented_frames;
         }
         send_audio(&app);
     }

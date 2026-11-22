@@ -1100,7 +1100,7 @@ static ARM9_ITCM __attribute__((noinline)) unsigned execute_immediate(struct m68
     return 0;
 }
 
-static ARM9_ITCM __attribute__((noinline)) bool call_subroutine(
+static __attribute__((noinline)) bool call_subroutine(
     struct m68k *cpu, struct megadrive *md, uint32_t address)
 {
     cpu->a[7] -= 4;

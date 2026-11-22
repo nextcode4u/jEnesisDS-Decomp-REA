@@ -2,6 +2,7 @@
 #define JENESIS_DAC_H
 
 #include "fm.h"
+#include "psg.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -13,15 +14,20 @@ struct dac_sample {
 };
 
 struct fm_write_event {
-    uint16_t sample, reg;
-    uint8_t value;
+    uint32_t sample : 10;
+    uint32_t reg : 9;
+    uint32_t value : 8;
 };
+
+_Static_assert(sizeof(struct fm_write_event) == 4, "FM event must fit in one IPC word");
+_Static_assert(DAC_PCM_CAPACITY <= (1U << 10), "DAC frame must fit the FM sample index");
 
 // Both processors communicate through aligned buffers in main RAM.
 struct dac_frame {
     uint16_t count, generation, sequence, fm_count;
     uint8_t slot;
     bool fm_overflow;
+    uint16_t psg_registers[PSG_REGISTERS];
     uint8_t fm_registers[2][256], fm_keys[FM_CHANNELS];
     struct fm_pitch fm_pitch;
     struct dac_sample samples[DAC_PCM_CAPACITY];

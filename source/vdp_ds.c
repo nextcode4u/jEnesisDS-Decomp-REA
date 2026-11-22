@@ -121,7 +121,7 @@ static ITCM_CODE void hblank(void)
     irqDisable(IRQ_HBLANK);
 }
 
-static ITCM_CODE void vcount(void)
+static void vcount(void)
 {
     // Arm HBlank on the preceding line so control writes land between draws.
     irqDisable(IRQ_VCOUNT);
@@ -337,7 +337,7 @@ static unsigned object_dimension(unsigned remaining)
 
 static bool prepare_sprite_span(const struct megadrive *md, struct page *page, unsigned next,
                                 bool wide, int left, int top, const uint8_t *table,
-                                int first, int last, unsigned *object_count,
+                                int first, int last, bool scale, unsigned *object_count,
                                 unsigned *pattern_count)
 {
     unsigned limit = wide ? 80 : 64;
@@ -359,7 +359,7 @@ static bool prepare_sprite_span(const struct megadrive *md, struct page *page, u
         } else {
             y -= 128;
         }
-        y -= top;
+        y = vdp_viewport_sprite_y(y, scale) - top;
         int x = ((entry[6] << 8 | entry[7]) & 0x1ff) - 128 - left;
         unsigned width = ((size_link >> 10) & 3) + 1, height = ((size_link >> 8) & 3) + 1;
         int bottom = y + (int)(height * 8);
@@ -447,7 +447,8 @@ static const struct vdp_scanline *raster_row(const struct megadrive *md, unsigne
 }
 
 static bool prepare_sprites(const struct megadrive *md, struct page *page, unsigned next,
-                            bool wide, unsigned left, unsigned top, const uint8_t *tables)
+                            bool wide, unsigned left, unsigned top, bool scale,
+                            const uint8_t *tables)
 {
     unsigned table_base = (md->vdp_registers[5] & (wide ? 0x7e : 0x7f)) << 9;
     unsigned count = 0, blocks = 0;
@@ -459,7 +460,8 @@ static bool prepare_sprites(const struct megadrive *md, struct page *page, unsig
         if (table == UINT8_MAX)
             continue;
         const uint8_t *data = table ? md->memory->vdp_sprite_tables[table - 1] : md->memory->vram + table_base;
-        if (!prepare_sprite_span(md, page, next, wide, left, top, data, first, last, &count, &blocks))
+        if (!prepare_sprite_span(md, page, next, wide, left, top, data, first, last, scale,
+                                 &count, &blocks))
             return false;
     }
     page->used_sprite_patterns = blocks;
@@ -515,7 +517,8 @@ static void rebase_scroll(struct scanline *line, unsigned plane, const struct ti
     line->scroll[plane] = (scroll & 0xffff0000) | ((scroll - map->first_column * 8) & 0x1ff);
 }
 
-bool vdp_ds_prepare(const struct megadrive *md)
+bool vdp_ds_prepare(const struct megadrive *md, bool vertical_scaling,
+                    enum vdp_horizontal_view view)
 {
     const uint8_t *regs = md->vdp_registers;
     unsigned mode = regs[12] & 6;
@@ -526,7 +529,12 @@ bool vdp_ds_prepare(const struct megadrive *md)
         (mode && !interlace) || horizontal == 2 || (regs[16] & 0x20))
         return false;
     bool wide = (regs[12] & 1) != 0;
-    unsigned left = wide ? 32 : 0, top = (regs[1] & 8) ? 24 : 16;
+    // Interlace mode 2 presents each field at its native line spacing.
+    bool scale = vertical_scaling && !interlace;
+    if (wide && view == VDP_VIEW_FIT)
+        return false;
+    unsigned left = vdp_viewport_left(wide, view);
+    unsigned top = vdp_viewport_top(regs, scale);
     unsigned next = visible_page ^ 1;
     struct page *page = &pages[next];
     if (md->video_revision < page->last_revision) {
@@ -564,7 +572,8 @@ bool vdp_ds_prepare(const struct megadrive *md)
     unsigned window_base = (regs[3] & (wide ? 0x3c : 0x3e)) << 10;
     bool window_geometry_differs = width != window_width || columns != window_width || height != 32;
     for (unsigned y = 0; y < VDP_VIEW_HEIGHT; ++y) {
-        const struct vdp_scanline *row = raster_row(md, y + top);
+        unsigned guest_y = vdp_viewport_scanline(y, top, scale);
+        const struct vdp_scanline *row = raster_row(md, guest_y);
         bool active = row ? row->display_enabled : enabled;
         sprite_tables[y] = active ? (row ? row->sprite_table : 0) : UINT8_MAX;
         if (!active) {
@@ -573,7 +582,6 @@ bool vdp_ds_prepare(const struct megadrive *md)
             blanking = true;
             continue;
         }
-        unsigned guest_y = y + top;
         bool window_row = window_below ? guest_y >= window_y : guest_y < window_y;
         // A DS BG cannot change its map partway across a scanline. Use the
         // bitmap renderer if both Plane A and the window are visible here.
@@ -593,8 +601,9 @@ bool vdp_ds_prepare(const struct megadrive *md)
         unsigned v_b = vertical[1] + field;
         unsigned parity_a = interlace ? v_a & 1 : 0;
         unsigned parity_b = interlace ? v_b & 1 : 0;
-        page->lines[y].scroll[0] = h_a | (((top + (v_a >> interlace)) & 0x1ff) << 16);
-        page->lines[y].scroll[1] = h_b | (((top + (v_b >> interlace)) & 0x1ff) << 16);
+        unsigned y_offset = guest_y - y;
+        page->lines[y].scroll[0] = h_a | (((y_offset + (v_a >> interlace)) & 0x1ff) << 16);
+        page->lines[y].scroll[1] = h_b | (((y_offset + (v_b >> interlace)) & 0x1ff) << 16);
         unsigned base = window ? window_base : ((row ? row->plane_a_base : regs[2]) & 0x38) << 10;
         // The low bits identify field parity and the window's map geometry.
         unsigned key = base | parity_a | (window && window_geometry_differs ? 2 : 0);
@@ -646,7 +655,7 @@ bool vdp_ds_prepare(const struct megadrive *md)
     }
     if (!map_count ||
         !prepare_maps(md, page, next, maps, map_count, interlace) ||
-        !prepare_sprites(md, page, next, wide, left, top, sprite_tables))
+        !prepare_sprites(md, page, next, wide, left, top, scale, sprite_tables))
         return false;
     page->raster = blanking || map_count > 2;
     page->change_count = 0;

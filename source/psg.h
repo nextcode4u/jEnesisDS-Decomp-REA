@@ -8,7 +8,6 @@
 enum { PSG_RATE = 27563, PSG_REGISTERS = 8 };
 
 struct psg_message {
-    uint16_t registers[PSG_REGISTERS];
     uint16_t generation;
     uint8_t enabled;
     uint8_t pal;

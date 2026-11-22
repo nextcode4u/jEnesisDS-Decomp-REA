@@ -451,6 +451,7 @@ static void test_dac_timing(const struct cartridge *cart)
     assert(frame.fm_count == 2);
     assert(frame.fm_writes[0].reg == 0x2b && frame.fm_writes[0].sample == 2);
     assert(frame.fm_writes[1].reg == 0x1b6 && frame.fm_writes[1].sample == 4);
+    assert(!memcmp(frame.psg_registers, md.psg_registers, sizeof(frame.psg_registers)));
     assert(!md.dac_capture.frame);
     assert(!memcmp(frame.samples, expected, sizeof(expected)));
 }
@@ -707,16 +708,16 @@ static void test_vdp_render(struct megadrive *md)
     set_vram_word(md, 0xf000, 16 + 128);
     set_vram_word(md, 0xf004, 3);
     set_vram_word(md, 0xf006, 128);
-    vdp_render_frame(md, bitmap);
+    vdp_render_frame(md, bitmap, false, VDP_VIEW_CENTER);
     assert(bitmap[0] == 0x0202 && bitmap[4] == 0);
     set_vram_word(md, 0xe080, 0x0002);
-    vdp_render_frame(md, bitmap);
+    vdp_render_frame(md, bitmap, false, VDP_VIEW_CENTER);
     assert(bitmap[0] == 0x0303);
     set_vram_word(md, 0xc080, 0xa001);
-    vdp_render_frame(md, bitmap);
+    vdp_render_frame(md, bitmap, false, VDP_VIEW_CENTER);
     assert(bitmap[0] == 0x1111);
     vdp_register(md, 1, 4);
-    vdp_render_frame(md, bitmap);
+    vdp_render_frame(md, bitmap, false, VDP_VIEW_CENTER);
     assert(bitmap[0] == 0);
 }
 
@@ -739,12 +740,68 @@ static void test_sprite_scanline_limit(void)
         set_vram_word(&md, entry + 4, 1);
         set_vram_word(&md, entry + 6, i == 16 ? 128 : 0);
     }
-    vdp_render_frame(&md, bitmap);
+    vdp_render_frame(&md, bitmap, false, VDP_VIEW_CENTER);
     assert(bitmap[0] == 0); // The first sixteen sprites are offscreen.
     set_vram_word(&md, 0xf000 + 15 * 8 + 6, 128);
-    vdp_render_frame(&md, bitmap);
+    vdp_render_frame(&md, bitmap, false, VDP_VIEW_CENTER);
     assert(bitmap[0] == 0x0202);
     assert(bitmap[(VDP_VIEW_WIDTH / 2) * 8] == 0);
+}
+
+static void test_vertical_scaling(void)
+{
+    static struct megadrive_memory memory;
+    static struct megadrive md = {.memory = &memory};
+    static uint16_t bitmap[VDP_VIEW_WIDTH * VDP_VIEW_HEIGHT / 2];
+    const unsigned stride = VDP_VIEW_WIDTH / 2;
+    vdp_register(&md, 1, 0x40);
+    vdp_register(&md, 2, 8);
+    vdp_register(&md, 4, 3);
+    vdp_register(&md, 5, 0x20);
+    vdp_register(&md, 13, 0x3f);
+    set_vram_word(&md, 0x2000, 1);
+    memset(memory.vram + 32 + 5 * 4, 0x11, 4);
+    memset(memory.vram + 32 + 6 * 4, 0x22, 4);
+    memset(memory.vram + 32 + 7 * 4, 0x33, 4);
+    set_vram_word(&md, 0x4000, 128 + 20);
+    set_vram_word(&md, 0x4004, 2);
+    set_vram_word(&md, 0x4006, 128 + 16);
+    memset(memory.vram + 64, 0x44, 32);
+
+    vdp_render_frame(&md, bitmap, true, VDP_VIEW_CENTER);
+    assert(bitmap[5 * stride] == 0x0101);
+    assert(bitmap[6 * stride] == 0x0303);
+    assert(bitmap[16 * stride + 8] == 0);
+    assert(bitmap[17 * stride + 8] == 0x0404);
+    assert(bitmap[24 * stride + 8] == 0x0404);
+    assert(bitmap[25 * stride + 8] == 0);
+}
+
+static void test_horizontal_view(void)
+{
+    static struct megadrive_memory memory;
+    static struct megadrive md = {.memory = &memory};
+    static uint16_t bitmap[VDP_VIEW_WIDTH * VDP_VIEW_HEIGHT / 2];
+    vdp_register(&md, 1, 0x40);
+    vdp_register(&md, 2, 8);
+    vdp_register(&md, 4, 3);
+    vdp_register(&md, 5, 0x20);
+    vdp_register(&md, 12, 1);
+    vdp_register(&md, 13, 0x3f);
+    vdp_register(&md, 16, 1);
+    set_vram_word(&md, 0x2000, 1);
+    set_vram_word(&md, 0x2000 + 39 * 2, 2);
+    memset(memory.vram + 32, 0x11, 32);
+    memset(memory.vram + 64, 0x22, 32);
+
+    vdp_render_frame(&md, bitmap, true, VDP_VIEW_FIT);
+    assert(bitmap[0] == 0x0101);
+    assert(bitmap[VDP_VIEW_WIDTH / 2 - 1] == 0x0202);
+    vdp_render_frame(&md, bitmap, true, VDP_VIEW_LEFT);
+    assert(bitmap[0] == 0x0101);
+    assert(bitmap[VDP_VIEW_WIDTH / 2 - 1] == 0);
+    vdp_render_frame(&md, bitmap, true, VDP_VIEW_CENTER);
+    assert(bitmap[0] == 0);
 }
 
 static void test_vdp_reads(const struct cartridge *cart)
@@ -824,7 +881,7 @@ static void test_scanline_scroll(void)
     assert(md.memory->vdp_rows[160].sprite_table == 2 && md.memory->vdp_sprite_tables[1][1] == 2);
     assert(megadrive_scanline_vscroll(&md, 64, 0) == 0);
     assert(megadrive_scanline_vscroll(&md, 160, 0) == 4);
-    vdp_render_frame(&md, pixels);
+    vdp_render_frame(&md, pixels, false, VDP_VIEW_CENTER);
     assert(pixels[48 * VDP_VIEW_WIDTH / 2] == 0x0101);
     assert(pixels[144 * VDP_VIEW_WIDTH / 2] == 0x0202);
 
@@ -844,7 +901,7 @@ static void test_scanline_scroll(void)
     megadrive_run_frame(&md);
     assert(!md.cpu.stopped && md.vdp_row_count == 0);
     assert(md.video_revision > revision);
-    vdp_render_frame(&md, pixels);
+    vdp_render_frame(&md, pixels, false, VDP_VIEW_CENTER);
     assert(pixels[144 * VDP_VIEW_WIDTH / 2] == 0x0101);
 }
 
@@ -870,12 +927,12 @@ static void test_interlace(const struct cartridge *cart)
     set_vram_word(&md, 0x4004, 2);
     set_vram_word(&md, 0x4006, 128 + 16);
 
-    vdp_render_frame(&md, bitmap);
+    vdp_render_frame(&md, bitmap, false, VDP_VIEW_CENTER);
     assert(bitmap[0] == 0x0101 && bitmap[8] == 0x0303);
     assert(!(megadrive_read_word(&md, 0xc00004) & 0x10));
     md.cpu.stopped = true;
     megadrive_run_frame(&md);
-    vdp_render_frame(&md, bitmap);
+    vdp_render_frame(&md, bitmap, false, VDP_VIEW_CENTER);
     assert(bitmap[0] == 0x0202 && bitmap[8] == 0x0404);
     assert(megadrive_read_byte(&md, 0xc00005) & 0x10);
     megadrive_run_frame(&md);
@@ -1268,6 +1325,24 @@ static void test_frame_pacing(void)
     for (unsigned i = 1; i < DS_REFRESH; ++i)
         pal_frames += frame_pacing_batch(&pacing, 1, true, true, true);
     assert(pal_frames == PAL_REFRESH && pacing.pending_frames == 0);
+
+    struct video_pacing video = {0};
+    video_pacing_observe(&video, 2);
+    video_pacing_observe(&video, 1);
+    assert(!video.limit_draws);
+    video_pacing_observe(&video, 3);
+    assert(video.limit_draws);
+    video_pacing_advance(&video, 60, 100);
+    assert(video_pacing_due(&video, 1));
+    video_pacing_drawn(&video, 80, 1, 100);
+    assert(!video_pacing_due(&video, 1));
+    video_pacing_advance(&video, 60, 100);
+    assert(!video_pacing_due(&video, 2));
+    video_pacing_advance(&video, 60, 100);
+    assert(video_pacing_due(&video, 3));
+    video_pacing_advance(&video, 900, 100);
+    assert(!video_pacing_due(&video, 5));
+    assert(video_pacing_due(&video, 6));
 }
 
 int main(void)
@@ -1330,6 +1405,8 @@ int main(void)
     test_vdp_reads(&cartridge);
     test_interlace(&cartridge);
     test_sprite_scanline_limit();
+    test_vertical_scaling();
+    test_horizontal_view();
     test_scanline_scroll();
 
     assert(m68k_interrupt(&md.cpu, &md, 6) == 0);  // Reset masks level 6.
