@@ -1014,6 +1014,82 @@ static void test_signed_byte_copy(void)
     assert(m68k_skip_idle(&batched.cpu, &batched, 100) == 38); // Stop at the ROM boundary.
 }
 
+static void test_opcode_fetch_alias(void)
+{
+    static const uint8_t code[] = {0x70, 0x80}; // MOVEQ #-128,D0
+    struct megadrive md = {.rom = code, .rom_size = sizeof(code), .rom_fetch_limit = sizeof(code)};
+    md.cpu.pc = 0x01000000;
+    assert(m68k_step(&md.cpu, &md) == 4);
+    assert(md.cpu.pc == 0x01000002 && md.cpu.d[0] == 0xffffff80);
+}
+
+static void test_sprite_record_loop(void)
+{
+    static struct megadrive_memory direct_memory, batched_memory;
+    static struct megadrive direct = {.memory = &direct_memory};
+    static struct megadrive batched = {.memory = &batched_memory};
+    const uint8_t code[] = {
+        0x10, 0x18, 0x48, 0x80, 0xd0, 0x45, 0x32, 0xc0, // biased signed byte to word
+        0x16, 0x18, 0x12, 0xfb, 0x30, 0x34, // index the ROM table with D3
+        0x52, 0x04, 0x12, 0xc4, 0x54, 0x48, // sequence byte and source skip
+        0x30, 0x18, 0xd0, 0x4a, 0x32, 0xc0, // word with address register bias
+        0x30, 0x18, 0xd0, 0x46, 0x02, 0x40, 0x01, 0xff, // masked word with bias
+        0x66, 0x02, 0x52, 0x40, 0x32, 0xc0, // map zero to one and store
+        0x51, 0xc9, 0xff, 0xd6, // dbra d1,0
+        [64] = 0x91, 0xa2, 0xb3,
+    };
+    const uint8_t records[] = {
+        0x80, 0, 0, 0, 0x12, 0x34, 0xff, 0xfe,
+        0x7f, 1, 0, 0, 0x43, 0x21, 0x03, 0x20,
+        0xff, 2, 0, 0, 0x00, 0x19, 0xff, 0xff,
+    };
+    direct.rom = code;
+    direct.rom_size = sizeof(code);
+    direct.cpu.pc = 0;
+    direct.cpu.instruction_address = 40;
+    direct.cpu.opcode = 0x51c9;
+    direct.cpu.a[0] = 0xff1000;
+    direct.cpu.a[1] = 0xff2000;
+    direct.cpu.a[2] = 0x0102;
+    direct.cpu.d[0] = 0xf00d0000;
+    direct.cpu.d[1] = 3;
+    direct.cpu.d[3] = 0x12340000;
+    direct.cpu.d[4] = 0x560000fe;
+    direct.cpu.d[5] = 0x20;
+    direct.cpu.d[6] = 2;
+    memcpy(direct_memory.ram + 0x1000, records, sizeof(records));
+
+    const struct m68k initial_cpu = direct.cpu;
+    batched = direct;
+    batched_memory = direct_memory;
+    batched.memory = &batched_memory;
+    assert(m68k_skip_idle(&batched.cpu, &batched, 138) == 0);
+    unsigned cycles = 0;
+    for (unsigned record = 0; record < 3; ++record) {
+        do {
+            cycles += m68k_step(&direct.cpu, &direct);
+            assert(!direct.cpu.stopped);
+        } while (direct.cpu.pc != 0);
+    }
+    assert(cycles == 416 && m68k_skip_idle(&batched.cpu, &batched, cycles) == cycles);
+    assert(memcmp(&direct.cpu, &batched.cpu, sizeof(direct.cpu)) == 0);
+    assert(memcmp(direct_memory.ram, batched_memory.ram, sizeof(direct_memory.ram)) == 0);
+
+    // The cached entry also handles a DBRA that ends the loop.
+    direct.cpu = batched.cpu = initial_cpu;
+    direct.cpu.d[1] = batched.cpu.d[1] = 0;
+    direct.z80_reset = batched.z80_reset = true;
+    direct.frame_cycles = batched.frame_cycles = 128005;
+    cycles = 0;
+    do {
+        cycles += m68k_step(&direct.cpu, &direct);
+        assert(!direct.cpu.stopped);
+    } while (direct.cpu.pc != 44);
+    assert(cycles == 144 && m68k_run_until(&batched, 0, cycles) == cycles);
+    assert(memcmp(&direct.cpu, &batched.cpu, sizeof(direct.cpu)) == 0);
+    assert(memcmp(direct_memory.ram, batched_memory.ram, sizeof(direct_memory.ram)) == 0);
+}
+
 static void test_savestate(struct megadrive *md)
 {
     const char *path = "build/c/boot-test.jsc";
@@ -1269,6 +1345,8 @@ int main(void)
     test_idle_loops(&md);
     test_m68k_batched_loops();
     test_signed_byte_copy();
+    test_opcode_fetch_alias();
+    test_sprite_record_loop();
     md.cpu.pc = 0x264;
     md.cpu.d[0] = 0x12345678;
     md.cpu.d[1] = 0x89abcdef;

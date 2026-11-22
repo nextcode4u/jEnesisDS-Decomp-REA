@@ -67,6 +67,14 @@ struct megadrive_memory {
     uint8_t sram[CARTRIDGE_SRAM_CAPACITY];
 };
 
+// Decoded operands for the last sprite-record loop recognized in cartridge ROM.
+struct m68k_sprite_record_loop {
+    uint32_t start; // Guest PC plus one. Zero marks an empty cache.
+    uint32_t lookup_base;
+    uint16_t mask;
+    uint8_t source, output, data, index, first_bias, last_bias, address_bias, sequence, counter;
+};
+
 struct megadrive {
     struct m68k cpu;
     const uint8_t *rom;
@@ -127,6 +135,7 @@ struct megadrive {
     struct megadrive_memory *memory;
 
     unsigned m68k_slice_end;
+    struct m68k_sprite_record_loop sprite_record_loop;
 };
 
 static inline void m68k_end_slice_for_hinterrupt(struct megadrive *md)

@@ -60,7 +60,7 @@ static ARM9_ITCM __attribute__((noinline)) uint32_t read_other_memory(
     return value;
 }
 
-static ARM9_ITCM __attribute__((noinline)) bool write_other_memory(
+static __attribute__((noinline)) bool write_other_memory(
     struct megadrive *md, uint32_t address, unsigned size, uint32_t value)
 {
     if (size == 1)
@@ -1336,6 +1336,172 @@ static unsigned skip_inactive_objects(struct m68k *cpu, const struct megadrive *
     return done * cost;
 }
 
+static bool decode_sprite_record_loop(struct m68k_sprite_record_loop *loop,
+                                      const uint8_t *rom, uint32_t entry)
+{
+    // This loop copies eight-byte records, applying two register biases,
+    // an indexed ROM byte lookup, a sequence number, and a nonzero word mask.
+    // Decode its operands from the cartridge. Any other form uses the interpreter.
+    uint16_t load_byte = cartridge_aligned_word(rom, 0);
+    uint16_t add_first = cartridge_aligned_word(rom, 4);
+    uint16_t store_word = cartridge_aligned_word(rom, 6);
+    uint16_t load_index = cartridge_aligned_word(rom, 8);
+    uint16_t lookup = cartridge_aligned_word(rom, 12);
+    uint16_t add_sequence = cartridge_aligned_word(rom, 14);
+    uint16_t add_second = cartridge_aligned_word(rom, 22);
+    uint16_t add_last = cartridge_aligned_word(rom, 28);
+    unsigned source = load_byte & 7, output = (store_word >> 9) & 7;
+    unsigned data = (load_byte >> 9) & 7, index = (load_index >> 9) & 7;
+    unsigned first_bias = add_first & 7, last_bias = add_last & 7;
+    unsigned address_bias = add_second & 7, sequence = add_sequence & 7;
+    uint16_t dbra = cartridge_aligned_word(rom, 40);
+    unsigned counter = dbra & 7;
+
+    if (source == 7 || output == 7 || source == output ||
+        address_bias == source || address_bias == output ||
+        data == index || data == sequence || index == sequence ||
+        counter == data || counter == index || counter == sequence ||
+        first_bias == data || first_bias == index || first_bias == sequence || first_bias == counter ||
+        last_bias == data || last_bias == index || last_bias == sequence || last_bias == counter)
+        return false;
+
+    uint16_t load_word = 0x3018 | (data << 9) | source;
+    if ((load_byte & 0xf1f8) != 0x1018 ||
+        cartridge_aligned_word(rom, 2) != (0x4880 | data) ||
+        add_first != (0xd040 | (data << 9) | first_bias) ||
+        store_word != (0x30c0 | (output << 9) | data) ||
+        load_index != (0x1018 | (index << 9) | source) ||
+        cartridge_aligned_word(rom, 10) != (0x10fb | (output << 9)) ||
+        (lookup & 0xff00) != index << 12 ||
+        add_sequence != (0x5200 | sequence) ||
+        cartridge_aligned_word(rom, 16) != (0x10c0 | (output << 9) | sequence) ||
+        cartridge_aligned_word(rom, 18) != (0x5448 | source) ||
+        cartridge_aligned_word(rom, 20) != load_word ||
+        add_second != (0xd048 | (data << 9) | address_bias) ||
+        cartridge_aligned_word(rom, 24) != store_word ||
+        cartridge_aligned_word(rom, 26) != load_word ||
+        add_last != (0xd040 | (data << 9) | last_bias) ||
+        cartridge_aligned_word(rom, 30) != (0x0240 | data) ||
+        cartridge_aligned_word(rom, 34) != 0x6602 ||
+        cartridge_aligned_word(rom, 36) != (0x5240 | data) ||
+        cartridge_aligned_word(rom, 38) != store_word ||
+        (dbra & 0xfff8) != 0x51c8 || cartridge_aligned_word(rom, 42) != 0xffd6)
+        return false;
+
+    *loop = (struct m68k_sprite_record_loop){
+        .start = entry + 1,
+        .lookup_base = (entry & 0xffffff) + 12 + (int8_t)lookup,
+        .mask = cartridge_aligned_word(rom, 32),
+        .source = source, .output = output, .data = data, .index = index,
+        .first_bias = first_bias, .last_bias = last_bias, .address_bias = address_bias,
+        .sequence = sequence, .counter = counter,
+    };
+    return true;
+}
+
+static __attribute__((noinline)) unsigned skip_sprite_record_loop(
+    struct m68k *cpu, struct megadrive *md, unsigned budget, uint32_t entry, bool complete)
+{
+    enum { RECORD_BYTES = 8, TAKEN_CYCLES = 138, ZERO_CYCLES = 140 };
+    unsigned pc = entry & 0xffffff;
+    struct m68k_sprite_record_loop *loop = &md->sprite_record_loop;
+    if (!rom_visible(md, pc, 44) ||
+        (loop->start != entry + 1 && !decode_sprite_record_loop(loop, md->rom + pc, entry)))
+        return 0;
+
+    unsigned source = loop->source, output = loop->output, counter = loop->counter;
+    unsigned data = loop->data, index = loop->index, sequence = loop->sequence;
+
+    uint32_t src = cpu->a[source] & 0xffffff, dst = cpu->a[output] & 0xffffff;
+    bool source_in_ram = src >= 0xe00000;
+    if ((src | dst) & 1 || dst < 0xe00000 ||
+        (!source_in_ram && !rom_visible(md, src, RECORD_BYTES)))
+        return 0;
+    unsigned remaining = (uint16_t)cpu->d[counter];
+    unsigned limit = budget / TAKEN_CYCLES;
+    unsigned src_room = (source_in_ram ? 0x10000 - (src & 0xffff) : md->rom_size - src)
+                        / RECORD_BYTES;
+    unsigned dst_room = (0x10000 - (dst & 0xffff)) / RECORD_BYTES;
+    if (limit > remaining + complete)
+        limit = remaining + complete;
+    if (limit > src_room)
+        limit = src_room;
+    if (limit > dst_room)
+        limit = dst_room;
+    if (!limit)
+        return 0;
+    unsigned bytes = limit * RECORD_BYTES;
+    if (source_in_ram) {
+        unsigned from = src & 0xffff, to = dst & 0xffff;
+        if (from < to + bytes && to < from + bytes)
+            return 0;
+    } else if (!rom_visible(md, src, bytes)) {
+        return 0;
+    }
+
+    const uint8_t *input = source_in_ram ? md->memory->ram + (src & 0xffff) : md->rom + src;
+    uint16_t mask = loop->mask;
+    uint16_t index_base = cpu->d[index] & 0xff00;
+    uint32_t lookup_base = (loop->lookup_base + (int16_t)index_base) & 0xffffff;
+    bool lookup_in_rom = rom_visible(md, lookup_base, 256);
+    uint8_t *destination = md->memory->ram + (dst & 0xffff);
+    bool aligned_words = (dst & 3) == 0;
+    unsigned used = 0, done = 0;
+    uint8_t index_byte = 0, sequence_byte = cpu->d[sequence];
+    uint16_t result = 0;
+    uint16_t bias1 = cpu->d[loop->first_bias], bias2 = cpu->a[loop->address_bias], bias3 = cpu->d[loop->last_bias];
+    bool extend = false;
+
+    while (done < limit && budget - used >= TAKEN_CYCLES) {
+        uint8_t next_index = cartridge_byte(input, 1);
+        unsigned lookup_address = (lookup_base + next_index) & 0xffffff;
+        if (!lookup_in_rom && !rom_visible(md, lookup_address, 1))
+            break;
+        uint16_t sum = cartridge_aligned_word(input, 6) + bias3;
+        uint16_t last = sum & mask;
+        unsigned cost = (last ? TAKEN_CYCLES : ZERO_CYCLES) + (done == remaining ? 4 : 0);
+        if (budget - used < cost)
+            break;
+
+        uint16_t first_word = (int8_t)cartridge_byte(input, 0) + bias1;
+        uint16_t second_word = (uint16_t)cartridge_byte(md->rom, lookup_address) << 8;
+        second_word |= ++sequence_byte;
+        uint16_t third_word = cartridge_aligned_word(input, 4) + bias2;
+        result = last ? last : 1;
+        if (M68K_NATIVE_WORDS && aligned_words) {
+            uint32_t first_pair = first_word | (uint32_t)second_word << 16;
+            uint32_t second_pair = third_word | (uint32_t)result << 16;
+            __builtin_memcpy(__builtin_assume_aligned(destination, 4), &first_pair, sizeof(first_pair));
+            __builtin_memcpy(__builtin_assume_aligned(destination + 4, 4), &second_pair, sizeof(second_pair));
+        } else {
+            work_ram_store_word(md, dst, first_word);
+            work_ram_store_word(md, dst + 2, second_word);
+            work_ram_store_word(md, dst + 4, third_word);
+            work_ram_store_word(md, dst + 6, result);
+        }
+        extend = last && sum < bias3; // ADDQ clears X when the masked sum was zero.
+        index_byte = next_index;
+        input += RECORD_BYTES;
+        destination += RECORD_BYTES;
+        dst += RECORD_BYTES;
+        used += cost;
+        ++done;
+    }
+    if (done) {
+        set_data(cpu, data, 2, result);
+        set_data(cpu, index, 1, index_byte);
+        set_data(cpu, sequence, 1, sequence_byte);
+        set_data(cpu, counter, 2, remaining - done);
+        cpu->sr = (cpu->sr & ~CCR_X) | (extend ? CCR_X : 0);
+        set_logic_flags(cpu, 2, result);
+        cpu->a[source] += done * RECORD_BYTES;
+        cpu->a[output] += done * RECORD_BYTES;
+        if (complete)
+            cpu->pc = entry + (done > remaining ? 44 : 0);
+    }
+    return used;
+}
+
 ARM9_ITCM unsigned m68k_skip_idle(struct m68k *cpu, struct megadrive *md, unsigned budget)
 {
     uint16_t op = cpu->opcode;
@@ -1347,6 +1513,8 @@ ARM9_ITCM unsigned m68k_skip_idle(struct m68k *cpu, struct megadrive *md, unsign
                 return skip_signed_byte_copy(cpu, md, budget, md->rom + pc);
             if (cpu->pc + 10 == cpu->instruction_address && rom_visible(md, pc, 10))
                 return skip_interleaved_word_stores(cpu, md, budget, md->rom + pc);
+            if (cpu->pc + 40 == cpu->instruction_address)
+                return skip_sprite_record_loop(cpu, md, budget, cpu->pc, false);
             if (cpu->pc + 2 != cpu->instruction_address)
                 return skip_inactive_objects(cpu, md, budget, pc);
             if (!rom_visible(md, pc, 2))
@@ -1409,7 +1577,8 @@ void m68k_reset(struct m68k *cpu, struct megadrive *md)
 static inline uint16_t fetch_opcode(struct m68k *cpu, struct megadrive *md,
                                     const uint8_t *rom, unsigned rom_limit)
 {
-    uint32_t address = cpu->pc & 0xffffff;
+    // The general fetch handles aliases and addresses outside the ROM prefix.
+    uint32_t address = cpu->pc;
     if (__builtin_expect(address < rom_limit, 1)) {
         cpu->pc += 2;
         return cartridge_aligned_word(rom, address);
@@ -1550,6 +1719,17 @@ run_slice:
 op_immediate:
             FINISH_INSTRUCTION(execute_immediate(cpu, md, op));
 op_move_byte:
+            if (instruction + 1 == md->sprite_record_loop.start && cycles < md->m68k_slice_end) {
+                unsigned taken = skip_sprite_record_loop(cpu, md, md->m68k_slice_end - cycles,
+                                                         instruction, true);
+                if (taken) {
+                    bool finished = cpu->pc != instruction;
+                    instruction += 40;
+                    op = cartridge_aligned_word(rom, (instruction & 0xffffff));
+                    md->frame_cycle = cycles + taken - (finished ? 14 : 10);
+                    FINISH_INSTRUCTION(taken);
+                }
+            }
             FINISH_INSTRUCTION(move_common(cpu, md, op, 1));
 op_move_long:
             FINISH_INSTRUCTION(move_common(cpu, md, op, 4));
