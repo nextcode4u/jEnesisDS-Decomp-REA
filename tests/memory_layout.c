@@ -23,6 +23,7 @@ int main(int argc, char **argv)
     static const uint8_t rom[] = {
         [0] = 0x00, 0xff, 0xfe, 0x00, 0x00, 0x00, 0x02, 0x00,
         [0x100] = 'S', 'E', 'G', 'A',
+        [0x1fc] = 0x4e, 0x75,                         // RTS
         [0x200] = 0x20, 0x3c, 0x12, 0x34, 0x56, 0x78, // MOVE.L #$12345678,D0
         [0x206] = 0x60, 0xfe,                         // BRA.S to itself
         [0x208] = 0xab,                               // Final unpaired byte
@@ -50,6 +51,25 @@ int main(int argc, char **argv)
     assert(megadrive_read_word(&md, 0xff0001) == 0x1234);
     assert(megadrive_write_byte(&md, 0xffffff, 0x56));
     assert(megadrive_read_word(&md, 0xffffff) == 0x5600);
+
+    assert(megadrive_write_word(&md, 0xfffffc, 0xfedc));
+    assert(megadrive_write_word(&md, 0xfffffe, 0xba98));
+    static const struct {
+        uint32_t sp, expected_pc;
+    } return_cases[] = {
+        {0xeffffc, 0xfedcba98}, // Aligned pair at the end of a RAM mirror.
+        {0xeffffe, 0xba980012}, // Unaligned pair across RAM mirrors.
+        {0xfffffe, 0xba9800ff}, // The low word wraps to cartridge ROM.
+    };
+    struct m68k saved_cpu = md.cpu;
+    for (unsigned i = 0; i < sizeof(return_cases) / sizeof(return_cases[0]); ++i) {
+        md.cpu.pc = 0x1fc;
+        md.cpu.a[7] = return_cases[i].sp;
+        assert(m68k_step(&md.cpu, &md) == 16);
+        assert(md.cpu.pc == return_cases[i].expected_pc);
+        assert(md.cpu.a[7] == return_cases[i].sp + 4);
+    }
+    md.cpu = saved_cpu;
 
     copy_words_to_vram(&md, 0x200, 0x100);
     assert(memcmp(md.memory->vram + 0x100, rom + 0x200, 4) == 0);

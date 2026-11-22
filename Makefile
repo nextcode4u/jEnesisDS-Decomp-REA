@@ -13,7 +13,7 @@ ARM7_OPT := -flto
 ARM9_OPT := -flto
 C_FLAGS := -I"$(LIBNDS)/include" -Wall -Wextra -O2 -ffunction-sections -fdata-sections -MMD -MP
 # The emulator hot paths benefit from ARM's predication and register set.
-build/c/m68k.o build/c/vdp_render.o build/c/vdp_ds.o build/c/megadrive.o build/c/z80_bus.o build/c/third_party/z80/z80.o: C_FLAGS += -marm -O3
+build/c/m68k.o build/c/vdp_render.o build/c/vdp_ds.o build/c/megadrive.o build/c/dac.o build/c/z80_bus.o build/c/third_party/z80/z80.o: C_FLAGS += -marm -O3
 build/c/arm7/main.o build/c/arm7/psg.o build/c/arm7/fm.o: C_FLAGS += -marm -O3
 ARM7_OBJ := build/c/arm7/main.o build/c/arm7/psg.o build/c/arm7/fm.o build/c/arm7/fm_tables.o
 Z80_SRC := source/z80_bus.c source/third_party/z80/z80.c

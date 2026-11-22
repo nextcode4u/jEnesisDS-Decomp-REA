@@ -73,7 +73,7 @@ static __attribute__((noinline)) bool write_other_memory(
 static inline __attribute__((always_inline)) uint32_t read_memory_fast(struct megadrive *md, uint32_t address, unsigned size)
 {
     address &= 0xffffff;
-    if (address >= 0xe00000 && (address & 0xffff) <= 0x10000 - size) {
+    if (address >= 0xe00000) {
         if (size == 1)
             return work_ram_byte(md, address);
         if (M68K_NATIVE_WORDS && size == 4 && !(address & 3)) {
@@ -82,8 +82,10 @@ static inline __attribute__((always_inline)) uint32_t read_memory_fast(struct me
             __builtin_memcpy(&pair, __builtin_assume_aligned(md->memory->ram + (uint16_t)address, 4), sizeof(pair));
             return (pair << 16) | (pair >> 16);
         }
-        uint32_t word = work_ram_word(md, address);
-        return size == 2 ? word : (word << 16) | work_ram_word(md, address + 2);
+        if ((uint16_t)address <= 0x10000 - size) {
+            uint32_t word = work_ram_word(md, address);
+            return size == 2 ? word : (word << 16) | work_ram_word(md, address + 2);
+        }
     }
     return read_other_memory(md, address, size);
 }
@@ -93,22 +95,24 @@ static inline __attribute__((always_inline)) bool write_memory_fast(struct megad
     address &= 0xffffff;
     if (size != 1 && (address & 1))
         return false;
-    if (address >= 0xe00000 && (address & 0xffff) <= 0x10000 - size) {
+    if (address >= 0xe00000) {
         if (size == 1) {
             work_ram_store_byte(md, address, value);
-        } else {
-            if (M68K_NATIVE_WORDS && size == 4 && !(address & 3)) {
-                uint32_t pair = (value << 16) | (value >> 16);
-                __builtin_memcpy(__builtin_assume_aligned(md->memory->ram + (uint16_t)address, 4), &pair, sizeof(pair));
-                return true;
-            }
+            return true;
+        }
+        if (M68K_NATIVE_WORDS && size == 4 && !(address & 3)) {
+            uint32_t pair = (value << 16) | (value >> 16);
+            __builtin_memcpy(__builtin_assume_aligned(md->memory->ram + (uint16_t)address, 4), &pair, sizeof(pair));
+            return true;
+        }
+        if (size == 2 || (uint16_t)address <= 0x10000 - size) {
             if (size == 4) {
                 work_ram_store_word(md, address, value >> 16);
                 address += 2;
             }
             work_ram_store_word(md, address, value);
+            return true;
         }
-        return true;
     }
     return write_other_memory(md, address, size, value);
 }
