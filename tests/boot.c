@@ -10,6 +10,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifndef TEST_OUTPUT_DIR
+#define TEST_OUTPUT_DIR "build/c"
+#endif
+
 static uint8_t rom[0x27c] = {
     0x00, 0xff, 0xfe, 0x00,  // Initial supervisor stack at $fffe00.
     0x00, 0x00, 0x02, 0x00,  // Reset PC at $200.
@@ -400,6 +404,29 @@ static void test_fm_phase_increment(void)
     }
 }
 
+static void test_fm_timer_mode_writes(void)
+{
+    struct fm_chip fm;
+    fm_reset(&fm);
+
+    // A timer-only write can be the first configuration of channel 3.
+    fm_write(&fm, 0x27, 0x0f);
+    assert(fm.channels[2].op[0].rate[3] == 2);
+
+    fm_write(&fm, 0xa6, 0x38);
+    fm_write(&fm, 0xa2, 0x40);
+    fm_write(&fm, 0xac, 0x38);
+    fm_write(&fm, 0xa9, 0x80);
+    unsigned normal_step = fm.channels[2].op[0].step;
+    fm_write(&fm, 0x27, 0x4f);
+    unsigned special_step = fm.channels[2].op[0].step;
+    assert(special_step != normal_step);
+    fm_write(&fm, 0x27, 0x5f);
+    assert(fm.registers[0][0x27] == 0x5f && fm.channels[2].op[0].step == special_step);
+    fm_write(&fm, 0x27, 0x0f);
+    assert(fm.channels[2].op[0].step == normal_step);
+}
+
 static void test_fm_pitch_latches(const struct cartridge *cart)
 {
     static struct megadrive_memory memory;
@@ -424,7 +451,7 @@ static void test_fm_pitch_latches(const struct cartridge *cart)
     uint32_t phase_step = fm.channels[4].op[0].step;
     assert(phase_step != 0);
 
-    const char *path = "build/c/boot-test-pitch.jsc";
+    const char *path = TEST_OUTPUT_DIR "/boot-test-pitch.jsc";
     uint32_t identity = savestate_identity(&md);
     assert(savestate_save(path, identity, &md));
     memset(&md.ym_pitch, 0, sizeof(md.ym_pitch));
@@ -921,7 +948,7 @@ static void test_scanline_scroll(void)
     assert(pixels[48 * VDP_VIEW_WIDTH / 2] == 0x0101);
     assert(pixels[144 * VDP_VIEW_WIDTH / 2] == 0x0202);
 
-    const char *path = "build/c/boot-test-raster.jsc";
+    const char *path = TEST_OUTPUT_DIR "/boot-test-raster.jsc";
     remove(path);
     const uint32_t identity = savestate_identity(&md);
     assert(savestate_save(path, identity, &md));
@@ -1276,7 +1303,7 @@ static void test_sprite_record_loop(bool indexed)
 
 static void test_savestate(struct megadrive *md)
 {
-    const char *path = "build/c/boot-test.jsc";
+    const char *path = TEST_OUTPUT_DIR "/boot-test.jsc";
     remove(path);
     uint32_t identity = savestate_identity(md);
     const uint32_t pc = md->cpu.pc;
@@ -1332,7 +1359,7 @@ static void test_cartridge_sram(void)
     assert(megadrive_write_byte(&md, 0x101, 0xff));
     assert(megadrive_read_word(&md, 0x100) == 0x1234);
 
-    const char *path = "build/c/boot-test.srm";
+    const char *path = TEST_OUTPUT_DIR "/boot-test.srm";
     remove(path);
     assert(saveram_flush(path, &md) && !md.sram_dirty);
     memset(md.memory->sram, 0, md.sram_size);
@@ -1355,7 +1382,7 @@ static void test_cartridge_sram(void)
     assert(m68k_step(&md.cpu, &md) == 12 && md.cpu.sr == 0x2018);
     assert(md.cpu.a[0] == 0xff0021 && md.cpu.a[1] == 0xff0025);
 
-    const char *state = "build/c/boot-sram-test.jsc";
+    const char *state = TEST_OUTPUT_DIR "/boot-sram-test.jsc";
     remove(state);
     unsigned identity = savestate_identity(&md);
     assert(savestate_save(state, identity, &md));
@@ -1523,6 +1550,7 @@ int main(void)
     test_fm_mask_transitions();
     test_fm_zero_sustain_level();
     test_fm_phase_increment();
+    test_fm_timer_mode_writes();
     test_fm_pitch_latches(&cartridge);
     test_dac_timing(&cartridge);
     test_z80_dac_writes(&cartridge);

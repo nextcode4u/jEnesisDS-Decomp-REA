@@ -32,6 +32,8 @@ static uint32_t phase_increment(unsigned number)
 static void update_channel(struct fm_chip *fm, unsigned index)
 {
     unsigned bank = index / 3, channel = index % 3;
+    if (index == 2)
+        fm->channel_three_configured = true;
     const uint8_t *reg = fm->registers[bank];
     struct fm_channel *ch = &fm->channels[index];
     ch->algorithm = reg[0xb0 + channel] & 7;
@@ -118,12 +120,16 @@ void fm_write(struct fm_chip *fm, unsigned reg, uint8_t value)
             key_change(fm, channel + ((value & 4) ? 3 : 0), value >> 4);
         return;
     }
-    fm->registers[bank][address] = value;
-
     if (reg == 0x27) {
-        update_channel(fm, 2);
+        // Timer bits do not affect channel 3's mixer parameters. Preserve
+        // the first rebuild so its derived defaults are initialized.
+        bool mode_changed = (fm->registers[0][0x27] ^ value) & 0xc0;
+        fm->registers[0][0x27] = value;
+        if (mode_changed || !fm->channel_three_configured)
+            update_channel(fm, 2);
         return;
     }
+    fm->registers[bank][address] = value;
     unsigned channel = address & 3;
     if (channel == 3)
         return;

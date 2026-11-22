@@ -32,6 +32,22 @@ In melonDS 1.1, Sonic 2 guest frames 1,300 through 1,900 took 600 display refres
 
 An instrumented run through the 600-frame DS stretch counted 31 audio queue underruns before the renderer and CPU changes and four afterward. One ARM9 transfer was dropped in the revised test. The physical DSi audio result is still unverified.
 
+### Hardware profiling
+
+Build with `make PROFILE=1` to produce `build/jEnesisDS-C-profile.nds`. Open a ROM,
+play through the section you want to measure, then press Select to return to the
+ROM browser. The profiling build writes `jenesis-profile.csv` to the SD root
+when gameplay stops. It replaces the previous file and retains up to 128 recent
+windows of roughly 60 guest frames from the current emulator session.
+
+The CSV records guest frames, DS VBlanks, core execution, Z80 synchronization,
+drawing, and audio submission. The timer resolution is about 1.91 microseconds
+per tick. Z80 ticks are included in core ticks. The ARM7 columns contain
+cumulative snapshots from playback, including received frames, input queue
+starvation, deferred mixes, muted deadlines, and the longest mix. The timer
+reads and FIFO reports add overhead, so compare diagnostic runs with each other
+and use the normal build for final FPS checks.
+
 ### Performance references
 
 - PicoDrive's scanline renderer reuses tile row data and skips known blank tiles. Its GP2X fast renderer draws whole tiles and trades mid-frame raster effects for speed. [Scanline renderer](https://github.com/notaz/picodrive/blob/master/pico/draw.c) · [GP2X renderer modes](https://github.com/notaz/picodrive/blob/master/platform/base_readme.txt)
@@ -144,6 +160,12 @@ Replaying the same timed YM2612 register writes and render spans for 1,400 Sonic
 ARM7 queues up to six guest audio frames and starts mixing after three arrive. The mixer uses four 192-sample hardware blocks and prepares up to three blocks ahead. A cascaded hardware timer tracks the playback position across delayed interrupts. An unprepared block is muted, and audio that finishes late moves to the next safe block. If the guest queue runs dry, the PSG and DAC mix fades out and the FM state holds at the last guest sample until playback can resume. PSG register snapshots travel with the queued audio.
 
 The mixer skips DAC arithmetic for frames containing only silent DAC samples. FM pitch calculation uses the same phase increments as the former 8 KiB lookup table, leaving more ARM7 work RAM for the mixer and interrupt stacks. Four ARM9 transfer buffers hold frames until the ARM7 queue has room. The game clock starts after ROM loading to avoid sending a burst of catch-up frames.
+
+ARM9 handles YM2612 timer control, including status flags, and forwards
+channel-mode changes to the ARM7 mixer. Timer-only writes no longer split the
+mixer into short spans. This changes FM waveform timing compared with the
+preceding BlocksDS build. On a physical DSi, Sonic 2 and Titan Overdrive both
+sounded cleaner. Overdrive still showed frame drops.
 
 The ARM7 playback interrupt uses a four-entry table for the YM2612 pan and volume settings. In a native DSi melonDS Sonic 2 replay, the measured work per interrupt fell from 2.98 to 2.32 timer ticks over 1,440 interrupts. The four DS control settings are the same as before.
 

@@ -54,6 +54,7 @@ struct fm_chip {
     struct fm_pitch pitch;
     uint32_t envelope_clock, envelope_tick;
     uint8_t active_channels;
+    bool channel_three_configured;
 };
 
 extern const uint16_t fm_log_sine[1024];

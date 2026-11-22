@@ -1,5 +1,6 @@
 #include "z80_bus.h"
 #include "megadrive.h"
+#include "profile.h"
 
 enum { M68K_DIVIDER = 7, Z80_DIVIDER = 15, Z80_IRQ_DURATION = 32 };
 
@@ -244,7 +245,11 @@ static unsigned run_local_delay(struct megadrive *md, unsigned budget,
     return iterations * 21;
 }
 
+#ifdef JENESIS_PROFILE
+static ARM9_ITCM __attribute__((noinline)) void sync_sound_cpu(struct megadrive *md, unsigned m68k_cycle)
+#else
 ARM9_ITCM void genesis_z80_sync(struct megadrive *md, unsigned m68k_cycle)
+#endif
 {
     if (m68k_cycle > md->frame_cycles)
         m68k_cycle = md->frame_cycles;
@@ -317,6 +322,19 @@ ARM9_ITCM void genesis_z80_sync(struct megadrive *md, unsigned m68k_cycle)
     md->z80_irq_clocks = irq_clocks;
     md->z80_instruction_debt = -remaining;
 }
+
+#ifdef JENESIS_PROFILE
+unsigned profile_z80_ticks;
+
+void genesis_z80_sync(struct megadrive *md, unsigned m68k_cycle)
+{
+    if (m68k_cycle <= md->z80_synced_cycle)
+        return;
+    uint16_t start = timerTick(PROFILE_FRAME_TIMER);
+    sync_sound_cpu(md, m68k_cycle);
+    profile_z80_ticks += (uint16_t)(timerTick(PROFILE_FRAME_TIMER) - start);
+}
+#endif
 
 void genesis_z80_vblank(struct megadrive *md, unsigned m68k_cycle)
 {

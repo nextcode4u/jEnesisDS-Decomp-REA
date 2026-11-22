@@ -6,6 +6,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifndef TEST_OUTPUT_DIR
+#define TEST_OUTPUT_DIR "build/c"
+#endif
+
 static void copy_words_to_vram(struct megadrive *md, unsigned source, unsigned target)
 {
     md->vdp_registers[1] = 0x14;
@@ -37,7 +41,7 @@ int main(int argc, char **argv)
         [0x208] = 0xab,                               // Final unpaired byte
     };
     assert(argc == 2);
-    const char *path = "build/c/memory-layout-test.bin";
+    const char *path = TEST_OUTPUT_DIR "/memory-layout-test.bin";
     FILE *file = fopen(path, "wb");
     assert(file && fwrite(rom, 1, sizeof(rom), file) == sizeof(rom));
     assert(fclose(file) == 0);

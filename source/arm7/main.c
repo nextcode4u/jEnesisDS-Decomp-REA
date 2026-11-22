@@ -4,6 +4,7 @@
 
 #include "../dac.h"
 #include "../psg.h"
+#include "../profile.h"
 
 enum {
     BLOCK_SAMPLES = 192,
@@ -36,6 +37,24 @@ static bool playback_ready;
 static uint16_t sound_generation;
 static bool sound_active;
 static int16_t previous_left, previous_right;
+#ifdef JENESIS_PROFILE
+static struct audio_profile audio_stats;
+static volatile unsigned profile_missed;
+
+struct audio_timer_position {
+    uint16_t block, ticks;
+};
+
+static struct audio_timer_position audio_timer_position(void)
+{
+    struct audio_timer_position position;
+    do {
+        position.block = timerTick(AUDIO_BLOCK_COUNTER);
+        position.ticks = timerTick(AUDIO_TIMER);
+    } while (timerTick(AUDIO_BLOCK_COUNTER) != position.block);
+    return position;
+}
+#endif
 
 static void release_dac_slots(void)
 {
@@ -80,6 +99,9 @@ static void receive_dac(const void *address)
         memcpy(&dac_queue[tail], frame, offsetof(struct dac_frame, fm_writes) +
                frame->fm_count * sizeof(frame->fm_writes[0]));
         ++dac_count;
+#ifdef JENESIS_PROFILE
+        ++audio_stats.received;
+#endif
     }
     pending_releases |= 1U << slot;
     release_dac_slots();
@@ -170,6 +192,9 @@ static void fill_sound_block(int16_t *left, int16_t *right, int16_t *voices, uin
             // Hold the YM2612 at the guest sample boundary until the queue
             // refills. Free-running here makes later writes arrive off time.
             playback_ready = false;
+#ifdef JENESIS_PROFILE
+            ++audio_stats.starved;
+#endif
             fade_to_silence(left + pos, right + pos, count,
                             pos ? left[pos - 1] : previous_left,
                             pos ? right[pos - 1] : previous_right);
@@ -196,6 +221,10 @@ static void audio_wake(void)
     unsigned block = tick % AUDIO_BLOCKS;
     // On a missed deadline, mute the block instead of replaying old PCM.
     bool ready = prepared_blocks[block] == tick;
+#ifdef JENESIS_PROFILE
+    if (!ready)
+        ++profile_missed;
+#endif
     atomic_signal_fence(memory_order_acquire);
     // The two YM2612 routing bits select one of four DS pan/volume settings.
     static const uint32_t routing[4] = {
@@ -286,15 +315,30 @@ int main(void)
         int16_t left[BLOCK_SAMPLES], right[BLOCK_SAMPLES];
         int16_t voices[FM_CHANNELS * FM_STRIDE] __attribute__((aligned(4)));
         uint8_t pan[FM_CHANNELS] = {0};
+#ifdef JENESIS_PROFILE
+        struct audio_timer_position mix_start = audio_timer_position();
+#endif
         fill_sound_block(left, right, voices, pan);
+#ifdef JENESIS_PROFILE
+        struct audio_timer_position mix_end = audio_timer_position();
+        unsigned blocks = (uint16_t)(mix_end.block - mix_start.block);
+        // A block timer reloads before its 16-bit counter would naturally wrap.
+        int mix_ticks = (int)blocks * AUDIO_TIMER_TICKS + mix_end.ticks - mix_start.ticks;
+        if (mix_ticks > (int)audio_stats.max_mix_ticks)
+            audio_stats.max_mix_ticks = mix_ticks;
+#endif
         tick = timerTick(AUDIO_BLOCK_COUNTER);
         distance = next_block - tick;
         // Keep the mixed samples if they miss their slot. Leave the last
         // quarter of the preceding block for the sound hardware to prefetch.
         if (distance <= 1) {
             int safe_distance = TIMER_DATA(AUDIO_TIMER) >= (uint16_t)(-AUDIO_TIMER_TICKS / 4) ? 2 : 1;
-            if (distance < safe_distance)
+            if (distance < safe_distance) {
+#ifdef JENESIS_PROFILE
+                ++audio_stats.deferred;
+#endif
                 next_block = tick + safe_distance;
+            }
         }
         unsigned slot = next_block % AUDIO_BLOCKS;
         memcpy(fm_pan[slot], pan, sizeof(pan));
@@ -304,5 +348,11 @@ int main(void)
         memcpy(samples[1][slot], right, sizeof(right));
         atomic_signal_fence(memory_order_release);
         prepared_blocks[slot] = next_block++;
+#ifdef JENESIS_PROFILE
+        if (sound_active && ++audio_stats.mixed % 64 == 0) {
+            audio_stats.missed = profile_missed;
+            fifoSendDatamsg(PROFILE_AUDIO_FIFO, sizeof(audio_stats), (uint8_t *)&audio_stats);
+        }
+#endif
     }
 }

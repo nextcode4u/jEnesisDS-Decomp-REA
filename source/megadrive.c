@@ -268,7 +268,10 @@ void megadrive_ym_write_at(struct megadrive *md, unsigned port, uint8_t data, un
     }
     if ((reg & 0xf0) == 0xa0)
         fm_pitch_write(&md->ym_pitch, bank * 256 + reg, data);
-    if ((!bank && (reg == 0x22 || reg == 0x27 || reg == 0x28 || reg == 0x2b)) ||
+    // The sound CPU sees all timer writes. Only send channel-mode changes
+    // to the mixer, where the timer control bits do not affect synthesis.
+    bool mode_changed = reg == 0x27 && ((md->ym_registers[bank][reg] ^ data) & 0xc0);
+    if ((!bank && (reg == 0x22 || mode_changed || reg == 0x28 || reg == 0x2b)) ||
         (reg >= 0x30 && reg <= 0xb6 && (reg & 3) != 3))
         capture_fm_write(md, bank * 256 + reg, data, cycle);
     md->ym_registers[bank][reg] = data;

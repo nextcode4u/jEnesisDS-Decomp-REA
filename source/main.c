@@ -3,6 +3,7 @@
 #include "frontend.h"
 #include "megadrive.h"
 #include "psg.h"
+#include "profile.h"
 #include "savestate.h"
 #include "vdp_ds.h"
 #include "vdp_render.h"
@@ -10,6 +11,9 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fat.h>
+#ifdef JENESIS_PROFILE
+#include <fcntl.h>
+#endif
 #include <nds.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -144,6 +148,71 @@ static volatile uint32_t vblank_count;
 static volatile uint32_t presented_frames;
 enum { FRAME_TIMER = 0, FRAME_TIMER_DIVIDER = 64 };
 
+#ifdef JENESIS_PROFILE
+enum { PROFILE_WINDOWS = 128, PROFILE_WINDOW_FRAMES = 60 };
+
+struct profile_window {
+    unsigned frames, vblanks, core_ticks, max_core_ticks, z80_ticks;
+    unsigned draw_ticks, draws, submit_ticks, submitted, no_slot, send_failed;
+    struct audio_profile audio;
+};
+
+static struct profile_window profile_window, profile_windows[PROFILE_WINDOWS];
+static struct audio_profile profile_audio;
+static unsigned profile_window_count;
+
+static void profile_receive_audio(void)
+{
+    while (fifoCheckDatamsg(PROFILE_AUDIO_FIFO)) {
+        struct audio_profile report;
+        if (fifoGetDatamsg(PROFILE_AUDIO_FIFO, sizeof(report), (uint8_t *)&report) == sizeof(report))
+            profile_audio = report;
+    }
+}
+
+static void profile_store_window(void)
+{
+    if (!profile_window.frames)
+        return;
+    profile_window.audio = profile_audio;
+    profile_windows[profile_window_count++ % PROFILE_WINDOWS] = profile_window;
+    profile_window = (struct profile_window){0};
+}
+
+static bool profile_export(void)
+{
+    profile_store_window();
+    if (!profile_window_count)
+        return true;
+    char path[sizeof("nand:/jenesis-profile.csv")];
+    int path_size = snprintf(path, sizeof(path), "%sjenesis-profile.csv", fatGetDefaultDrive());
+    if (path_size < 0 || (size_t)path_size >= sizeof(path))
+        return false;
+    int file = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    if (file < 0)
+        return false;
+    static const char header[] =
+        "window,frames,vblanks,core_ticks,max_core_ticks,z80_ticks,draw_ticks,draws,"
+        "submit_ticks,submitted,no_slot,send_failed,arm7_received,arm7_mixed,"
+        "arm7_starved,arm7_deferred,arm7_missed,arm7_max_mix_ticks\n";
+    bool ok = write(file, header, sizeof(header) - 1) == sizeof(header) - 1;
+    unsigned first = profile_window_count > PROFILE_WINDOWS ? profile_window_count - PROFILE_WINDOWS : 0;
+    for (unsigned i = first; ok && i < profile_window_count; ++i) {
+        const struct profile_window *row = &profile_windows[i % PROFILE_WINDOWS];
+        char line[208];
+        int size = snprintf(line, sizeof(line), "%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u\n",
+                            i, row->frames, row->vblanks, row->core_ticks, row->max_core_ticks, row->z80_ticks,
+                            row->draw_ticks, row->draws, row->submit_ticks, row->submitted, row->no_slot,
+                            row->send_failed, row->audio.received, row->audio.mixed, row->audio.starved,
+                            row->audio.deferred, row->audio.missed, row->audio.max_mix_ticks);
+        ok = size > 0 && (size_t)size < sizeof(line) && write(file, line, size) == size;
+    }
+    if (ok && fsync(file) != 0)
+        ok = false;
+    return close(file) == 0 && ok;
+}
+#endif
+
 static void init_game_display(void)
 {
     videoSetMode(MODE_5_2D);
@@ -248,7 +317,14 @@ static bool draw_paced_frame(const struct application *app, struct video_pacing 
                              unsigned budget)
 {
     if (app->horizontal_view != VDP_VIEW_FIT || !(app->md->vdp_registers[12] & 1)) {
+#ifdef JENESIS_PROFILE
+        uint16_t start = timerTick(FRAME_TIMER);
+#endif
         draw_game_frame(app);
+#ifdef JENESIS_PROFILE
+        profile_window.draw_ticks += (uint16_t)(timerTick(FRAME_TIMER) - start);
+        ++profile_window.draws;
+#endif
         return true;
     }
     uint32_t vblank = vblank_count;
@@ -256,7 +332,12 @@ static bool draw_paced_frame(const struct application *app, struct video_pacing 
         return false;
     uint16_t start = timerTick(FRAME_TIMER);
     draw_game_frame(app);
-    video_pacing_drawn(video, (uint16_t)(timerTick(FRAME_TIMER) - start), vblank, budget);
+    uint16_t draw_ticks = timerTick(FRAME_TIMER) - start;
+    video_pacing_drawn(video, draw_ticks, vblank, budget);
+#ifdef JENESIS_PROFILE
+    profile_window.draw_ticks += draw_ticks;
+    ++profile_window.draws;
+#endif
     return true;
 }
 
@@ -674,8 +755,14 @@ static void submit_dac_frame(struct dac_frame *frame)
     if (frame) {
         DC_FlushRange(frame, offsetof(struct dac_frame, fm_writes) +
                              frame->fm_count * sizeof(frame->fm_writes[0]));
-        if (fifoSendAddress(FIFO_USER_02, frame))
+        if (fifoSendAddress(FIFO_USER_02, frame)) {
             dac_in_use |= 1U << frame->slot;
+#ifdef JENESIS_PROFILE
+            ++profile_window.submitted;
+        } else {
+            ++profile_window.send_failed;
+#endif
+        }
     }
 }
 
@@ -756,6 +843,11 @@ int main(void)
             video = (struct video_pacing){0};
         else
             video_pacing_observe(&video, elapsed_vblanks);
+#ifdef JENESIS_PROFILE
+        profile_receive_audio();
+        if (running)
+            profile_window.vblanks += elapsed_vblanks;
+#endif
         if (running && frame_budget) {
             // Reserve part of each period for input, display IRQs and the frontend.
             enum { NTSC_WORK_TICKS = (BUS_CLOCK / FRAME_TIMER_DIVIDER) * 97 / DS_REFRESH,
@@ -766,12 +858,30 @@ int main(void)
             for (unsigned frame = 0; frame < frame_budget && !app.md->cpu.stopped; ++frame) {
                 uint16_t frame_start = timerTick(FRAME_TIMER);
                 struct dac_frame *audio = begin_audio_frame(&app, pal);
+#ifdef JENESIS_PROFILE
+                uint16_t core_start = timerTick(FRAME_TIMER);
+                unsigned z80_start = profile_z80_ticks;
+                if (!audio)
+                    ++profile_window.no_slot;
+#endif
                 megadrive_run_frame(app.md);
+#ifdef JENESIS_PROFILE
+                unsigned core_ticks = (uint16_t)(timerTick(FRAME_TIMER) - core_start);
+                profile_window.core_ticks += core_ticks;
+                profile_window.z80_ticks += profile_z80_ticks - z80_start;
+                if (core_ticks > profile_window.max_core_ticks)
+                    profile_window.max_core_ticks = core_ticks;
+                ++profile_window.frames;
+                uint16_t submit_start = timerTick(FRAME_TIMER);
+#endif
                 dac_end(app.md);
                 ++measurement_frames;
                 send_audio(&app);
                 if (!app.md->cpu.stopped)
                     submit_dac_frame(audio);
+#ifdef JENESIS_PROFILE
+                profile_window.submit_ticks += (uint16_t)(timerTick(FRAME_TIMER) - submit_start);
+#endif
                 video_pacing_advance(&video, (uint16_t)(timerTick(FRAME_TIMER) - frame_start), work_ticks);
                 // With two emulated fields before a VBlank, choose the one
                 // opposite the field currently on screen.
@@ -793,6 +903,15 @@ int main(void)
             if (!saveram_flush(app.sram_path, app.md))
                 draw_screen(&app, "Cannot write cartridge SRAM");
         }
+#ifdef JENESIS_PROFILE
+        if (profile_window.frames >= PROFILE_WINDOW_FRAMES)
+            profile_store_window();
+        if ((was_running || running) && (!running || app.md->cpu.stopped)) {
+            if (!profile_export())
+                draw_screen(&app, "Could not write profile CSV");
+            observed_vblank = vblank_count;
+        }
+#endif
         was_running = running && !app.md->cpu.stopped;
         if (running && !app.md->cpu.stopped) {
             measurement_vblanks += elapsed_vblanks;
