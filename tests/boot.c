@@ -631,6 +631,51 @@ static void test_z80_delay_exits(const struct cartridge *cart)
     }
 }
 
+static void test_z80_ym_status_poll(const struct cartridge *cart)
+{
+    static struct megadrive_memory memory;
+    static struct megadrive md = {.memory = &memory};
+    static const unsigned slice_ends[] = {48, 50, 52, 70, 72, 142};
+    for (unsigned prefix = 0xdd; prefix <= 0xfd; prefix += 0x20) {
+        for (unsigned status = 0; status < 8; ++status) {
+            for (unsigned i = 0; i < sizeof(slice_ends) / sizeof(slice_ends[0]); ++i) {
+                megadrive_reset(&md, cart, GENESIS_REGION_AUTO);
+                const uint8_t program[] = {prefix, 0x7e, 0xfa, 0x0f, 0xd2, 0, 0, 0x76};
+                memcpy(memory.z80_ram, program, sizeof(program));
+                md.z80_reset = false;
+                md.sound_cpu.ix = md.sound_cpu.iy = 0x4008;
+                md.sound_cpu.f = 0xff;
+                md.sound_cpu.r = 0xfe;
+                md.ym_registers[0][0x27] = 0x0f;
+                md.ym_timer_clocks[0] = 310;
+                md.ym_timer_clocks[1] = 610;
+                md.ym_timer_flags = status & 3;
+                md.ym_busy_cycles = (status & 4) ? 32 : 0;
+
+                struct megadrive reference = md;
+                genesis_z80_bind(&reference);
+                unsigned budget = slice_ends[i] * 7 / 15;
+                while (reference.sound_cpu.cyc < budget) {
+                    unsigned long before = reference.sound_cpu.cyc;
+                    z80_step(&reference.sound_cpu);
+                    megadrive_ym_advance(&reference, (reference.sound_cpu.cyc - before) * 15);
+                }
+
+                genesis_z80_sync(&md, slice_ends[i]);
+                size_t offset = offsetof(z80, cyc);
+                assert(memcmp((const uint8_t *)&md.sound_cpu + offset,
+                              (const uint8_t *)&reference.sound_cpu + offset,
+                              sizeof(z80) - offset) == 0);
+                assert(md.z80_instruction_debt == reference.sound_cpu.cyc - budget);
+                assert(md.ym_timer_flags == reference.ym_timer_flags);
+                assert(md.ym_busy_cycles == reference.ym_busy_cycles);
+                assert(memcmp(md.ym_timer_clocks, reference.ym_timer_clocks,
+                              sizeof(md.ym_timer_clocks)) == 0);
+            }
+        }
+    }
+}
+
 static void test_z80_mirrored_words(const struct cartridge *cart)
 {
     static const uint8_t program[] = {
@@ -966,6 +1011,68 @@ static void test_scanline_scroll(void)
     assert(md.video_revision > revision);
     vdp_render_frame(&md, pixels, false, VDP_VIEW_CENTER);
     assert(pixels[144 * VDP_VIEW_WIDTH / 2] == 0x0101);
+}
+
+static void test_raster_column_scroll(const struct cartridge *cart)
+{
+    static struct megadrive_memory memory;
+    static struct megadrive md = {.memory = &memory};
+    static uint16_t pixels[VDP_VIEW_WIDTH * VDP_VIEW_HEIGHT / 2];
+
+    megadrive_reset(&md, cart, GENESIS_REGION_USA);
+    vdp_register(&md, 1, 0x50);
+    vdp_register(&md, 2, 8);
+    vdp_register(&md, 4, 3);
+    vdp_register(&md, 11, 4);
+    vdp_register(&md, 13, 0x3f);
+    vdp_register(&md, 15, 2);
+    for (unsigned row = 0; row < 32; ++row) {
+        set_vram_word(&md, 0x2000 + row * 64 + 2, 1);
+        set_vram_word(&md, 0x2000 + row * 64 + 4, 1);
+    }
+    memset(memory.vram + 32, 0x11, 16);
+    memset(memory.vram + 48, 0x22, 16);
+
+    md.vdp_active_lines = 224;
+    md.vdp_capture_raster = true;
+    md.frame_cycle = (64 * 3420 + 6) / 7;
+    // DMA fills consecutive columns of plane A while leaving plane B alone.
+    vdp_register(&md, 15, 4);
+    vdp_register(&md, 19, 2);
+    vdp_register(&md, 20, 0);
+    vdp_register(&md, 21, 0);
+    vdp_register(&md, 22, 0);
+    vdp_register(&md, 23, 0x70);
+    work_ram_store_word(&md, 0xe00000, 4);
+    work_ram_store_word(&md, 0xe00002, 7);
+    assert(megadrive_write_word(&md, 0xc00004, 0x4004));
+    assert(megadrive_write_word(&md, 0xc00004, 0x0090));
+    assert(md.vsram[2] == 4 && md.vsram[3] == 0 && md.vsram[4] == 7);
+    md.frame_cycle = (160 * 3420 + 6) / 7;
+    assert(megadrive_write_word(&md, 0xc00004, 0x4004));
+    assert(megadrive_write_word(&md, 0xc00004, 0x0010));
+    assert(megadrive_write_word(&md, 0xc00000, 0));
+    md.vdp_capture_raster = false;
+    assert(md.vsram[2] == 0);
+    assert(memory.vdp_rows[48].column_scroll && memory.vdp_column_scroll[48][2] == 0);
+    assert(memory.vdp_rows[128].column_scroll && memory.vdp_column_scroll[128][2] == 4);
+
+    const char *path = TEST_OUTPUT_DIR "/boot-test-column-scroll.jsc";
+    remove(path);
+    uint32_t identity = savestate_identity(&md);
+    assert(savestate_save(path, identity, &md));
+    memory.vdp_column_scroll[128][2] = 0;
+    assert(savestate_load(path, identity, &md));
+    assert(remove(path) == 0);
+    vdp_render_frame(&md, pixels, false, VDP_VIEW_CENTER);
+    assert(pixels[32 * VDP_VIEW_WIDTH / 2 + 8] == 0x0101);
+    assert(pixels[112 * VDP_VIEW_WIDTH / 2 + 8] == 0x0202);
+    assert(pixels[160 * VDP_VIEW_WIDTH / 2 + 8] == 0x0101);
+
+    // A one-pixel horizontal shift moves the column-scroll boundary with it.
+    set_vram_word(&md, 0xfc00, 1);
+    vdp_render_frame(&md, pixels, false, VDP_VIEW_CENTER);
+    assert(pixels[112 * VDP_VIEW_WIDTH / 2 + 8] == 0x0201);
 }
 
 static void test_interlace(const struct cartridge *cart)
@@ -1560,6 +1667,7 @@ int main(void)
     test_six_button_controller();
     test_z80_delay_loops(&cartridge);
     test_z80_delay_exits(&cartridge);
+    test_z80_ym_status_poll(&cartridge);
     test_z80_and_ym(&md);
     test_vdp_dma(&md);
     test_vdp_render(&md);
@@ -1569,6 +1677,7 @@ int main(void)
     test_vertical_scaling();
     test_horizontal_view();
     test_scanline_scroll();
+    test_raster_column_scroll(&cartridge);
 
     assert(m68k_interrupt(&md.cpu, &md, 6) == 0);  // Reset masks level 6.
     md.cpu.sr = 0x2304;

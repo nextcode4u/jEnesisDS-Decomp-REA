@@ -2010,6 +2010,25 @@ op_move_long_postincrement: { // MOVE.L (An)+,(Am)+
                 cpu->a[src] += 4;
                 if (address & 1)
                     FINISH_INSTRUCTION(0);
+                unsigned destination = cpu->a[dst];
+                unsigned source = address & 0xffffff;
+                unsigned target = destination & 0xffffff;
+                if (M68K_NATIVE_WORDS && source >= 0xe00000 && target >= 0xe00000 &&
+                    (uint16_t)source <= 0xfffc && (uint16_t)target <= 0xfffc && !(target & 1)) {
+                    // Both addresses use the same native word layout. Do not
+                    // shift and rebuild the guest longword for the store.
+                    uint8_t *ram = md->memory->ram;
+                    const uint8_t *input = __builtin_assume_aligned(ram + (uint16_t)source, 2);
+                    uint8_t *output = __builtin_assume_aligned(ram + (uint16_t)target, 2);
+                    uint16_t high, low;
+                    __builtin_memcpy(&high, input, sizeof(high));
+                    __builtin_memcpy(&low, input + 2, sizeof(low));
+                    __builtin_memcpy(output, &high, sizeof(high));
+                    __builtin_memcpy(output + 2, &low, sizeof(low));
+                    cpu->a[dst] += 4;
+                    set_logic_flags(cpu, 4, (uint32_t)high << 16 | low);
+                    FINISH_INSTRUCTION(20);
+                }
                 uint32_t value = read_memory_fast(md, address, 4);
                 address = cpu->a[dst];
                 cpu->a[dst] += 4;

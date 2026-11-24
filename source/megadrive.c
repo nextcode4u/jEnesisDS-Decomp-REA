@@ -155,9 +155,14 @@ static void capture_raster_through(struct megadrive *md, unsigned next_line)
         .plane_a_base = md->vdp_registers[2],
         .sprite_table = sprite_table,
         .display_enabled = display,
+        .column_scroll = (md->vdp_registers[11] & 4) != 0,
     };
-    while (md->vdp_row_count < next_line)
-        md->memory->vdp_rows[md->vdp_row_count++] = row;
+    while (md->vdp_row_count < next_line) {
+        unsigned y = md->vdp_row_count++;
+        md->memory->vdp_rows[y] = row;
+        if (row.column_scroll)
+            memcpy(md->memory->vdp_column_scroll[y], md->vsram, sizeof(md->vsram));
+    }
 }
 
 static void refresh_rom_fetch_limit(struct megadrive *md)
@@ -223,12 +228,24 @@ static unsigned ym_timer_period(const struct megadrive *md, unsigned timer)
 
 void megadrive_ym_advance(struct megadrive *md, unsigned master_clocks)
 {
-    unsigned m68k_cycles = master_clocks / 7;
-    md->ym_busy_cycles = m68k_cycles < md->ym_busy_cycles ?
-                         md->ym_busy_cycles - m68k_cycles : 0;
+    if (md->ym_busy_cycles) {
+        unsigned m68k_cycles = master_clocks / 7;
+        md->ym_busy_cycles = m68k_cycles < md->ym_busy_cycles ?
+                             md->ym_busy_cycles - m68k_cycles : 0;
+    }
     uint8_t mode = md->ym_registers[0][0x27];
-    if (!(mode & 3))
+    unsigned active = mode & 3;
+    if (!active)
         return;
+
+    // Most Z80 instructions end before either timer expires.
+    unsigned a = md->ym_timer_clocks[0];
+    unsigned b = md->ym_timer_clocks[1];
+    if (active == 3 && master_clocks < a && master_clocks < b) {
+        md->ym_timer_clocks[0] = a - master_clocks;
+        md->ym_timer_clocks[1] = b - master_clocks;
+        return;
+    }
     for (unsigned timer = 0; timer < 2; ++timer) {
         if (!(mode & (1 << timer)))
             continue;
@@ -601,9 +618,13 @@ static void vdp_store(struct megadrive *md, uint16_t value)
         break;
     case 5:
         value &= 0x07ff;
-        if (word < 40 && md->vsram[word] != value) {
-            if (word < 2 && md->vdp_capture_raster && !(md->vdp_registers[11] & 4))
-                capture_raster_through(md, md->frame_cycle * 7 / 3420 + 1);
+        if (word < VDP_VSRAM_WORDS && md->vsram[word] != value) {
+            if (md->vdp_capture_raster && (word < 2 || (md->vdp_registers[11] & 4))) {
+                unsigned clocks = md->frame_cycle * 7;
+                // A DMA can write several columns at the same beam position.
+                if (clocks >= md->vdp_row_count * 3420 && md->vdp_row_count < md->vdp_active_lines)
+                    capture_raster_through(md, clocks / 3420 + 1);
+            }
             md->vsram[word] = value;
             ++md->video_revision;
         }
@@ -705,6 +726,39 @@ static bool dma_linear_vram(struct megadrive *md, uint32_t address, unsigned len
     return true;
 }
 
+static bool dma_work_ram_to_vsram(struct megadrive *md, uint32_t source, unsigned length)
+{
+    unsigned dest = md->vdp_address & 0x7f;
+    unsigned step = md->vdp_registers[15];
+    if ((md->vdp_code & 0xf) != 5 || !(md->vdp_registers[11] & 4) ||
+        (step != 2 && step != 4) || (dest & 1) ||
+        dest + (length - 1) * step + 2 > sizeof(md->vsram) ||
+        source < 0xe00000 || source < md->rom_size ||
+        (source & 0xffff) + length * 2 > 0x10000)
+        return false;
+
+    unsigned clocks = md->frame_cycle * 7;
+    bool capture = md->vdp_capture_raster && clocks >= md->vdp_row_count * 3420 &&
+                   md->vdp_row_count < md->vdp_active_lines;
+    unsigned revision = md->video_revision;
+    uint16_t *column = md->vsram + dest / 2;
+    unsigned stride = step / 2;
+    for (unsigned i = 0; i < length; ++i) {
+        unsigned value = work_ram_word(md, source + i * 2) & 0x7ff;
+        if (value != column[i * stride]) {
+            if (capture) {
+                capture_raster_through(md, clocks / 3420 + 1);
+                capture = false;
+            }
+            column[i * stride] = value;
+            ++revision;
+        }
+    }
+    md->vdp_address += length * step;
+    md->video_revision = revision;
+    return true;
+}
+
 static bool vdp_dma(struct megadrive *md)
 {
     unsigned mode = md->vdp_registers[23] >> 6;
@@ -726,7 +780,8 @@ static bool vdp_dma(struct megadrive *md)
         }
     } else {
         const uint32_t bank = (md->vdp_registers[23] & 0x7f) << 17;
-        if (dma_linear_vram(md, bank | ((uint16_t)offset << 1), length)) {
+        uint32_t source = bank | ((uint16_t)offset << 1);
+        if (dma_linear_vram(md, source, length) || dma_work_ram_to_vsram(md, source, length)) {
             offset += length;
         } else {
             for (unsigned i = 0; i < length; ++i) {
@@ -770,9 +825,9 @@ static bool vdp_write_control(struct megadrive *md, uint16_t value)
                 return false;
             uint8_t changed = md->vdp_registers[reg] ^ (uint8_t)value;
             if (changed) {
-                if (md->vdp_capture_raster &&
-                    ((reg == 1 && (changed & 0x40)) || reg == 2 || reg == 5)) {
-                    md->vdp_raster_layout = true;
+                bool layout = (reg == 1 && (changed & 0x40)) || reg == 2 || reg == 5;
+                if (md->vdp_capture_raster && (layout || (reg == 11 && (changed & 4)))) {
+                    md->vdp_raster_layout |= layout;
                     capture_raster_through(md, md->frame_cycle * 7 / 3420 + 1);
                 }
                 md->vdp_registers[reg] = (uint8_t)value;

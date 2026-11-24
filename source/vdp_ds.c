@@ -574,6 +574,8 @@ bool vdp_ds_prepare(const struct megadrive *md, bool vertical_scaling,
     for (unsigned y = 0; y < VDP_VIEW_HEIGHT; ++y) {
         unsigned guest_y = vdp_viewport_scanline(y, top, scale);
         const struct vdp_scanline *row = raster_row(md, guest_y);
+        if (row && row->column_scroll)
+            return false;
         bool active = row ? row->display_enabled : enabled;
         sprite_tables[y] = active ? (row ? row->sprite_table : 0) : UINT8_MAX;
         if (!active) {

@@ -41,8 +41,13 @@ when gameplay stops. It replaces the previous file and retains up to 128 recent
 windows of roughly 60 guest frames from the current emulator session.
 
 The CSV records guest frames, DS VBlanks, core execution, Z80 synchronization,
-drawing, and audio submission. The timer resolution is about 1.91 microseconds
-per tick. Z80 ticks are included in core ticks. The ARM7 columns contain
+drawing, and audio submission. The 33.514 MHz timer clock with a divide-by-64
+prescaler gives about 1.91 microseconds per tick in both ARM9 clock modes.
+Convert refresh counts using the DS display rate of 59.826 Hz. Z80 ticks are
+included in core ticks. [GBATEK timers](https://problemkaputt.de/gbatek.htm#dstimers) ·
+[GBATEK display timings](https://problemkaputt.de/gbatek.htm#dsvideostuff)
+
+The ARM7 columns contain
 cumulative snapshots from playback, including received frames, input queue
 starvation, deferred mixes, muted deadlines, and the longest mix. The timer
 reads and FIFO reports add overhead, so compare diagnostic runs with each other
@@ -80,6 +85,37 @@ Sonic 2 at 67 MHz took 614 refreshes over guest frames 1,300 through 1,900 with 
 Dedicated 68000 handlers for postincrement word arithmetic, immediate word shifts and rotates, register ADDX/SUBX.W, and word branches that read a single flag brought Gunstar down to 440 refreshes for guest frames 600 through 1,000 at 67 MHz with Fit. That is 54.39 game FPS. Sonic 2 took 613 refreshes over the shared guest frame window from 1,300 through 1,901, down from 615 on the preceding build. In native DSi mode, Sonic 2 advanced one guest frame per refresh and Overdrive repeated its 49.67 game FPS result. Gunstar's top-screen captures at guest frames 600, 800, and 1,000 matched the preceding build pixel for pixel. The same 21-cartridge host trace also matched across 42,000 frames.
 
 Direct dispatch for common MOVE.W forms, quick word arithmetic to data registers, SWAP, and signed word branches improved the 67 MHz Fit replay again. Gunstar took 418 refreshes for the same 400 guest frames (57.25 FPS), down from 440 on the preceding build. jEnesisDS 0.7.4 took 431 on that replay. Sonic 2 took 607 refreshes for 601 guest frames (59.23 FPS), down from 613. The original took 601 refreshes. The port's 21-cartridge CPU, memory, video-state, and timed-audio host trace matched the preceding build across 42,000 frames. melonDS samples at display refreshes, so a capture at a given guest counter can show an earlier rendered frame when the builds present at different times.
+
+Titan Overdrive streams new column-scroll values into VSRAM on successive
+scanlines during the rotating circuit-board effect. The bitmap renderer now
+uses the scroll values recorded for each line and aligns the 16-pixel column
+boundaries with horizontal scroll. Work-RAM DMA can update consecutive VSRAM
+words or one plane's interleaved columns, with a single scanline capture before
+the first changed word. The rotating board appears in the BlocksDS capture. Some raster lines still differ from the same hardware ROM in Genesis
+Plus GX. jEnesisDS 0.7.4 stayed in its browser with that ROM.
+
+The Z80 sound CPU can execute a full YM2612 status-poll iteration in one
+step when the branch starts before the slice ends. Tests compare the resulting
+CPU and timer state with three individual instructions, including slices
+that end during the loop and transitions through the YM2612 busy and timer
+flags. Overdrive's late scene, guest frames 3,500 through 3,640, took 269
+VBlanks in melonDS with JIT, compared with 278 before the raster fix. A
+profiling replay in the same scene measured about 13 ms per guest frame
+each in the Z80 and the rest of the core, plus about 5 ms for video drawing
+per guest frame. PAL full speed allows about 20 ms for the whole guest frame.
+
+The Z80 scheduler now decrements both running YM2612 timers directly when
+neither reaches zero during the instruction. Timer expiry and single-timer
+modes use the full update. In the same late Overdrive window, the normal
+build went from 315 to 278 VBlanks in the interpreter and from 269 to 242
+with JIT. The profiling build measured 10.76 ms in Z80 execution and
+synchronization per guest frame, down from 13.01 ms. CPU state, timed audio,
+and raster traces matched across 15,000 frames in each host memory layout.
+
+In longer native-DSi-mode melonDS replays, the ARM7 counters reported 12
+missed playback deadlines and zero queue-starvation events in Sonic 2.
+Overdrive reported 38 missed deadlines and 440 queue-starvation events.
+Both runs played for roughly 2 minutes and 48 seconds of DS display time.
 
 In a 600-frame Sonic 2 Emerald Hill replay in melonDS, the faster bitmap renderer and redraw pacing sustained 59.83 game FPS and 30.31 video FPS with Fit in native DSi mode. At 67 MHz in DS mode, gameplay ran at about 54 FPS and the video updated about 11 times per second in the same interval. The bitmap renderer matched 1,800 frames from the previous implementation byte for byte in a host replay.
 

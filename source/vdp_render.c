@@ -172,7 +172,8 @@ static __attribute__((noinline)) void draw_interlaced_plane_span(
 static void draw_plane_line(const struct megadrive *md, uint8_t *line,
                             unsigned screen_x, unsigned screen_y, unsigned view_width,
                             bool wide, unsigned plane,
-                            unsigned cell_shift, const uint8_t *column_ends)
+                            unsigned cell_shift, const uint16_t *column_scroll,
+                            const uint8_t *column_ends)
 {
     const uint8_t *regs = md->vdp_registers;
     static const unsigned cells[4] = {32, 64, 32, 128};
@@ -202,11 +203,18 @@ static void draw_plane_line(const struct megadrive *md, uint8_t *line,
         if (!window) {
             unsigned vscroll = line_scroll;
             if (column_ends) {
-                unsigned column = x / 16;
-                unsigned column_end = column_ends[column] * 16;
+                // A partial tile column enters from the left as the plane scrolls.
+                unsigned shift = hscroll & 15;
+                unsigned column_end = shift;
+                if (x < shift) {
+                    vscroll = wide ? column_scroll[38] & column_scroll[39] : 0;
+                } else {
+                    unsigned column = (x - shift) / 16;
+                    column_end += column_ends[column] * 16;
+                    vscroll = column_scroll[column * 2 + plane];
+                }
                 if (column_end < span_end)
                     span_end = column_end;
-                vscroll = md->vsram[column * 2 + plane];
             }
             px = x + 1024 - hscroll;
             py = (field_y + vscroll) & ((height << cell_shift) - 1);
@@ -420,21 +428,11 @@ void vdp_render_frame(const struct megadrive *md, uint16_t *pixels, bool vertica
 #else
     struct sprite_index visible;
 #endif
-    // Columns with the same vertical scroll can share a tile span.
-    // Compute their boundaries once for the whole frame.
+    // Neighboring columns with equal scroll can share a tile span.
+    unsigned columns = (wide ? VDP_WIDE_WIDTH : VDP_VIEW_WIDTH) / 16;
     uint8_t column_ends[2][VDP_WIDE_WIDTH / 16];
-    bool column_scroll = (md->vdp_registers[11] & 4) != 0;
-    if (column_scroll) {
-        unsigned columns = wide ? VDP_WIDE_WIDTH / 16 : VDP_VIEW_WIDTH / 16;
-        for (unsigned plane = 0; plane < 2; ++plane) {
-            unsigned end = columns;
-            for (unsigned col = columns; col-- > 0;) {
-                if (col + 1 < columns && md->vsram[col * 2 + plane] != md->vsram[(col + 1) * 2 + plane])
-                    end = col + 1;
-                column_ends[plane][col] = end;
-            }
-        }
-    }
+    const uint16_t *last_column_scroll = NULL;
+    bool frame_column_scroll = (md->vdp_registers[11] & 4) != 0;
     unsigned indexed_until = 0;
     for (unsigned y = 0; y < VDP_VIEW_HEIGHT; ++y) {
         unsigned guest_y = vdp_viewport_scanline(y, top, scale);
@@ -442,6 +440,23 @@ void vdp_render_frame(const struct megadrive *md, uint16_t *pixels, bool vertica
                                          &md->memory->vdp_rows[guest_y] : NULL;
         _Alignas(4) uint8_t line[VDP_WIDE_WIDTH] = {0};
         if (row ? row->display_enabled : display_enabled) {
+            bool column_mode = row ? row->column_scroll : frame_column_scroll;
+            const uint16_t *scroll = column_mode ?
+                (row ? md->memory->vdp_column_scroll[guest_y] : md->vsram) : NULL;
+            if (scroll && scroll != last_column_scroll) {
+                if (!last_column_scroll ||
+                    memcmp(last_column_scroll, scroll, columns * 2 * sizeof(*scroll))) {
+                    for (unsigned plane = 0; plane < 2; ++plane) {
+                        unsigned end = columns;
+                        for (unsigned col = columns; col-- > 0;) {
+                            if (col + 1 < columns && scroll[col * 2 + plane] != scroll[(col + 1) * 2 + plane])
+                                end = col + 1;
+                            column_ends[plane][col] = end;
+                        }
+                    }
+                }
+                last_column_scroll = scroll;
+            }
             if (y >= indexed_until) {
                 unsigned table = row ? row->sprite_table : 0;
                 indexed_until = y + 1;
@@ -459,9 +474,9 @@ void vdp_render_frame(const struct megadrive *md, uint16_t *pixels, bool vertica
                                    wide, cell_shift, md->vdp_odd_field);
             }
             draw_plane_line(md, line, screen_x, guest_y, view_width, wide, 1, cell_shift,
-                            column_scroll ? column_ends[1] : NULL);
+                            scroll, scroll ? column_ends[1] : NULL);
             draw_plane_line(md, line, screen_x, guest_y, view_width, wide, 0, cell_shift,
-                            column_scroll ? column_ends[0] : NULL);
+                            scroll, scroll ? column_ends[0] : NULL);
             draw_sprites_line(md, line, screen_x, top + y, view_width, sprites, visible.indices[y], visible.counts[y], cell_shift);
         }
         store_scanline(pixels, line, fit);

@@ -175,10 +175,44 @@ static __attribute__((noinline)) unsigned run_indexed_dac_write(
     return cycles;
 }
 
+static __attribute__((noinline)) unsigned run_ym_status_poll(
+    struct megadrive *md, unsigned budget, const uint8_t *ram, unsigned offset)
+{
+    // LD A,(IX/IY+d); RRCA; JP NC back to the load.
+    enum { POLL_CYCLES = 33, BRANCH_START = 23 };
+    z80 *cpu = &md->sound_cpu;
+    if (budget <= BRANCH_START || offset > 0x1ff9 ||
+        cpu->int_pending || cpu->nmi_pending || cpu->iff_delay)
+        return 0;
+    const uint8_t *code = ram + offset;
+    if (code[1] != 0x7e || code[3] != 0x0f || code[4] != 0xd2 ||
+        (code[5] | code[6] << 8) != cpu->pc)
+        return 0;
+    uint16_t address = ((code[0] & 0x20) ? cpu->iy : cpu->ix) + (int8_t)code[2];
+    if (address < 0x4000 || address >= 0x6000)
+        return 0;
+
+    // The load sees the state before this iteration. Even with BUSY set,
+    // the load alone consumes enough clocks to clear it before the branch.
+    unsigned status = megadrive_ym_status(md);
+    cpu->a = (status >> 1) | ((status & 1) << 7);
+    cpu->cf = status & 1;
+    cpu->nf = cpu->hf = 0;
+    cpu->xf = (cpu->a >> 3) & 1;
+    cpu->yf = (cpu->a >> 5) & 1;
+    cpu->mem_ptr = cpu->pc;
+    if (cpu->cf)
+        cpu->pc += 7;
+    advance_refresh(cpu, 4);
+    return POLL_CYCLES;
+}
+
 static unsigned run_local_delay(struct megadrive *md, unsigned budget,
                                 const uint8_t *ram, unsigned offset, unsigned op)
 {
     z80 *cpu = &md->sound_cpu;
+    if ((op & 0xdf) == 0xdd)
+        return run_ym_status_poll(md, budget, ram, offset);
     if (op == 0x08)
         return run_indexed_dac_write(md, budget, ram, offset);
     if (op == 0x07)
@@ -311,9 +345,20 @@ ARM9_ITCM void genesis_z80_sync(struct megadrive *md, unsigned m68k_cycle)
             if (remaining > 0)
                 cpu->int_pending = irq_clocks != 0;
         }
-        if (md->ym_registers[0][0x27] & 3) {
-            megadrive_ym_advance(md, clocks * Z80_DIVIDER);
-        } else if (md->ym_busy_cycles) {
+        // Handle the common countdown here. Expiry still uses the full
+        // timer update so flag changes and reloads stay on the guest clock.
+        unsigned running = md->ym_registers[0][0x27] & 3;
+        if (running) {
+            unsigned master = clocks * Z80_DIVIDER;
+            unsigned a = md->ym_timer_clocks[0], b = md->ym_timer_clocks[1];
+            if (running != 3 || master >= a || master >= b) {
+                megadrive_ym_advance(md, master);
+                continue;
+            }
+            md->ym_timer_clocks[0] = a - master;
+            md->ym_timer_clocks[1] = b - master;
+        }
+        if (md->ym_busy_cycles) {
             unsigned elapsed_m68k = clocks * Z80_DIVIDER / M68K_DIVIDER;
             md->ym_busy_cycles = elapsed_m68k < md->ym_busy_cycles ?
                                  md->ym_busy_cycles - elapsed_m68k : 0;

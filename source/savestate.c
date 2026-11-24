@@ -8,7 +8,7 @@
 
 enum { FNV_PRIME = 16777619 };
 static const uint32_t fnv_start = UINT32_C(2166136261);
-static const uint8_t magic[4] = {'J', 'S', 'C', 11};
+static const uint8_t magic[4] = {'J', 'S', 'C', 12};
 
 struct state_io {
     FILE *file;
@@ -186,6 +186,18 @@ static void transfer_state(struct state_io *io, struct megadrive *md, unsigned v
             SCALAR(row->plane_a_base);
             SCALAR(row->sprite_table);
             SCALAR(row->display_enabled);
+            uint16_t *scroll = md->memory->vdp_column_scroll[y];
+            if (version >= 12) {
+                SCALAR(row->column_scroll);
+                if (row->column_scroll)
+                    for (unsigned i = 0; i < VDP_VSRAM_WORDS; ++i)
+                        SCALAR(scroll[i]);
+            } else {
+                // Older saves used the final column scroll for every row.
+                row->column_scroll = (md->vdp_registers[11] & 4) != 0;
+                if (row->column_scroll)
+                    memcpy(scroll, md->vsram, sizeof(md->vsram));
+            }
             if (row->sprite_table > md->vdp_sprite_table_count) {
                 io->ok = false;
                 return;

@@ -17,6 +17,7 @@
 
 enum {
     VDP_MAX_ACTIVE_LINES = 240,
+    VDP_VSRAM_WORDS = 40,
     VDP_SPRITE_TABLE_BYTES = 80 * 8,
     VDP_RASTER_SPRITE_TABLES = 8,
 };
@@ -26,6 +27,7 @@ struct vdp_scanline {
     uint8_t plane_a_base;
     uint8_t sprite_table;
     bool display_enabled;
+    bool column_scroll;
 };
 
 enum genesis_region {
@@ -62,6 +64,7 @@ struct megadrive_memory {
 #endif
     _Alignas(4) uint8_t vram[0x10000];
     struct vdp_scanline vdp_rows[VDP_MAX_ACTIVE_LINES];
+    uint16_t vdp_column_scroll[VDP_MAX_ACTIVE_LINES][VDP_VSRAM_WORDS];
     uint8_t vdp_sprite_tables[VDP_RASTER_SPRITE_TABLES][VDP_SPRITE_TABLE_BYTES];
     uint32_t vram_revisions[0x10000 / 32];
     uint32_t vdp_sprite_snapshot_revision;
@@ -106,7 +109,7 @@ struct megadrive {
     uint8_t th_phase[2];
     uint32_t controller_cycles, th_last_edge[2];
     uint16_t cram[64];
-    uint16_t vsram[40];
+    uint16_t vsram[VDP_VSRAM_WORDS];
 
     unsigned vdp_row_count, vdp_sprite_table_count, vdp_active_lines;
     bool vdp_capture_raster, vdp_raster_layout;
