@@ -117,6 +117,17 @@ static inline __attribute__((always_inline)) bool write_memory_fast(struct megad
     return write_other_memory(md, address, size, value);
 }
 
+static inline bool store_direct_long(struct megadrive *md, uint32_t address, uint32_t value)
+{
+    address &= 0xffffff;
+    // Both words must address the same VDP port. Leave aliases to the bus.
+    if (address == 0xc00004)
+        return megadrive_write_vdp_control_long(md, value);
+    if (address == 0xc00000)
+        return megadrive_write_vdp_data_long(md, value);
+    return write_memory_fast(md, address, 4, value);
+}
+
 static ARM9_ITCM uint32_t read_memory(struct megadrive *md, uint32_t address, unsigned size)
 {
     return read_memory_fast(md, address, size);
@@ -1005,7 +1016,7 @@ static __attribute__((noinline)) unsigned shift_memory(struct m68k *cpu, struct 
     return write_memory(md, address, 2, result) ? 8 + memory_cycles(mode, reg, 2) : 0;
 }
 
-static ARM9_ITCM __attribute__((noinline)) unsigned execute_misc(struct m68k *cpu, struct megadrive *md, uint16_t op)
+static __attribute__((noinline)) unsigned execute_misc(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
     if ((op & 0xf1c0) == 0x41c0) {
         unsigned mode = (op >> 3) & 7, reg = op & 7;
@@ -1195,7 +1206,7 @@ static unsigned compare_memory(struct m68k *cpu, struct megadrive *md, uint16_t 
     return size == 4 ? 20 : 12;
 }
 
-static ARM9_ITCM __attribute__((noinline)) unsigned execute_immediate(struct m68k *cpu, struct megadrive *md, uint16_t op)
+static __attribute__((noinline)) unsigned execute_immediate(struct m68k *cpu, struct megadrive *md, uint16_t op)
 {
     if ((op & 0xf138) == 0x0108)
         return move_peripheral(cpu, md, op);
@@ -1892,6 +1903,51 @@ static unsigned advance_ram_poll(struct megadrive *md, struct m68k *cpu,
     return stop;
 }
 
+// H40 counter totals per line and loop timing in 68000 clocks.
+enum { HCOUNTER_WRAP = 3420, HCOUNTER_STEPS = 211, HCOUNTER_DIVIDER = 7,
+       WAIT_TAKEN = 26, WAIT_BRANCH_START = 16, WAIT_EXIT = 24 };
+
+static __attribute__((noinline)) unsigned run_horizontal_wait(
+    struct megadrive *md, struct m68k *cpu, unsigned op, unsigned start, unsigned budget)
+{
+    unsigned pc = cpu->pc & 0xffffff;
+    unsigned reg = (op >> 9) & 7;
+    if (!(md->vdp_registers[12] & 1) || md->rom_size > 0xc00009 ||
+        megadrive_sram_visible(md, 0xc00009) || !rom_visible(md, pc, 6))
+        return 0;
+    const uint8_t *rom = md->rom + pc;
+    if (cartridge_aligned_word(rom, 0) != (0x0400 | reg) ||
+        (uint8_t)cartridge_aligned_word(rom, 2) != 0x40 ||
+        cartridge_aligned_word(rom, 4) != 0x6bf8)
+        return 0;
+
+    // MOVE.B (An),Dn; SUBI.B #$40,Dn; BMI back to the load.
+    // The branch is taken before $40 and after the H40 wrap at $b7.
+    enum { READ_FIRST = (0x40 * HCOUNTER_WRAP + HCOUNTER_STEPS - 1) / HCOUNTER_STEPS,
+           READ_WRAP = (0xb7 * HCOUNTER_WRAP + HCOUNTER_STEPS - 1) / HCOUNTER_STEPS,
+           WAIT_STEP = WAIT_TAKEN * HCOUNTER_DIVIDER };
+    unsigned phase = (start * HCOUNTER_DIVIDER) % HCOUNTER_WRAP;
+    unsigned distance = 0;
+    if (phase < READ_FIRST)
+        distance = READ_FIRST - phase;
+    else if (phase >= READ_WRAP)
+        distance = HCOUNTER_WRAP + READ_FIRST - phase;
+    unsigned taken = (distance + WAIT_STEP - 1) / WAIT_STEP;
+    unsigned fit = (budget + WAIT_TAKEN - WAIT_BRANCH_START - 1) / WAIT_TAKEN;
+    bool exit = taken < fit;
+    unsigned last_loop = exit ? taken : fit - 1;
+    phase += last_loop * WAIT_STEP;
+    if (phase >= HCOUNTER_WRAP)
+        phase -= HCOUNTER_WRAP;
+    unsigned counter = phase * HCOUNTER_STEPS / HCOUNTER_WRAP;
+    if (counter >= 0xb7)
+        counter += 0xe4 - 0xb7;
+    set_data(cpu, reg, 1, arithmetic_flags(cpu, 1, counter, 0x40, true, false));
+    cpu->pc += exit ? 6 : -2;
+    md->frame_cycle = start + last_loop * WAIT_TAKEN + WAIT_BRANCH_START;
+    return last_loop * WAIT_TAKEN + (exit ? WAIT_EXIT : WAIT_TAKEN);
+}
+
 // Use the fetched word to select a handler, as the r20 reference does.
 // Keep scheduling and single-step execution at the same instruction boundary.
 static ARM9_ITCM unsigned execute_until(struct megadrive *md, unsigned cycles,
@@ -1914,6 +1970,8 @@ static ARM9_ITCM unsigned execute_until(struct megadrive *md, unsigned cycles,
         {0xf1ff, 0x41f8, &&op_lea_word},
         {0xffff, 0x4eb9, &&op_jsr_long},
         {0xffbf, 0x4a38, &&op_tst_absolute},
+        {0xf1f8, 0x2080, &&op_store_long_register},
+        {0xf1ff, 0x20bc, &&op_store_long_immediate},
         {0xf1f8, 0x20d8, &&op_move_long_postincrement},
         {0xf1f8, 0x30c0, &&op_store_word_postincrement},
         {0xf1f8, 0x3000, &&op_move_word_register},
@@ -1921,6 +1979,7 @@ static ARM9_ITCM unsigned execute_until(struct megadrive *md, unsigned cycles,
         {0xf1f8, 0x3028, &&op_load_word_memory},
         {0xf1f8, 0x3018, &&op_load_word_postincrement},
         {0xf1f8, 0x1028, &&op_load_byte_displacement},
+        {0xf1f8, 0x1010, &&op_load_byte_memory},
         {0xfff8, 0x51c8, &&op_dbra},
         {0xf0f8, 0x5040, &&op_quick_word_register},
         {0xfeff, 0x6e00, &&op_word_signed_branch},
@@ -2004,31 +2063,26 @@ op_move_byte:
             FINISH_INSTRUCTION(move_common(cpu, md, op, 1));
 op_move_long:
             FINISH_INSTRUCTION(move_common(cpu, md, op, 4));
+op_store_long_register: { // MOVE.L Dn,(An)
+                uint32_t value = cpu->d[op & 7];
+                if (!store_direct_long(md, cpu->a[(op >> 9) & 7], value))
+                    FINISH_INSTRUCTION(0);
+                set_logic_flags(cpu, 4, value);
+                FINISH_INSTRUCTION(12);
+            }
+op_store_long_immediate: { // MOVE.L #imm,(An)
+                uint32_t value = fetch(cpu, md, 4);
+                if (!store_direct_long(md, cpu->a[(op >> 9) & 7], value))
+                    FINISH_INSTRUCTION(0);
+                set_logic_flags(cpu, 4, value);
+                FINISH_INSTRUCTION(20);
+            }
 op_move_long_postincrement: { // MOVE.L (An)+,(Am)+
                 unsigned src = op & 7, dst = (op >> 9) & 7;
                 uint32_t address = cpu->a[src];
                 cpu->a[src] += 4;
                 if (address & 1)
                     FINISH_INSTRUCTION(0);
-                unsigned destination = cpu->a[dst];
-                unsigned source = address & 0xffffff;
-                unsigned target = destination & 0xffffff;
-                if (M68K_NATIVE_WORDS && source >= 0xe00000 && target >= 0xe00000 &&
-                    (uint16_t)source <= 0xfffc && (uint16_t)target <= 0xfffc && !(target & 1)) {
-                    // Both addresses use the same native word layout. Do not
-                    // shift and rebuild the guest longword for the store.
-                    uint8_t *ram = md->memory->ram;
-                    const uint8_t *input = __builtin_assume_aligned(ram + (uint16_t)source, 2);
-                    uint8_t *output = __builtin_assume_aligned(ram + (uint16_t)target, 2);
-                    uint16_t high, low;
-                    __builtin_memcpy(&high, input, sizeof(high));
-                    __builtin_memcpy(&low, input + 2, sizeof(low));
-                    __builtin_memcpy(output, &high, sizeof(high));
-                    __builtin_memcpy(output + 2, &low, sizeof(low));
-                    cpu->a[dst] += 4;
-                    set_logic_flags(cpu, 4, (uint32_t)high << 16 | low);
-                    FINISH_INSTRUCTION(20);
-                }
                 uint32_t value = read_memory_fast(md, address, 4);
                 address = cpu->a[dst];
                 cpu->a[dst] += 4;
@@ -2075,6 +2129,21 @@ op_load_word_postincrement: { // MOVE.W (An)+,Dn
                 uint32_t value = read_memory_fast(md, address, 2);
                 set_data(cpu, (op >> 9) & 7, 2, value);
                 set_logic_flags(cpu, 2, value);
+                FINISH_INSTRUCTION(8);
+            }
+op_load_byte_memory: { // MOVE.B (An),Dn
+                uint32_t address = cpu->a[op & 7] & 0xffffff;
+                if (address == 0xc00009 && cycles + WAIT_BRANCH_START < md->m68k_slice_end) {
+                    unsigned spent = run_horizontal_wait(md, cpu, op, cycles, md->m68k_slice_end - cycles);
+                    if (spent) {
+                        instruction += 6;
+                        op = 0x6bf8;
+                        FINISH_INSTRUCTION(spent);
+                    }
+                }
+                uint32_t value = read_memory_fast(md, address, 1);
+                set_data(cpu, (op >> 9) & 7, 1, value);
+                set_logic_flags(cpu, 1, value);
                 FINISH_INSTRUCTION(8);
             }
 op_load_byte_displacement: { // MOVE.B (d16,An),Dn

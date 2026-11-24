@@ -201,6 +201,8 @@ uint8_t megadrive_read_byte(struct megadrive *md, uint32_t address);
 uint16_t megadrive_read_word(struct megadrive *md, uint32_t address);
 void megadrive_psg_write(struct megadrive *md, uint8_t value);
 bool megadrive_write_byte(struct megadrive *md, uint32_t address, uint8_t value);
+bool megadrive_write_vdp_control_long(struct megadrive *md, uint32_t value);
+bool megadrive_write_vdp_data_long(struct megadrive *md, uint32_t value);
 bool megadrive_write_word(struct megadrive *md, uint32_t address, uint16_t value);
 
 #endif

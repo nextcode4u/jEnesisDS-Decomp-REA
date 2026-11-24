@@ -148,7 +148,7 @@ static inline __attribute__((always_inline)) void draw_plane_span(const uint8_t 
     }
 }
 
-static __attribute__((noinline)) void draw_progressive_background_span(
+static ARM9_ITCM __attribute__((noinline)) void draw_progressive_background_span(
     const uint8_t *vram, uint8_t *line, unsigned length, unsigned x, unsigned y,
     unsigned stride, unsigned base)
 {
@@ -173,7 +173,7 @@ static void draw_plane_line(const struct megadrive *md, uint8_t *line,
                             unsigned screen_x, unsigned screen_y, unsigned view_width,
                             bool wide, unsigned plane,
                             unsigned cell_shift, const uint16_t *column_scroll,
-                            const uint8_t *column_ends)
+                            const uint8_t *column_ends, bool background_high)
 {
     const uint8_t *regs = md->vdp_registers;
     static const unsigned cells[4] = {32, 64, 32, 128};
@@ -225,7 +225,7 @@ static void draw_plane_line(const struct megadrive *md, uint8_t *line,
         if (cell_shift == 4)
             draw_interlaced_plane_span(md->memory->vram, output, span_end - x,
                                        px, py, stride, tile_base, plane == 0);
-        else if (plane == 0)
+        else if (plane == 0 && background_high)
             draw_progressive_foreground_span(md->memory->vram, output, span_end - x,
                                              px, py, stride, tile_base);
         else
@@ -401,7 +401,27 @@ static void draw_sprites_line(const struct megadrive *md, uint8_t *line,
     }
 }
 
-void vdp_render_frame(const struct megadrive *md, uint16_t *pixels, bool vertical_scaling,
+static __attribute__((noinline)) bool background_has_priority(const struct megadrive *md)
+{
+    static const unsigned cells[4] = {32, 64, 32, 128};
+    unsigned width = cells[md->vdp_registers[16] & 3];
+    unsigned height = cells[(md->vdp_registers[16] >> 4) & 3];
+    unsigned address = (md->vdp_registers[4] & 7) << 13;
+    unsigned words = width * height / 2;
+    for (unsigned i = 0; i < words; ++i, address += 4) {
+        uint32_t entries;
+        memcpy(&entries, __builtin_assume_aligned(md->memory->vram + (uint16_t)address, 4),
+               sizeof(entries));
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+        entries >>= 8;
+#endif
+        if (entries & 0x00800080u)
+            return true;
+    }
+    return false;
+}
+
+ARM9_ITCM void vdp_render_frame(const struct megadrive *md, uint16_t *pixels, bool vertical_scaling,
                       enum vdp_horizontal_view view)
 {
     bool display_enabled = (md->vdp_registers[1] & 0x40) != 0;
@@ -434,6 +454,7 @@ void vdp_render_frame(const struct megadrive *md, uint16_t *pixels, bool vertica
     const uint16_t *last_column_scroll = NULL;
     bool frame_column_scroll = (md->vdp_registers[11] & 4) != 0;
     unsigned indexed_until = 0;
+    bool background_high = cell_shift == 4 || background_has_priority(md);
     for (unsigned y = 0; y < VDP_VIEW_HEIGHT; ++y) {
         unsigned guest_y = vdp_viewport_scanline(y, top, scale);
         const struct vdp_scanline *row = guest_y < md->vdp_row_count ?
@@ -474,9 +495,9 @@ void vdp_render_frame(const struct megadrive *md, uint16_t *pixels, bool vertica
                                    wide, cell_shift, md->vdp_odd_field);
             }
             draw_plane_line(md, line, screen_x, guest_y, view_width, wide, 1, cell_shift,
-                            scroll, scroll ? column_ends[1] : NULL);
+                            scroll, scroll ? column_ends[1] : NULL, background_high);
             draw_plane_line(md, line, screen_x, guest_y, view_width, wide, 0, cell_shift,
-                            scroll, scroll ? column_ends[0] : NULL);
+                            scroll, scroll ? column_ends[0] : NULL, background_high);
             draw_sprites_line(md, line, screen_x, top + y, view_width, sprites, visible.indices[y], visible.counts[y], cell_shift);
         }
         store_scanline(pixels, line, fit);

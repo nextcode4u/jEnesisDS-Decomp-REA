@@ -117,6 +117,14 @@ missed playback deadlines and zero queue-starvation events in Sonic 2.
 Overdrive reported 38 missed deadlines and 440 queue-starvation events.
 Both runs played for roughly 2 minutes and 48 seconds of DS display time.
 
+The optimized VDP long writes, bitmap renderer, and Z80 DAC polling loop
+sustained 49.69 emulated FPS over guest frames 3300–3800 in four cold melonDS
+DSi replays with JIT, audio, and Fit enabled. Fit displayed 14.61 FPS over
+that interval. Timed audio and raster traces matched the earlier C build.
+In the 3500–3640 window, the JIT run improved from 34.75 to 50.15 emulated
+FPS. The interpreter fell from 30.57 to 28.01 FPS, and the 67 MHz DS replays
+for Sonic 2 and Gunstar Heroes also slowed down.
+
 In a 600-frame Sonic 2 Emerald Hill replay in melonDS, the faster bitmap renderer and redraw pacing sustained 59.83 game FPS and 30.31 video FPS with Fit in native DSi mode. At 67 MHz in DS mode, gameplay ran at about 54 FPS and the video updated about 11 times per second in the same interval. The bitmap renderer matched 1,800 frames from the previous implementation byte for byte in a host replay.
 
 - In the ROM browser, use **Up** and **Down** to highlight an entry, **Left** and **Right** to change pages, **A** to open or run the selection, and **B** to open the parent folder.

@@ -27,7 +27,7 @@ static unsigned sample_position(const struct megadrive *md, const struct dac_fra
     return numerator / md->frame_cycles;
 }
 
-void dac_sync(struct megadrive *md, unsigned cycle)
+ARM9_ITCM __attribute__((noinline)) void dac_sync(struct megadrive *md, unsigned cycle)
 {
     struct dac_capture *capture = &md->dac_capture;
     struct dac_frame *frame = capture->frame;
@@ -51,7 +51,7 @@ void dac_sync(struct megadrive *md, unsigned cycle)
         frame->samples[capture->position++] = sample;
 }
 
-void dac_write_sample(struct megadrive *md, uint8_t sample, unsigned cycle)
+ARM9_ITCM void dac_write_sample(struct megadrive *md, uint8_t sample, unsigned cycle)
 {
     if (md->ym_registers[0][0x2a] != sample) {
         dac_sync(md, cycle);

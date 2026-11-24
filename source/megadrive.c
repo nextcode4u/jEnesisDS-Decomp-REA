@@ -852,6 +852,54 @@ static bool vdp_write_control(struct megadrive *md, uint16_t value)
     return true;
 }
 
+__attribute__((noinline)) bool megadrive_write_vdp_control_long(struct megadrive *md, uint32_t value)
+{
+    unsigned high = value >> 16;
+    unsigned low = (uint16_t)value;
+    if (!md->vdp_command_pending) {
+        // Both halves form one command to set the VDP address and code.
+        if ((high & 0xc000) != 0x8000) {
+            md->vdp_address = (high & 0x3fff) | ((low & 3) << 14);
+            md->vdp_code = (high >> 14) | ((low >> 2) & 0x3c);
+            if ((md->vdp_code & 0x20) && (md->vdp_registers[1] & 0x10))
+                return vdp_dma(md);
+            return true;
+        }
+        // DMA length registers change neither display state nor IRQ timing.
+        if ((value & 0xff00ff00u) == 0x94009300u) {
+            md->vdp_registers[20] = high;
+            md->vdp_registers[19] = low;
+            md->vdp_code = 0;
+            return true;
+        }
+    }
+    return vdp_write_control(md, high) && vdp_write_control(md, low);
+}
+
+__attribute__((noinline)) bool megadrive_write_vdp_data_long(struct megadrive *md, uint32_t value)
+{
+    unsigned address = md->vdp_address;
+    if ((md->vdp_code & 15) != 1 || md->vdp_fill_pending || md->vdp_registers[15] != 2 || (address & 3))
+        return vdp_write_data(md, value >> 16) && vdp_write_data(md, value);
+
+    md->vdp_command_pending = false;
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+    value = __builtin_bswap32(value);
+#endif
+    uint8_t *output = __builtin_assume_aligned(md->memory->vram + address, 4);
+    uint32_t before;
+    memcpy(&before, output, sizeof(before));
+    uint32_t changed = before ^ value;
+    if (changed) {
+        memcpy(output, &value, sizeof(value));
+        md->video_revision += ((changed & 0xff) != 0) + ((changed & 0xff00) != 0) +
+                              ((changed & 0xff0000) != 0) + ((changed & 0xff000000u) != 0);
+        md->memory->vram_revisions[address >> 5] = md->video_revision;
+    }
+    md->vdp_address += 4;
+    return true;
+}
+
 bool megadrive_write_word(struct megadrive *md, uint32_t address, uint16_t value)
 {
     address &= 0xffffff;
